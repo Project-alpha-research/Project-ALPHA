@@ -298,25 +298,3 @@ def feature_projection(store: CryptoBulkStore, manifest: dict[str, object]) -> d
         "research_authority": False,
         "execution_authority": False,
     }
-
-
-def comparison_frame(
-    store: CryptoBulkStore, manifest_id: str
-) -> tuple[dict[str, object], CryptoDatasetIdentityV1, CryptoQualityReportV1, pl.DataFrame]:
-    manifest = store.verify_manifest(manifest_id)
-    if manifest.get("artifact_kind") != "normalized":
-        raise DataError("crypto comparison inputs must be normalized manifests")
-    dataset = CryptoDatasetIdentityV1.from_dict(manifest.get("dataset"))
-    report = CryptoQualityReportV1.from_dict(manifest.get("quality"))
-    if report.state != "qualified" or report.failures or report.warnings:
-        raise DataError("crypto comparison inputs must be exactly qualified")
-    artifact_key = manifest.get("artifact_key")
-    if not isinstance(artifact_key, str):
-        raise DataError("crypto comparison artifact key is invalid")
-    try:
-        frame = pl.read_parquet(store.bulk_root / artifact_key)
-    except (OSError, pl.exceptions.PolarsError) as exc:
-        raise DataError("crypto comparison artifact is unreadable") from exc
-    if "timestamp" not in frame.columns and "open_time" in frame.columns:
-        frame = frame.rename({"open_time": "timestamp"})
-    return manifest, dataset, report, frame

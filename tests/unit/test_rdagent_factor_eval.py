@@ -256,6 +256,7 @@ def test_known_only_evaluation_bytes_match_declared_primary_baseline(
             .replace("Factor failed: reason not recorded. ", "Factor execution failed.")
             .replace(cutoff, "(1 looks, 0 confirmed).")
         )
+    # The baseline run failed before any replay: only the costs record and cost text are new.
     # Assert every added field and phrase before reproducing the immutable baseline.
     assert "family" not in row  # this request names no family; the judge always sends one
     assert row.pop("critic_status") == "unavailable"
@@ -281,7 +282,7 @@ def test_known_only_evaluation_bytes_match_declared_primary_baseline(
         for key in ("reason", "figures_clock", "mean_ic", "spread"):
             row.pop(key, None)
     assert ev.sha(ev.canonical(record)) == (
-        "f52128980a352b3eebe36b8f1c917fbf4fdc0ceb9e270dfc4eed56e8fa189590"
+        "542e532b76b8bf83ca27313ac971081a6a2c1de966ef3a0812f1edc7ddf288fb"
     )
 
 

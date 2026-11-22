@@ -130,8 +130,6 @@ READ_ONLY_COMMANDS = frozenset(
         ("crypto-data", "asset-masters"),
         ("crypto-data", "storage"),
         ("crypto-data", "features"),
-        ("crypto-data", "profiles"),
-        ("crypto-data", "profile-batches"),
         ("info", "strategies"),
         ("info", "commands"),
         ("info", "symbols"),

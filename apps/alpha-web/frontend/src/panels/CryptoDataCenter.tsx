@@ -1,29 +1,19 @@
-import { Timestamp } from '../util/formatTime'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { api } from '../api/client'
 import type {
   CryptoAcquisitionRequest,
-  CryptoAssetIdentity,
   CryptoAssetMaster,
   CryptoAssetMasters,
   CryptoCatalog,
   CryptoCapabilities,
   CryptoCoverage,
-  CryptoCoverageBatch,
-  CryptoCoverageBatches,
-  CryptoCoverageCadence,
   CryptoCoverageItem,
-  CryptoCoverageProfilePage,
-  CryptoCoverageProfiles,
-  CryptoCoverageTask,
   CryptoEstimate,
   CryptoFamily,
   CryptoFeature,
   CryptoFeatureName,
   CryptoFeatures,
-  CryptoLiquidityMembership,
-  CryptoOneMinuteSelection,
   CryptoQuality,
   CryptoSnapshotCreate,
   CryptoSnapshotRegister,
@@ -34,7 +24,7 @@ import type {
   CryptoCacheClean,
 } from '../api/types'
 import { JobConsole } from '../components/JobConsole'
-import { fmtBytes, shortId } from '../util/format'
+import { fmtBytes } from '../util/format'
 import { CryptoAcquisitionView } from './CryptoAcquisitionView'
 import { CryptoAssetsView } from './CryptoAssetsView'
 import { CryptoCoverageView } from './CryptoCoverageView'
@@ -80,19 +70,6 @@ const BYBIT_RANGED_FAMILIES = new Set<CryptoFamily>([
   'premium_bars',
   'historical_volatility',
 ])
-
-const PROFILE_CADENCES: { id: CryptoCoverageCadence; label: string }[] = [
-  { id: 'daily', label: 'Daily coverage' },
-  { id: 'hourly', label: 'Hourly coverage' },
-  { id: 'funding_interval', label: 'Native funding intervals' },
-  { id: 'five_minute', label: 'Five-minute option tier' },
-]
-
-function previousUtcSession(): string {
-  const value = new Date()
-  value.setUTCDate(value.getUTCDate() - 1)
-  return value.toISOString().slice(0, 10)
-}
 
 function acquisitionProvider(value: string): CryptoAcquisitionRequest['provider'] | null {
   if (PROVIDERS.has(value)) return value as CryptoAcquisitionRequest['provider']
@@ -154,35 +131,15 @@ export function CryptoDataCenter({
   const [end, setEnd] = useState('2026-01-01T00:00:00Z')
   const [days, setDays] = useState(30)
   const [estimate, setEstimate] = useState<CryptoEstimate | null>(null)
-  const [asset, setAsset] = useState<CryptoAssetIdentity | null>(null)
   const [assetMasters, setAssetMasters] = useState<CryptoAssetMasters | null>(null)
   const [assetMaster, setAssetMaster] = useState<CryptoAssetMaster | null>(null)
   const [assetMasterVersion, setAssetMasterVersion] = useState('reviewed-native-v1')
-  const [contractNetwork, setContractNetwork] = useState('ethereum')
-  const [contractAddress, setContractAddress] = useState('')
   const [quality, setQuality] = useState<CryptoQuality | null>(null)
   const [features, setFeatures] = useState<CryptoFeatures | null>(null)
   const [featureName, setFeatureName] = useState<CryptoFeatureName>('funding')
   const [createdFeature, setCreatedFeature] = useState<CryptoFeature | null>(null)
-  const [profiles, setProfiles] = useState<CryptoCoverageProfiles | null>(null)
-  const [activeProfileId, setActiveProfileId] = useState<string>('')
-  const activeProfileRef = useRef('')
-  const [profilePage, setProfilePage] = useState<CryptoCoverageProfilePage | null>(null)
-  const [profileCadence, setProfileCadence] = useState<CryptoCoverageCadence>('daily')
-  const [profileOffset, setProfileOffset] = useState(0)
-  const [batches, setBatches] = useState<CryptoCoverageBatches | null>(null)
-  const [oneMinuteTasks, setOneMinuteTasks] = useState<CryptoCoverageTask[]>([])
-  const [oneMinuteNextOffset, setOneMinuteNextOffset] = useState<number | null>(null)
-  const [oneMinuteMarkets, setOneMinuteMarkets] = useState<Set<string>>(() => new Set())
-  const [oneMinuteReason, setOneMinuteReason] = useState('Inspect these bounded one-minute markets for the current research case.')
-  const [oneMinuteSelection, setOneMinuteSelection] = useState<CryptoOneMinuteSelection | null>(null)
-  const [liquidityCategory, setLiquidityCategory] = useState<'spot' | 'linear' | 'inverse'>('spot')
-  const [liquidityQuote, setLiquidityQuote] = useState<'USD' | 'USDT'>('USDT')
-  const [liquiditySession, setLiquiditySession] = useState(previousUtcSession)
-  const [liquidityMembership, setLiquidityMembership] = useState<CryptoLiquidityMembership | null>(null)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [jobId, setJobId] = useState<string | null>(null)
-  const [jobKind, setJobKind] = useState<'acquisition' | 'profile'>('acquisition')
   const [jobFinished, setJobFinished] = useState(false)
   const [snapshot, setSnapshot] = useState<CryptoSnapshotCreate | null>(null)
   const [verification, setVerification] = useState<CryptoSnapshotVerify | null>(null)
@@ -197,15 +154,13 @@ export function CryptoDataCenter({
     if (refresh) setRefreshing(true)
     else setLoading(true)
     try {
-      const [nextCatalog, nextCapabilities, nextAssetMasters, nextStorage, nextCoverage, nextFeatures, nextProfiles, nextBatches] = await Promise.all([
+      const [nextCatalog, nextCapabilities, nextAssetMasters, nextStorage, nextCoverage, nextFeatures] = await Promise.all([
         api.cryptoCatalog(),
         api.cryptoCapabilities(),
         api.cryptoAssetMasters(),
         api.cryptoStorage(),
         api.cryptoCoverage(),
         api.cryptoFeatures(),
-        api.cryptoProfiles(),
-        api.cryptoBatches(),
       ])
       setCatalog(nextCatalog)
       setCapabilities(nextCapabilities)
@@ -220,13 +175,6 @@ export function CryptoDataCenter({
       setStorage(nextStorage)
       setCoverage(nextCoverage)
       setFeatures(nextFeatures)
-      setProfiles(nextProfiles)
-      setBatches(nextBatches)
-      setActiveProfileId((current) => {
-        if (nextProfiles.items.some((item) => item.profile_id === current)) return current
-        return [...nextProfiles.items].sort((left, right) => right.as_of.localeCompare(left.as_of))[0]
-          ?.profile_id ?? ''
-      })
       setSelected((current) => {
         const admitted = new Set(
           nextCoverage.items
@@ -245,45 +193,8 @@ export function CryptoDataCenter({
   }, [])
 
   useEffect(() => {
-    activeProfileRef.current = activeProfileId
-  }, [activeProfileId])
-
-  useEffect(() => {
     void load()
   }, [load])
-
-  useEffect(() => {
-    if (!activeProfileId) {
-      setProfilePage(null)
-      setOneMinuteTasks([])
-      setOneMinuteNextOffset(null)
-      return
-    }
-    let cancelled = false
-    void Promise.all([
-      api.cryptoProfile(activeProfileId, {
-        cadence: profileCadence,
-        offset: profileOffset,
-        limit: 25,
-      }),
-      api.cryptoProfile(activeProfileId, {
-        provider: 'binance',
-        family: 'market_bars',
-        frequency: '1d',
-        offset: 0,
-        limit: 100,
-      }),
-    ]).then(([nextPage, markets]) => {
-      if (cancelled) return
-      setProfilePage(nextPage)
-      setOneMinuteTasks(markets.items)
-      setOneMinuteNextOffset(markets.next_offset)
-      setOneMinuteMarkets(new Set())
-    }).catch((reason: unknown) => {
-      if (!cancelled) setError(reason instanceof Error ? reason.message : String(reason))
-    })
-    return () => { cancelled = true }
-  }, [activeProfileId, profileCadence, profileOffset])
 
   const familyRows = useMemo(
     () => (catalog?.families ?? []).filter((row) => {
@@ -359,8 +270,6 @@ export function CryptoDataCenter({
       .filter((item) => selected.has(item.manifest_id) && item.base_asset)
       .map((item) => item.base_asset as string),
   )
-  const activeProfile = profiles?.items.find((item) => item.profile_id === activeProfileId) ?? null
-  const failedBatches = (batches?.items ?? []).filter((item) => item.state === 'failed')
   const featureInputSelection = useMemo(
     () => cryptoFeatureInputSelection(featureName, coverage?.items ?? [], selected),
     [coverage, featureName, selected],
@@ -393,38 +302,6 @@ export function CryptoDataCenter({
       setEstimate(await api.cryptoEstimate({ family, instruments: 1, days, frequency }))
     } catch (reason: unknown) {
       setEstimate(null)
-      setError(reason instanceof Error ? reason.message : String(reason))
-    } finally {
-      setBusyAction(null)
-    }
-  }
-
-  async function inspectAsset(): Promise<void> {
-    setBusyAction('asset')
-    setError(null)
-    try {
-      setAsset(await api.cryptoAsset(base, new Date().toISOString()))
-    } catch (reason: unknown) {
-      setAsset(null)
-      setError(reason instanceof Error ? reason.message : String(reason))
-    } finally {
-      setBusyAction(null)
-    }
-  }
-
-  async function inspectContractAsset(): Promise<void> {
-    if (!contractAddress || assetMasterVersion === 'reviewed-native-v1') return
-    setBusyAction('asset-contract')
-    setError(null)
-    try {
-      setAsset(await api.cryptoAssetContract(
-        contractNetwork,
-        contractAddress,
-        assetMasterVersion,
-        new Date().toISOString(),
-      ))
-    } catch (reason: unknown) {
-      setAsset(null)
       setError(reason instanceof Error ? reason.message : String(reason))
     } finally {
       setBusyAction(null)
@@ -505,7 +382,6 @@ export function CryptoDataCenter({
       }
       const accepted = await api.cryptoAcquire(request)
       setJobId(accepted.job_id)
-      setJobKind('acquisition')
       setJobFinished(false)
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : String(reason))
@@ -569,133 +445,6 @@ export function CryptoDataCenter({
       setQuality(await api.cryptoQuality(item.manifest_id))
       setSection('quality')
     } catch (reason: unknown) {
-      setError(reason instanceof Error ? reason.message : String(reason))
-    } finally {
-      setBusyAction(null)
-    }
-  }
-
-  async function createProfile(): Promise<void> {
-    setBusyAction('profile-create')
-    setError(null)
-    try {
-      const created = await api.cryptoProfileCreate()
-      setActiveProfileId(created.profile_id)
-      setProfileOffset(0)
-      await load(true)
-    } catch (reason: unknown) {
-      setError(reason instanceof Error ? reason.message : String(reason))
-    } finally {
-      setBusyAction(null)
-    }
-  }
-
-  async function runProfileBatch(): Promise<void> {
-    if (!activeProfileId || !profilePage || profilePage.items.length === 0) return
-    setBusyAction('profile-run')
-    setError(null)
-    try {
-      const accepted = await api.cryptoProfileRun(
-        activeProfileId,
-        profileCadence,
-        profileOffset,
-        Math.min(25, profilePage.items.length),
-      )
-      setJobId(accepted.job_id)
-      setJobKind('profile')
-      setJobFinished(false)
-    } catch (reason: unknown) {
-      setError(reason instanceof Error ? reason.message : String(reason))
-    } finally {
-      setBusyAction(null)
-    }
-  }
-
-  async function resumeProfileBatch(batch: CryptoCoverageBatch): Promise<void> {
-    if (batch.state !== 'failed') return
-    setBusyAction(`batch:${batch.batch_id}`)
-    setError(null)
-    try {
-      const accepted = await api.cryptoBatchResume(batch.batch_id)
-      setJobId(accepted.job_id)
-      setJobKind('profile')
-      setJobFinished(false)
-    } catch (reason: unknown) {
-      setError(reason instanceof Error ? reason.message : String(reason))
-    } finally {
-      setBusyAction(null)
-    }
-  }
-
-  async function freezeLiquidityMembership(): Promise<void> {
-    if (!activeProfileId) return
-    setBusyAction('liquidity-freeze')
-    setError(null)
-    try {
-      setLiquidityMembership(await api.cryptoLiquidityFreeze(activeProfileId, {
-        category: liquidityCategory,
-        quote_asset: liquidityQuote,
-        session: liquiditySession,
-        limit: 250,
-      }))
-    } catch (reason: unknown) {
-      setLiquidityMembership(null)
-      setError(reason instanceof Error ? reason.message : String(reason))
-    } finally {
-      setBusyAction(null)
-    }
-  }
-
-  async function loadMoreOneMinuteMarkets(): Promise<void> {
-    if (!activeProfileId || oneMinuteNextOffset === null) return
-    setBusyAction('one-minute-more')
-    setError(null)
-    try {
-      const page = await api.cryptoProfile(activeProfileId, {
-        provider: 'binance',
-        family: 'market_bars',
-        frequency: '1d',
-        offset: oneMinuteNextOffset,
-        limit: 100,
-      })
-      if (page.profile_id !== activeProfileRef.current) return
-      setOneMinuteTasks((current) => [...current, ...page.items])
-      setOneMinuteNextOffset(page.next_offset)
-    } catch (reason: unknown) {
-      setError(reason instanceof Error ? reason.message : String(reason))
-    } finally {
-      setBusyAction(null)
-    }
-  }
-
-  function toggleOneMinuteMarket(task: CryptoCoverageTask): void {
-    if (!task.category) return
-    const market = `${task.category}:${task.instrument}`
-    setOneMinuteMarkets((current) => {
-      const next = new Set(current)
-      if (next.has(market)) next.delete(market)
-      else if (next.size < 50) next.add(market)
-      return next
-    })
-    setOneMinuteSelection(null)
-  }
-
-  async function freezeOneMinuteSelection(): Promise<void> {
-    if (!activeProfileId || !projectId || !caseRevision || oneMinuteMarkets.size === 0) return
-    setBusyAction('one-minute-select')
-    setError(null)
-    try {
-      const created = await api.cryptoOneMinuteSelection(activeProfileId, {
-        case_id: projectId,
-        expected_case_revision: caseRevision,
-        markets: [...oneMinuteMarkets],
-        reason: oneMinuteReason.trim(),
-      })
-      setOneMinuteSelection(created)
-      setActiveProfileId(created.profile_id)
-      await load(true)
-    } catch (reason: unknown) {
-      setOneMinuteSelection(null)
       setError(reason instanceof Error ? reason.message : String(reason))
     } finally {
       setBusyAction(null)
@@ -794,37 +543,18 @@ export function CryptoDataCenter({
 
       <CryptoAssetsView
         show={section === 'assets'}
-        base={base}
-        asset={asset}
         assetMasters={assetMasters}
         assetMaster={assetMaster}
         assetMasterVersion={assetMasterVersion}
-        contractNetwork={contractNetwork}
-        contractAddress={contractAddress}
         busyAction={busyAction}
-        onBaseChange={(value) => {
-          setBase(value)
-          setAsset(null)
-        }}
-        onInspectAsset={() => void inspectAsset()}
         onAssetMasterVersionChange={(value) => {
           setAssetMasterVersion(value)
-          setAsset(null)
           setAssetMaster(null)
           setSnapshot(null)
           setVerification(null)
         }}
         onFreezeAssetMaster={() => void freezeAssetMaster()}
         onVerifyAssetMaster={() => void verifyAssetMaster()}
-        onContractNetworkChange={(value) => {
-          setContractNetwork(value)
-          setAsset(null)
-        }}
-        onContractAddressChange={(value) => {
-          setContractAddress(value)
-          setAsset(null)
-        }}
-        onInspectContractAsset={() => void inspectContractAsset()}
       />
 
       <CryptoAcquisitionView
@@ -871,7 +601,7 @@ export function CryptoDataCenter({
         onAcquire={() => void acquire()}
       />
 
-      {jobId ? <section className="crypto-job"><div className="rd-head">{jobKind === 'profile' ? 'Coverage batch job' : 'Acquisition job'}</div><div className="workbench-notice" role="status"><strong>{jobFinished ? 'FINISHED' : 'RUNNING'}</strong><span>{jobFinished ? 'Coverage refreshed. Review the new mechanical qualification below.' : jobKind === 'profile' ? 'Running at most 25 exact tasks from the frozen profile with an atomic checkpoint after each task.' : 'Fetching one bounded provider response and freezing its exact bytes.'}</span></div><div className="advanced-only"><JobConsole jobId={jobId} onDone={() => { setJobFinished(true); void load(true) }} /></div></section> : null}
+      {jobId ? <section className="crypto-job"><div className="rd-head">Acquisition job</div><div className="workbench-notice" role="status"><strong>{jobFinished ? 'FINISHED' : 'RUNNING'}</strong><span>{jobFinished ? 'Coverage refreshed. Review the new mechanical qualification below.' : 'Fetching one bounded provider response and freezing its exact bytes.'}</span></div><div className="advanced-only"><JobConsole jobId={jobId} onDone={() => { setJobFinished(true); void load(true) }} /></div></section> : null}
 
       <CryptoCoverageView
         section={section}
@@ -915,106 +645,6 @@ export function CryptoDataCenter({
 
       {section === 'storage' && storage ? (
         <>
-        <section className="provider-card" aria-label="Default crypto coverage profile">
-          <div className="provider-card-head">
-            <div className="rd-head">Default coverage profile</div>
-            <span className="chip kind">{activeProfile?.task_count.toLocaleString() ?? 0} tasks</span>
-          </div>
-          <p className="muted">A profile freezes point-in-time provider catalogs into bounded acquisition tasks. It is scheduling provenance only—never research evidence or execution authority.</p>
-          <div className="crypto-form-grid">
-            <label>
-              <span className="eyebrow">Frozen profile</span>
-              <select
-                className="field"
-                value={activeProfileId}
-                onChange={(event) => {
-                  setActiveProfileId(event.target.value)
-                  setProfileOffset(0)
-                  setLiquidityMembership(null)
-                  setOneMinuteSelection(null)
-                }}
-              >
-                {(profiles?.items ?? []).map((item) => (
-                  <option key={item.profile_id} value={item.profile_id}>
-                    <Timestamp value={item.as_of} /> · {item.task_count.toLocaleString()} tasks
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button className="btn" type="button" disabled={busyAction !== null} onClick={() => void createProfile()}>
-              {busyAction === 'profile-create' ? 'Freezing catalogs…' : 'Freeze fresh profile'}
-            </button>
-          </div>
-          {activeProfile ? (
-            <div className="crypto-detail">
-              <span>{Object.entries(activeProfile.counts_by_provider).map(([name, count]) => `${name} ${count.toLocaleString()}`).join(' · ')}</span>
-              <span>{Object.entries(activeProfile.counts_by_cadence).map(([name, count]) => `${name.replaceAll('_', ' ')} ${count.toLocaleString()}`).join(' · ')}</span>
-              <span className="mono muted advanced-only">profile {activeProfile.profile_id} · {activeProfile.source_manifest_ids.length} exact catalog inputs</span>
-            </div>
-          ) : <div className="workbench-notice" role="note"><strong>NO FROZEN PROFILE</strong><span>Acquire and qualify the required Bybit catalogs, option chains, and Binance membership catalogs, then freeze a profile.</span></div>}
-          {activeProfile ? (
-            <>
-              <div className="crypto-form-grid">
-                <label><span className="eyebrow">Cadence</span><select className="field" value={profileCadence} onChange={(event) => { setProfileCadence(event.target.value as CryptoCoverageCadence); setProfileOffset(0) }}>{PROFILE_CADENCES.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-                <label><span className="eyebrow">Page</span><input className="field" readOnly value={`${profileOffset + 1}–${profileOffset + (profilePage?.items.length ?? 0)} of ${profilePage?.filtered_count.toLocaleString() ?? '…'}`} /></label>
-                <button className="btn" type="button" disabled={profileOffset === 0 || busyAction !== null} onClick={() => setProfileOffset(Math.max(0, profileOffset - 25))}>Previous 25</button>
-                <button className="btn" type="button" disabled={!profilePage?.has_more || busyAction !== null} onClick={() => setProfileOffset(profilePage?.next_offset ?? profileOffset)}>Next 25</button>
-                <button className="btn primary" type="button" disabled={!profilePage?.items.length || busyAction !== null} onClick={() => void runProfileBatch()}>{busyAction === 'profile-run' ? 'Starting…' : `Run these ${profilePage?.items.length ?? 0} tasks`}</button>
-              </div>
-              <p className="muted">{profilePage?.next_action ?? 'Loading this exact cadence page…'} Provider requests begin only after this explicit click.</p>
-              <div className="crypto-coverage-list">
-                {(profilePage?.items ?? []).map((task) => (
-                  <article className="crypto-dataset" key={task.task_id}>
-                    <span><strong>{task.instrument}</strong><span className="muted">{task.family.replaceAll('_', ' ')} · {task.provider} · {task.category ?? 'reference'} · {task.frequency}</span></span>
-                    <span className="chip">PLANNED</span>
-                    <span className="mono muted advanced-only">task {shortId(task.task_id)}</span>
-                  </article>
-                ))}
-              </div>
-            </>
-          ) : null}
-          {failedBatches.length ? (
-            <div className="crypto-detail">
-              <strong>{failedBatches.length} failed bounded batch{failedBatches.length === 1 ? '' : 'es'}</strong>
-              {failedBatches.map((batch) => <div key={batch.batch_id} className="crypto-detail"><span><strong>{batch.error ?? 'Provider or data blocker'}</strong><span className="muted">{batch.recovery_action ?? 'Resolve the blocker, then resume.'}</span></span><button className="btn" type="button" disabled={busyAction !== null} onClick={() => void resumeProfileBatch(batch)}>{busyAction === `batch:${batch.batch_id}` ? 'Resuming…' : `Resume ${batch.cadence.replaceAll('_', ' ')} batch (${batch.completed_count}/${batch.task_count})`}</button></div>)}
-            </div>
-          ) : null}
-        </section>
-
-        {activeProfile ? (
-          <section className="crypto-card-grid" aria-label="Higher-resolution crypto coverage">
-            <article className="provider-card">
-              <div className="rd-head">Causal hourly liquidity scope</div>
-              <p className="muted">After every market in one exact prior-day scope is qualified, freeze the top 250 without mixing quote assets or contract units.</p>
-              <div className="crypto-form-grid">
-                <label><span className="eyebrow">Market</span><select className="field" value={liquidityCategory} onChange={(event) => { const next = event.target.value as 'spot' | 'linear' | 'inverse'; setLiquidityCategory(next); setLiquidityQuote(next === 'inverse' ? 'USD' : 'USDT'); setLiquidityMembership(null) }}><option value="spot">Spot</option><option value="linear">USD-M perpetual</option><option value="inverse">COIN-M perpetual</option></select></label>
-                <label><span className="eyebrow">Quote</span><input className="field mono" readOnly value={liquidityQuote} /></label>
-                <label><span className="eyebrow">Complete UTC session</span><input className="field mono" type="date" value={liquiditySession} onChange={(event) => { setLiquiditySession(event.target.value); setLiquidityMembership(null) }} /></label>
-                <button className="btn primary" type="button" disabled={busyAction !== null || !liquiditySession} onClick={() => void freezeLiquidityMembership()}>{busyAction === 'liquidity-freeze' ? 'Re-verifying scope…' : 'Freeze top-liquidity membership'}</button>
-              </div>
-              {liquidityMembership ? <div className="workbench-notice" role="status"><strong>FROZEN · {liquidityMembership.selected_count} OF {liquidityMembership.universe_count}</strong><span>Create a fresh profile to admit this exact hourly membership.</span><span className="mono muted advanced-only">manifest {liquidityMembership.manifest_id}</span></div> : null}
-            </article>
-
-            <article className="provider-card">
-              <div className="rd-head">Case-bound one-minute markets</div>
-              <p className="muted">Select up to 50 markets from the frozen daily membership. This only schedules the previous complete hour and is bound to the current research-case revision.</p>
-              <label><span className="eyebrow">Research purpose</span><input className="field" value={oneMinuteReason} onChange={(event) => { setOneMinuteReason(event.target.value); setOneMinuteSelection(null) }} /></label>
-              {!projectId || !caseRevision ? <div className="workbench-notice" role="note"><strong>SELECT A RESEARCH CASE</strong><span>A current case and revision are required before one-minute membership can be frozen.</span></div> : null}
-              <div className="crypto-market-picker">
-                {oneMinuteTasks.map((task) => {
-                  const market = `${task.category}:${task.instrument}`
-                  return <label key={task.task_id}><input type="checkbox" checked={oneMinuteMarkets.has(market)} disabled={!task.category || (!oneMinuteMarkets.has(market) && oneMinuteMarkets.size >= 50)} onChange={() => toggleOneMinuteMarket(task)} /><span><strong>{task.instrument}</strong><small>{task.category} · {task.base_asset}/{task.quote_asset}</small></span></label>
-                })}
-              </div>
-              <div className="crypto-actions">
-                {oneMinuteNextOffset !== null ? <button className="btn" type="button" disabled={busyAction !== null} onClick={() => void loadMoreOneMinuteMarkets()}>{busyAction === 'one-minute-more' ? 'Loading…' : 'Load 100 more markets'}</button> : null}
-                <button className="btn primary" type="button" disabled={busyAction !== null || !projectId || !caseRevision || oneMinuteMarkets.size === 0 || !oneMinuteReason.trim()} onClick={() => void freezeOneMinuteSelection()}>{busyAction === 'one-minute-select' ? 'Freezing…' : `Freeze ${oneMinuteMarkets.size} selected market${oneMinuteMarkets.size === 1 ? '' : 's'}`}</button>
-              </div>
-              {oneMinuteSelection ? <div className="workbench-notice" role="status"><strong>CASE-BOUND · {oneMinuteSelection.selected_count} MARKETS</strong><span>New profile frozen for the previous complete hour; no research or execution authority was granted.</span><span className="mono muted advanced-only">selection {oneMinuteSelection.selection_manifest_id}</span></div> : null}
-            </article>
-          </section>
-        ) : null}
-
         <section className="provider-card">
           <div className="rd-head">Storage</div>
           <div className="crypto-storage-stats"><span className={storage.state === 'ready' ? 'chip pass' : 'chip fail'}>{storage.state.toUpperCase()}</span><span>{fmtBytes(storage.free_bytes)} free of {fmtBytes(storage.total_bytes)}</span><span>{storage.manifest_count} immutable manifests</span><span>{fmtBytes(storage.cache_bytes)} removable cache</span><span>Reserve {storage.reserve_fraction == null ? '—' : `${Math.round(storage.reserve_fraction * 100)}%`} · minimum {fmtBytes(storage.minimum_free_bytes)}</span></div>

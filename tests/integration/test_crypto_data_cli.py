@@ -170,46 +170,6 @@ def test_crypto_storage_inventory_verify_and_confirmed_cache_cleanup(
     assert protected.read_bytes() == b"protected"
 
 
-def test_crypto_data_asset_identity_uses_reviewed_native_mapping_not_ticker_join() -> None:
-    btc = runner.invoke(
-        app,
-        ["crypto-data", "asset", "BTC", "--as-of", "2026-08-15T00:00:00Z", "--json"],
-    )
-    assert btc.exit_code == 0, btc.output
-    identity = json.loads(btc.stdout)
-    assert identity["coingecko_id"] == "bitcoin"
-    assert identity["network"] == "bitcoin"
-    assert identity["native_asset"] is True
-
-    unknown = runner.invoke(
-        app,
-        ["crypto-data", "asset", "DOGE", "--as-of", "2026-08-15T00:00:00Z"],
-    )
-    assert unknown.exit_code != 0
-    assert "reviewed native mapping" in unknown.output
-
-
-def test_crypto_data_asset_identity_resolves_reviewed_xrp_and_sol() -> None:
-    for symbol, coingecko_id in (("XRP", "ripple"), ("SOL", "solana")):
-        result = runner.invoke(
-            app, ["crypto-data", "asset", symbol, "--as-of", "2024-01-01T00:00:00Z", "--json"]
-        )
-        assert result.exit_code == 0, result.output
-        identity = json.loads(result.stdout)
-        assert identity["coingecko_id"] == coingecko_id
-        assert identity["native_asset"] is True
-        assert ["binance", symbol] in identity["provider_symbols"]
-
-    listing = runner.invoke(app, ["crypto-data", "asset-masters", "--json"])
-    assert listing.exit_code == 0, listing.output
-    builtins = {
-        item["asset_master_version"]: item["identity_count"]
-        for item in json.loads(listing.stdout)["items"]
-        if item["builtin"]
-    }
-    assert builtins == {"reviewed-native-v1": 2, "reviewed-native-v2": 4}
-
-
 def test_cross_provider_asset_master_freezes_verifies_and_binds_snapshot(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -372,22 +332,6 @@ def test_cross_provider_asset_master_freezes_verifies_and_binds_snapshot(
     assert listed_masters.exit_code == 0, listed_masters.output
     # the two reviewed-native builtins plus the frozen cross-provider master
     assert json.loads(listed_masters.stdout)["count"] == 3
-    contract = runner.invoke(
-        app,
-        [
-            "crypto-data",
-            "asset-contract",
-            "ethereum",
-            "0xusdc",
-            "--asset-master-version",
-            master["asset_master_version"],
-            "--as-of",
-            "2026-08-15T00:00:00Z",
-            "--json",
-        ],
-    )
-    assert contract.exit_code == 0, contract.output
-    assert json.loads(contract.stdout)["coingecko_id"] == "usd-coin"
 
     master_path = tmp_path / "masters" / f"{master['asset_master_version']}.json"
     master_path.write_text(master_path.read_text().replace("usd-coin", "forged"))

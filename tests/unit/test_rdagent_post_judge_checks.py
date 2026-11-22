@@ -59,6 +59,7 @@ def direct(tool: str, returns: FloatArray, seed: int) -> dict[str, float]:
     }
 
 
+@pytest.mark.usefixtures("pre_table_costs")
 def test_parity_attempts_and_cache(tmp_path: Path, recorded_time: None) -> None:
     run = tmp_path / "run"
     req = fixture(run)

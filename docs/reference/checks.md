@@ -18,9 +18,11 @@ Pull requests merge on the one required check, `ci-ok`. Times are wall time on G
 standard runners, measured on pull request #134 (run 43482233439, 2026-11-13) unless marked otherwise.
 `tests/unit/test_checks_reference.py` fails when a CI job or a pytest marker is missing here.
 A DRAFT pull request runs only `changes` and `static`, and its `ci-ok` fails on purpose with a message. The full run starts when the pull
-request is marked ready (`gh pr ready <number>`). Nothing merges without the full green run.
+request is marked ready (`gh pr ready <number>`). Nothing merges without a green `ci-ok`.
 
-Tiers: **PR** runs on every pull request and every push to main. **PR (paths)** runs on a pull
+Tiers: **PR** runs on every pull request and every push to main. **main** runs on every push to
+main, after the merge, and not on a pull request (owner decision 2026-11-22: a pull request runs
+the light `quick` job; a failure on main is fixed or reverted at once). **PR (paths)** runs on a pull
 request only when its paths (or the workflow and gate files) change, and always on main.
 **PR (quant)** runs when quant-tier source changes ([engineering § Quant tier](invariants/engineering.md#quant-tier)).
 **Nightly** and **Weekly** run on main on a schedule. **Local** cannot run on GitHub.
@@ -39,7 +41,8 @@ request only when its paths (or the workflow and gate files) change, and always 
 | `static`: semgrep over the whole repo, plus its rule contracts | wall-clock reads, unseeded random numbers, negative shifts, silent excepts | PR | 13 s |
 | `static`: OpenAPI freshness and authority | a web route changed without regenerating `openapi.json`, or an unsafe operation | PR | 3 s |
 | `static`: wheel build and wheel smoke | a package that no longer builds or imports, or a web wheel without its SPA | PR | 5 s |
-| `tests` job, four shards: all root tests but `network`, `slow_oracle` | any unit, integration, smoke or acceptance failure | PR | 4.5-5.7 min each |
+| `quick` job: `gate.py check` (lint, types, imports, tests mapped from the changed files) | a failure near the change; guards, quick oracles | PR | ~8 min |
+| `tests` job, four shards: all root tests but `network`, `slow_oracle` | any unit, integration, smoke or acceptance failure | main | 4.5-5.7 min each |
 | `bias_guard` marker (inside `tests`) | look-ahead: output before the cutoff changes when later data is poisoned | PR | in `tests` |
 | `oracle` marker (inside `tests`) | wrong statistics: metamorphic and differential checks fail | PR | in `tests` |
 | `tests/acceptance` (inside `tests`, no marker) | the gauntlet, threshold and execution contracts break | PR | in `tests` |
@@ -47,11 +50,11 @@ request only when its paths (or the workflow and gate files) change, and always 
 | `platform` marker (inside `tests`) | nothing extra: it only moves files out of the fast local check | PR | in `tests` |
 | code size (`tests/unit/test_code_size.py`, in `tests`) | a new file over 1,500 lines or function over 150, growth, a baseline entry added | PR | 3 s |
 | determinism, identity and golden tests (inside `tests`) | a result that is not byte-stable across fresh processes | PR | in `tests` |
-| `coverage` job: changed product lines (`packages/*/src`, `apps/*/src`) | new or changed code shipped without tests (below 85% of changed lines) | PR | 30 s |
+| `coverage` job: changed product lines (`packages/*/src`, `apps/*/src`) | new or changed code without tests (below 85% of changed lines) | main | 30 s |
 | `coverage`: whole-suite line coverage | nothing (reported in the job summary, never gated) | PR | in `coverage` |
 | `quant` job: `slow_oracle` marker | a statistic that no longer recovers known truth | PR (quant) | not measured here |
 | mutation gate (local `backend` run; weekly sweep) | weak tests (kill rate < 0.90), or a module not measured | Weekly | ~21 min per module |
-| `frontend` job: lint, build with types, unit tests with coverage | TypeScript, lint and component failures | PR | 22 s (job 9.6 min) |
+| `frontend` job: lint, build with types, unit tests with coverage | TypeScript, lint and component failures | PR (paths) | 22 s (job 9.6 min) |
 | `frontend`: API client freshness | `src/api/generated.ts` out of date with `openapi.json` | PR | in `frontend` |
 | `frontend`: browser journeys at the reference viewport (plus reference-only ones) | broken Workstation screens and flows, real backend | PR | 8.6 min |
 | `qlib-worker` job | the isolated Qlib worker's lint, types or tests | PR (paths) | 5.7 min |

@@ -31,7 +31,7 @@ test.beforeAll(async () => {
   ids = ready.ids
   const metadata = await (await fetch(endpoint+'/__fixture/retained-coverage')).json()
   expect(metadata).toMatchObject({synthetic: true, ids})
-  for (const resource of ['catalog', 'capabilities', 'asset-masters', 'storage', 'coverage', 'features', 'profiles', 'batches']) {
+  for (const resource of ['catalog', 'capabilities', 'asset-masters', 'storage', 'coverage', 'features']) {
     const response = await fetch(endpoint+'/api/crypto-data/'+resource)
     expect(response.ok, `${resource}: ${await response.text()}`).toBe(true)
   }

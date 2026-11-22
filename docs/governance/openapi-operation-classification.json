@@ -107,34 +107,6 @@
     },
     {
       "method": "GET",
-      "mode": "fixture_backed",
-      "operation_id": "asset_contract_api_crypto_data_assets_contracts__network___contract_address__get",
-      "path": "/api/crypto-data/assets/contracts/{network}/{contract_address}",
-      "reason": "Parameterized safe read uses typed identity and boundary fixtures."
-    },
-    {
-      "method": "GET",
-      "mode": "fixture_backed",
-      "operation_id": "asset_api_crypto_data_assets__symbol__get",
-      "path": "/api/crypto-data/assets/{symbol}",
-      "reason": "Parameterized safe read uses typed identity and boundary fixtures."
-    },
-    {
-      "method": "GET",
-      "mode": "automatic",
-      "operation_id": "profile_batches_api_crypto_data_batches_get",
-      "path": "/api/crypto-data/batches",
-      "reason": "Safe read exercised against an isolated temporary store."
-    },
-    {
-      "method": "POST",
-      "mode": "fixture_backed",
-      "operation_id": "profile_resume_api_crypto_data_batches__batch_id__resume_post",
-      "path": "/api/crypto-data/batches/{batch_id}/resume",
-      "reason": "Mutation is exercised with deterministic local fixtures and no vendor network."
-    },
-    {
-      "method": "GET",
       "mode": "automatic",
       "operation_id": "capabilities_api_crypto_data_capabilities_get",
       "path": "/api/crypto-data/capabilities",
@@ -188,48 +160,6 @@
       "operation_id": "market_catalog_api_crypto_data_market_catalog_get",
       "path": "/api/crypto-data/market-catalog",
       "reason": "Safe read exercised against an isolated temporary store."
-    },
-    {
-      "method": "GET",
-      "mode": "automatic",
-      "operation_id": "profiles_api_crypto_data_profiles_get",
-      "path": "/api/crypto-data/profiles",
-      "reason": "Safe read exercised against an isolated temporary store."
-    },
-    {
-      "method": "POST",
-      "mode": "fixture_backed",
-      "operation_id": "profile_create_api_crypto_data_profiles_post",
-      "path": "/api/crypto-data/profiles",
-      "reason": "Mutation is exercised with deterministic local fixtures and no vendor network."
-    },
-    {
-      "method": "GET",
-      "mode": "fixture_backed",
-      "operation_id": "profile_show_api_crypto_data_profiles__profile_id__get",
-      "path": "/api/crypto-data/profiles/{profile_id}",
-      "reason": "Parameterized safe read uses typed identity and boundary fixtures."
-    },
-    {
-      "method": "POST",
-      "mode": "fixture_backed",
-      "operation_id": "profile_run_api_crypto_data_profiles__profile_id__batches_post",
-      "path": "/api/crypto-data/profiles/{profile_id}/batches",
-      "reason": "Mutation is exercised with deterministic local fixtures and no vendor network."
-    },
-    {
-      "method": "POST",
-      "mode": "fixture_backed",
-      "operation_id": "liquidity_freeze_api_crypto_data_profiles__profile_id__liquidity_membership_post",
-      "path": "/api/crypto-data/profiles/{profile_id}/liquidity-membership",
-      "reason": "Mutation is exercised with deterministic local fixtures and no vendor network."
-    },
-    {
-      "method": "POST",
-      "mode": "fixture_backed",
-      "operation_id": "one_minute_selection_api_crypto_data_profiles__profile_id__one_minute_selection_post",
-      "path": "/api/crypto-data/profiles/{profile_id}/one-minute-selection",
-      "reason": "Mutation is exercised with deterministic local fixtures and no vendor network."
     },
     {
       "method": "GET",
@@ -293,13 +223,6 @@
       "operation_id": "storage_verify_api_crypto_data_storage_verify_post",
       "path": "/api/crypto-data/storage/verify",
       "reason": "Mutation is exercised with deterministic local fixtures and no vendor network."
-    },
-    {
-      "method": "GET",
-      "mode": "automatic",
-      "operation_id": "yield_pools_api_crypto_data_yield_pools_get",
-      "path": "/api/crypto-data/yield-pools",
-      "reason": "Safe read exercised against an isolated temporary store."
     },
     {
       "method": "GET",

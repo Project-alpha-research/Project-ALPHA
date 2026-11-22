@@ -24,14 +24,13 @@ class Document:
         return self.payload
 
 
-@pytest.fixture(params=["coverage_profile", "asset_master", "snapshot"])
+@pytest.fixture(params=["asset_master", "snapshot"])
 def writer(
     request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> tuple[Callable[[Document], None], Path, str]:
     kind = str(request.param)
     root = tmp_path / "documents"
     root_name = {
-        "coverage_profile": "_coverage_profile_root",
         "asset_master": "_asset_master_root",
         "snapshot": "_snapshot_root",
     }[kind]

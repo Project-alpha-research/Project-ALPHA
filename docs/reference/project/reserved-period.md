@@ -66,8 +66,8 @@ Three kinds: the code locks it out (it refuses reserved rows or aborts), only la
   A store with no bar from the date on keeps its ids and outputs, except that a split or dividend known only from the date on is never applied.
   In text output the command prints the one sentence; with `--json` the result carries the `reserve` field instead, so the JSON stays one object.
   Older stored runs of these commands are not rewritten and are not relabelled; only rule runs derive `reserved-period-seen`.
-  The hypothesis scan holds the period back in both lanes. A run with held-back bars puts `research_cutoff`, `reserve` and the label in its frozen spec, so
-  its scan id changes; the number of hypotheses counted as tried does not. Equity bars and the split or dividend known only from the date on are never
+  The hypothesis scan holds the period back in both lanes. The scan id and the ledger test keys come from the rows before the date only (`data_hash`), so a
+  pull that adds or revises later rows keeps the scan id and counts no new try. The held-back count and label are shown in the result, outside identity. Equity bars and the split or dividend known only from the date on are never
   loaded. The crypto lane filters inside the parquet scan, so no row stamped on or after the date reaches Python; the count reads timestamps only.
   It counts every such row (bars, funding, open interest) that the user's cut-off would have admitted, so its record is `held_back_rows` and its
   sentence says "rows (bars, funding and open interest)". Other commands keep `held_back_bars` and the standard sentence. A manifest replay reads
@@ -116,6 +116,7 @@ These still read bars from the date on.
 - Label only (display or forward use): `alpha chart`, `alpha data` reads, the assistant context.
 - Exempt (forward paper use): paper trading, IBKR Paper and the daily scheduler.
 - Data health (`alpha data health`, and `--check-data` on a rule test or setup) checks every stored bar, the held-back ones too.
+  The verdict that can stop a run covers the rows a test may read; a problem found only in held-back rows is stated ("N problems in held-back rows, not used") and does not stop it.
   Its verdict can label or stop a run; its numbers do not enter a result, and neither its verdict nor its fingerprint enters an identity.
 - `alpha project reveal-holdout` is a separate owner-only action on a project's sealed holdout. Whether it is tied to this date: not verified.
 

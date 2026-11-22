@@ -12,6 +12,7 @@ import { Navigator } from '../panels/Navigator'
 import { Alerts } from '../panels/Alerts'
 import { DataPulls } from '../panels/JobMonitor'
 import { AllTests } from '../panels/RecentTests'
+import { RiskMonitor } from '../panels/RiskMonitor'
 
 function RunLibrary() { return createElement(Navigator, { onOpenRun: openRunDetail }) }
 
@@ -38,6 +39,7 @@ export function workflowPages(profile: Profile): WorkflowPage[] {
     { id: 'results', title: 'Results', description: 'Review stored tests, compare runs and open reports.', panes: [
       { name: 'AllTests', title: 'All tests', component: AllTests },
       { name: 'Navigator', title: 'Run library', component: RunLibrary },
+      { name: 'RiskMonitor', title: 'Risk', component: RiskMonitor },
     ] },
     { id: 'operations', title: 'Operations', description: 'Track jobs and alerts.', panes: [] },
     { id: 'settings', title: 'Settings', description: 'Display preferences, owner authentication and research safeguards.', panes: [{ name: 'Workspaces', title: 'Saved workspaces', component: Workspaces }] },

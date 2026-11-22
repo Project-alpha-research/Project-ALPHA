@@ -271,7 +271,11 @@ def component_steps(
     if component == "backend-tests":
         return [("uv sync", root, ["uv", "sync", "--locked"]), *_backend_tests(root, shard)]
     if component == "backend-quant":
-        return [("uv sync", root, ["uv", "sync", "--locked"]), *_backend_quant(root, context)]
+        # The pull request runs the slow oracles only. The mutation gate stays in the local
+        # `backend` run and in the weekly sweep (owner decision, 2026-11-22): it takes 20 to 90
+        # minutes a module, and a change should not wait that long to land.
+        quant = [step for step in _backend_quant(root, context) if step[0] != "mutation gate"]
+        return [("uv sync", root, ["uv", "sync", "--locked"]), *quant]
     if component in {"frontend", "frontend-full"}:
         cwd = root / "apps/alpha-web/frontend"
         # Pull requests run one viewport; nightly runs all four (frontend-full).

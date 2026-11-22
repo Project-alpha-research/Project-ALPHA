@@ -14,6 +14,7 @@ from alpha_cli.toolbox.families.resampling import (
     RETURN_INTERVAL,
     SHARPE_INTERVAL,
 )
+from alpha_cli.toolbox.families.risk_sizing import CHECKS as RISK_SIZING_CHECKS
 from alpha_cli.toolbox.families.robustness import START_END_DATES
 from alpha_cli.toolbox.families.trades import DEPENDENCE
 
@@ -34,6 +35,7 @@ SPECS = (
     BLOCK_PATHS,
     STUDENT_T_PATHS,
     PUBLISHED_FACTORS,
+    *RISK_SIZING_CHECKS,
 )
 ALIASES = {
     "attribution": ATTRIBUTION.id,

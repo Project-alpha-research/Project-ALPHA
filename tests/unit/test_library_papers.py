@@ -227,3 +227,25 @@ def test_retraction_is_kept_and_unknown_is_not_read_as_not_retracted(tmp_path: P
         by_title["Momentum in a synthetic market"]["paper_id"],
     )
     assert "[RETRACTED]" in _cli(tmp_path, "idea", "file", card["id"])[1]
+
+
+def test_a_later_search_that_learns_a_retraction_updates_the_stored_paper(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    first_candidate = {
+        k: v for k, v in RECORDED_SEARCH["candidates"][0].items() if k != "retracted"
+    }
+    first = {**RECORDED_SEARCH, "candidates": [first_candidate]}
+    monkeypatch.setattr(library_papers_cmds, "_run_literature_worker", lambda argv, **kw: first)
+    before = _facts(tmp_path, "library", "search", "momentum", "--unpaywall-email", "x@y.org")
+    assert before["papers"][0]["retracted"] is None
+    later = {**RECORDED_SEARCH, "candidates": [RECORDED_SEARCH["candidates"][0]]}
+    monkeypatch.setattr(library_papers_cmds, "_run_literature_worker", lambda argv, **kw: later)
+    after = _facts(tmp_path, "library", "search", "momentum", "--unpaywall-email", "x@y.org")
+    assert after["papers"][0]["retracted"] is True
+    assert "retracted" not in after["papers"][0]["not_stated"]
+    assert _facts(tmp_path, "library", "papers")["papers"][0]["retracted"] is True
+    # a later answer of "not retracted" or "not stated" never undoes a known retraction
+    monkeypatch.setattr(library_papers_cmds, "_run_literature_worker", lambda argv, **kw: first)
+    again = _facts(tmp_path, "library", "search", "momentum", "--unpaywall-email", "x@y.org")
+    assert again["papers"][0]["retracted"] is True

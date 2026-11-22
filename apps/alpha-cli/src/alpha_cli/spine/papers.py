@@ -84,10 +84,25 @@ def save(home: Path, record: dict[str, Any]) -> tuple[dict[str, Any], bool]:
     path = _folder(home) / f"{record['paper_id']}.json"
     if path.is_file():
         stored = load(home, record["paper_id"])
+        stored = _with_newest_retraction(home, stored, record.get("retracted"))
         if stored["state"] == "imported" or record["state"] == "candidate":
             return stored, False
     _write_once(path, record)
     return record, True
+
+
+def _with_newest_retraction(
+    home: Path, stored: dict[str, Any], seen: bool | None
+) -> dict[str, Any]:
+    """A later hit may learn a retraction. A known true is never undone; null never overwrites."""
+    now = stored.get("retracted")
+    new = True if now is True else (seen if seen is not None else now)
+    if new == now:
+        return stored
+    names = [n for n in stored["not_stated"] if n != "retracted"]
+    updated = {**stored, "retracted": new, "not_stated": names}
+    _write_once(_folder(home) / f"{stored['paper_id']}.json", updated)
+    return updated
 
 
 def save_text(home: Path, extraction: dict[str, Any]) -> str:

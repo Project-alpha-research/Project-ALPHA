@@ -3,7 +3,7 @@ owner: delivery pipeline
 sources:
   - workflow/stages/*/CONTEXT.md
   - workflow/README.md
-verified: d71a2b1d4322b405
+verified: f4cf3670944b0e52
 ---
 
 # Delivery pipeline — how a change gets made

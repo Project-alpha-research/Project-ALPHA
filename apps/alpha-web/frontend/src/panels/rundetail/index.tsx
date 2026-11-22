@@ -209,7 +209,7 @@ export function RunDetail(props: PanelHandleProps) {
           </table>}<div><RecordedPanel runId={runId} kind="equity" panelId="report-equity"/><RecordedPanel runId={runId} kind="drawdown" panelId="report-drawdown"/></div><div className="report-summary-figures">{(catalogue?.items ?? []).filter(item => item.available && !item.figure_id.includes('equity') && !item.figure_id.includes('price')).slice(0, 2).map(item => <FigureCard key={`${runId}:${item.figure_id}`} runId={runId} runName={detail.display_name} item={item}/>)}</div></div>
         )
       case 'gates':
-        return <Gates manifest={manifest as ValidateManifest} runId={runId} />
+        return <Gates manifest={manifest as ValidateManifest} runId={runId} test={ruleTest} />
       case 'trades':
         if (selectedTradeState.status === 'loading') {
           return <Placeholder big="Loading trades…">Waiting for this run’s trade projection.</Placeholder>

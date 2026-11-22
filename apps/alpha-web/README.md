@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 3b61fc50d4488d7a
+verified: 408dfac40167f7c4
 ---
 
 # alpha-web: code map and change loop
@@ -39,6 +39,7 @@ grants authority.
   Field sources and limits: [API](../../docs/reference/invariants/web-api-reads.md#reads-and-writes),
   [journey view](../../docs/reference/invariants/web-run-detail.md#run-detail-binding).
 - The rule-test Summary uses `panels/ruleTestModel.ts` and `panels/rundetail/RuleTestReport.tsx`. Its "Checks run on this test" section reads `GET /api/runs/{id}/checks` (`_checks.py`, which relays `alpha results show`).
+- The owner-rule sentence, family and labels (`panels/rundetail/RuleWords.tsx`, backend `_owner_rule_words.py`) show on the rule-test Summary and Gates. Browser spec: `e2e/owner-rule-words.spec.ts`.
 - The rule-test report opens with the interactive stack `components/tearsheet/TearSheetStack.tsx` (pure model `tearSheetModel.ts`, BokehJS mount `tearSheetPlot.ts`).
   It reads `GET /api/runs/{id}/series` (`_run_series.py`, `api/models/series.py`). Browser spec: `e2e/rule-test-summary.spec.ts`.
 - The reading block (`components/ReadingBlock.tsx`, model `panels/readingModel.ts`) is used by `RuleTestReport.tsx` and `SetupLabPanel.tsx`. The rule-test reading

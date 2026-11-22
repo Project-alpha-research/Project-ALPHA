@@ -442,6 +442,7 @@ def _emit_hypotheses(result: dict[str, Any], json_out: bool, first_line: str) ->
     _emit(result, json_out, first_line)
     if json_out:
         return
+    typer.echo(result["counted"]["sentence"])
     if result.get("reserve"):
         typer.echo(reserve.describe(result["reserve"]))
     typer.echo("signal      h    IC mean   t (plain)  dates   spread     cost-adj   turnover/h")

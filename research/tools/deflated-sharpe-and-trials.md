@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
-verified: e437e45adb6516ce
+verified: 9d15527e3405d4f4
 ---
 
 # Deflated Sharpe and trial counting
@@ -28,12 +28,12 @@ uv run alpha optim grid <SYMBOL> --strategy ma_crossover --grid fast=20,50 --gri
 - A test is spec hash, asset, data window, bar size, store and data content, never the code version: the
   same test after a code change is a `repeat` (`repeat_of`: first run), counted nowhere; newer bars are a new test.
   The label is in the ledger row only. `same_asset_tests`, `same_asset_repeats`: "N distinct tests on this asset; R repeats not counted".
+  Each hypothesis of a [quick screen](quick-screen.md) counts here too, once per asset.
 - `total_trials`: ledger row number, an audit sequence, not ideas tried (say "ledger entry N"). `variants_evaluated`: sensitivity re-runs only.
 - `alpha optim grid` sweeps declared settings and prints the best one with its deflated Sharpe, `PBO` (the
   probability that the in-sample winner is below the middle out of sample; high is bad), and the `SPA` and
   `RC` p-values (is the best better than no skill, allowing for the search).
-- Under 30 closed OOS trades: `too-few-trades` shows and the reading says `too little to read`. Noise copies are no trial.
-**What it cannot tell you**
+- Under 30 closed OOS trades: `too-few-trades` shows and the reading says `too little to read`. Noise copies are no trial.**What it cannot tell you**
 - Trials nobody recorded (`alpha validate`, `alpha optim`, `alpha backtest` runs): count by hand; the true number is higher.
 - `alpha ledger summary` and `families` count every recorded try read-only; effective tests are not shown. Family counting feeds the verdict.
 **Next** A setting that survives: check it against [the random-price null](random-price-null.md) and the

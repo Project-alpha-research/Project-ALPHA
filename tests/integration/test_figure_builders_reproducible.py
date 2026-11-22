@@ -214,6 +214,11 @@ class TestPriceSignal:
         root, manifest = snapshotted
         rows = self._rows(bars)
         monkeypatch.setattr(_sources, "bars", lambda *a, **k: (rows, None))
+        # The stub bars are not dated like the fixture run; widen the run span to cover them
+        # so this test keeps probing the candle-or-line choice, not the crop.
+        from alpha_cli.figures import _price_signal
+
+        monkeypatch.setattr(_price_signal, "_run_span", lambda ctx: (0.0, 4e9))
 
         spec = build_figure_spec(
             "price_signal",

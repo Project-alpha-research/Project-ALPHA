@@ -79,7 +79,7 @@ export function sparkPath(values: readonly number[], width: number, height: numb
 export function plainError(cause: unknown, what: string): string {
   const raw = cause instanceof Error ? cause.message : String(cause)
   const message = raw.replace(/\s*\[request [^\]]*\]\s*$/, '').replace(/^\d{3}(\s[A-Za-z ]+)?\s*—\s*/, '').trim()
-  const generic = !message || message === 'The Workstation request failed.' || /Failed to fetch|NetworkError/i.test(message)
+  const generic = !message || /Failed to fetch|NetworkError/i.test(message)
   const detail = generic ? 'The server did not answer.' : message.replace(/\.?$/, '.')
   return `Could not load ${what}. ${detail} Check that the Workstation server is running, then reload the page.`
 }

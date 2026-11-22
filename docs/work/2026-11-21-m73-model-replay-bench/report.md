@@ -115,3 +115,7 @@ count as N+1 attempts in the plan, the reservation, the call cap and the settled
 1. `--gateway-retries` must be a whole number from 0 to 3 (the gateway's own range); anything else is refused before any file or call.
 2. Each stored output keeps the number of attempts it was counted for. A reused store restores the run's call count from these, plus failed
    attempts, so a rerun with other models cannot pass the 60-attempt cap. The plan counts only the calls still missing.
+
+## Review round 14 (Codex)
+A stored prompt may carry the live call's `response_format` (for example JSON mode). The bench sends it on replay and includes it in the prompt hash,
+so a model is not marked unbuildable for prose that the live request would have constrained.

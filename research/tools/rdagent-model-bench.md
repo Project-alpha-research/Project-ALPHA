@@ -19,7 +19,8 @@ Pass `--gateway-retries N` with the `--provider-retries` each gateway was starte
 Each gateway has its own token, read from `ALPHA_BENCH_TOKEN_<MODEL>` (capitals, other characters as `_`).
 A stored output is kept, so a second run resumes. `alpha rdagent bench report --prompts DIR --models a,b --store DIR` prints the readings.
 
-**Inputs** A prompt file is JSON: `id`, `stage`, `messages`, `prompt_tokens`, `completion_tokens`. Prices are TOML: `[model]` with
+**Inputs** A prompt file is JSON: `id`, `stage`, `messages`, `prompt_tokens`, `completion_tokens`,
+and `response_format` when the live call set one (JSON mode). Prices are TOML: `[model]` with
 `in_per_mtok` and `out_per_mtok`. A missing price or token count refuses the plan; it never counts as zero.
 
 **How to read it** Each model shows its refusal rate (closed idea family or a repeated dropped idea), its buildable share

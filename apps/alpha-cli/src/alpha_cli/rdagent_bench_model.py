@@ -35,6 +35,7 @@ class StoredPrompt:
     messages: list[dict[str, Any]]
     prompt_tokens: int | None
     completion_tokens: int | None
+    response_format: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -72,6 +73,14 @@ def _count(value: object, where: str) -> int | None:
     return value
 
 
+def _format(value: object, where: str) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise BenchError(f"{where}: response_format must be an object.")
+    return dict(value)
+
+
 def load_prompts(folder: Path, stages: list[str] | None) -> list[StoredPrompt]:
     if not folder.is_dir():
         raise BenchError(f"The prompt folder does not exist: {folder}")
@@ -85,6 +94,7 @@ def load_prompts(folder: Path, stages: list[str] | None) -> list[StoredPrompt]:
                 messages=list(raw["messages"]),
                 prompt_tokens=_count(raw.get("prompt_tokens"), path.name),
                 completion_tokens=_count(raw.get("completion_tokens"), path.name),
+                response_format=_format(raw.get("response_format"), path.name),
             )
         except (OSError, ValueError, KeyError, TypeError) as error:
             raise BenchError(f"{path.name} is not a stored prompt: {error!r}") from error
@@ -203,7 +213,10 @@ def month_spent(spend: Path, now: datetime) -> float:
 
 
 def prompt_sha(p: StoredPrompt) -> str:
-    body = json.dumps({"stage": p.stage, "messages": p.messages}, sort_keys=True)
+    content: dict[str, Any] = {"stage": p.stage, "messages": p.messages}
+    if p.response_format is not None:  # the setting is part of the request; old hashes stay valid
+        content["response_format"] = p.response_format
+    body = json.dumps(content, sort_keys=True)
     return hashlib.sha256(body.encode()).hexdigest()
 
 

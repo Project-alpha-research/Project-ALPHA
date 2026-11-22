@@ -65,7 +65,10 @@ class GatewayClient:
         address = urllib.parse.urlsplit(self.urls[model])
         if address.scheme != "http" or address.hostname not in LOCAL_HOSTS:
             raise BenchError("The gateway address must be on this machine.")
-        body = json.dumps({"model": model, "messages": prompt.messages}).encode()
+        request_body: dict[str, Any] = {"model": model, "messages": prompt.messages}
+        if prompt.response_format is not None:  # the live loop's JSON mode, replayed as it was
+            request_body["response_format"] = prompt.response_format
+        body = json.dumps(request_body).encode()
         request = urllib.request.Request(
             self.urls[model].rstrip("/") + "/v1/chat/completions",
             data=body,

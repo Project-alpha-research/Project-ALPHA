@@ -19,6 +19,7 @@ from alpha_cli.rdagent_bench_model import (
     load_prices,
     load_prompts,
     make_plan,
+    prompt_sha,
 )
 from alpha_cli.rdagent_bench_run import run_bench
 from alpha_cli.rdagent_bench_score import score_store
@@ -903,3 +904,46 @@ def test_a_reported_token_count_that_is_negative_or_not_a_whole_number_is_refuse
     text = _spend(tmp_path).read_text()
     assert "NaN" not in text
     assert all(json.loads(line)["usd"] >= 0 for line in text.splitlines())
+
+
+def test_the_response_format_of_a_stored_prompt_is_replayed_and_hashed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    folder = _prompts(tmp_path / "pr", 1)
+    row = json.loads((folder / "p0.json").read_text())
+    row["response_format"] = {"type": "json_object"}
+    (folder / "p0.json").write_text(json.dumps(row))
+    json_prompt = load_prompts(folder, None)[0]
+    assert json_prompt.response_format == {"type": "json_object"}
+    plain = StoredPrompt(
+        json_prompt.id,
+        json_prompt.stage,
+        json_prompt.messages,
+        json_prompt.prompt_tokens,
+        json_prompt.completion_tokens,
+    )
+    # The same messages with another setting are another request.
+    assert prompt_sha(plain) != prompt_sha(json_prompt)
+    sent: list[dict[str, Any]] = []
+
+    class _Response:
+        def __enter__(self) -> _Response:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return json.dumps({"choices": [{"message": {"content": "x"}}], "usage": {}}).encode()
+
+    def fake_urlopen(request: Any, timeout: float) -> _Response:
+        sent.append(json.loads(request.data))
+        return _Response()
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    monkeypatch.setenv("ALPHA_BENCH_GATEWAY_TOKEN", "t")
+    client = GatewayClient({"a": "http://127.0.0.1:1"})
+    client.complete("a", json_prompt, 0)
+    client.complete("a", plain, 0)
+    assert sent[0]["response_format"] == {"type": "json_object"}
+    assert "response_format" not in sent[1]

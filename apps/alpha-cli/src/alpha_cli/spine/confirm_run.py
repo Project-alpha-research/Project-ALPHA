@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -73,7 +74,7 @@ def receipt_for(home: Path, run_id: str) -> dict[str, Any] | None:
     return next((r for r in reserved_slots.receipts(home) if r["run_id"] == run_id), None)
 
 
-def _take(home: Path, run_id: str, now: datetime) -> dict[str, Any]:
+def _take(home: Path, run_id: str, now: datetime, on_spent: Callable[[], None]) -> dict[str, Any]:
     """Recheck the earlier period, then spend the slot. A refusal here spends nothing."""
     frozen = frozen_test(home, run_id)
     refuse_spent(frozen, home)
@@ -94,7 +95,9 @@ def _take(home: Path, run_id: str, now: datetime) -> dict[str, Any]:
             f"({why}; compared with {found.get('compared_with')}). No slot was used.",
             "Run alpha test <spec> --recheck to see the differences.",
         )
-    return reserved_slots.take_slot(home, frozen=frozen.record(), now=now)
+    receipt = reserved_slots.take_slot(home, frozen=frozen.record(), now=now)
+    on_spent()
+    return receipt
 
 
 def _compute(home: Path, frozen: Frozen, receipt: dict[str, Any]) -> dict[str, Any]:
@@ -166,12 +169,20 @@ def _ledger(home: Path, frozen: Frozen, receipt: dict[str, Any], manifest: dict[
     )
 
 
-def confirm_run(home: Path, run_id: str, *, now: datetime | None = None) -> dict[str, Any]:
-    """Confirm one frozen test once, or resume or show the one confirmation it already has."""
+def confirm_run(
+    home: Path,
+    run_id: str,
+    *,
+    now: datetime | None = None,
+    on_spent: Callable[[], None] = lambda: None,
+) -> dict[str, Any]:
+    """Confirm one frozen test once, or resume or show the one confirmation it already has.
+
+    `on_spent` is called once, right after the slot receipt is written."""
     stamp = now or datetime.now(UTC)
     receipt = receipt_for(home, run_id)
     if receipt is None:
-        receipt = _take(home, run_id, stamp)
+        receipt = _take(home, run_id, stamp, on_spent)
     if receipt["result"] is None:
         frozen = frozen_test(home, run_id, reserved_end=str(receipt["frozen"]["reserved_end"]))
         if frozen.record()["artifact_hash"] != receipt["frozen"]["artifact_hash"]:

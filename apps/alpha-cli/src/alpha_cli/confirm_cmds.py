@@ -110,15 +110,22 @@ def run_cmd(
 
     home = _settings().data_dir
     found = None
+    shown = sys.stdout
+    words = ""
     try:
         if confirm_run.receipt_for(home, run_id) is None:
             found = plan(home, run_id)
-            left = found["slots"]["left"] - 1
+            words = f"Spending 1 slot now. After this, {found['slots']['left'] - 1} slots are left."
             if not json_out:
                 typer.echo("\n".join(_plan_lines(found)))
-                typer.echo(f"Spending 1 slot now. After this, {left} slots are left.")
+
+        def spent() -> None:
+            # Printed when the receipt is written, not before: a refusal spends nothing.
+            if words and not json_out:
+                typer.echo(words, file=shown)
+
         with redirect_stdout(sys.stderr):
-            output = confirm_run.confirm_run(home, run_id)
+            output = confirm_run.confirm_run(home, run_id, on_spent=spent)
     except SpineError as exc:
         fail(exc, json_out)
     except (DataError, OSError, ValueError) as exc:

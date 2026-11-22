@@ -16,3 +16,12 @@ Rules: `docs/work/2026-11-21-common-build-rules/brief.md`.
   The other fields were checked: `name` and `idea` are in the spec hash (test-defining), `test_id`, `reserve`, health labels
   and fingerprints were already skipped; every number is still compared.
 - Test: `tests/unit/test_recheck_idea_card.py` (fail first: `manifest.spine.idea_card` stored `9f4a…`, recomputed `<missing>`).
+
+### 2. `confirm run` refusal without a reason; slot line printed too early
+
+- Cause: the command printed "Spending 1 slot now" before the recheck ran, so a refusal read as a spent slot. The silent exit could
+  not be reproduced here: in every refusal tried (recheck mismatch, real CLI in a subprocess) the reason was printed on stdout.
+- Change: `confirm_run(..., on_spent=...)` calls back right after the slot receipt is written; the command prints the slot line
+  there, on stdout. A refusal prints only the plan and the reason ("... No slot was used.").
+- Tests: `tests/unit/test_confirm_run_words.py` (fail first: the slot line was in the refused output);
+  `test_reserved_confirmation_surfaces.py` now asserts the slot line is absent when the run is refused.

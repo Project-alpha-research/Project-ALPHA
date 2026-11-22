@@ -20,6 +20,8 @@ if TYPE_CHECKING:
     from alpha_validation import FloatArray
 
 FLAT = "The scored returns do not vary."
+# The pair search grows with the square of the length; above this the check says so, not waits.
+MAX_BARS = 10_000
 
 
 def sample_entropy(x: FloatArray, m: int, r_frac: float) -> float | None:
@@ -45,6 +47,12 @@ def _sample_entropy(inputs: Inputs, params: dict[str, Any], rng: Generator | Non
     r = inputs.stored.scored_returns()
     if r.size < 100:
         return too_little(keys, 100, r.size)
+    if r.size > MAX_BARS:
+        reason = (
+            f"Sample entropy compares every pair of patterns, so it is read up to {MAX_BARS} "
+            f"scored bar returns; this run has {r.size}."
+        )
+        return unavailable(keys, reason, r.size)
     if flat(r):
         return unavailable(keys, FLAT, r.size)
     value = sample_entropy(r, params["m"], params["r_frac"])
@@ -155,8 +163,9 @@ CHECKS = (
         "The sample entropy is {sample_entropy:.3f} for patterns of {m:.0f} bars at a tolerance of"
         " {tolerance:.0%} of the return spread. Higher means patterns repeated less often than"
         " lower; random noise of a similar shape gives a high value.",
-        "Richman & Moorman (2000). It has no pass level and no p-value; read it next to the other"
-        " checks. Its size depends on the tolerance and pattern length.",
+        "Richman & Moorman (2000). It has no fixed level and no p-value; read it next to the other"
+        " checks. Its size depends on the tolerance and pattern length. It is read up to"
+        " 10,000 bars.",
         _sample_entropy,
         "test_known_sample_entropy",
         situations=("behaviour-change",),

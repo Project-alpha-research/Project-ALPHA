@@ -35,5 +35,6 @@ Run each as `alpha tool run <id> <run_id>`. Each gives a reading, never a verdic
 - A p-value is a chance under a stated no-pattern case. A small one is a reason to look, not proof of an edge.
 - With too few returns, a check says "too little to read" and gives the count.
 - `timeseries.hurst` uses the run's seed for its white-noise comparison.
+- `timeseries.sample_entropy` reads up to 10,000 bars; a longer run gets an unavailable result with the count.
 
 **What these checks cannot tell you** They describe the past returns of one run. They do not say why, or whether it will continue.

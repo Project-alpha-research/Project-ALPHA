@@ -298,3 +298,11 @@ def test_runs_leave_out_flat_bars() -> None:
     signs = np.array([1, 1, -1, -1, 1, -1, 1, 1, -1, 1]) * 0.01
     padded = np.insert(signs, [2, 5, 5, 9], 0.0)
     assert td.runs_reading(padded) == td.runs_reading(signs)
+
+
+def test_sample_entropy_has_a_size_limit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(tc, "MAX_BARS", 150)
+    put(tmp_path, SAMPEN, sample(200, 31))
+    doc = run(tmp_path, SAMPEN, RUN)
+    assert all(v is None for v in doc["values"].values())
+    assert all("up to 150" in r and "has 200" in r for r in doc["reasons"].values())

@@ -72,6 +72,8 @@ def test_every_count_states_the_same_headline(home: Path) -> None:
     assert "by_outcome" not in summary and " trials" not in summary
     _, families = _cli(home, "ledger", "families")
     assert "Tries on all assets: 2 tries" in families and " trials" not in families
+    # No second count beside the headline: the per-family row counts stay in the JSON.
+    assert "reader_trials" not in families and "\trows" not in families
     _, results = _cli(home, "results")
     assert "Total trials" not in results and "Tries on all assets: 2 tries" in results
     _, only = _cli(home, "results", "--symbol", "SPY")

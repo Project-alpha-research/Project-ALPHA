@@ -86,6 +86,8 @@ def _render(output: dict[str, Any]) -> str:
     rows = [{**row, "figures": figures(row)} if row.get("measure_clock") else row for row in rows]
     # A rule test's stored status is its old letter grade: it stays in the JSON, never in the text.
     rows = [{**row, "raw_status": None} if row.get("kind") == "rule_test" else row for row in rows]
+    # Beside the headline count of tries, no other count is printed: they stay in the JSON.
+    hidden = {"rows", "mapped", "unknown", "reader_trials"} if "tries" in output else set()
     keys = [
         key
         for key in (
@@ -106,7 +108,7 @@ def _render(output: dict[str, Any]) -> str:
             "reader_trials",
             "measure_value",
         )
-        if any(key in row for row in rows)
+        if key not in hidden and any(key in row for row in rows)
     ]
     lines = ["\t".join(keys)] if keys else []
     lines.extend(

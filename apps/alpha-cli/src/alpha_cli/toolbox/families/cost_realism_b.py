@@ -82,7 +82,8 @@ FINANCING = make(
     "{leveraged_trades} trades used borrowed money ; "
     "interest comes to {interest:.2f}, leaving {profit_after_interest:.2f} of profit.",
     "The rate is an assumption you set, not a quote from a broker. Interest is simple, on the "
-    "borrowed part only, and ignores margin rules and intraday changes in equity.",
+    "borrowed part only, and ignores margin rules. A trade is sized at its peak for its whole "
+    "hold, so interest is an upper bound for a position that was scaled in.",
     financing,
 )
 

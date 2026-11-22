@@ -21,7 +21,7 @@ verified: 0000000000000000
 | Does any order take too large a share of the day's volume? | `alpha tool run cost_realism.volume_share <run_id>` |
 | Would a limit order below or above the open have filled on the entry day? | `alpha tool run cost_realism.limit_fill <run_id>` |
 **How to read the results**
-- Readings only, never pass or fail. Settings you choose are assumptions. Bar checks read the run's bars, the rest its trades; a gap has a reason.
+- Readings only, never pass or fail. Settings you choose are assumptions. A trade's size is its peak, so a scaled position is a bound; a gap has a reason.
 - Recorded facts: `cost_realism.cost_sweep.return_x0`, `cost_realism.cost_sweep.return_x1`, `cost_realism.cost_sweep.return_x2`,
   `cost_realism.cost_sweep.return_x5`, `cost_realism.cost_sweep.sharpe_x1`, `cost_realism.cost_sweep.sharpe_x2`, `cost_realism.churn_budget.gross_return`,
   `cost_realism.churn_budget.net_return`, `cost_realism.churn_budget.trades_per_year`, `cost_realism.churn_budget.cost_drag_per_year`,

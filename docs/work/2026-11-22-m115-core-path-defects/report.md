@@ -66,3 +66,17 @@ Rules: `docs/work/2026-11-21-common-build-rules/brief.md`.
 - Tests: `tests/unit/test_tries_headline.py` (fail first: 4 of 5 failed); `test_ledger_cmds.py` wording updated.
 - Docs: `cli-trial-ledger.md`, `research/tools/deflated-sharpe-and-trials.md`, `research/PLAYBOOK.md` example.
   `docs/reference/commands.md` is not regenerated (brief); it will list `ledger tries` when it is next regenerated.
+
+### 6. Prop firm: rules not shown, whole-history horizon, late check of the preset name, no tool card
+
+- Cause: the simulation length defaulted to the whole return series (decades, so a trailing drawdown is breached almost
+  surely: "bust 100%"); the rules were stored but never printed; the preset name was checked only after the backtest had read
+  the data (the CLI did reject it then, so the silent fallback to "custom" could not be reproduced; the check now runs first).
+- Change: `propfirm run` prints the rules used first (profit target, daily loss limit, maximum loss trailing or fixed, time
+  limit, minimum trading days), then the evaluation length: 30 trading days by default, said so, or `--horizon` days. No preset
+  states a time limit, so the 30-day default always applies unless `--horizon` is given. An unknown `--firm` is refused before
+  any read, with the valid names. The run id now holds the resolved length.
+- Tool card `research/tools/propfirm.md` (37 lines) and a row in `research/tools/README.md`.
+- Seen, not mine: `research/tools/rule-test.md` had a 182-character line on main (the card test failed); wrapped within its
+  40 lines.
+- Test: `tests/unit/test_propfirm_words.py` (fail first: all 3 failed; the unknown preset read data first).

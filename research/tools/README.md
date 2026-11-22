@@ -36,7 +36,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | "Does it hold up out of sample?" | [walk-forward efficiency](walk-forward.md) |
 | "Is it just the market?", "a known published factor?" | [benchmark and drawdowns](benchmark-and-drawdowns.md), [published factors](published-factors.md) |
 | Market beta, calm or turbulent regimes, "when did it change?" | [attribution, regimes and change points](attribution-regimes-changepoints.md) |
-| How wide is the return range, or how deep the drop? | [resampling](resampling-checks.md), [fat tails](montecarlo-checks.md), [path risk](path-risk.md) |
+| Return range, drop depth, prop-firm odds | [resampling](resampling-checks.md), [tails](montecarlo-checks.md), [path](path-risk.md), [prop firm](propfirm.md) |
 | Why a judged RD-Agent idea stopped | [one idea’s journey](rdagent-journey.md) |
 | A picture for the owner | [charts](charts.md) (`trade_pnl` for profit by trade) |
 | Need the macro picture or option prices | [macro](macro-context.md), [positioning](positioning-short-volume-context.md), [options](options-derived.md) |

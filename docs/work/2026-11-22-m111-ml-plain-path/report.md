@@ -40,6 +40,9 @@ Answer: `alpha ml run <spec.toml>` now goes from a plain spec to a stored, coste
 - Fixed: the snapshot id is the hash of its own bytes. A snapshot is reused only if its files hash to its id; a new one that does not (the store changed while copying) is removed and the run stops with "run the command again". Test: a tampered snapshot is refused.
 - Fixed: `--as-of` now reaches the replay, so the stored manifest keeps `research_cutoff`. Test: `--as-of 2023-06-30` is in the manifest and the last test day is not later.
 
+## Review round 4
+- Fixed: the output now carries the replay's `authority`, `label` and `validation` (counterfactual refit not run, not promotion-eligible), as `alpha ml replay` does. Test added.
+
 ## Fail-first evidence
 I wrote the tests before `ml_run.py`, but I did not run them before the module existed. The first run against the new code failed on a too-short fixture (728 sessions before the held-back day; 756 needed). I lengthened the fixture and all 7 passed. This is weaker than a true red run.
 

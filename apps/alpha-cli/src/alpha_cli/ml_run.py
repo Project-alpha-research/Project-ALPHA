@@ -274,6 +274,9 @@ def run_spec(
         "costs": f"{FEE_BPS} bp fee and {SLIPPAGE_BPS} bp slippage per trade",
         "n_oos_periods": manifest["n_oos_periods"],
         "metrics": manifest["metrics"],
+        "authority": manifest["authority"],
+        "label": manifest["label"],
+        "validation": manifest["validation"],
         "tries_sentence": _count_try(data_dir, spec, replayed.run_id, snapshot_id, folds),
         **(
             {"reserve_sentence": reserve.describe(manifest["reserve"])}

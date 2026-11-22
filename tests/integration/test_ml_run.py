@@ -102,6 +102,9 @@ def test_run_end_to_end_with_fake_worker(home: Path, tmp_path: Path) -> None:
     assert folds[-1]["test_end"] < "2024-01-01"
     assert f"refit {len(folds)} times" in result["split_sentence"]
     assert "No model saw its own test days" in result["split_sentence"]
+    assert "not recomputed under counterfactual" in result["label"]
+    assert result["validation"]["promotion_eligible"] is False
+    assert result["validation"]["counterfactual_refit"] is False
     assert "Held back" in result["reserve_sentence"]
     assert manifest["reserve"]["held_back_bars"] > 0
 

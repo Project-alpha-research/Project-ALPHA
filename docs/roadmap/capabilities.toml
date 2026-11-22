@@ -839,7 +839,7 @@ name = "Check data providers and background jobs"
 what = "See which data providers are set up and working, and follow or cancel long-running jobs."
 see_it = [
   "uv run alpha info providers --json, uv run alpha provider check <provider>",
-  "Workstation: View → Jobs & providers",
+  "Workstation: View → Jobs",
 ]
 entry_points = [
   "cli: alpha info providers",
@@ -847,7 +847,6 @@ entry_points = [
   "api: GET /api/providers",
   "api: GET /api/jobs",
   "panel: apps/alpha-web/frontend/src/panels/JobMonitor.tsx",
-  "panel: apps/alpha-web/frontend/src/panels/ProviderSystem.tsx",
 ]
 proof_synthetic = [
   "tests/integration/test_provider_cli.py::test_info_system_reports_local_readiness_only",

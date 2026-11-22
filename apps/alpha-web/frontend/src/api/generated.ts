@@ -1173,13 +1173,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Experiment Preflight
-         * @description Recompute project, data, gate, worker, and capacity prerequisites without launching.
-         */
-        get: operations["get_experiment_preflight_api_ml_experiments_preflight_get"];
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Post Experiment Preflight
+         * @description Recompute spec, data, worker, and capacity prerequisites without launching.
+         */
+        post: operations["post_experiment_preflight_api_ml_experiments_preflight_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3492,15 +3492,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
-         * V3 Get Experiment Preflight
-         * @description Recompute project, data, gate, worker, and capacity prerequisites without launching.
+         * V3 Post Experiment Preflight
+         * @description Recompute spec, data, worker, and capacity prerequisites without launching.
          *
          *     Versioned Workstation-v3 alias of `/api/ml/experiments/preflight`.
          */
-        get: operations["v3_get_experiment_preflight_api_v3_ml_experiments_preflight_get"];
-        put?: never;
-        post?: never;
+        post: operations["v3_post_experiment_preflight_api_v3_ml_experiments_preflight_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5117,8 +5117,6 @@ export interface components {
         CryptoAcquisitionRequest: {
             /** Base */
             base: string;
-            /** Case Id */
-            case_id?: string | null;
             /**
              * Category
              * @default linear
@@ -5127,8 +5125,6 @@ export interface components {
             category: "spot" | "linear" | "inverse" | "option";
             /** End */
             end?: string | null;
-            /** Expected Case Revision */
-            expected_case_revision?: string | null;
             family: components["schemas"]["CryptoFamilyValue"];
             /**
              * Frequency
@@ -5149,8 +5145,6 @@ export interface components {
             provider: components["schemas"]["CryptoProviderValue"];
             /** Quote */
             quote: string;
-            /** Reason */
-            reason?: string | null;
             /** Start */
             start?: string | null;
         };
@@ -8189,16 +8183,16 @@ export interface components {
         };
         /** MlExperimentGenerateRequest */
         MlExperimentGenerateRequest: {
-            /** Experiment Id */
-            experiment_id?: string | null;
             /** Model */
             model?: ("lightgbm" | "linear" | "catboost" | "xgboost" | "double_ensemble") | null;
             /** Parameters */
             parameters?: {
                 [key: string]: number | ("ols" | "ridge" | "lasso" | "nnls");
             };
-            /** Project Id */
-            project_id: string;
+            /** Spec */
+            spec: {
+                [key: string]: unknown;
+            };
             /**
              * Timeout Seconds
              * @default 3600
@@ -8214,14 +8208,10 @@ export interface components {
             action: "generate-experiment";
             /** Exchange Id */
             exchange_id: string;
-            /** Experiment Id */
-            experiment_id: string;
             /** Input Bundle Id */
             input_bundle_id: string;
             /** Job Id */
             job_id: string;
-            /** Project Id */
-            project_id: string;
             /**
              * Status
              * @constant
@@ -8260,8 +8250,6 @@ export interface components {
             checks: components["schemas"]["MlPreflightCheck"][];
             /** Experiment Id */
             experiment_id: string | null;
-            /** Project Id */
-            project_id: string;
             /** Ready */
             ready: boolean;
             /**
@@ -8523,12 +8511,12 @@ export interface components {
         };
         /** MlInputGenerateRequest */
         MlInputGenerateRequest: {
-            /** Experiment Id */
-            experiment_id: string;
             /** Input Bundle Id */
             input_bundle_id?: string | null;
-            /** Project Id */
-            project_id: string;
+            /** Spec */
+            spec: {
+                [key: string]: unknown;
+            };
             /**
              * Timeout Seconds
              * @default 3600
@@ -8542,14 +8530,10 @@ export interface components {
              * @constant
              */
             action: "export-input";
-            /** Experiment Id */
-            experiment_id: string;
             /** Input Bundle Id */
             input_bundle_id: string;
             /** Job Id */
             job_id: string;
-            /** Project Id */
-            project_id: string;
             /**
              * Status
              * @constant
@@ -8890,6 +8874,13 @@ export interface components {
             min_symbols: 20;
             /** Worker Ready */
             worker_ready: boolean;
+        };
+        /** MlSpecRequest */
+        MlSpecRequest: {
+            /** Spec */
+            spec: {
+                [key: string]: unknown;
+            };
         };
         /** MlTabularModelRecipe */
         MlTabularModelRecipe: {
@@ -15434,17 +15425,18 @@ export interface operations {
             };
         };
     };
-    get_experiment_preflight_api_ml_experiments_preflight_get: {
+    post_experiment_preflight_api_ml_experiments_preflight_post: {
         parameters: {
-            query: {
-                project_id: string;
-                experiment_id?: string | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MlSpecRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -19550,17 +19542,18 @@ export interface operations {
             };
         };
     };
-    v3_get_experiment_preflight_api_v3_ml_experiments_preflight_get: {
+    v3_post_experiment_preflight_api_v3_ml_experiments_preflight_post: {
         parameters: {
-            query: {
-                project_id: string;
-                experiment_id?: string | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MlSpecRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

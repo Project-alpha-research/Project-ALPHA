@@ -2305,7 +2305,6 @@ function responseFor(route: Route, options: MockOptions): unknown {
   if (url.pathname === '/api/ml/experiments/preflight') {
     return {
       schema_version: 1,
-      project_id: url.searchParams.get('project_id') ?? 'project-1',
       experiment_id: null,
       snapshot_id: null,
       universe_count: 0,

@@ -140,7 +140,7 @@ describe('control-plane API client', () => {
 
     await api.projects()
     await api.mlStatus()
-    const accepted = await api.createMlExperiment('project/id')
+    const accepted = await api.createMlExperiment({ snapshot_id: 'snap' })
     await api.developmentJob(accepted.job_id)
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/projects?limit=50&offset=0')
@@ -148,7 +148,7 @@ describe('control-plane API client', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/ml/experiments', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ project_id: 'project/id' }),
+      body: JSON.stringify({ spec: { snapshot_id: 'snap' } }),
     })
     expect(fetchMock).toHaveBeenNthCalledWith(4, '/api/development/jobs/job-1?event_tail=true')
   })
@@ -157,11 +157,11 @@ describe('control-plane API client', () => {
     const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(jsonResponse({})))
     vi.stubGlobal('fetch', fetchMock)
     await api.mlCapabilities()
-    await api.createMlExperiment('project-1', 'linear', { alpha: 2 })
+    await api.createMlExperiment({ snapshot_id: 'snap' }, 'linear', { alpha: 2 })
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/ml/capabilities')
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/ml/experiments', {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ project_id: 'project-1', model: 'linear', parameters: { alpha: 2 } }),
+      body: JSON.stringify({ spec: { snapshot_id: 'snap' }, model: 'linear', parameters: { alpha: 2 } }),
     })
   })
 

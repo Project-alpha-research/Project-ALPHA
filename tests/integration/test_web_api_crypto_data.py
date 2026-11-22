@@ -91,19 +91,6 @@ def test_crypto_route_functions_cover_closed_validation_and_recovery_edges(
             )
         )
 
-    request = CryptoAcquisitionRequest(
-        provider="bybit",
-        family="funding",
-        instrument="BTCUSDT",
-        base="BTC",
-        quote="USDT",
-        case_id="f03802b8-df35-4f19-a90c-0b3437aa587d",
-        expected_case_revision="a" * 64,
-        reason="Not valid for this family.",
-    )
-    with pytest.raises(HTTPException, match="only valid"):
-        crypto_api.acquire(request)
-
 
 def test_crypto_asset_master_routes_build_closed_exact_identity_commands(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch

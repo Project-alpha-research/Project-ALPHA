@@ -2,13 +2,13 @@ import { expect, test } from '@playwright/test'
 
 import { openDocument, preparePage } from './support/workstationHarness'
 
+const SPEC = JSON.stringify({ snapshot_id: 'snapshot-1', universe: ['SPY'] })
+
 test('ML model selection relays Linear estimator and exposes dependency blockers', async ({ page }) => {
   await preparePage(page)
-  // Choose a project through the existing Research Case route before opening ML.
-  await page.getByLabel('Project context', { exact: true }).selectOption({ label: 'SPY double bottom' })
-  await page.route('**/api/ml/experiments/preflight?*', async (route) => {
+  await page.route('**/api/ml/experiments/preflight', async (route) => {
     await route.fulfill({ json: {
-      schema_version: 1, project_id: 'project-1', experiment_id: `ex_${'a'.repeat(64)}`,
+      schema_version: 1, experiment_id: `ex_${'a'.repeat(64)}`,
       snapshot_id: 'snapshot-1', universe_count: 20, aligned_sessions: 756,
       active_job_id: null, ready: true, checks: [],
     } })
@@ -22,7 +22,6 @@ test('ML model selection relays Linear estimator and exposes dependency blockers
     generated = route.request().postDataJSON()
     await route.fulfill({ status: 202, json: {
       job_id: 'tabular-test-job', status: 'queued', action: 'generate-experiment',
-      project_id: 'project-1', experiment_id: `ex_${'a'.repeat(64)}`,
       input_bundle_id: 'b'.repeat(32), exchange_id: 'c'.repeat(32),
     } })
   })
@@ -30,6 +29,8 @@ test('ML model selection relays Linear estimator and exposes dependency blockers
     await route.fulfill({ json: { status: 'running' } })
   })
   await openDocument(page, 'Machine learning')
+  await page.getByLabel('Experiment spec').fill(SPEC)
+  await page.getByRole('button', { name: 'Check spec' }).click()
   const generate = page.getByRole('button', { name: 'Generate preflighted ML experiment' })
   await page.getByLabel('ML model', { exact: true }).selectOption('catboost')
   await expect(page.getByLabel('Selected ML backend capability')).toContainText('catboost is not installed')
@@ -46,10 +47,9 @@ test('ML model selection relays Linear estimator and exposes dependency blockers
 
 test('ML generation keeps the experiment recipe by default', async ({ page }) => {
   await preparePage(page)
-  await page.getByLabel('Project context', { exact: true }).selectOption({ label: 'SPY double bottom' })
-  await page.route('**/api/ml/experiments/preflight?*', async (route) => {
+  await page.route('**/api/ml/experiments/preflight', async (route) => {
     await route.fulfill({ json: {
-      schema_version: 1, project_id: 'project-1', experiment_id: `ex_${'a'.repeat(64)}`,
+      schema_version: 1, experiment_id: `ex_${'a'.repeat(64)}`,
       snapshot_id: 'snapshot-1', universe_count: 20, aligned_sessions: 756,
       active_job_id: null, ready: true, checks: [],
     } })
@@ -63,7 +63,6 @@ test('ML generation keeps the experiment recipe by default', async ({ page }) =>
     generated = route.request().postDataJSON()
     await route.fulfill({ status: 202, json: {
       job_id: 'recipe-test-job', status: 'queued', action: 'generate-experiment',
-      project_id: 'project-1', experiment_id: `ex_${'a'.repeat(64)}`,
       input_bundle_id: 'b'.repeat(32), exchange_id: 'c'.repeat(32),
     } })
   })
@@ -71,10 +70,12 @@ test('ML generation keeps the experiment recipe by default', async ({ page }) =>
     await route.fulfill({ json: { status: 'running' } })
   })
   await openDocument(page, 'Machine learning')
+  await page.getByLabel('Experiment spec').fill(SPEC)
+  await page.getByRole('button', { name: 'Check spec' }).click()
   await expect(page.getByLabel('ML model', { exact: true })).toHaveValue('experiment_recipe')
   await expect(page.getByLabel('Selected ML backend capability')).toContainText('No model override')
   await page.getByRole('button', { name: 'Generate preflighted ML experiment' }).click()
-  await expect.poll(() => generated && Object.keys(generated).sort()).toEqual(['project_id'])
+  await expect.poll(() => generated && Object.keys(generated).sort()).toEqual(['spec'])
 })
 
 for (const scoreStatus of ['degenerate', 'ties_present'] as const) {

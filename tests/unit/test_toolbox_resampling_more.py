@@ -19,7 +19,6 @@ from tests.unit.test_spine_tools import RUN
 from tests.unit.test_toolbox_run_level_checks import END, START, stored_run, write_trades
 
 MOVING = "resampling.moving_block_paths"
-CIRCULAR = "resampling.circular_block_paths"
 WILD = "resampling.wild_bootstrap"
 RUIN = "resampling.risk_of_ruin"
 SHUFFLE = "resampling.return_shuffle"
@@ -32,7 +31,6 @@ YEAR_JACK = "resampling.year_jackknife"
 STRESS = "resampling.stress_shocks"
 TOOLS = (
     MOVING,
-    CIRCULAR,
     WILD,
     RUIN,
     SHUFFLE,
@@ -83,8 +81,8 @@ def wavy(n: int = 60) -> FloatArray:
     return np.array([0.012 * math.sin(i) + 0.002 * (i % 3) - 0.001 for i in range(n)])
 
 
-@pytest.mark.parametrize(("tool", "circular"), [(MOVING, False), (CIRCULAR, True)])
-def test_known_answer_blocks(tool: str, circular: bool, tmp_path: Path) -> None:
+def test_known_answer_blocks(tmp_path: Path) -> None:
+    tool = MOVING
     # Constant gains: every redrawn history is identical, so the answer is (1.01)^12 - 1.
     put(tmp_path, [0.01] * 12)
     values = read(tmp_path, tool, n_paths=30, block_length=4)
@@ -96,7 +94,7 @@ def test_known_answer_blocks(tool: str, circular: bool, tmp_path: Path) -> None:
     returns = wavy(30)
     put(tmp_path, returns)
     rng, n, b = np.random.default_rng(SEED), 30, 4
-    starts = rng.integers(0, n if circular else n - b + 1, size=(50, math.ceil(n / b)))
+    starts = rng.integers(0, n - b + 1, size=(50, math.ceil(n / b)))
     finals, drops = [], []
     for row in starts:
         path = np.array([returns[(s + k) % n] for s in row for k in range(b)][:n])

@@ -13,7 +13,6 @@ Run any of them with `alpha tool run <id> <run_id>`. Each gives numbers and a pl
 | Check | Question |
 |---|---|
 | `resampling.moving_block_paths` | What range of final return and worst drop do fixed blocks of bars give? |
-| `resampling.circular_block_paths` | The same, with blocks wrapped around the history. |
 | `resampling.wild_bootstrap` | What range of average bar return holds when bars of different size are weighted? |
 | `resampling.risk_of_ruin` | How often does a redrawn history fall past a ruinous drop? |
 | `resampling.return_shuffle` | Does the order of the bar returns carry anything beyond the returns themselves? |

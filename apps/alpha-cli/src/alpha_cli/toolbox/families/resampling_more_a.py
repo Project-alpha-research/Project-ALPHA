@@ -1,9 +1,8 @@
-"""Fixed-block, circular-block and wild bootstraps, and the chance of a ruinous drop."""
+"""Fixed-block and wild bootstraps, and the chance of a ruinous drop."""
 
 from __future__ import annotations
 
 import math
-from functools import partial
 from typing import TYPE_CHECKING, Any
 
 from alpha_cli.toolbox.contract import Output, Param, Result
@@ -35,23 +34,20 @@ PATH_OUTPUTS = (
 )
 
 
-def fixed_block_indices(n: int, block: int, n_paths: int, rng: Generator, *, circular: bool) -> Any:
-    """Rows of bar positions built from equal blocks, cut to the length of the history.
+def fixed_block_indices(n: int, block: int, n_paths: int, rng: Generator) -> Any:
+    """Rows of bar positions built from equal moving blocks (Kuensch 1989), cut to the history.
 
-    Moving blocks (Kuensch 1989) start only where a whole block fits; circular blocks
-    (Politis and Romano 1992) start anywhere and wrap past the end.
+    A block starts only where a whole block fits.
     """
     import numpy as np
 
     n_blocks = math.ceil(n / block)
-    starts = rng.integers(0, n if circular else n - block + 1, size=(n_paths, n_blocks))
+    starts = rng.integers(0, n - block + 1, size=(n_paths, n_blocks))
     rows = (starts[:, :, None] + np.arange(block)).reshape(n_paths, n_blocks * block)[:, :n]
     return rows % n
 
 
-def block_family(
-    inputs: Inputs, params: dict[str, Any], rng: Generator | None, *, circular: bool
-) -> Result:
+def block_family(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
     import numpy as np
 
     from alpha_validation.path_montecarlo import path_metric_arrays
@@ -68,7 +64,7 @@ def block_family(
         return blank(PATH_KEYS, reason, RETURN_BASIS, inputs.seed)
     if rng is None:
         raise ValueError("Block bootstrap paths require a seeded generator")
-    rows = fixed_block_indices(len(returns), block, n_paths, rng, circular=circular)
+    rows = fixed_block_indices(len(returns), block, n_paths, rng)
     metrics = path_metric_arrays(returns[rows])
     low, median, high = np.quantile(metrics.terminal_return, [0.05, 0.5, 0.95])
     return Result(
@@ -111,23 +107,7 @@ MOVING_BLOCKS = make_spec(
         " fewer blocks. " + PAST,
     ),
     reference="test_known_answer_blocks",
-    compute=partial(block_family, circular=False),
-    situations=("drawdown", "return-range"),
-    seeded=True,
-)
-CIRCULAR_BLOCKS = make_spec(
-    "resampling.circular_block_paths",
-    question="What range of final return and worst drop do blocks wrapped around the history give?",
-    needs=("stored_equity",),
-    params=BLOCK_PARAMS,
-    outputs=PATH_OUTPUTS,
-    reading=BLOCK_READING.format(kind="wrapped-around"),
-    caveats=(
-        "Blocks may run past the last bar and continue from the first, which joins the end of"
-        " the history to its start. " + PAST,
-    ),
-    reference="test_known_answer_blocks",
-    compute=partial(block_family, circular=True),
+    compute=block_family,
     situations=("drawdown", "return-range"),
     seeded=True,
 )
@@ -269,4 +249,4 @@ RISK_OF_RUIN = make_spec(
     situations=("drawdown",),
     seeded=True,
 )
-CHECKS = (MOVING_BLOCKS, CIRCULAR_BLOCKS, WILD_BOOTSTRAP, RISK_OF_RUIN)
+CHECKS = (MOVING_BLOCKS, WILD_BOOTSTRAP, RISK_OF_RUIN)

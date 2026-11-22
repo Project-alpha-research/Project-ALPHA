@@ -22,10 +22,10 @@ The result is then marked `declared`, otherwise `exploratory`. Nothing is refuse
 - The result looks too good after many tries: `overfit.deflated_sharpe`
 - Big drawdown, or how deep the drop could get: `performance.ulcer`, `performance.pain`, `performance.sterling_burke`, `performance.worst_windows`,
   `performance.recovery_factor`, `performance.downside_ratios`, `resampling.drawdown_distribution`, `resampling.block_bootstrap_paths`,
-  `resampling.student_t_paths`, `resampling.moving_block_paths`, `resampling.circular_block_paths`, `resampling.risk_of_ruin`, `resampling.phase_surrogates`,
-  `resampling.trade_order_drawdown`, `resampling.calendar_year_shuffle`, `resampling.stress_shocks`
+  `resampling.student_t_paths`, `resampling.moving_block_paths`, `resampling.risk_of_ruin`, `resampling.phase_surrogates`, `resampling.trade_order_drawdown`,
+  `resampling.calendar_year_shuffle`, `resampling.stress_shocks`
 - How wide is the return range: `performance.worst_windows`, `resampling.sharpe_interval`, `resampling.return_interval`, `resampling.block_bootstrap_paths`,
-  `resampling.student_t_paths`, `resampling.moving_block_paths`, `resampling.circular_block_paths`, `resampling.wild_bootstrap`
+  `resampling.student_t_paths`, `resampling.moving_block_paths`, `resampling.wild_bootstrap`
 - Works in some years or windows only: `market.vol_regimes`, `market.changepoints`, `robustness.start_end_dates`, `resampling.calendar_year_shuffle`,
   `resampling.interleaved_halves`, `resampling.year_jackknife`
 - Does it earn in calm or turbulent markets: `market.vol_regimes`

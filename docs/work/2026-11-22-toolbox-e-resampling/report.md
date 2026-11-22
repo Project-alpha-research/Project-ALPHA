@@ -1,6 +1,6 @@
 # Report: toolbox family E, resampling (2026-11-22)
 
-Result: 12 new checks, all registered with one import and one `*RESAMPLING_MORE` entry in `registry.py`.
+Result: 11 new checks (`resampling.circular_block_paths` was removed in review: it differs from the moving-block check only at the ends of the history), all registered with one import and one `*RESAMPLING_MORE` entry in `registry.py`.
 Module: `apps/alpha-cli/src/alpha_cli/toolbox/families/resampling_more*.py` (split into `_common`, `_a` to `_e`; each file is under 300 lines).
 Tests: `tests/unit/test_toolbox_resampling_more.py` (49 tests). Card: `research/tools/toolbox-resampling-more.md`.
 
@@ -9,7 +9,6 @@ Tests: `tests/unit/test_toolbox_resampling_more.py` (49 tests). Card: `research/
 | Check id | Catalogue row | Known-answer source |
 |---|---|---|
 | `resampling.moving_block_paths` | E4 (Kuensch 1989) | Constant gains give (1.01)^12 - 1; independent block-by-block redraw |
-| `resampling.circular_block_paths` | E5 (Politis and Romano 1992) | Same constant-gain answer; independent wrapped redraw |
 | `resampling.wild_bootstrap` | E26 (Wu 1986; Liu 1988; Mammen 1993 weights) | Mean equals the series mean; independent per-bar weighting |
 | `resampling.risk_of_ruin` | E36 | Steady -10% bars give ruin share 1.0; calls `alpha_validation.risk_of_ruin` |
 | `resampling.return_shuffle` | E14 | Alternating +/-1% gives lag-1 correlation -19/20 by hand |

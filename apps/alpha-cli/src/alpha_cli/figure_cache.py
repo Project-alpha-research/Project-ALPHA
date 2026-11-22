@@ -44,7 +44,7 @@ VARIANTS: Final = ("plain", "annotated")
 #: Bump when a builder in ``alpha_cli.figures`` (or the Setup Lab drawing) changes what a figure
 #: shows. ``RENDERER_VERSION`` lives in a protected package and only moves with the drawing
 #: code, so a builder-only fix would otherwise keep serving the old bytes from the cache.
-BUILDER_REVISION: Final = 1
+BUILDER_REVISION: Final = 2
 
 FIGURE_ROOT: Final = "figures"
 FIGURE_ID_RE: Final = re.compile(r"[a-z0-9]+(?:_[a-z0-9]+)*")

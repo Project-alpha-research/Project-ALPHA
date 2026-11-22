@@ -90,7 +90,7 @@ async function openProjectPage(page: Page, selectCrypto: boolean) {
     page.on('requestfailed', onRequestFailed)
     page.on('close', onClose)
     void (async () => {
-      await page.goto(endpoint + '/#legacy')
+      await page.goto(endpoint)
       if (!active) return
       if (selectCrypto) await page.getByLabel('Market profile').selectOption('crypto')
       if (!active) return

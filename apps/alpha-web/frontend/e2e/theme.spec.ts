@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test('the top-bar theme survives a reload', async ({ page }) => {
-  await page.goto('/#legacy')
+  await page.goto('/')
   const theme = page.getByRole('combobox', { name: 'Theme', exact: true })
   await expect(theme).toHaveValue('light')
   await theme.selectOption('dim')

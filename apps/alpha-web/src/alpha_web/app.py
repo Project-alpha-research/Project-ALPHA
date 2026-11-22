@@ -34,7 +34,6 @@ from alpha_web.api import candles as candles_api
 from alpha_web.api import catalog as catalog_api
 from alpha_web.api import control as control_api
 from alpha_web.api import crypto_data as crypto_data_api
-from alpha_web.api import desk as desk_api
 from alpha_web.api import development as development_api
 from alpha_web.api import figures as figures_api
 from alpha_web.api import follow as follow_api
@@ -46,6 +45,7 @@ from alpha_web.api import native_results as native_results_api
 from alpha_web.api import owner_auth as owner_auth_api
 from alpha_web.api import paper as paper_api
 from alpha_web.api import rdagent as rdagent_api
+from alpha_web.api import recent_runs as recent_runs_api
 from alpha_web.api import research as research_api
 from alpha_web.api import risk as risk_api
 from alpha_web.api import rules as rules_api
@@ -120,7 +120,7 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(runs_api.router)
-    app.include_router(desk_api.router)
+    app.include_router(recent_runs_api.router)
     app.include_router(jobs_api.router)
     app.include_router(native_results_api.router)
     app.include_router(rdagent_api.router)

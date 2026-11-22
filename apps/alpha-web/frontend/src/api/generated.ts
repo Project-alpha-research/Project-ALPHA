@@ -623,46 +623,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/desk/runs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Desk Runs
-         * @description The newest stored runs with idea, asset, trades, out-of-sample Sharpe and evidence word.
-         */
-        get: operations["desk_runs_api_desk_runs_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/desk/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Desk Status
-         * @description The reserved-period start and the last nightly run, relayed from `alpha nightly status`.
-         */
-        get: operations["desk_status_api_desk_status_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/development/jobs": {
         parameters: {
             query?: never;
@@ -1990,6 +1950,26 @@ export interface paths {
          * @description Read one published PNG belonging to this idea.
          */
         get: operations["journey_figure_api_rdagent_runs__run_id__journeys__idea_id__figures__filename__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recent-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recent Runs
+         * @description The newest stored runs with idea, asset, trades, out-of-sample Sharpe and evidence word.
+         */
+        get: operations["recent_runs_api_recent_runs_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6163,69 +6143,6 @@ export interface components {
         Deleted: {
             /** Deleted */
             deleted: string;
-        };
-        /** DeskNightly */
-        DeskNightly: {
-            /** Blocking */
-            blocking: number;
-            /** Complete */
-            complete: string;
-            /** Date */
-            date: string;
-            /** Minor */
-            minor: number;
-            /** Ready */
-            ready: boolean;
-            /** Reasons */
-            reasons: string[];
-            /** Run Number */
-            run_number: number | null;
-        };
-        /** DeskRun */
-        DeskRun: {
-            /** Display Name */
-            display_name: string;
-            /** Evidence */
-            evidence: string | null;
-            /** First Ts */
-            first_ts: string | null;
-            /** Idea */
-            idea: string | null;
-            /** Kind */
-            kind: string;
-            /** Last Ts */
-            last_ts: string | null;
-            /** Mtime */
-            mtime: number;
-            /** Oos Sharpe */
-            oos_sharpe: number | null;
-            /** Rule Name */
-            rule_name: string | null;
-            /** Run Id */
-            run_id: string;
-            /** Spark */
-            spark: number[];
-            /** Symbol */
-            symbol: string | null;
-            /** Trades */
-            trades: number | null;
-            /** Tries */
-            tries: number | null;
-        };
-        /** DeskRunList */
-        DeskRunList: {
-            /** Items */
-            items: components["schemas"]["DeskRun"][];
-            /** Total */
-            total: number;
-        };
-        /** DeskStatus */
-        DeskStatus: {
-            nightly: components["schemas"]["DeskNightly"] | null;
-            /** Nightly Problem */
-            nightly_problem: string | null;
-            /** Reserved Start */
-            reserved_start: string;
         };
         /** @enum {string} */
         DevelopmentStageValue: "hypothesis" | "data" | "strategy" | "baseline" | "oos" | "robustness" | "monte_carlo" | "optimization" | "portfolio" | "candidate" | "holdout" | "paper" | "decision" | "kronos" | "ml";
@@ -10535,6 +10452,44 @@ export interface components {
             /** Missing Links */
             missing_links: string[];
         };
+        /** RecentRun */
+        RecentRun: {
+            /** Display Name */
+            display_name: string;
+            /** Evidence */
+            evidence: string | null;
+            /** First Ts */
+            first_ts: string | null;
+            /** Idea */
+            idea: string | null;
+            /** Kind */
+            kind: string;
+            /** Last Ts */
+            last_ts: string | null;
+            /** Mtime */
+            mtime: number;
+            /** Oos Sharpe */
+            oos_sharpe: number | null;
+            /** Rule Name */
+            rule_name: string | null;
+            /** Run Id */
+            run_id: string;
+            /** Spark */
+            spark: number[];
+            /** Symbol */
+            symbol: string | null;
+            /** Trades */
+            trades: number | null;
+            /** Tries */
+            tries: number | null;
+        };
+        /** RecentRunList */
+        RecentRunList: {
+            /** Items */
+            items: components["schemas"]["RecentRun"][];
+            /** Total */
+            total: number;
+        };
         /** RecordedFact */
         RecordedFact: {
             /** Basis */
@@ -14807,67 +14762,6 @@ export interface operations {
             };
         };
     };
-    desk_runs_api_desk_runs_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-                spark?: boolean;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeskRunList"];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
-    desk_status_api_desk_status_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeskStatus"];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
     list_development_jobs_api_development_jobs_get: {
         parameters: {
             query?: {
@@ -17269,6 +17163,38 @@ export interface operations {
                 };
                 content: {
                     "image/png": string;
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    recent_runs_api_recent_runs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                spark?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecentRunList"];
                 };
             };
             /** @description Stable, redacted Workstation error */

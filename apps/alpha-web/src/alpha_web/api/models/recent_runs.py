@@ -1,11 +1,11 @@
-"""The Workstation desk reads: recent tests with a sparkline, and the frame's status facts."""
+"""The Overview's recent tests: stored run facts with a sparkline."""
 
 from __future__ import annotations
 
 from ._base import StrictModel
 
 
-class DeskRun(StrictModel):
+class RecentRun(StrictModel):
     run_id: str
     kind: str
     mtime: float
@@ -23,22 +23,6 @@ class DeskRun(StrictModel):
     spark: list[float]
 
 
-class DeskRunList(StrictModel):
+class RecentRunList(StrictModel):
     total: int
-    items: list[DeskRun]
-
-
-class DeskNightly(StrictModel):
-    date: str
-    run_number: int | None
-    complete: str
-    blocking: int
-    minor: int
-    ready: bool
-    reasons: list[str]
-
-
-class DeskStatus(StrictModel):
-    reserved_start: str
-    nightly: DeskNightly | None
-    nightly_problem: str | None
+    items: list[RecentRun]

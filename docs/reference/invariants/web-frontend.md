@@ -40,14 +40,6 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
 
 ## Shell and navigation
 
-- The desk (`src/v2/`, Workstation v2 slice 1) is the default app: a left rail of seven places (Home, Charts, Ideas, Tests, Setup Lab, RD-Agent,
-  System), a top bar (title, symbol box, Ctrl+K palette, nightly status dot) and URLs `#place=…` (plus `run=` and `symbol=`). It is always dark;
-  stored figures stay white. Every desk colour, size and radius is a token in `src/v2/tokens.css`; that file also maps the older panel tokens onto
-  the desk palette. Loads show skeletons, empty states say what to do next, and errors say what failed and what to try, never a status code.
-- On the desk Charts page the bars from the reserved start (`GET /api/desk/status`) on are shaded and labelled `Held back: not used by tests`.
-  The window buttons (6M to All) move the visible range over the loaded bars only.
-- The old shell below opens at `#legacy` and for its own `#page=` and `#run=` links; moving between the two reloads the page. It is deleted when
-  later slices replace it.
 - `App.tsx` renders workflow pages from `shell/workflowModel.ts`. URLs are `#page=...&pane=...` (plus `run=` for a run). Keep existing page and pane names
   stable — they are bookmarks and test targets.
 - `shell/documents.ts` is the registry: one `DocumentDefinition` per `WindowId`, each holding panes. `workflowModel.DOCUMENT_PAGE` maps every `WindowId` to a

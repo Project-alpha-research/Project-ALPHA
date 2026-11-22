@@ -32,7 +32,7 @@ test('real backend captures a case and renders all material questions without ve
     legacy_journals: 'monitoring_only',
   })
 
-  await page.goto('#legacy')
+  await page.goto('')
   // New Idea lives at the top of the Research menu (artboard: no titlebar button).
   await page.getByRole('menuitem', { name: 'Research', exact: true }).click()
   await page.getByRole('menuitem', { name: 'New Idea…', exact: true }).click()
@@ -70,7 +70,7 @@ test('generated project workspace is visible and refreshes without authority esc
   expect(created.ok()).toBe(true)
   const project = (await created.json()) as { project_id: string }
 
-  await page.goto('#legacy')
+  await page.goto('')
   await openDocument(page, 'Build')
   await openTask(page, 'Strategies & Tests', 'Development Center')
   await page.getByLabel('Strategy project').selectOption(project.project_id)
@@ -114,7 +114,7 @@ test('late workspace refresh cannot overwrite a newly selected project', async (
     await route.continue()
   })
 
-  await page.goto('#legacy')
+  await page.goto('')
   await openDocument(page, 'Build')
   await openTask(page, 'Strategies & Tests', 'Development Center')
   const selector = page.getByLabel('Strategy project')

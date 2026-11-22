@@ -53,7 +53,6 @@ export default defineConfig({
         'src/panels/researchDataModel.ts',
         'src/panels/v3Models.ts',
         'src/panels/workspaceModel.ts',
-        'src/v2/deskModel.ts',
       ],
       exclude: ['src/api/generated.ts', 'src/**/*.test.{ts,tsx}'],
       thresholds: {

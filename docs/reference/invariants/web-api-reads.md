@@ -63,15 +63,6 @@ What the Workstation backend reads, writes and relays. The other backend rules a
 - `RunListItem.evidence` is the evidence word (or `fault`) a new run stored in its manifest `reading`; null for an older run.
   The list relays it and works nothing out.
 
-## Desk reads
-
-- `GET /api/desk/runs?limit=&spark=` (`api/desk.py`, `_desk.py`) lists the newest stored runs for the desk tables. It reads the same verified
-  manifests and `equity_curve.parquet` as `/api/runs` and relays, never computes: trade count from the stored diagnostics, out-of-sample Sharpe from
-  `oos_metrics`, tries from `reading.counts`, the stored evidence word. The sparkline is the stored equity curve thinned to 60 points, both ends kept.
-  At most 200 runs; an unreadable run is skipped.
-- `GET /api/desk/status` relays `alpha nightly status --json` (30 s timeout) and adds the reserved start from `alpha_core.reserve`. A failed relay
-  comes back as `nightly_problem` in the CLI's words, never as an error page. Enforced by `tests/unit/test_web_desk_routes.py`.
-
 ## Market overview read
 
 - `GET /api/market/overview` relays `alpha data market-overview --json` (`api/market.py`, 120 s timeout). The CLI reads stored bars only through

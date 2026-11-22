@@ -16,7 +16,7 @@ import {
   type UTCTimestamp,
   type IChartApi, type LogicalRange,
   type ISeriesMarkersPluginApi, type Time,
-  type ISeriesApi, type ISeriesPrimitive,
+  type ISeriesApi,
 } from 'lightweight-charts'
 import { useEffect, useMemo, useRef } from 'react'
 import { scheduleChartResize, cancelChartResize } from './chartResize'
@@ -45,8 +45,6 @@ interface Props {
   onSelectEvidence?: (sequenceId: number) => void
   /** `alpha chart overlays` for the same window: drawn as-is, never recomputed here. */
   overlays?: ChartOverlays | null
-  /** An extra drawing on the price pane (the desk's held-back shading). */
-  primitive?: ISeriesPrimitive<Time> | null
 }
 
 const SUB_PANE_HEIGHT = 90
@@ -88,7 +86,6 @@ export function PriceChartCanvas({
   selectedTrade = null,
   onSelectEvidence,
   overlays = null,
-  primitive = null,
 }: Props) {
   const colors = useChartPalette()
   const hostRef = useRef<HTMLDivElement>(null)
@@ -251,7 +248,6 @@ export function PriceChartCanvas({
       ...drawableAnnotations(overlays?.annotations ?? []),
     ], colors)
     series.attachPrimitive(annotationPrimitive)
-    if (primitive) series.attachPrimitive(primitive)
     seriesRef.current = series
     const markerPlugin = createSeriesMarkers(series, [], { zOrder: 'top' })
     markersRef.current = markerPlugin
@@ -263,10 +259,9 @@ export function PriceChartCanvas({
       savedRange.current = chart.timeScale().getVisibleLogicalRange()
       markerPlugin.detach(); markersRef.current = null; seriesRef.current = null
       series.detachPrimitive(annotationPrimitive)
-      if (primitive) series.detachPrimitive(primitive)
       for (const item of composition) chart.removeSeries(item)
     }
-  }, [colors, bars, overlays, annotations, controls.type, primitive])
+  }, [colors, bars, overlays, annotations, controls.type])
 
   useEffect(() => {
     const firstBar = bars[0]?.t ?? -Infinity

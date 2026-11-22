@@ -255,20 +255,6 @@
     {
       "method": "GET",
       "mode": "automatic",
-      "operation_id": "desk_runs_api_desk_runs_get",
-      "path": "/api/desk/runs",
-      "reason": "Safe read exercised against an isolated temporary store."
-    },
-    {
-      "method": "GET",
-      "mode": "automatic",
-      "operation_id": "desk_status_api_desk_status_get",
-      "path": "/api/desk/status",
-      "reason": "Safe read exercised against an isolated temporary store."
-    },
-    {
-      "method": "GET",
-      "mode": "automatic",
       "operation_id": "list_development_jobs_api_development_jobs_get",
       "path": "/api/development/jobs",
       "reason": "Safe read exercised against an isolated temporary store."
@@ -783,6 +769,13 @@
       "operation_id": "journey_figure_api_rdagent_runs__run_id__journeys__idea_id__figures__filename__get",
       "path": "/api/rdagent/runs/{run_id}/journeys/{idea_id}/figures/{filename}",
       "reason": "Parameterized safe read uses typed identity and boundary fixtures."
+    },
+    {
+      "method": "GET",
+      "mode": "automatic",
+      "operation_id": "recent_runs_api_recent_runs_get",
+      "path": "/api/recent-runs",
+      "reason": "Safe read exercised against an isolated temporary store."
     },
     {
       "method": "GET",

@@ -1,4 +1,4 @@
-"""`/api/desk/runs` relays stored run facts and a thinned curve; `/status` relays nightly."""
+"""`/api/recent-runs` relays stored run facts and a thinned equity curve."""
 
 from __future__ import annotations
 
@@ -6,13 +6,12 @@ import json
 import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any
 
 import polars as pl
 import pytest
 from fastapi.testclient import TestClient
 
-from alpha_web import _desk
+from alpha_web import _recent_runs
 from alpha_web.app import create_app
 
 
@@ -47,13 +46,13 @@ def test_recent_runs_are_newest_first_with_stored_facts(
 ) -> None:
     _run(tmp_path, "a" * 16, sharpe=0.5, word="some evidence", mtime=1_000, bars=200)
     _run(tmp_path, "b" * 16, sharpe=-0.2, word="too little to read", mtime=2_000, bars=10)
-    body = _client(tmp_path, monkeypatch).get("/api/desk/runs?limit=10").json()
+    body = _client(tmp_path, monkeypatch).get("/api/recent-runs?limit=10").json()
     assert body["total"] == 2
     first, second = body["items"]
     assert first["run_id"] == "b" * 16 and first["oos_sharpe"] == -0.2
     assert first["evidence"] == "too little to read" and first["tries"] == 4
     assert first["symbol"] == "SPY" and first["spark"] == [float(1 + i) for i in range(10)]
-    assert len(second["spark"]) == _desk.SPARK_POINTS
+    assert len(second["spark"]) == _recent_runs.SPARK_POINTS
     assert second["spark"][0] == 1.0 and second["spark"][-1] == 200.0
 
 
@@ -61,43 +60,5 @@ def test_recent_runs_can_skip_the_sparkline(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _run(tmp_path, "c" * 16, sharpe=0.1, word="some evidence", mtime=1_000, bars=5)
-    body = _client(tmp_path, monkeypatch).get("/api/desk/runs?spark=false").json()
+    body = _client(tmp_path, monkeypatch).get("/api/recent-runs?spark=false").json()
     assert body["items"][0]["spark"] == []
-
-
-def test_status_relays_the_last_nightly_run(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    facts: dict[str, Any] = {
-        "last": {
-            "date": "2026-11-20",
-            "run_number": 2,
-            "complete": "all three paths",
-            "blocking": 0,
-        },
-        "ready": False,
-        "reasons": ["(a) Both latest runs are on the same date."],
-    }
-    calls: list[list[str]] = []
-
-    def relay(args: list[str], **_: Any) -> Any:
-        calls.append(args)
-        return facts
-
-    monkeypatch.setattr(_desk, "_run_json", relay)
-    body = _client(tmp_path, monkeypatch).get("/api/desk/status").json()
-    assert calls == [["nightly", "status", "--json"]]
-    assert body["reserved_start"] == "2024-01-01"
-    assert body["nightly"]["date"] == "2026-11-20" and body["nightly"]["blocking"] == 0
-    assert body["nightly_problem"] is None
-
-
-def test_status_says_why_the_nightly_record_is_missing(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    def relay(args: list[str], **_: Any) -> Any:
-        raise RuntimeError("no nightly records")
-
-    monkeypatch.setattr(_desk, "_run_json", relay)
-    body = _client(tmp_path, monkeypatch).get("/api/desk/status").json()
-    assert body["nightly"] is None and body["nightly_problem"] == "no nightly records"

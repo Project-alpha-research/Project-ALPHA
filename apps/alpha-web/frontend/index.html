@@ -7,13 +7,6 @@
     <script>
       const savedTheme = localStorage.getItem('alpha.theme.v1')
       document.documentElement.dataset.theme = savedTheme === 'dim' || savedTheme === 'dark' ? savedTheme : 'light'
-      // The desk (default app) is dark before first paint; the old shell keeps its saved theme.
-      const deskParams = new URLSearchParams(location.hash.replace(/^#/, ''))
-      const legacyHash = /^#legacy\b/.test(location.hash) || (!deskParams.has('place') && (deskParams.has('page') || deskParams.has('pane') || deskParams.has('run')))
-      if (!legacyHash && location.pathname !== '/owner-auth/enroll') {
-        document.documentElement.dataset.desk = 'v2'
-        document.documentElement.dataset.theme = 'dark'
-      }
     </script>
     <link rel="icon" href="/static/app/favicon.svg" type="image/svg+xml" />
     <title>ALPHA Workstation</title>

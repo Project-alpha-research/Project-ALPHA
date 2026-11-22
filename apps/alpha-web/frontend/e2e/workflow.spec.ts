@@ -7,7 +7,7 @@ test('real workflow navigation, asset selection, chart and history', async ({ pa
   test.setTimeout(120_000)
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
-  await page.goto('/#legacy')
+  await page.goto('/')
   await expect(page.getByRole('menubar', { name: 'Terminal menu' })).toBeVisible()
   for (const [section, task] of [['Data & Assets', 'Data downloads'], ['Research', 'Research Case'], ['Strategies & Tests', 'Builder'], ['Results', 'Run library'], ['Operations', 'Jobs'], ['Settings', 'Governance']]) {
     await openTask(page, section, task)
@@ -96,7 +96,7 @@ test('@reference-only every real workflow task opens in both market profiles', a
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   page.on('response', response => { if (response.url().includes('/api/') && response.status() >= 400) failures.push({ url: response.url(), status: response.status() }) })
-  await page.goto('/#legacy')
+  await page.goto('/')
   for (const profile of ['crypto', 'equities']) {
     await page.getByLabel('Market profile').selectOption(profile)
     for (const section of ['Data & Assets', 'Research', 'Strategies & Tests', 'Results', 'Operations', 'Settings']) {

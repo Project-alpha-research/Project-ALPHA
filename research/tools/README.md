@@ -25,7 +25,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | A setup traded with stops, targets and a time limit | [setup trade](setup-trade.md) |
 | "Did we test this?", "what was the number?", "do two runs move together?" | [results and cite](results-and-cite.md), [portfolio book](portfolio-book.md) |
 | The result looks too good | [diagnose and audit](diagnose-and-audit.md), then [random-price null](random-price-null.md) |
-| The result looks too good after many tries | [deflated Sharpe and trials](deflated-sharpe-and-trials.md) |
+| Too good after many tries; a first look at many signals | [deflated Sharpe, trials](deflated-sharpe-and-trials.md), [quick screen](quick-screen.md) |
 | Big drawdown in a short period | [benchmark and drawdowns](benchmark-and-drawdowns.md), then the macro row below |
 | Works in some years only | [benchmark and drawdowns](benchmark-and-drawdowns.md) (`by_year`), [walk-forward](walk-forward.md) |
 | Few trades | [diagnose and audit](diagnose-and-audit.md) (`enough-trades`), [rule test](rule-test.md) on more assets |

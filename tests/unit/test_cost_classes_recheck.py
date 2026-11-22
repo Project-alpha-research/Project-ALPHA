@@ -108,3 +108,13 @@ def test_an_explicit_cost_still_wins(stated: Path) -> None:
     assert (used["fee_bps"], used["slippage_bps"]) == (1.0, 2.0)
     assert used["asset_class"] is None  # as every stored stated-cost run of SPY recorded it
     assert cc.CLASS_DEFAULT_LABEL not in stored["spine"]["labels"]
+
+
+def test_recheck_of_an_idea_file_without_costs_finds_its_run_stored_with_the_flat_default(
+    stated: Path,
+) -> None:
+    # Before M99 a spec without costs meant the flat default, so its runs are stored as `stated`.
+    found = _recheck(stated, _idea())
+    assert found["computed"] is True
+    assert found["match"] is True, found["differences"]
+    assert "states no costs" in found["identity_note"]

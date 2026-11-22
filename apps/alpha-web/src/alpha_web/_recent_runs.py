@@ -2,7 +2,7 @@
 
 A bounded, read-only read of what is already stored (run manifests and equity curves). Nothing here
 computes a statistic: the trade count, the out-of-sample Sharpe and the evidence word are relayed as
-the run stored them. The sparkline is the stored equity curve thinned to a fixed number of points.
+the run stored them. An older run without a stored reading gets its word from the report's own function. The sparkline is the stored equity curve thinned to a fixed number of points.
 """
 
 from __future__ import annotations
@@ -11,6 +11,9 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from alpha_cli.spine.facts import read_json
+from alpha_cli.spine.reading import build_reading, reading_word
+from alpha_core import DataError
 from alpha_web import _rule_test, _runs
 
 SPARK_POINTS = 60
@@ -30,6 +33,20 @@ def thin(values: list[float], points: int = SPARK_POINTS) -> list[float]:
         return values
     step = (len(values) - 1) / (points - 1)
     return [values[round(index * step)] for index in range(points)]
+
+
+def _derived_word(manifest: Mapping[str, Any], rdir: Path) -> str | None:
+    """The reading word an older run did not store, worked out from its stored numbers.
+
+    Uses the function the report uses. A run with no out-of-sample numbers, or numbers that
+    cannot be read, gives ``None``: the table then points to the report.
+    """
+    if not isinstance(manifest.get("oos_metrics"), Mapping):
+        return None
+    try:
+        return reading_word(build_reading(manifest, read_json(rdir / "diagnostics.json")))
+    except (AttributeError, KeyError, TypeError, ValueError, DataError):
+        return None
 
 
 def _row(record: dict[str, Any], *, data_dir: Path, spark: bool) -> dict[str, Any]:
@@ -55,7 +72,7 @@ def _row(record: dict[str, Any], *, data_dir: Path, spark: bool) -> dict[str, An
         "trades": trades if isinstance(trades, int) and not isinstance(trades, bool) else None,
         "tries": tries if isinstance(tries, int) and not isinstance(tries, bool) else None,
         "oos_sharpe": _number(_map(manifest.get("oos_metrics")).get("sharpe")),
-        "evidence": record["evidence"],
+        "evidence": record["evidence"] or _derived_word(manifest, rdir),
         "spark": thin(curve),
     }
 

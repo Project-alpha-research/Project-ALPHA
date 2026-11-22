@@ -353,3 +353,11 @@ def test_pull_partial_and_total_failure(stored: Path, monkeypatch: pytest.Monkey
 )
 def test_bad_arguments_fail(stored: Path, args: list[str]) -> None:
     assert CliRunner().invoke(context_app, args).exit_code != 0
+
+
+def test_show_prints_a_table_by_default(stored: Path) -> None:
+    out = CliRunner().invoke(context_app, ["show", "X"]).stdout
+
+    assert "obs date\tvalue\tknown from" in out
+    assert "series_id" not in out and "{" not in out
+    assert "2024-02-01\t3.0\t2024-02-02" in out

@@ -111,6 +111,17 @@ def _table(payload: dict[str, Any]) -> str:
     return "\n".join(lines) if lines else "No context data is stored yet."
 
 
+def _show_table(payload: dict[str, Any]) -> str:
+    """One stored series as a plain table; the view and cutoff come first."""
+    cutoff = f", known as of {payload['as_of']}" if payload["as_of"] else ""
+    head = f"{payload['series_id']}: view {payload['view']}{cutoff}"
+    if not payload["rows"]:
+        return f"{head}\nNo observations in this range."
+    lines = [head, "obs date\tvalue\tknown from"]
+    lines += [f"{r['obs_date']}\t{r['value']}\t{r['known_from']}" for r in payload["rows"]]
+    return "\n".join(lines)
+
+
 @context_app.command("list")
 def list_series(json_out: bool = typer.Option(False, "--json")) -> None:
     """List stored FRED series and free CFTC/FINRA tables with provenance (no network)."""
@@ -167,15 +178,13 @@ def show(
         {"obs_date": str(r["obs_date"]), "value": r["value"], "known_from": str(r["known_from"])}
         for r in df.iter_rows(named=True)
     ]
-    _emit(
-        {
-            "series_id": series_id,
-            "view": {"known": "as_known", "first": "first_release", "latest": "latest"}[view],
-            "as_of": str(cutoff) if view == "known" else None,
-            "rows": rows,
-        },
-        json_out,
-    )
+    payload = {
+        "series_id": series_id,
+        "view": {"known": "as_known", "first": "first_release", "latest": "latest"}[view],
+        "as_of": str(cutoff) if view == "known" else None,
+        "rows": rows,
+    }
+    emit(payload, json_out=json_out, fallback=_show_table(payload))
 
 
 def _endpoint(df: pl.DataFrame, when: date, cutoff: date) -> float | None:

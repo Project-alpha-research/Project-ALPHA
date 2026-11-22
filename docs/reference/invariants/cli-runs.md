@@ -29,7 +29,7 @@ sources:
   - tests/unit/test_suite_*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 4a642a5420f95c34
+verified: fea476f4018e929c
 ---
 
 # Command line runs invariants

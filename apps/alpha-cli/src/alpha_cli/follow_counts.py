@@ -65,7 +65,8 @@ def follows_of_card(home: Path, card: str) -> list[dict[str, Any]]:
         }
         try:
             facts = follow_store.show_facts(home, follow_id)
-        except (SpineError, JournalRefusal):
+        except (SpineError, JournalRefusal, OSError, ValueError):
+            # An unreadable or non-UTF-8 journal is this follow's fault, never the whole page's.
             rows.append({**shown, "state": "broken", "sessions": 0, "stop_reason": ""})
             continue
         sessions = sum(n for kind, n in facts["entries"].items() if kind not in {"start", "stop"})

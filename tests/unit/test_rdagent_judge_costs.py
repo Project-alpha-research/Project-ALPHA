@@ -88,12 +88,10 @@ def test_old_stored_scores_are_not_altered_and_are_named() -> None:
     assert costs.other_cost_note(0) == ""
 
 
-def test_daily_rule_study_reads_the_table(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_daily_rule_study_terms_match_the_table() -> None:
+    # The study file is hash-bound for daily approvals, so it cannot import the unbound table;
+    # its stated terms must equal the crypto spot row.
     economics, _ = daily_rule_terms_proposal()
     row = cost_classes.ROWS["crypto_spot"]
     assert economics.fee_bps_per_side == row.fee_bps
     assert economics.slippage_bps_per_side == row.slippage_bps
-    changed = dataclasses.replace(row, fee_bps=12.0, slippage_bps=7.0)
-    monkeypatch.setitem(cost_classes.ROWS, "crypto_spot", changed)
-    economics, _ = daily_rule_terms_proposal()
-    assert (economics.fee_bps_per_side, economics.slippage_bps_per_side) == (12.0, 7.0)

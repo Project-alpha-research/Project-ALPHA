@@ -2,15 +2,16 @@
 
 ## Answer
 
-The RD-Agent judge and the native daily rule study now read fee and slippage from `ROWS["crypto_spot"]` in `spine/cost_classes.py`.
-Both keep no cost number of their own. A change of the row reaches their next score.
+The RD-Agent judge now reads fee and slippage from `ROWS["crypto_spot"]` in `spine/cost_classes.py`. The native daily rule study keeps its
+numbers: its file is hash-bound for daily approvals and may not import the table (`test_daily_guard_boundary`). A test holds them equal.
+The judge keeps no cost number of its own. A change of the row reaches its next score.
 
 ## Call sites
 
 | Site | Old numbers | New source |
 |---|---|---|
 | `_rdagent_judge.py` (`FEE_BPS`, `SLIPPAGE_BPS`; replay, gap replay, spread cost) | fee 10, slippage 6 | table row `crypto_spot`: fee 10, slippage 5 (`_rdagent_costs.judge_costs()`, read at each call) |
-| `_native_daily_rule_study.py` (`daily_rule_terms_proposal`) | fee 10, slippage 5 | same row: numbers unchanged (10, 5) |
+| `_native_daily_rule_study.py` (`daily_rule_terms_proposal`) | fee 10, slippage 5 | kept in the bound file; a test holds them equal to the row |
 | `research_cmds.py` (~line 3135, 1 and 2 bp) | flat 1 and 2 | NOT changed: old research-case lane, scheduled for deletion |
 
 ## Decisions

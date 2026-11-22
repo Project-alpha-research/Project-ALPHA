@@ -386,7 +386,9 @@ def test_plan_blockers_and_optional_command_controls(tmp_path: Path) -> None:
     paper = _suite.build_suite_plan(
         store, project_id, experiment_id, "paper_preflight", data_dir=tmp_path
     )
-    assert "--starting-cash" in paper.steps[0].argv
+    assert paper.steps == ()
+    assert paper.ready is False
+    assert "paper trading was removed" in " ".join(paper.blockers)
 
     stress = _suite.build_suite_plan(
         store, project_id, experiment_id, "fixed_stress", data_dir=tmp_path

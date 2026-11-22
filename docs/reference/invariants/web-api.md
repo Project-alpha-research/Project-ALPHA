@@ -12,7 +12,7 @@ sources:
   - tests/unit/test_owner_auth_api.py
   - tests/unit/test_owner_local_confirmation.py
   - tests/unit/test_run_context_authority.py
-verified: eeed7d9bae616931
+verified: e437a567bae8eef8
 ---
 
 # Web API invariants
@@ -67,7 +67,7 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
   `alpha_validation`, `alpha_forecast`, `alpha_research`, `alpha_study` and `alpha_mcp` — including indirect imports.
   So any `alpha_cli` module you import must not pull those in. See [engineering § Import layers](engineering.md#import-layers).
 - Seams in use today: `run_store`, `catalog`, `run_context`, `artifact_contract`, `run_projection`, `figure_cache`,
-  `job_capacity`, `durable_lease`, `ml_contract`, `suite_catalog`, `paper_store`, `paper_readiness`,
+  `job_capacity`, `durable_lease`, `ml_contract`, `suite_catalog`,
   `assistant_contracts`, and `owner_auth` (exception below).
   A new `alpha_cli` import is an architecture change: keep it small and engine-free.
 - `tests/unit/test_public_seams.py` checks that `alpha_cli.catalog` and `alpha_cli.run_store` load without numpy, scipy,

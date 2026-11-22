@@ -50,6 +50,7 @@
     "AttemptStatus",
     "AuthorKind",
     "ControlStore",
+    "DATABASE_NAME",
     "DecisionVerdict",
     "EvidenceStatus",
     "JobStatus",

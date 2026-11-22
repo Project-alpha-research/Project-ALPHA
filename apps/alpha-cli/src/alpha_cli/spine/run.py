@@ -37,7 +37,7 @@ from alpha_cli.spine.ledger import append_trial, first_same_test, read_trials
 from alpha_cli.spine.owner_rule import OwnerRule, manifest_fields
 from alpha_cli.spine.reading import build_reading, ledger_fields, stored_reading
 from alpha_cli.spine.spec import IdeaSpec
-from alpha_cli.spine.stores import annualisation, resolve_asset
+from alpha_cli.spine.stores import ResolvedAsset, annualisation, resolve_asset
 from alpha_cli.spine.trial_reader import LedgerSnapshot, spine_snapshot
 from alpha_cli.validate_cmds import write_validation_run
 from alpha_core import Bar, CorporateAction, DataError
@@ -167,12 +167,37 @@ def prepare_asset(
         resolved.symbol, data_dir=resolved.data_dir, as_of=reserve.CUTOFF
     )
     verify_inputs([resolved], record)
+    return prepare_bars(
+        idea,
+        resolved,
+        (bars, dividends, snapshot_id),
+        home,
+        knobs,
+        result,
+        # Always the same: whether a bar was held back is a fact about held-back rows.
+        {"research_cutoff": reserve.CUTOFF_DATE},
+    )
+
+
+def prepare_bars(
+    idea: IdeaSpec,
+    resolved: ResolvedAsset,
+    loaded: tuple[list[Bar], list[CorporateAction], str | None],
+    home: Path,
+    knobs: _gauntlet.GauntletParams,
+    result: dict[str, Any],
+    identity_fields: dict[str, Any],
+    *,
+    ppy_given: tuple[int, str] | None = None,
+) -> Prepared:
+    """The run spec and run identity for bars already loaded (a rule test or a confirmation)."""
+    bars, dividends, snapshot_id = loaded
     result.update(
         first_ts=bars[0].ts.isoformat(), last_ts=bars[-1].ts.isoformat(), n_bars=len(bars)
     )
     if (bars[-1].ts - bars[0].ts).total_seconds() < 3 * 365.25 * 86400:
         result["labels"].append("short-history")
-    ppy, basis = annualisation([bar.ts for bar in bars], bar_size=DAILY)
+    ppy, basis = ppy_given or annualisation([bar.ts for bar in bars], bar_size=DAILY)
     result["periods_per_year"] = ppy
     result["periods_per_year_basis"] = basis
     klass = cost_classes.asset_class(resolved, by_symbol=idea.costs_class_default)
@@ -197,15 +222,14 @@ def prepare_asset(
             "command": "validate",
             "symbol": resolved.symbol,
             "snapshot_id": snapshot_id,
-            # Always the same: whether a bar was held back is a fact about held-back rows.
-            "research_cutoff": reserve.CUTOFF_DATE,
+            **identity_fields,
             **_fields(spec),
             **{key: value for key, value in _fields(knobs).items() if key != "max_workers"},
             "spec_sha256": idea.spec_sha256,
             "source": resolved.source,
             "store": resolved.store_name,
             "labels": identity_labels(result["labels"]),
-            "data_health": identity_record(record),
+            "data_health": identity_record(result["data_health"]),
         },
         source_fingerprint=_runner.source_fingerprint(bars, dividends=dividends),
     )
@@ -408,6 +432,20 @@ def write_run(
     return manifest
 
 
+def gauntlet_knobs(seed: int, quick: bool) -> _gauntlet.GauntletParams:
+    """The engine settings of a rule test: the full gauntlet, or the small labelled one.
+
+    The full gauntlet runs its independent engine runs on all cores but one; the results do not
+    depend on the worker count. The small one stays serial.
+    """
+    knobs = _gauntlet.GauntletParams(seed=seed, max_workers=max(1, (os.cpu_count() or 1) - 1))
+    if quick:
+        knobs = replace(
+            knobs, tier1_paths=20, tier2_paths=4, tier3_paths=4, n_resamples=50, max_workers=1
+        )
+    return knobs
+
+
 def new_result(asset: str, *, quick: bool, no_diagnose: bool) -> dict[str, Any]:
     """The empty result of one asset, before anything is computed."""
     result: dict[str, Any] = dict.fromkeys(
@@ -445,16 +483,6 @@ def new_result(asset: str, *, quick: bool, no_diagnose: bool) -> dict[str, Any]:
     return result
 
 
-def gauntlet_knobs(seed: int, quick: bool) -> _gauntlet.GauntletParams:
-    """The full gauntlet runs its independent engine runs on all cores but one (results do not
-    depend on the worker count); ``quick`` is the small serial gauntlet."""
-    if quick:
-        return _gauntlet.GauntletParams(
-            seed=seed, tier1_paths=20, tier2_paths=4, tier3_paths=4, n_resamples=50, max_workers=1
-        )
-    return _gauntlet.GauntletParams(seed=seed, max_workers=max(1, (os.cpu_count() or 1) - 1))
-
-
 def run_idea(
     idea: IdeaSpec,
     *,
@@ -486,6 +514,11 @@ def run_idea(
                     report_time=report_time,
                 )
             )
+            # After the identity, so a stored run keeps its id; recorded with the run and row.
+            confirmed = reserve.confirmed_in_family(home, idea.rule.kind, result["symbol"])
+            if confirmed is not None:
+                result["labels"].append(reserve.CONFIRMED)
+                print(reserve.confirmed_sentence(confirmed))
         except SpineError:
             raise
         except (

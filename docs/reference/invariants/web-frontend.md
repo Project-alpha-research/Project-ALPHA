@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: e2d46b2d8544373c
+verified: 8cd3ea2164dc85ab
 ---
 
 # Web frontend invariants
@@ -80,7 +80,7 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
 
 ## Today screen
 
-- The Today screen (Research › Today, pane `FollowToday`, a workflow pane) shows `alpha follow today --json` from `GET /api/follow/today`.
+- The Today screen (Overview, and Research › Today; pane `FollowToday`, a workflow pane) shows `alpha follow today --json` from `GET /api/follow/today`.
   A selected card loads `GET /api/follow/{id}`. It computes nothing: decisions, readings, paper figures and the replay check
   are shown as the command gives them.
 - It says `Paper only. Forward use; not research. Not advice.` Groups run NEW SIGNAL, OPEN PAPER POSITION, NOTHING TODAY,

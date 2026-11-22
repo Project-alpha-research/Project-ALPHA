@@ -61,7 +61,6 @@ def test_empty_generic_command_is_unknown() -> None:
         (["setup", "trade"], "empirical"),
         (["data", "audit"], "safe"),
         (["data", "repair"], "owner_only"),
-        (["paper", "run"], "owner_only"),
         (["pricing", "price"], "unknown"),
         (["screener", "run"], "unknown"),
     ],
@@ -77,7 +76,7 @@ def _subcommands(root: str) -> list[str]:
 
 
 @pytest.mark.parametrize(
-    "root", ["context", "crypto-data", "provider", "strategy-candidate", "data", "paper"]
+    "root", ["context", "crypto-data", "provider", "strategy-candidate", "data"]
 )
 def test_every_served_subcommand_of_a_classified_root_is_not_unknown(root: str) -> None:
     """An unlisted verb must fail this test rather than silently classify ``unknown``."""
@@ -94,3 +93,18 @@ def test_every_served_root_is_classified() -> None:
     assert roots
     for root in roots:
         assert classify_generic_command([root, "x"]) != "unknown", root
+
+
+def test_no_command_word_or_web_route_reaches_a_broker() -> None:
+    """IBKR paper trading is removed: no CLI group or web path may name a broker or order."""
+    import json
+    from pathlib import Path
+
+    banned = ("paper", "ibkr", "broker", "order")
+    group = get_group(app)
+    assert not [name for name in group.commands if any(word in name for word in banned)]
+    spec = json.loads(
+        (Path(__file__).parents[2] / "apps/alpha-web/frontend/openapi.json").read_text()
+    )
+    reached = [path for path in spec["paths"] if any(word in path.lower() for word in banned)]
+    assert not reached, reached

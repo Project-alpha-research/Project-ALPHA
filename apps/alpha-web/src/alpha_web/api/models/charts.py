@@ -7,7 +7,6 @@ from typing import Any, Literal
 from pydantic import Field
 
 from ._base import StrictModel
-from .paper import PaperCandleMarker
 
 
 class EquitySeries(StrictModel):
@@ -444,7 +443,6 @@ class Candles(StrictModel):
     snapshot_id: str | None
     provenance: CandleProvenance
     bars: list[Candle]
-    paper_markers: list[PaperCandleMarker]
 
 
 class OverlaySeries(StrictModel):

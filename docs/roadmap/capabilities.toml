@@ -470,6 +470,29 @@ needs = []
 state = "Working"
 
 [[capability]]
+id = "idea-workspace"
+name = "Idea workspace: one page for one idea (Workstation, Ideas)"
+what = "See the whole story of one idea on one screen: the card, the hypothesis, the rule built from it, the data, every test and setup find in a timeline, the real charts and checks of the selected run, the stored tool results, the paper follow and the open points. A list of cards comes first, newest first. Read only."
+see_it = ["Workstation: View, Research, Ideas (or the link under 'no research cases yet')", "uv run alpha idea file <id> --json"]
+entry_points = [
+  "api: GET /api/ideas",
+  "api: GET /api/ideas/{card}",
+  "panel: apps/alpha-web/frontend/src/panels/idea/IdeaWorkspace.tsx",
+  "cli: alpha idea file",
+]
+proof_synthetic = [
+  "tests/unit/test_web_ideas_routes.py::test_the_real_cli_answers_the_models_end_to_end",
+  "tests/unit/test_idea_file.py::test_follows_list_only_this_cards_follows_and_the_map_step_turns_true",
+  "tests/unit/test_web_activity_areas.py::test_ideas_walk_is_one_level_deep_so_its_cost_is_bounded",
+  "apps/alpha-web/frontend/e2e/idea-workspace.spec.ts::the list opens one page that tells the whole story, and a click on a test changes the charts",
+]
+docs = ["docs/reference/invariants/web-frontend-ideas.md", "docs/reference/invariants/web-api-reads.md", "docs/reference/invariants/cli-idea-file.md"]
+real_data = "not yet confirmed (to check on the Mac later)"
+needs = []
+state = "Partial"
+missing = "Proven on synthetic records and a fixture browser run only; no end-to-end smoke check. Step 9 (RD-Agent work) is not linked to an idea yet. A follow change shows within a minute (the page looks again on a timer), not at once. The tear sheet is not mounted yet."
+
+[[capability]]
 id = "forward-follow"
 name = "Follow a tested idea on paper (alpha follow)"
 what = "Follow a rule test or setup find forward on paper. The follow is frozen when it starts. An append-only, hash-chained journal records its sessions. A changed spec starts a new version. For a rule test, `alpha follow update` books one entry per new session: the rule's numbers, a plain decision and a paper fill at the next open, with a replay check against the stored bars."
@@ -520,6 +543,29 @@ real_data = "not yet confirmed (to check on the Mac later)"
 needs = []
 state = "Partial"
 missing = "Proven with in-process unit tests only; no smoke test through the installed program. Follow sizes are fixed paper sizes, not marked to market. No real-data run recorded."
+
+[[capability]]
+id = "reserved-period-confirmation"
+name = "Confirm one tested idea once on the reserved period"
+what = "Test one frozen rule test once on the held-back data from 2024-01-01 on, when the owner asks: ten slots in all, each idea once, the result recorded whatever it is."
+see_it = [
+  "uv run alpha confirm plan <run id>",
+  "uv run alpha confirm list",
+]
+entry_points = [
+  "cli: alpha confirm",
+  "code: apps/alpha-cli/src/alpha_cli/reserved_slots.py",
+]
+proof_synthetic = [
+  "tests/bias_guards/test_reserved_confirmation_future_poison.py::test_one_confirmation_reads_reserved_bars_only_after_its_receipt",
+  "tests/unit/test_reserved_slots.py::test_two_processes_cannot_both_take_the_last_slot",
+  "tests/unit/test_reserved_confirmation_surfaces.py::test_plan_says_what_is_spent_and_run_prints_the_plan_before_it_spends",
+]
+docs = ["docs/reference/project/reserved-period.md"]
+real_data = "not yet: no real slot may be used in a test; the owner's first use is the real run"
+needs = []
+state = "Partial"
+missing = "tested in-process on synthetic data only; Setup Lab runs cannot be confirmed yet."
 
 [[capability]]
 id = "follow-today-screen"
@@ -811,7 +857,7 @@ name = "Check data providers and background jobs"
 what = "See which data providers are set up and working, and follow or cancel long-running jobs."
 see_it = [
   "uv run alpha info providers --json, uv run alpha provider check <provider>",
-  "Workstation: View → Jobs & providers",
+  "Workstation: View → Jobs",
 ]
 entry_points = [
   "cli: alpha info providers",
@@ -819,7 +865,6 @@ entry_points = [
   "api: GET /api/providers",
   "api: GET /api/jobs",
   "panel: apps/alpha-web/frontend/src/panels/JobMonitor.tsx",
-  "panel: apps/alpha-web/frontend/src/panels/ProviderSystem.tsx",
 ]
 proof_synthetic = [
   "tests/integration/test_provider_cli.py::test_info_system_reports_local_readiness_only",
@@ -830,28 +875,6 @@ real_data_needs = "Provider credentials (for example a Tiingo key)."
 needs = []
 state = "Partial"
 missing = "job list tested only with a stand-in command; provider checks need real providers"
-
-[[capability]]
-id = "paper-trading"
-name = "Paper trading: practice trading with no real money"
-codes = ["IBKR Paper"]
-what = "Run a strategy against live public prices in a local practice account, or an IBKR practice account; nothing touches real money."
-see_it = [
-  "uv run alpha paper readiness",
-  "Workstation: View → Paper sessions",
-]
-entry_points = [
-  "cli: alpha paper run",
-  "cli: alpha paper readiness",
-  "cli: alpha paper ibkr-run",
-  "api: GET /api/paper/sessions",
-  "panel: apps/alpha-web/frontend/src/panels/PaperMonitor.tsx",
-]
-proof_synthetic = []
-real_data = "not yet confirmed (to check on the Mac later)"
-needs = ["an opt-in setting, live Binance public data, and an IBKR practice account and gateway for stocks"]
-state = "Partial"
-missing = "no end-to-end test; parts tested with stand-ins"
 
 [[capability]]
 id = "ml-lab"

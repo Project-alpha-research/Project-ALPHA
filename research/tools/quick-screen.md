@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/_hypothesis_scan.py
   - apps/alpha-cli/src/alpha_cli/_screen_trials.py
   - apps/alpha-cli/src/alpha_cli/scan_cmds.py
-verified: 0000000000000000
+verified: 9bab39f345a7e8c9
 ---
 
 # Quick screen

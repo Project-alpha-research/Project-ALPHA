@@ -4,7 +4,7 @@ import { workflowPages, type PageId } from './workflowModel'
 const CODES: Record<string, string> = {
   PriceChart: 'CHART', MarketWatch: 'WATCH', DataManager: 'DATA', ResearchCockpit: 'RESEARCH',
   DevelopmentCenter: 'BUILD', StrategyBuilder: 'RULES', Scanner: 'SCAN', Navigator: 'LIBRARY',
-  Literature: 'LITERATURE', ProviderSystem: 'PROVIDERS', Workspaces: 'DESKS', Governance: 'HELP',
+  Literature: 'LITERATURE', Workspaces: 'DESKS', Governance: 'HELP',
   Alerts: 'ALERTS', JobMonitor: 'JOBS', FundingData: 'FUNDING',
 }
 export function functionEntries(profile: Profile) {

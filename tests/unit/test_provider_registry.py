@@ -33,7 +33,6 @@ def test_provider_ids_are_unique_and_historical_sources_come_from_registry() -> 
         "geckoterminal",
         "coinmetrics",
         "defillama",
-        "ibkr",
     } == set(ids)
     historical_ids = {
         provider.id for provider in providers_with_capability("historical_bars", providers)
@@ -134,20 +133,11 @@ def test_tiingo_is_authoritative_daily_equity_provider() -> None:
     assert tiingo.asset_classes == ("stock", "etf")
     assert tiingo.timeframes == ("1D",)
     assert tiingo.research_authority is True
-    assert tiingo.paper_execution is False
     assert tiingo.budget_tier == "free_500_symbols"
     assert [credential.name for credential in tiingo.credential_env] == ["ALPHA_TIINGO_API_KEY"]
 
 
-def test_ibkr_is_paper_only_and_never_a_research_authority() -> None:
-    ibkr = next(provider for provider in provider_definitions(environ={}) if provider.id == "ibkr")
-    assert ibkr.asset_classes == ("stock", "etf", "future")
-    assert ibkr.research_authority is False
-    assert ibkr.paper_execution is True
-    assert "paper_execution" in ibkr.capabilities
-
-
-def test_binance_native_history_capabilities_do_not_change_paper_authority() -> None:
+def test_binance_native_history_capabilities_keep_research_authority_off() -> None:
     binance = next(
         provider for provider in provider_definitions(environ={}) if provider.id == "binance"
     )
@@ -158,7 +148,6 @@ def test_binance_native_history_capabilities_do_not_change_paper_authority() -> 
         "crypto_book_snapshots",
     }.issubset(binance.capabilities)
     assert binance.research_authority is False
-    assert binance.paper_execution is True
 
 
 def test_bybit_is_family_scoped_public_research_data_without_execution() -> None:
@@ -178,7 +167,6 @@ def test_bybit_is_family_scoped_public_research_data_without_execution() -> None
     } == set(bybit.capabilities)
     assert bybit.credential_env == ()
     assert bybit.research_authority is True
-    assert bybit.paper_execution is False
 
 
 def test_crypto_reference_providers_have_distinct_family_authority() -> None:
@@ -202,7 +190,7 @@ def test_crypto_reference_providers_have_distinct_family_authority() -> None:
     )
     assert definitions["coinmetrics"].capabilities == ("crypto_onchain_metrics",)
     assert all(
-        definitions[provider].research_authority and not definitions[provider].paper_execution
+        definitions[provider].research_authority
         for provider in ("coingecko", "geckoterminal", "coinmetrics")
     )
 
@@ -220,7 +208,7 @@ def test_alpaca_is_interim_and_projects_only_credential_presence() -> None:
             for p in provider_definitions(environ=environ, module_available=lambda _: True)
             if p.id == "alpaca"
         )
-        assert provider.research_authority is False and provider.paper_execution is False
+        assert provider.research_authority is False
         assert provider.asset_classes == ("stock", "etf") and provider.timeframes == ("1D",)
         assert provider.budget_tier == "free_basic"
         assert provider.capabilities == ("historical_bars", "corporate_actions")

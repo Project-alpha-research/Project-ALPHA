@@ -835,6 +835,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ideas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Ideas
+         * @description Relay ``alpha idea list --json``: every card, newest first, at most ``MAX_CARDS``.
+         */
+        get: operations["list_ideas_api_ideas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ideas/{card}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Idea File
+         * @description Relay ``alpha idea file <card> --json``; the id is checked as 4 to 12 hex first.
+         */
+        get: operations["idea_file_api_ideas__card__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/jobs": {
         parameters: {
             query?: never;
@@ -1394,86 +1434,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/paper/readiness": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Paper Readiness
-         * @description Machine-derived paper acceptance state; elapsed time cannot mark it passed.
-         */
-        get: operations["get_paper_readiness_api_paper_readiness_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/paper/sessions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Paper Sessions
-         * @description Every complete paper session, newest first, with computed heartbeat staleness.
-         */
-        get: operations["list_paper_sessions_api_paper_sessions_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/paper/sessions/{session_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Paper Session
-         * @description One validated paper session. Reading a stale session never signals its recorded PID.
-         */
-        get: operations["get_paper_session_api_paper_sessions__session_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/paper/sessions/{session_id}/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Paper Events
-         * @description Validated operational events whose sequence is strictly greater than ``after``.
-         */
-        get: operations["get_paper_events_api_paper_sessions__session_id__events_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/projects": {
         parameters: {
             query?: never;
@@ -1812,26 +1772,6 @@ export interface paths {
         get: operations["get_providers_api_providers_get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/providers/{provider_id}/check": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Check Provider
-         * @description Perform one explicit bounded check; ordinary provider reads never enter this path.
-         */
-        post: operations["check_provider_api_providers__provider_id__check_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4769,8 +4709,6 @@ export interface components {
         Candles: {
             /** Bars */
             bars: components["schemas"]["Candle"][];
-            /** Paper Markers */
-            paper_markers: components["schemas"]["PaperCandleMarker"][];
             provenance: components["schemas"]["CandleProvenance"];
             /** Snapshot Id */
             snapshot_id: string | null;
@@ -7049,6 +6987,535 @@ export interface components {
             /** Multiplicity */
             multiplicity: string;
         };
+        /** IdeaAimRow */
+        IdeaAimRow: {
+            /** Aim */
+            aim?: number | null;
+            /** Interval 95 */
+            interval_95?: number[] | null;
+            /** Measure */
+            measure?: string | null;
+            /** Observed */
+            observed?: number | null;
+            /** Relation */
+            relation?: string | null;
+        };
+        /** IdeaCardFacts */
+        IdeaCardFacts: {
+            /** Baseline */
+            baseline?: string | null;
+            /** Claim */
+            claim?: string | null;
+            /** Disproved By */
+            disproved_by?: string | null;
+            /** Edge Lasts */
+            edge_lasts?: string | null;
+            /** Held For */
+            held_for?: string | null;
+            /** How Often */
+            how_often?: string | null;
+            /** Id */
+            id: string;
+            /** Mechanism */
+            mechanism?: string | null;
+            /** Other Side */
+            other_side?: string | null;
+            /** Signal Forms */
+            signal_forms?: string | null;
+            /** Source */
+            source?: string | null;
+            /** Superseded By */
+            superseded_by?: string | null;
+            /** Supersedes */
+            supersedes?: string | null;
+        };
+        /** IdeaChecksRun */
+        IdeaChecksRun: {
+            /**
+             * Declared
+             * @default 0
+             */
+            declared: number;
+            /**
+             * Exploratory
+             * @default 0
+             */
+            exploratory: number;
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+        };
+        /** IdeaCounts */
+        IdeaCounts: {
+            /**
+             * @default {
+             *       "declared": 0,
+             *       "exploratory": 0,
+             *       "total": 0
+             *     }
+             */
+            checks_run: components["schemas"]["IdeaChecksRun"];
+            /**
+             * Distinct Assets
+             * @default 0
+             */
+            distinct_assets: number;
+            /**
+             * Ledger Rows Naming These Runs
+             * @default 0
+             */
+            ledger_rows_naming_these_runs: number;
+            /**
+             * Rule Tests
+             * @default 0
+             */
+            rule_tests: number;
+            /**
+             * Setup Finds
+             * @default 0
+             */
+            setup_finds: number;
+            /**
+             * Tests Linked
+             * @default 0
+             */
+            tests_linked: number;
+            /**
+             * Trials
+             * @default []
+             */
+            trials: components["schemas"]["IdeaTrial"][];
+            /**
+             * Variants Of This Idea
+             * @default 0
+             */
+            variants_of_this_idea: number;
+        };
+        /** IdeaEvidence */
+        IdeaEvidence: {
+            /**
+             * Because
+             * @default []
+             */
+            because: string[];
+            /** Word */
+            word?: string | null;
+        };
+        /** IdeaFile */
+        IdeaFile: {
+            card: components["schemas"]["IdeaCardFacts"];
+            counts: components["schemas"]["IdeaCounts"];
+            /**
+             * Follows
+             * @default []
+             */
+            follows: components["schemas"]["IdeaFollow"][];
+            /** Map */
+            map: components["schemas"]["IdeaMapStep"][];
+            open_points: components["schemas"]["IdeaOpenPoints"];
+            /**
+             * Rdagent
+             * @default []
+             */
+            rdagent: components["schemas"]["IdeaRdAgent"][];
+            /** Readings */
+            readings: components["schemas"]["IdeaTest"][];
+            /**
+             * Readings Shown From
+             * @default 0
+             */
+            readings_shown_from: number;
+            /**
+             * Readings Total
+             * @default 0
+             */
+            readings_total: number;
+        };
+        /** IdeaFindTotals */
+        IdeaFindTotals: {
+            /** Accepted */
+            accepted?: number | null;
+            /** Pending */
+            pending?: number | null;
+            /** Set Aside */
+            set_aside?: number | null;
+        };
+        /** IdeaFollow */
+        IdeaFollow: {
+            /**
+             * Assets
+             * @default []
+             */
+            assets: string[];
+            /** Follow Id */
+            follow_id: string;
+            /** Kind */
+            kind: string;
+            /** Paper Account Percent */
+            paper_account_percent?: number | null;
+            /**
+             * Sessions
+             * @default 0
+             */
+            sessions: number;
+            /** Source Id */
+            source_id: string;
+            /** Started At */
+            started_at: string;
+            /** State */
+            state: string;
+            /**
+             * Stop Reason
+             * @default
+             */
+            stop_reason: string;
+            /** Version */
+            version: number;
+        };
+        /** IdeaList */
+        IdeaList: {
+            /** Cards */
+            cards: components["schemas"]["IdeaListRow"][];
+            /** Total */
+            total: number;
+            /**
+             * Truncated
+             * @default false
+             */
+            truncated: boolean;
+        };
+        /** IdeaListRow */
+        IdeaListRow: {
+            /**
+             * Claim
+             * @default
+             */
+            claim: string;
+            /** Id */
+            id: string;
+            /**
+             * Not Stated
+             * @default []
+             */
+            not_stated: string[];
+            /** Saved At */
+            saved_at?: string | null;
+            /**
+             * Tested
+             * @default false
+             */
+            tested: boolean;
+            /**
+             * Tests Linked
+             * @default 0
+             */
+            tests_linked: number;
+        };
+        /** IdeaMapStep */
+        IdeaMapStep: {
+            /**
+             * Evidence
+             * @default []
+             */
+            evidence: string[];
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /** State */
+            state: string;
+            /** Step */
+            step: string;
+        };
+        /** IdeaMeasure */
+        IdeaMeasure: {
+            /** Basis */
+            basis?: string | null;
+            /** Interval 95 */
+            interval_95?: number[] | null;
+            /** Name */
+            name: string;
+            /**
+             * Not To Be Read
+             * @default false
+             */
+            not_to_be_read: boolean;
+            /** Value */
+            value?: number | null;
+        };
+        /** IdeaNextStep */
+        IdeaNextStep: {
+            /** Command */
+            command: string;
+            /** Step */
+            step: string;
+        };
+        /** IdeaOpenPoints */
+        IdeaOpenPoints: {
+            /**
+             * Map Not Yet
+             * @default []
+             */
+            map_not_yet: string[];
+            /**
+             * Next Steps
+             * @default []
+             */
+            next_steps: components["schemas"]["IdeaNextStep"][];
+            /**
+             * Not Stated
+             * @default []
+             */
+            not_stated: string[];
+            /**
+             * Too Little To Read
+             * @default []
+             */
+            too_little_to_read: string[];
+        };
+        /**
+         * IdeaRdAgent
+         * @description One stored RD-Agent journey linked to the card (`alpha idea link --rdagent`).
+         */
+        IdeaRdAgent: {
+            /**
+             * Exploratory
+             * @default false
+             */
+            exploratory: boolean;
+            /** Iteration */
+            iteration?: number | null;
+            /** Name */
+            name?: string | null;
+            /** Problem */
+            problem?: string | null;
+            /** Ref */
+            ref: string;
+            /**
+             * Steps
+             * @default []
+             */
+            steps: components["schemas"]["IdeaRdAgentStep"][];
+        };
+        /** IdeaRdAgentStep */
+        IdeaRdAgentStep: {
+            /** Text */
+            text?: string | null;
+            /** Title */
+            title?: string | null;
+            /** What This Means */
+            what_this_means?: string | null;
+            /** Who */
+            who?: string | null;
+        };
+        /** IdeaReading */
+        IdeaReading: {
+            /**
+             * @default {
+             *       "rows": []
+             *     }
+             */
+            aim: components["schemas"]["IdeaReadingAim"];
+            /**
+             * Checks
+             * @default []
+             */
+            checks: components["schemas"]["IdeaReadingCheck"][];
+            /** @default {} */
+            costs: components["schemas"]["IdeaReadingCosts"];
+            /** @default {} */
+            counts: components["schemas"]["IdeaReadingCounts"];
+            /**
+             * @default {
+             *       "because": []
+             *     }
+             */
+            evidence: components["schemas"]["IdeaEvidence"];
+            /**
+             * Measures
+             * @default []
+             */
+            measures: components["schemas"]["IdeaMeasure"][];
+            /** Sentence */
+            sentence?: string | null;
+        };
+        /** IdeaReadingAim */
+        IdeaReadingAim: {
+            /** Basis */
+            basis?: string | null;
+            /**
+             * Rows
+             * @default []
+             */
+            rows: components["schemas"]["IdeaAimRow"][];
+            /** Source */
+            source?: string | null;
+        };
+        /** IdeaReadingCheck */
+        IdeaReadingCheck: {
+            /**
+             * Detail
+             * @default
+             */
+            detail: string;
+            /** Name */
+            name: string;
+            /** State */
+            state: string;
+        };
+        /** IdeaReadingCosts */
+        IdeaReadingCosts: {
+            /** Line */
+            line?: string | null;
+            /** Periods */
+            periods?: string | null;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** IdeaReadingCounts */
+        IdeaReadingCounts: {
+            /** Best Of */
+            best_of?: number | null;
+            /** Family Id */
+            family_id?: string | null;
+            /** Family Trials */
+            family_trials?: number | null;
+            /** Trial N */
+            trial_n?: number | null;
+            /** Variants Tried */
+            variants_tried?: number | null;
+        };
+        /** IdeaStudy */
+        IdeaStudy: {
+            /** Id */
+            id: string;
+            /**
+             * Labels
+             * @default []
+             */
+            labels: string[];
+            /** Occurrences */
+            occurrences?: number | null;
+            /** Problem */
+            problem?: string | null;
+            /** Reading */
+            reading?: string | null;
+        };
+        /**
+         * IdeaTest
+         * @description One linked test: a rule test or a setup find, in the order the file lists them.
+         */
+        IdeaTest: {
+            aim?: components["schemas"]["IdeaAimRow"] | null;
+            /**
+             * Checks
+             * @default []
+             */
+            checks: components["schemas"]["IdeaToolCheck"][];
+            /**
+             * Figures Available
+             * @default []
+             */
+            figures_available: string[];
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /**
+             * Labels
+             * @default []
+             */
+            labels: string[];
+            /** Problem */
+            problem?: string | null;
+            reading?: components["schemas"]["IdeaReading"] | null;
+            /** Recorded At */
+            recorded_at?: string | null;
+            /** Sentence */
+            sentence?: string | null;
+            /**
+             * Studies
+             * @default []
+             */
+            studies: components["schemas"]["IdeaStudy"][];
+            /**
+             * @default {
+             *       "assets": []
+             *     }
+             */
+            tested: components["schemas"]["IdeaTested"];
+            /** @default {} */
+            totals: components["schemas"]["IdeaFindTotals"];
+            /** Word */
+            word?: string | null;
+        };
+        /**
+         * IdeaTested
+         * @description What a linked test looked at. A rule test fills asset..held_back; a find, idea..assets.
+         */
+        IdeaTested: {
+            /** Asset */
+            asset?: string | null;
+            /**
+             * Assets
+             * @default []
+             */
+            assets: string[];
+            /** Context Bars */
+            context_bars?: number | null;
+            /** Data From */
+            data_from?: string | null;
+            /** Data To */
+            data_to?: string | null;
+            /** Held Back */
+            held_back?: string | null;
+            /** Idea */
+            idea?: string | null;
+            /** Rule */
+            rule?: string | null;
+            /** Scored From */
+            scored_from?: string | null;
+            /** Scored To */
+            scored_to?: string | null;
+        };
+        /** IdeaToolCheck */
+        IdeaToolCheck: {
+            /**
+             * File
+             * @default
+             */
+            file: string;
+            /**
+             * Labels
+             * @default []
+             */
+            labels: string[];
+            /**
+             * Reading
+             * @default
+             */
+            reading: string;
+            /** Recorded At */
+            recorded_at?: string | null;
+            /** Tool */
+            tool: string;
+            /** Word */
+            word: string;
+        };
+        /** IdeaTrial */
+        IdeaTrial: {
+            /** Family Trials */
+            family_trials?: number | null;
+            /** Run */
+            run: string;
+            /** Trial N */
+            trial_n?: number | null;
+            /** Variants Tried */
+            variants_tried?: number | null;
+        };
         /** JobDetail */
         JobDetail: {
             /** Command */
@@ -7239,7 +7706,6 @@ export interface components {
         JsonObject: {
             [key: string]: components["schemas"]["JsonValue"];
         };
-        JsonScalar: string | number | boolean | null;
         JsonValue: unknown;
         /** KronosCacheStatus */
         KronosCacheStatus: {
@@ -9072,206 +9538,6 @@ export interface components {
             /** Token */
             token: string;
         };
-        /** PaperCandleMarker */
-        PaperCandleMarker: {
-            /**
-             * Event Type
-             * @enum {string}
-             */
-            event_type: "intent" | "order" | "fill" | "cancel" | "expired";
-            /** Exact Ts */
-            exact_ts: number;
-            /**
-             * Execution Mode
-             * @enum {string}
-             */
-            execution_mode: "local_sandbox" | "ibkr_paper";
-            /** Intent Id */
-            intent_id: string | null;
-            /** Price */
-            price: number | null;
-            /** Quantity */
-            quantity: number | null;
-            /** Sequence */
-            sequence: number;
-            /** Session Id */
-            session_id: string;
-            /** Side */
-            side: string | null;
-            /** T */
-            t: number;
-        };
-        /** PaperEvent */
-        PaperEvent: {
-            /**
-             * Event Type
-             * @enum {string}
-             */
-            event_type: "lifecycle" | "intent" | "risk_check" | "connection" | "account_snapshot" | "order" | "fill" | "cancel" | "expired" | "rejection" | "position" | "reconciliation" | "reconciliation_warning";
-            /** Payload */
-            payload: {
-                [key: string]: components["schemas"]["JsonScalar"];
-            };
-            /** Recorded At */
-            recorded_at: string;
-            /** Schema Version */
-            schema_version: number;
-            /** Sequence */
-            sequence: number;
-            /** Session Id */
-            session_id: string;
-            /** Ts Event Ns */
-            ts_event_ns: number | null;
-        };
-        /** PaperReadinessBlocker */
-        PaperReadinessBlocker: {
-            /** Event Type */
-            event_type: string;
-            /** Sequence */
-            sequence: number;
-            /** Session Id */
-            session_id: string;
-        };
-        /** PaperReadinessEvidence */
-        PaperReadinessEvidence: {
-            /** Event Type */
-            event_type: string;
-            /**
-             * Execution Mode
-             * @enum {string}
-             */
-            execution_mode: "local_sandbox" | "ibkr_paper";
-            /** Sequence */
-            sequence: number;
-            /** Session Id */
-            session_id: string;
-        };
-        /** PaperReadinessReport */
-        PaperReadinessReport: {
-            /** Blocking Events */
-            blocking_events: components["schemas"]["PaperReadinessBlocker"][];
-            /**
-             * Derived From Elapsed Time
-             * @constant
-             */
-            derived_from_elapsed_time: false;
-            /**
-             * Futures Research Supported
-             * @constant
-             */
-            futures_research_supported: false;
-            /**
-             * Legacy Journals
-             * @constant
-             */
-            legacy_journals: "monitoring_only";
-            /**
-             * Live Capital Routing
-             * @constant
-             */
-            live_capital_routing: "absent";
-            /** Paper Passed */
-            paper_passed: boolean;
-            /** Plans */
-            plans: {
-                [key: string]: unknown;
-            }[];
-            /** Predicates */
-            predicates: {
-                [key: string]: boolean;
-            };
-            /** Requirements */
-            requirements: components["schemas"]["PaperReadinessRequirement"][];
-            /**
-             * Schema Version
-             * @constant
-             */
-            schema_version: 2;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "passed" | "pending";
-            /** Tamper Detected */
-            tamper_detected: boolean;
-            /**
-             * What If Credit
-             * @constant
-             */
-            what_if_credit: false;
-        };
-        /** PaperReadinessRequirement */
-        PaperReadinessRequirement: {
-            /** Evidence */
-            evidence: components["schemas"]["PaperReadinessEvidence"][];
-            /** Id */
-            id: string;
-            /** Passed */
-            passed: boolean;
-        };
-        /** PaperSession */
-        PaperSession: {
-            /** Account Alias */
-            account_alias: string | null;
-            /** Decision Artifact Id */
-            decision_artifact_id: string | null;
-            /** Ended At */
-            ended_at: string | null;
-            /**
-             * Execution Mode
-             * @enum {string}
-             */
-            execution_mode: "local_sandbox" | "ibkr_paper";
-            /** Heartbeat At */
-            heartbeat_at: string;
-            /** Instrument Id */
-            instrument_id: string;
-            /** Last Sequence */
-            last_sequence: number;
-            /**
-             * Paper
-             * @constant
-             */
-            paper: true;
-            /** Pid */
-            pid: number | null;
-            /** Provider */
-            provider: string;
-            /**
-             * Reconciliation State
-             * @enum {string}
-             */
-            reconciliation_state: "not_applicable" | "pending" | "matched" | "mismatch" | "halted";
-            /** Risk Profile Id */
-            risk_profile_id: string;
-            /** Sandbox */
-            sandbox: boolean;
-            /** Schema Version */
-            schema_version: number;
-            /** Session Id */
-            session_id: string;
-            /** Snapshot Id */
-            snapshot_id: string;
-            /** Stale */
-            stale: boolean;
-            /** Started At */
-            started_at: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "starting" | "running" | "stopping" | "completed" | "cancelled" | "failed";
-            /** Strategy */
-            strategy: string;
-            /** Strategy Params */
-            strategy_params: {
-                [key: string]: components["schemas"]["JsonScalar"];
-            };
-            /** Symbol */
-            symbol: string;
-            /** Terminal Error */
-            terminal_error: string | null;
-        };
         /** ParamDefinition */
         ParamDefinition: {
             /** Default */
@@ -9579,35 +9845,6 @@ export interface components {
         PropfirmPaths: {
             paths: components["schemas"]["PropfirmPathColumns"];
         };
-        /** ProviderCheckReceipt */
-        ProviderCheckReceipt: {
-            /** Checked At */
-            checked_at: string;
-            /** Content Sha256 */
-            content_sha256: string;
-            /** Details */
-            details: {
-                [key: string]: unknown;
-            };
-            /** Granted Capabilities */
-            granted_capabilities: string[];
-            /** Provider Id */
-            provider_id: string;
-            /** Receipt Id */
-            receipt_id: string;
-            /** Recovery Action */
-            recovery_action: string;
-            /**
-             * Schema Version
-             * @constant
-             */
-            schema_version: 1;
-            /**
-             * Verification State
-             * @enum {string}
-             */
-            verification_state: "verified" | "unverified" | "authentication_failed" | "entitlement_denied" | "rate_limited" | "connectivity_failed" | "schema_drift" | "optional_disabled";
-        };
         /** ProviderDefinition */
         ProviderDefinition: {
             /** Asset Classes */
@@ -9643,8 +9880,6 @@ export interface components {
             options: {
                 [key: string]: components["schemas"]["ProviderOption"];
             };
-            /** Paper Execution */
-            paper_execution: boolean;
             /** Recovery Action */
             recovery_action: string;
             /** Research Authority */
@@ -12633,8 +12868,6 @@ export interface components {
             name: string;
             /** Params */
             params: components["schemas"]["ParamDefinition"][];
-            /** Supports Live Paper */
-            supports_live_paper: boolean;
         };
         /** StrategyProjectWorkspace */
         StrategyProjectWorkspace: {
@@ -12829,12 +13062,8 @@ export interface components {
         SystemStatus: {
             counts: components["schemas"]["SystemCounts"];
             data_dir: components["schemas"]["SystemDataDirectory"];
-            /** Ibkr Paper Enabled */
-            ibkr_paper_enabled: boolean;
             kronos_cache: components["schemas"]["KronosCacheStatus"];
             nautilus: components["schemas"]["NautilusStatus"];
-            /** Paper Enabled */
-            paper_enabled: boolean;
         };
         /**
          * Ticker
@@ -14561,6 +14790,66 @@ export interface operations {
             };
         };
     };
+    list_ideas_api_ideas_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdeaList"];
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    idea_file_api_ideas__card__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdeaFile"];
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
     list_jobs_api_jobs_get: {
         parameters: {
             query?: never;
@@ -15606,128 +15895,6 @@ export interface operations {
             };
         };
     };
-    get_paper_readiness_api_paper_readiness_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaperReadinessReport"];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
-    list_paper_sessions_api_paper_sessions_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaperSession"][];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
-    get_paper_session_api_paper_sessions__session_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                session_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaperSession"];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
-    get_paper_events_api_paper_sessions__session_id__events_get: {
-        parameters: {
-            query?: {
-                after?: number;
-            };
-            header?: never;
-            path: {
-                session_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaperEvent"][];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
     list_projects_api_projects_get: {
         parameters: {
             query?: {
@@ -16320,37 +16487,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProviderDefinition"][];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
-    check_provider_api_providers__provider_id__check_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                provider_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProviderCheckReceipt"];
                 };
             };
             /** @description Stable, redacted Workstation error */

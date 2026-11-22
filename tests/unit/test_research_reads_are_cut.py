@@ -14,6 +14,10 @@ scans `apps/alpha-cli/src` and enforces the cut positively. Every call to `load_
   (followed through helpers, at most MAX_STEPS steps). A helper that is also used as a value
   (passed, stored) or has no caller is not proven.
 
+One read is of its own kind and listed in RECEIPT_READS: the owner's one-shot confirmation reads
+bars after the boundary through `reserve.open_with_receipt`, which reads its slot receipt from the
+control store on every call. Only `spine/confirm_run.py` may call it (a test below).
+
 Any other read is listed in ALLOWED with one reason. `exempt:` means forward use, a display, a
 check of stored bytes or cut by other means the scan cannot prove. `open:` is a known leak; the
 reason names the change that fixes it, and that change removes the entry. A read not proven and
@@ -61,9 +65,6 @@ HOLD_HELPERS: dict[tuple[str, str], str] = {
 ALLOWED: dict[tuple[str, str], str] = {
     ("_data_health.py", "_stock_peers"): "exempt: data health checks every stored bar by design",
     ("_data_health.py", "compute_report"): "exempt: data health checks every stored bar by design",
-    ("_ibkr_paper.py", "load_ibkr_warmup"): "exempt: forward paper use reads the newest bars",
-    ("_paper.py", "load_paper_warmup"): "exempt: forward paper use reads the newest bars",
-    ("daily_scheduler.py", "execute_cycle"): "exempt: the daily scheduler is forward paper use",
     ("follow_source.py", "latest_bar_hashes"): "exempt: follow is forward use (follow separation)",
     ("follow_source.py", "forward_bars"): "exempt: follow is forward use; as_of is now",
     ("follow_source.py", "forward_dividends"): "exempt: follow is forward use; as_of is now",
@@ -84,10 +85,20 @@ ALLOWED: dict[tuple[str, str], str] = {
     ("_native_rule_projection.py", "_snapshot"): "exempt: checks a synthetic snapshot's own rows",
     ("_native_daily_rule_projection.py", "chart_snapshot"): "exempt: checks a frozen chart query",
 }
+# The one read of bars after the boundary: never `exempt:` or `open:`, a kind of its own.
+RECEIPT_READS: dict[tuple[str, str], str] = {
+    ("spine/reserve.py", "open_with_receipt"): (
+        "receipt: the one-shot confirmation of a frozen test; the slot receipt is read from the "
+        "store and its asset and frozen bars are checked on every call"
+    ),
+}
+RECEIPT_READ = (RESERVE, "open_with_receipt")
+RECEIPT_CALLER = "spine/confirm_run.py"
 # (file under alpha_cli/, enclosing function) that reads a bars store file with polars.
 PARQUET_ALLOWED: dict[tuple[str, str], str] = {
     ("spine/reserve.py", "held_back_count"): "exempt: counts stamps from the reserved day on",
     ("spine/reserve.py", "hold"): "exempt: counts stamps from the reserved day on",
+    ("spine/reserve.py", "reserved_span"): "exempt: counts stamps from the reserved day on",
     ("toolbox/run_months.py", "bar_dates"): "exempt: reads stamps up to the run's last bar",
 }
 # fmt: on
@@ -401,12 +412,12 @@ def _keys(
 
 def test_every_unproven_read_is_listed_with_a_reason() -> None:
     rows = unproven()
-    new = sorted(r for r in rows if (r[0], r[1]) not in ALLOWED)
+    new = sorted(r for r in rows if (r[0], r[1]) not in ALLOWED | RECEIPT_READS)
     assert not new, f"a bars or dividends read is not cut by the reserve; cut it or list it: {new}"
 
 
 def test_no_listed_entry_is_stale() -> None:
-    stale = sorted(set(ALLOWED) - _keys(unproven()))
+    stale = sorted((set(ALLOWED) | set(RECEIPT_READS)) - _keys(unproven()))
     assert not stale, f"these entries match no unproven read any more; remove them: {stale}"
 
 
@@ -414,6 +425,28 @@ def test_every_entry_has_a_kind_and_a_reason() -> None:
     entries = {**ALLOWED, **PARQUET_ALLOWED}
     bad = [k for k, why in entries.items() if not why.startswith(("exempt: ", "open: "))]
     assert not bad, f"each reason starts with 'exempt: ' or 'open: ': {bad}"
+
+
+def test_the_receipt_read_is_one_named_function_of_its_own_kind() -> None:
+    assert list(RECEIPT_READS) == [("spine/reserve.py", "open_with_receipt")]
+    assert all(why.startswith("receipt: ") for why in RECEIPT_READS.values())
+    assert not set(RECEIPT_READS) & set(ALLOWED)
+    body = ast.unparse(package().module("spine/reserve.py").functions["open_with_receipt"])
+    assert "reserved_slots.receipt(" in body  # it reads the receipt before its loader calls
+
+
+def test_only_the_confirmation_run_calls_the_receipt_read() -> None:
+    callers, as_value = package().callers(RECEIPT_READ)
+    assert {mod.rel for mod, _, _ in callers} == {RECEIPT_CALLER} and not as_value
+    named = {
+        path.relative_to(ROOT).as_posix()
+        for top in ("apps", "packages", "workers", "scripts")
+        for path in (ROOT / top).rglob("*.py")
+        if not any(p.startswith(".") or p == "node_modules" for p in path.relative_to(ROOT).parts)
+        and "open_with_receipt" in path.read_text(encoding="utf-8")
+    }
+    prefix = "apps/alpha-cli/src/alpha_cli/"
+    assert named == {prefix + "spine/reserve.py", prefix + RECEIPT_CALLER}, named
 
 
 def test_every_listed_helper_exists_and_names_the_reserve() -> None:

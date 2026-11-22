@@ -145,8 +145,6 @@ The stages of one governed research case. Data is split by date groups, 60/20/20
 - **Gate** — `scripts/gate.py`: the local check tool. The real merge gate is CI on the pull request.
 - **Codex** — OpenAI's coding assistant, used inside ALPHA as an advisory research assistant. Its answers
   are advice, never approval.
-- **IBKR / IBKR Paper** — Interactive Brokers, a stock broker. IBKR Paper is its practice account, with no
-  real money.
 - **Kronos** — A foundation model used for price forecasts, run in a separate process.
 - **MCP** — Model Context Protocol. The link that lets an AI assistant call ALPHA tools. It cannot approve.
 - **Nautilus (NautilusTrader)** — The engine ALPHA uses to run backtests and paper trading.

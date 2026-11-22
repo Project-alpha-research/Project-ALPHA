@@ -11,6 +11,8 @@ import { FollowToday } from '../panels/FollowToday'
 import { Navigator } from '../panels/Navigator'
 import { Alerts } from '../panels/Alerts'
 import { DataPulls } from '../panels/JobMonitor'
+import { AllTests } from '../panels/RecentTests'
+import { RiskMonitor } from '../panels/RiskMonitor'
 
 function RunLibrary() { return createElement(Navigator, { onOpenRun: openRunDetail }) }
 
@@ -20,23 +22,24 @@ export interface WorkflowPage { id: PageId; title: string; description: string; 
 
 const DOCUMENT_PAGE: Record<WindowId, PageId> = {
   chart: 'data', report: 'results', compare: 'results', builder: 'strategies', scanner: 'strategies',
-  build: 'strategies', research: 'research', rdagent: 'research', ideas: 'research', 'setup-lab': 'research', governance: 'settings', forecast: 'results',
-  'ml-lab': 'results', jobs: 'operations', 'corporate-actions': 'data',
-  funding: 'data', 'open-interest': 'data', onchain: 'data', dex: 'data', crowding: 'research',
+  rdagent: 'research', ideas: 'research', 'setup-lab': 'research', governance: 'settings', forecast: 'results',
+  jobs: 'operations',
 }
 
 export function workflowPages(profile: Profile): WorkflowPage[] {
   const pages: WorkflowPage[] = [
-    { id: 'overview', title: 'Overview', description: 'Your projects, recent work and next steps.', panes: [] },
+    { id: 'overview', title: 'Overview', description: 'Recent tests, what is followed today and the market.', panes: [] },
     { id: 'data', title: 'Data & Assets', description: 'Find assets, explore charts and prepare reliable data.', panes: [
       { name: 'DataManager', title: 'Data downloads', component: DataManager },
       { name: 'MarketWatch', title: 'Watchlist', component: MarketWatch },
       { name: 'MarketOverview', title: 'Market', component: MarketOverview },
     ] },
-    { id: 'research', title: 'Research', description: 'Turn an observation into a bounded, evidence-backed research case.', panes: [] },
-    { id: 'strategies', title: 'Strategies & Tests', description: 'Build rules and run tests with explicit research or sandbox context.', panes: [] },
-    { id: 'results', title: 'Results', description: 'Review recorded evidence, compare runs and export reports.', panes: [
+    { id: 'research', title: 'Research', description: 'Ideas, setups, RD-Agent runs and what is followed today.', panes: [] },
+    { id: 'strategies', title: 'Strategies & Tests', description: 'Build rules and scan stored data.', panes: [] },
+    { id: 'results', title: 'Results', description: 'Review stored tests, compare runs and open reports.', panes: [
+      { name: 'AllTests', title: 'All tests', component: AllTests },
       { name: 'Navigator', title: 'Run library', component: RunLibrary },
+      { name: 'RiskMonitor', title: 'Risk', component: RiskMonitor },
     ] },
     { id: 'operations', title: 'Operations', description: 'Track jobs and alerts.', panes: [] },
     { id: 'settings', title: 'Settings', description: 'Display preferences, owner authentication and research safeguards.', panes: [{ name: 'Workspaces', title: 'Saved workspaces', component: Workspaces }] },

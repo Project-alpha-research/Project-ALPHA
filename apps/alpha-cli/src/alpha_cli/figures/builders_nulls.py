@@ -127,6 +127,7 @@ def fold_sharpe(ctx: BuildContext) -> FigureSpec:
             position=mean,
             role="feature",
             width=1.2,
+            label=f"Mean of folds with a Sharpe ({mean:.2f})",
             annotate=ValueLabel(text=f"mean {mean:.2f}", ha="right", dx_pt=-6.0),
         ),
     ]

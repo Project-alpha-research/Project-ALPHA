@@ -342,7 +342,10 @@ def test_run_id_hashing_inputs_are_unchanged(
     ParquetStore(tmp_path / "store").write_provenance(
         "SPY", source="alpaca", adapter_version="1", parser_version="1"
     )
-    idea = load_spec(None, rule="ma_cross", param=["fast=5", "slow=20"], asset=["SPY"])
+    # Pin change (M99): no costs now means class costs; the legacy run stated the flat default.
+    idea = load_spec(
+        None, rule="ma_cross", param=["fast=5", "slow=20"], asset=["SPY"], fee_bps=1, slippage_bps=2
+    )
     knobs = replace(
         _gauntlet.GauntletParams(seed=7),
         tier1_paths=20,

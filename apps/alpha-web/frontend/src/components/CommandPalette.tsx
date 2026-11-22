@@ -23,7 +23,6 @@ interface Props {
   documents: readonly { id: WindowId; title: string }[]
   onOpenDocument: (id: WindowId) => void
   onOpenRun: (runId: string) => void
-  onNewIdea: () => void
 }
 
 type Page = 'root' | 'symbols' | 'runs'
@@ -34,7 +33,7 @@ const PLACEHOLDER: Record<Page, string> = {
   runs: 'Open run…',
 }
 
-export function CommandPalette({ functions, onNavigate, open, onClose, documents, onOpenDocument, onOpenRun, onNewIdea }: Props) {
+export function CommandPalette({ functions, onNavigate, open, onClose, documents, onOpenDocument, onOpenRun }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
   const profile = getSettings().profile
@@ -91,15 +90,6 @@ export function CommandPalette({ functions, onNavigate, open, onClose, documents
             {page === 'root' ? (
               <>
                 <Command.Group heading="Actions">
-                  <Command.Item
-                    value="new idea new research capture observation"
-                    onSelect={() => {
-                      onNewIdea()
-                      close()
-                    }}
-                  >
-                    New Idea / New Research <span className="hint">capture · no rules asked</span>
-                  </Command.Item>
                   <Command.Item value="set symbol" onSelect={() => changePage('symbols')}>
                     Set symbol… <span className="hint">linked context</span>
                   </Command.Item>

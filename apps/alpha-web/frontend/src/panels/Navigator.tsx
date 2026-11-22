@@ -1,12 +1,10 @@
-// Navigator dock (spec 2026-09-01 §4.2 item 4): one tree of Strategies · Backtests · Research
-// cases · Data · Scripts filed by the server's `market` field. Replaces the
-// Library rail. Clicking a backtest opens its report document; a strategy or research case sets
-// the linked project.
+// Navigator dock: the stored runs (Backtests), filed by the server's `market` field. Replaces the
+// Library rail. Clicking a run opens its report document.
 
 import { useEffect, useState } from 'react'
 
 import { api } from '../api/client'
-import type { CryptoStorage, ProjectSummary, RunListItem, StrategyDef } from '../api/types'
+import type { RunListItem } from '../api/types'
 import { setLinked } from '../context/linked'
 import { pairsByVenue, useStoredVenues } from '../context/storedQuotes'
 import { dockOf } from '../shell/documents'
@@ -22,9 +20,6 @@ export function Navigator({ onOpenRun }: { onOpenRun: (runId: string, title: str
   const [showAll, setShowAll] = useState(false)
   const [tab, setTab] = useState<string>('Common')
   const [runs, setRuns] = useState<RunListItem[]>([])
-  const [projects, setProjects] = useState<ProjectSummary[]>([])
-  const [strategies, setStrategies] = useState<StrategyDef[]>([])
-  const [storage, setStorage] = useState<CryptoStorage | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const storeRevision = useActivityField('runsVersion')
@@ -33,18 +28,10 @@ export function Navigator({ onOpenRun }: { onOpenRun: (runId: string, title: str
   useEffect(() => {
     let live = true
     setError(null)
-    Promise.all([
-      api.runs('?limit=500'),
-      api.projects(100, 0),
-      api.strategies(),
-      api.cryptoStorage().catch(() => null),
-    ])
-      .then(([runList, projectPage, strategyList, storageStatus]) => {
+    api.runs('?limit=500')
+      .then((runList) => {
         if (!live) return
         setRuns(runList.items)
-        setProjects(projectPage.items as ProjectSummary[])
-        setStrategies(strategyList)
-        setStorage(storageStatus)
         setLoaded(true)
       })
       .catch((cause) => live && setError(String(cause)))
@@ -53,15 +40,16 @@ export function Navigator({ onOpenRun }: { onOpenRun: (runId: string, title: str
     }
   }, [storeRevision, controlVersion])
 
+  // Only the stored runs: projects, research cases, data providers and scripts were removed.
   const groups = navigatorTree({
     profile,
     showAll,
     runs,
-    projects,
-    strategies,
-    storage: storageRow(storage),
+    projects: [],
+    strategies: [],
+    storage: storageRow(null),
     pairsByVenue: pairsByVenue(venues),
-  })
+  }).filter((group) => group.label === 'Backtests')
 
   const activate = (leaf: NavigatorLeaf) => {
     if (leaf.action.kind === 'run') onOpenRun(leaf.action.runId, leaf.label)

@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 
+from alpha_cli.spine.owner_rule import OwnerRule
 from alpha_cli.spine.spec import IdeaSpec, load_spec
 
 RSI_DIP: dict[str, Any] = {
@@ -304,3 +305,68 @@ def test_price_sized_operands_may_meet_zero_or_each_other() -> None:
     idea(_one({"indicator": "atr", "params": [5]}, {"indicator": "atr", "params": [20]}))
     idea(_one({"indicator": "bbands", "params": [20, 2], "field": "lower"}))
     idea(_one({"indicator": "cmma", "params": [10, 20]}, {"value": 0.5}))
+
+
+def test_existing_rule_hash_and_family_do_not_move_with_lag_support() -> None:
+    """Pinned before indicator lag and channels existed: lag 0 serialises as it always did."""
+    spec = load_spec(Path("research/examples/owner-rsi-dip.toml"))
+    assert spec.spec_sha256 == "a095483e067ac6f93a96d78a3a3cfc7404166638572363884a441808c77de7ea"
+    assert spec.rule.family_key == "owner:45096ad611f7"
+    zero = json.loads(json.dumps(RSI_DIP))
+    zero["long_when"][0]["left"]["lag"] = 0
+    assert idea(zero).spec_sha256 == idea(RSI_DIP).spec_sha256
+
+
+def _channel_rule(window: int, lag: int, level: float = 30.0) -> dict[str, Any]:
+    high = {"indicator": "highest", "params": [window], "field": "high"}
+    return {
+        "long_when": [
+            {"left": {"source": "close"}, "op": ">", "right": {**high, "lag": lag}},
+            {
+                "left": {"indicator": "rsi", "params": [14], "lag": lag},
+                "op": "<=",
+                "right": {"value": level},
+            },
+        ]
+    }
+
+
+def test_windows_and_lags_are_holes_in_the_family() -> None:
+    a = idea(_channel_rule(20, 1, 30)).rule.family_key
+    assert a == idea(_channel_rule(55, 3, 25)).rule.family_key
+    lagless = _channel_rule(20, 0)
+    assert idea(lagless).rule.family_key != a  # a lag is part of the structure
+    lowest = json.loads(json.dumps(_channel_rule(20, 1)))
+    lowest["long_when"][0]["right"]["indicator"] = "lowest"
+    assert idea(lowest).rule.family_key != a
+
+
+def test_channels_are_price_sized_and_refused_against_a_level() -> None:
+    for name in ("highest", "lowest"):
+        with pytest.raises(ValueError, match="price level"):
+            idea(_one({"indicator": name, "params": [20], "field": "close"}, {"value": 400}))
+    idea(
+        _one(
+            {"source": "close"},
+            {"indicator": "highest", "params": [20], "field": "high", "lag": 1},
+        )
+    )
+
+
+def test_channel_words_and_labels() -> None:
+    rule = idea(_channel_rule(20, 1)).rule
+    assert isinstance(rule, OwnerRule)
+    assert rule.words == (
+        "Long while close > highest(20) high 1 bars ago and RSI(14) 1 bars ago <= 30, "
+        "flat otherwise."
+    )
+    assert rule.labels == ("null-closes-for-high-low",)
+    on_close = _one({"source": "close"}, {"indicator": "highest", "params": [20], "field": "close"})
+    assert idea(on_close).rule.labels == ()
+
+
+def test_the_breakout_example_loads_with_its_lagged_conditions() -> None:
+    rule = load_spec(Path("research/examples/owner-breakout-rsi-cross.toml")).rule
+    assert isinstance(rule, OwnerRule)
+    assert len(rule.spec["long_when"]) == 3
+    assert rule.spec["long_when"][0]["right"]["lag"] == 1

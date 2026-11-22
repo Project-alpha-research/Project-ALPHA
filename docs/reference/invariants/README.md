@@ -46,7 +46,7 @@ verified: 8a77650b29ee8769
 | [cli-toolbox.md](cli-toolbox.md) | toolbox catalogue: adding a check, honesty rules | `alpha tool`, adding a check |
 | [cli-investigation-tools.md](cli-investigation-tools.md) | follow-up questions on one rule test | investigating a recorded rule test |
 | [cli-rule-readings.md](cli-rule-readings.md), [cli-cost-classes.md](cli-cost-classes.md) | readings; costs by class | `alpha test` text, costs line |
-| [cli-results-check.md](cli-results-check.md) | draft checks and run comparisons | `alpha results check` or `compare` |
+| [cli-results-check.md](cli-results-check.md), [cli-rule-context-gate.md](cli-rule-context-gate.md) | checks; context gate | `alpha results`, `--plan` |
 | [cli-crypto-data.md](cli-crypto-data.md) | `alpha data`, crypto data house | `alpha data`, `alpha crypto-data` |
 | [cli-ml.md](cli-ml.md) | Qlib exchange, Kronos composition | `alpha ml`, `alpha forecast` |
 | [cli-native.md](cli-native.md) | native upstream lanes: RD-Agent loop, rule studies | native loops, costed rule studies |

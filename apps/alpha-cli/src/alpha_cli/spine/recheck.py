@@ -42,6 +42,11 @@ OTHER_SETTINGS = (
     "no stored result with the same settings: the stored runs of this test used other engine "
     "settings (--quick, --seed or no diagnostics), so there is nothing to compare with"
 )
+OLDER_RULE = (
+    "The stored run used the older identity rule: it fingerprinted the whole stored bar file, "
+    "held-back rows included. Its numbers are compared with the numbers computed now from the "
+    "rows before the boundary; its identity is not compared."
+)
 SHOWN = 10
 ENGINE_LABELS = ("quick", "no-diagnostics")
 # Not settings of the result: the worker count; `tier2_mode` is not recorded in the manifest.
@@ -160,7 +165,8 @@ def _compute(
             )
         old = _artifacts.run_dir(home, run_id)
         compared = compare_runs(old, Path(result["run_dir"]))
-    then = read_json(old / "manifest.json").get("execution_fingerprint")
+    stored_manifest = read_json(old / "manifest.json")
+    then = stored_manifest.get("execution_fingerprint")
     return {
         "compared_with": run_id,
         "computed": True,
@@ -170,7 +176,17 @@ def _compute(
         "differences": compared.differences[:SHOWN],
         "differences_total": len(compared.differences),
         "code_changed": then != current,
+        "identity_note": OLDER_RULE if _older_rule(stored_manifest) else None,
     }
+
+
+def _older_rule(manifest: dict[str, Any]) -> bool:
+    """A run stored before the fix names a whole-file fingerprint in its health record."""
+    health = manifest.get("data_health")
+    series = health.get("series") if isinstance(health, dict) else None
+    return isinstance(series, list) and any(
+        isinstance(row, dict) and "source_fingerprint" in row for row in series
+    )
 
 
 def _nothing(why: str) -> dict[str, Any]:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -383,23 +382,20 @@ def source_keys(results: list[dict[str, Any]]) -> list[str]:
 
 
 def health_find_id(
-    home: Path, spec_hash: str, results: list[dict[str, Any]], context: int, record: dict[str, Any]
+    spec_hash: str, results: list[dict[str, Any]], context: int, record: dict[str, Any]
 ) -> str:
-    from alpha_cli.spine.data_health import identity_part
+    from alpha_cli.spine.data_health import identity_part, identity_record
 
     keys = source_keys(results)
-    if all(row["status"] == "unchecked" for row in record["series"]):
-        # Preserve historical ids and control seeds when there is no report. If that folder
-        # already records other evidence (including no field), leave it immutable.
-        original = find_identity(spec_hash, keys, context)
-        path = home / "setups" / original / "manifest.json"
-        if not path.exists() or json.loads(path.read_bytes()).get("data_health") == record:
-            return original
+    # The id is built from the rows the find may read. The health verdict and report describe the
+    # whole stored file, held-back rows included, so only the owner's override joins the id.
+    if identity_record(record)["override_reason"] is None:
+        return find_identity(spec_hash, keys, context)
     return find_identity(spec_hash, [*keys, identity_part(record)], context)
 
 
 def outcome_ids(manifest: dict[str, Any], version: str, record: dict[str, Any]) -> tuple[str, str]:
-    from alpha_cli.spine.data_health import identity_part
+    from alpha_cli.spine.data_health import identity_part, identity_record
 
     # Control draws use the original spec, bars and rule version, independent of the health check.
     base = manifest["find_id"]
@@ -409,7 +405,8 @@ def outcome_ids(manifest: dict[str, Any], version: str, record: dict[str, Any]) 
         )
     seed = hashlib.sha256(f"{base}|{version}".encode()).hexdigest()[:16]
     payload = f"{manifest['find_id']}|{version}"
-    if manifest.get("data_health") != record:
+    stored = manifest.get("data_health")
+    if stored is None or identity_record(stored) != identity_record(record):
         payload += "|" + identity_part(record)
     return hashlib.sha256(payload.encode()).hexdigest()[:16], seed
 

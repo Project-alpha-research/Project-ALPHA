@@ -7,6 +7,7 @@ export. Manifest serialization and HTML rendering are exercised once those helpe
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import json
 import math
 
@@ -15,6 +16,8 @@ import pytest
 from alpha_core import ValidationOutcome
 from alpha_validation import (
     CISummary,
+    CPCVSummary,
+    DSRSummary,
     FoldSummary,
     GauntletReport,
     NullSummary,
@@ -22,6 +25,7 @@ from alpha_validation import (
     VerdictSummary,
     build_outcomes,
     report_to_manifest,
+    tearsheet,
 )
 
 
@@ -151,3 +155,64 @@ def test_build_outcomes_gate_pass_logic() -> None:
 
 def _named(outcomes: tuple[ValidationOutcome, ...], name: str) -> ValidationOutcome:
     return next(o for o in outcomes if o.name == name)
+
+
+def _full_report(*, met: bool) -> GauntletReport:
+    """A report with every optional block, with each check on one chosen side of its old level."""
+    nan = float("nan")
+    return dataclasses.replace(
+        _report(),
+        oos_metrics={
+            "sharpe": 0.8,
+            "value_at_risk": 0.018,
+            "risk_of_ruin": nan,
+            "max_drawdown": -0.08,
+        },
+        nulls=(
+            NullSummary("returns_level", 0.8, 0.97, 0.03, 0.95, met, 1000),
+            NullSummary("full<engine>", 0.8, 0.5, 0.5, 0.95, not met, 64),
+        ),
+        verdict=VerdictSummary(
+            edge="B", robustness="A", risk="C", sample="A", overall="B", detail={}
+        ),
+        dsr=DSRSummary(0.05, 0.91, 0.62, 0.11, 12, 0.95, met),
+        cpcv=CPCVSummary(15, 0.4, 0.3, 0.8, met),
+    )
+
+
+@pytest.mark.parametrize(
+    ("met", "digest"),
+    [
+        (True, "b8c5a05544bd592fae560fe79ed7700dd240d1e3d8aa5acd02a70fb62fb0c1e6"),
+        (False, "48cda142cb7d522a02508efc99ab9932d19e4662134f2349bdd91db684898b1b"),
+    ],
+)
+def test_gauntlet_section_html_is_pinned_and_gives_readings(met: bool, digest: str) -> None:
+    section = tearsheet._validation_section_html(_full_report(met=met))
+
+    # readings, not verdicts: a side of the old level, never a pass/fail word or an overall verdict
+    for word in ("PASS", "FAIL", "Overall verdict", "passed", "failed"):
+        assert word not in section, word
+    first, second = ("at or above", "below") if met else ("below", "at or above")
+    assert f"<td>0.9500</td><td>{first}</td><td>1000</td>" in section
+    assert f"<td>0.9500</td><td>{second}</td><td>64</td>" in section
+    assert f"<td>0.9500</td><td>{first}</td></tr></table>" in section  # the Deflated Sharpe row
+    assert f"<td>0.8000</td><td>{'above' if met else 'at or below'}</td></tr></table>" in section
+    assert "full&lt;engine&gt;" in section  # text from the run is escaped
+    assert "<td>Risk of Ruin</td><td>n/a</td>" in section  # a non-finite number is not printed
+    assert "Old grade (kept for old records)" in section
+    # every other byte of the section: a changed word, tag or number format changes this digest
+    assert hashlib.sha256(section.encode("utf-8")).hexdigest() == digest
+
+
+def test_gauntlet_section_omits_the_blocks_that_were_not_computed() -> None:
+    section = tearsheet._validation_section_html(_report())
+
+    for heading in (
+        "Old grade",
+        "Risk Metrics",
+        "Deflated / Probabilistic Sharpe",
+        "Combinatorial",
+    ):
+        assert heading not in section, heading
+    assert "This page gives numbers, not a verdict." in section

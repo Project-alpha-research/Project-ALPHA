@@ -12,6 +12,8 @@ import math
 from collections.abc import Mapping
 from typing import Any
 
+from alpha_cli.spine.owner_reading import reading_additions
+
 SCHEMA = "AlphaReadingV1"
 # The four evidence words and their fixed definitions. Each number below has one source.
 MIN_TRADES = 30  # spine/audit.py ENOUGH_TRADES: fewer closed trades are too few to judge
@@ -329,6 +331,7 @@ def build_reading(
         "aim": aim,
         "counts": counts,
         "sentence": _sentence(faults, evidence, aim, counts),
+        **reading_additions(diag),
     }
 
 

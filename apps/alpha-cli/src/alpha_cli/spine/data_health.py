@@ -13,6 +13,22 @@ from alpha_cli.spine.errors import SpineError
 if TYPE_CHECKING:
     from alpha_cli.spine.stores import ResolvedAsset
 
+
+class HealthRecord(dict[str, Any]):
+    """The health record as shown and stored: facts about the files, never a fingerprint of them.
+
+    The stored bar file also holds the held-back rows. A hash of that file would move whenever a
+    nightly pull appends or revises such a row, so it stays out of the record. The guard
+    fingerprints that `verify_inputs` needs live on the object only and are never written.
+    """
+
+    guards: tuple[str, ...]
+
+    def __init__(self, data: dict[str, Any], guards: tuple[str, ...]) -> None:
+        super().__init__(data)
+        self.guards = guards
+
+
 # In increasing order of severity. Stale evidence and absent evidence share a disclosure label.
 _LABELS = {
     "pass": "data-health-pass",
@@ -23,7 +39,10 @@ _LABELS = {
 }
 
 
-def _series(asset: ResolvedAsset, check_data: bool, report_time: datetime | None) -> dict[str, Any]:
+def _series(
+    asset: ResolvedAsset, check_data: bool, report_time: datetime | None
+) -> tuple[dict[str, Any], str]:
+    """The shown facts of one series, and the guard fingerprint of the whole stored file."""
     from alpha_cli._data_health import compute_report, current_fingerprint, read_report
 
     store = asset.daily_store()
@@ -48,15 +67,14 @@ def _series(asset: ResolvedAsset, check_data: bool, report_time: datetime | None
                 for c in saved.checks
                 if c.status in {"warn", "fail"}
             ]
-    return dict(
+    shown = dict(
         asset=f"{asset.symbol}@{asset.store_name}",
         status=outcome,
         checks=checks,
         report_time=saved.report_time.isoformat() if saved else None,
-        source_fingerprint=fingerprint,
-        report_fingerprint=saved.source_fingerprint if saved else None,
         peers_used=len(saved.peer_symbols) if saved and saved.peer_symbols is not None else None,
     )
+    return shown, fingerprint
 
 
 def run_health_record(
@@ -65,14 +83,15 @@ def run_health_record(
     check_data: bool = False,
     accept_bad_data: str | None = None,
     report_time: datetime | None = None,
-) -> dict[str, Any]:
+) -> HealthRecord:
     if accept_bad_data is not None and not accept_bad_data.strip():
         raise SpineError(
             "BAD_OPTION",
             "--accept-bad-data needs a reason.",
             'Give the reason in quotes, for example --accept-bad-data "checked the raw prices".',
         )
-    series = [_series(a, check_data, report_time) for a in assets]
+    looked_up = [_series(a, check_data, report_time) for a in assets]
+    series = [shown for shown, _ in looked_up]
     verdict = max((s["status"] for s in series), key=tuple(_LABELS).index)
     parts = [f"Data health: {verdict}."]
     failures = []
@@ -93,7 +112,7 @@ def run_health_record(
                 "or run again with --check-data."
             )
         else:
-            # The report covers every stored bar at its report time: the bytes this run reads.
+            # The report covers every stored bar at its report time, the held-back ones too.
             checked = f"{asset}: report of {row['report_time'][:10]} covers all stored bars."
             parts.append(checked)
             if row["status"] == "fail":
@@ -115,7 +134,8 @@ def run_health_record(
         )
     if reason:
         parts.append(f"Data health overridden: {reason}.")
-    return dict(verdict=verdict, series=series, override_reason=reason, sentence=" ".join(parts))
+    record = dict(verdict=verdict, series=series, override_reason=reason, sentence=" ".join(parts))
+    return HealthRecord(record, tuple(guard for _, guard in looked_up))
 
 
 def health_labels(record: dict[str, Any]) -> list[str]:
@@ -129,18 +149,35 @@ def health_sentence(record: dict[str, Any] | None) -> str:
     return record["sentence"] if record else "Data health: not recorded."
 
 
+def identity_record(record: dict[str, Any]) -> dict[str, Any]:
+    """What of a health record may enter an identity: the assets checked and the owner's override.
+
+    The verdict, the report and its age describe the whole stored file, the held-back rows too, so
+    they never enter an identity. The rows a test may read are fingerprinted on their own.
+    """
+    assets = [row["asset"] for row in record["series"]]
+    return {"assets": assets, "override_reason": record["override_reason"]}
+
+
 def identity_part(record: dict[str, Any]) -> str:
-    return json.dumps(record, sort_keys=True, separators=(",", ":"))
+    return json.dumps(identity_record(record), sort_keys=True, separators=(",", ":"))
 
 
-def verify_inputs(assets: Sequence[ResolvedAsset], record: dict[str, Any]) -> None:
+def identity_labels(labels: Sequence[str]) -> list[str]:
+    """The labels that may enter an identity: no health label and no held-back label."""
+    from alpha_cli.spine import reserve
+
+    return [x for x in labels if not x.startswith("data-health-") and x != reserve.HELD_BACK]
+
+
+def verify_inputs(assets: Sequence[ResolvedAsset], record: HealthRecord) -> None:
     """Reject a data promotion between the health lookup and the run's input read."""
     from alpha_cli._data_health import current_fingerprint, read_report
 
-    for asset, row in zip(assets, record["series"], strict=True):
+    for asset, row, guard in zip(assets, record["series"], record.guards, strict=True):
         store = asset.daily_store()
         fingerprint = current_fingerprint(store, asset.symbol, read_report(store, asset.symbol))
-        if fingerprint != row["source_fingerprint"]:
+        if fingerprint != guard:
             raise SpineError(
                 "DATA_CHANGED",
                 f"{row['asset']}: source changed during run preparation.",

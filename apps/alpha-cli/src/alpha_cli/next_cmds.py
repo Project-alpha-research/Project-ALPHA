@@ -49,15 +49,20 @@ def _smallest_asset(store: ParquetStore) -> str | None:
     return min(sizes, key=lambda s: (sizes[s], s)) if sizes else None
 
 
-def _health(store: ParquetStore, symbols: list[str]) -> dict[str, int]:
+def _health(store: ParquetStore, symbols: list[str]) -> tuple[dict[str, int], str | None]:
+    """The count of data health reports by result, and the first asset with no report."""
     counts = {"pass": 0, "warn": 0, "fail": 0, "unchecked": 0}
+    first: str | None = None
     for symbol in symbols:
         try:
             verdict = json.loads((store.root / "health" / f"{symbol}.json").read_bytes())["verdict"]
         except (OSError, ValueError, KeyError, TypeError):
             verdict = None
-        counts[verdict if verdict in ("pass", "warn", "fail") else "unchecked"] += 1
-    return counts
+        key = verdict if verdict in ("pass", "warn", "fail") else "unchecked"
+        counts[key] += 1
+        if key == "unchecked" and first is None:
+            first = symbol
+    return counts, first
 
 
 def _stores_facts(home: Path) -> tuple[list[dict[str, Any]], str | None]:
@@ -68,12 +73,20 @@ def _stores_facts(home: Path) -> tuple[list[dict[str, Any]], str | None]:
         symbols = store.list_symbols()
         if not symbols:
             continue
+        health, first_unchecked = _health(store, symbols)
         facts.append(
             {
                 "name": name,
                 "path": str(directory),
                 "asset_count": len(symbols),
-                "health": _health(store, symbols),
+                "health": health,
+                "first_unchecked": (
+                    None
+                    if first_unchecked is None
+                    else first_unchecked
+                    if name == "home"
+                    else f"{first_unchecked}@{name}"
+                ),
             }
         )
         pick = _smallest_asset(store)
@@ -201,8 +214,14 @@ def _text(facts: dict[str, Any]) -> str:
         plural = "" if s["asset_count"] == 1 else "s"
         lines.append(
             f"  {s['name']}: {s['asset_count']} asset{plural}. Data health: {h['pass']} pass, "
-            f"{h['warn']} warn, {h['fail']} fail, {h['unchecked']} unchecked."
+            f"{h['warn']} warn, {h['fail']} fail, {h['unchecked']} not checked."
         )
+        if h["unchecked"]:
+            lines.append(
+                f"    Not checked: {h['unchecked']} asset{'' if h['unchecked'] == 1 else 's'} "
+                "with no data health report. A report tests the stored prices for faults. "
+                f"Check one with: alpha data health {s['first_unchecked']}"
+            )
     lines.append("What you did recently")
     if not facts["recent_trials"]:
         lines.append("  Nothing recorded yet.")

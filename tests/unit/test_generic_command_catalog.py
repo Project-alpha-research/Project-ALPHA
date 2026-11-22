@@ -93,3 +93,18 @@ def test_every_served_root_is_classified() -> None:
     assert roots
     for root in roots:
         assert classify_generic_command([root, "x"]) != "unknown", root
+
+
+def test_no_command_word_or_web_route_reaches_a_broker() -> None:
+    """IBKR paper trading is removed: no CLI group or web path may name a broker or order."""
+    import json
+    from pathlib import Path
+
+    banned = ("paper", "ibkr", "broker", "order")
+    group = get_group(app)
+    assert not [name for name in group.commands if any(word in name for word in banned)]
+    spec = json.loads(
+        (Path(__file__).parents[2] / "apps/alpha-web/frontend/openapi.json").read_text()
+    )
+    reached = [path for path in spec["paths"] if any(word in path.lower() for word in banned)]
+    assert not reached, reached

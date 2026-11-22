@@ -244,6 +244,13 @@ def _inputs(
     )
 
 
+def _keep_first_costs(row: dict[str, Any], earliest: dict[str, Any]) -> None:
+    """A repeat copies its first trial's replay, so it keeps that trial's costs (none: older)."""
+    row.pop("costs", None)
+    if "costs" in earliest:
+        row["costs"] = earliest["costs"]
+
+
 def _deflate(
     rows: list[dict[str, Any]],
     history: list[dict[str, Any]],
@@ -275,6 +282,7 @@ def _deflate(
                         if k in trial
                     }
                 )
+            _keep_first_costs(row, earliest)
             row["diagnostics"] = earliest.get("diagnostics", {})
             row["lead_clock"] = earliest.get("lead_clock", "daily")
             row.update(
@@ -860,6 +868,7 @@ def _screen_factors(
                     for k in ("status", "p", "q", "screen", "replay", "spread")
                     if k in trial
                 }
+            _keep_first_costs(row, earliest)
             row["diagnostics"] = earliest.get("diagnostics", {})
             row["lead_clock"] = earliest.get("lead_clock", "daily")
         else:

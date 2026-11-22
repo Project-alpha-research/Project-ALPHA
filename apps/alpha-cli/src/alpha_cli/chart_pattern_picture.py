@@ -184,7 +184,8 @@ def _figure(
     inside = [
         s for s in shapes if s.shape != "marker" and min(p[0] for p in s.points).date() >= start
     ]
-    drawn += _spread(inside)
+    # levels all belong to the last bar and differ by price, not by date: draw them together
+    drawn += inside if pattern in {"levels", "market_profile"} else _spread(inside)
     drawn.sort(key=lambda x: x.known)
     sentences = [
         f"The blue line is the daily close of {series.symbol}; the grey band behind it is each "

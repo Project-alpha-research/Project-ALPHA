@@ -11,6 +11,7 @@ from typing import Annotated, NoReturn
 
 import typer
 
+from alpha_cli.data_update_cmds import coverage, update
 from alpha_cli.market_overview_cmds import run_market_overview
 from alpha_cli.providers import (
     HistoricalAdapterFactory,
@@ -39,6 +40,8 @@ from alpha_data.store import ParquetStore
 from alpha_data.timeframe import DAILY, BarTimeframe, parse_timeframe, store_dir
 
 data_app = typer.Typer(help="Data ingestion, snapshots, and integrity.")
+data_app.command("coverage")(coverage)
+data_app.command("update")(update)
 
 # adapter registry — tests monkeypatch this to inject offline fakes
 _ADAPTERS: dict[str, HistoricalAdapterFactory] = historical_adapter_factories()

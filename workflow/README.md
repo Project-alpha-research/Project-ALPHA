@@ -38,6 +38,9 @@ owner keeps
    listed by `uv run python scripts/fs.py stale` and by the gate, and it does not block (broken front matter and a missing source still do).
    One sweep pull request re-reads the stale documents and stamps them (`fs.py verify <doc>`, or `--reason "<why still correct>"`, kept in
    `docs/verified-reasons.txt`); `fs.py owners <path>` names the documents that describe a file.
+   The same sweep regenerates the computer-made pages and lowers the size ceilings: `uv run python scripts/status.py`,
+   `scripts/roadmap_index.py`, `scripts/commands_reference.py`. A feature pull request leaves those pages alone, so two branches
+   never edit them at once. For the current commands ask the program: `uv run alpha <group> --help`.
 
 ## Task folders
 

@@ -20,7 +20,6 @@ from alpha_cli.crypto_price_snapshot_query import (
     BinanceDailyPriceSnapshotQueryV2,
     validate_binance_daily_price_identity,
 )
-from alpha_cli.spine.cost_classes import ROWS
 from alpha_core import DataError
 from alpha_data.crypto.contracts import CryptoDatasetIdentityV1, CryptoRawReceiptV1, require_utc
 from alpha_strategies.rules import canonical_json, rule_spec_from_json
@@ -274,11 +273,7 @@ def momentum20_rule() -> str:
 
 
 def daily_rule_terms_proposal() -> tuple[DailyRuleEconomicsV1, DailyRuleResourcesV1]:
-    """Reviewable proposal only; never infer approval from calling this function.
-
-    Fee and slippage come from the one cost table (crypto spot: the study trades BTC/USDT).
-    """
-    cost_row = ROWS["crypto_spot"]
+    """Reviewable proposal only; never infer approval from calling this function."""
     return (
         DailyRuleEconomicsV1(
             starting_cash=10_000.0,
@@ -288,9 +283,9 @@ def daily_rule_terms_proposal() -> tuple[DailyRuleEconomicsV1, DailyRuleResource
             sizing="fixed_units_long_flat_no_rebalance_while_long",
             control_sizing="same_fixed_units_buy_once_then_hold",
             control_entry_policy="first_eligible_attempt_only",
-            fee_bps_per_side=cost_row.fee_bps,
+            fee_bps_per_side=10.0,
             spread_bps_full=2.0,
-            slippage_bps_per_side=cost_row.slippage_bps,
+            slippage_bps_per_side=5.0,
             price_precision=2,
             quantity_precision=6,
             quantity_increment_btc=0.000001,

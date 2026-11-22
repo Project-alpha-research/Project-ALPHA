@@ -2,15 +2,15 @@
 
 ## Answer
 
-The RD-Agent judge and the native daily rule study now read fee and slippage from `ROWS["crypto_spot"]` in `spine/cost_classes.py`.
-Both keep no cost number of their own. A change of the row reaches their next score.
+The RD-Agent judge now reads fee and slippage from `ROWS["crypto_spot"]` in `spine/cost_classes.py`. It keeps no cost number of its own.
+A change of the row reaches its next score. The native daily rule study is NOT moved (see Not done).
 
 ## Call sites
 
 | Site | Old numbers | New source |
 |---|---|---|
 | `_rdagent_judge.py` (`FEE_BPS`, `SLIPPAGE_BPS`; replay, gap replay, spread cost) | fee 10, slippage 6 | table row `crypto_spot`: fee 10, slippage 5 (`_rdagent_costs.judge_costs()`, read at each call) |
-| `_native_daily_rule_study.py` (`daily_rule_terms_proposal`) | fee 10, slippage 5 | same row: numbers unchanged (10, 5) |
+| `_native_daily_rule_study.py` (`daily_rule_terms_proposal`) | fee 10, slippage 5 | NOT changed: see Not done. Numbers equal the table row today |
 | `research_cmds.py` (~line 3135, 1 and 2 bp) | flat 1 and 2 | NOT changed: old research-case lane, scheduled for deletion |
 
 ## Decisions
@@ -24,9 +24,13 @@ Both keep no cost number of their own. A change of the row reaches their next sc
    `pre_table_costs`) and still match, so cost is the only difference. `test_fractional_turnover_and_cost_are_weighted` now expects 15 bp (10 + 5).
    `test_rdagent_gapped_universe` golden uses 1.0005. `test_known_only_evaluation_bytes_match_declared_primary_baseline` has a new hash: that
    run fails before any replay, so only the costs record and cost text are new.
-5. Spread (`spread_bps_full` 2.0) of the daily study is not in the table: left as is.
 
 ## Not done (protected)
+
+Native daily rule study: it is in `DAILY_GUARD_FILES` (hash-bound). Importing `alpha_cli.spine` there adds an edge that
+`tests/unit/test_daily_guard_boundary.py` does not list (CI failed on it). Passing the numbers in from `daily_native_cmds.py` fails the same
+way (also a guard file). Listing the edge means editing a guard test, which the rules forbid. So I left the study alone. Its 10 and 5 bp equal
+the crypto spot row now; the owner decides whether to review that edge.
 
 `workers/rdagent/alpha_factor_judge.py` lines 59 and 518 still say "10 bps fee plus 6 bps slippage" in prompt text. The brief forbids edits to
 `workers/**` and to prompts. The text is now stale by 1 bp. `tests/unit/test_rdagent_factor_judge.py:473` pins the "6 bps" string. The owner should
@@ -35,7 +39,7 @@ decide on that edit.
 ## Tests
 
 Fail-first: `tests/unit/test_rdagent_judge_costs.py` failed at import before the change (no `_rdagent_costs`). It covers: crypto row used; a US ETF
-row read by class; a table change reaches the judge and the study; an old stored score is not altered and is counted. `alpha test` golden pins
+row read by class; a table change reaches the judge; an old stored score is not altered and is counted. `alpha test` golden pins
 (`test_cost_classes*`) pass unchanged.
 
 Failing before my change on main too (not mine): `test_rdagent_funding_columns::test_freeze_legacy_bytes_and_optional_receipt`,

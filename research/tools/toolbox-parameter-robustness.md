@@ -28,7 +28,7 @@ sources:
 - Each check runs the engine again on the run's own bars, before the held-back period, with one thing changed.
 - Settings move to 0.5, 0.8, 1.2 and 1.5 times (one at a time), or 0.8 and 1.2 times (nearest). Windows stay whole bars.
 - The grid moves the first two settings: `grid=quick` is 3 x 3 (8 re-runs), `grid=full` is 5 x 5 (24 re-runs).
-- A settings check (the first four) adds tries: each other setting goes in the trial ledger before it runs. A repeat adds none.
+- A settings check (the first four) adds tries: each setting goes in the trial ledger before it runs. A repeat adds none.
 - The other seven are controls: the same rule on changed prices, timing or costs. They add no try.
 - A run with fewer than 10 closed trades is too little to read. The check says so and runs nothing.
 - Each check says how many engine runs it makes and about how long, then prints a line every 10 seconds.

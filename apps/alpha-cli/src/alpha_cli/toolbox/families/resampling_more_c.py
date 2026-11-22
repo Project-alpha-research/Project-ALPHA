@@ -42,9 +42,7 @@ def trade_order(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -
     n = params["n_paths"]
     if n < 1 or rng is None:
         raise ValueError("n_paths must be at least 1 and a seeded generator is required")
-    cash = run.manifest["metadata"].get("starting_cash")
-    if not isinstance(cash, (int, float)) or isinstance(cash, bool) or not cash > 0:
-        raise ValueError("manifest.json requires a positive metadata.starting_cash")
+    cash = run.require_cash()
     observed = float(worst_drops(pnl[None, :], float(cash))[0])
     drops = worst_drops(rng.permuted(np.tile(pnl, (n, 1)), axis=1), float(cash))
     median, q95 = np.quantile(drops, [0.5, 0.95])

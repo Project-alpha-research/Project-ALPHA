@@ -289,3 +289,22 @@ def test_a_check_that_needs_one_rules_bars_says_why_it_does_not_apply(
 
     assert out.exit_code != 0
     assert "model run" in out.output and "single rule" in out.output
+
+
+def test_every_check_either_runs_or_says_why_on_an_ml_run(home: Path, tmp_path: Path) -> None:
+    """No check may crash or say the run is not a rule test; each runs or gives one reason."""
+    from alpha_cli.toolbox.registry import SPECS
+
+    run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
+    stored = {"stored_equity", "run_trades"}
+    ran, refused = [], []
+    for spec in SPECS:
+        if spec.compute is None or not set(spec.needs) <= stored:
+            continue
+        out = CliRunner().invoke(app, ["tool", "run", spec.id, run_id, "--json"])
+        assert "not made by alpha test" not in out.output, spec.id
+        assert "Traceback" not in out.output and "KeyError" not in out.output, (spec.id, out.output)
+        (ran if out.exit_code == 0 else refused).append(spec.id)
+        if out.exit_code != 0:
+            assert "model run" in out.output or "at least" in out.output, (spec.id, out.output)
+    assert len(ran) > 20

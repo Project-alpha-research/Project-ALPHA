@@ -297,7 +297,7 @@ def _show_ml(home: Path, rdir: Path, manifest: dict[str, Any], run_id: str) -> d
         "labels": [manifest["label"]],
         "flags": [],
         "audit": [],
-        "diagnostics_reason": None,
+        "diagnostics_reason": _no_diagnostics_reason(manifest),
         "tool_history": history(home, run_id),
         "tools": [
             {

@@ -116,9 +116,7 @@ def equity_at(inputs: Inputs, when: list[datetime]) -> FloatArray:
     """
     import numpy as np
 
-    cash = inputs.stored.manifest["metadata"].get("starting_cash")
-    if not isinstance(cash, int | float) or isinstance(cash, bool) or not cash > 0:
-        raise ValueError("manifest.json requires a positive metadata.starting_cash")
+    cash = inputs.stored.require_cash()
     frame = inputs.stored.table("stored_equity", "ts", "equity")
     dates = inputs.stored.dates(frame, "stored_equity")
     position = [bisect_right(dates, ts) - 1 for ts in when]

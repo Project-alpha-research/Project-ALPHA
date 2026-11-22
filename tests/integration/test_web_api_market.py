@@ -120,3 +120,19 @@ def test_a_changed_corporate_action_file_makes_a_new_cache_key(
     actions.mkdir(parents=True, exist_ok=True)
     (actions / "BIG.json").write_text("[]", encoding="utf-8")
     assert market._fingerprint(tmp_path) != before
+
+
+def test_a_promotion_marker_appearing_or_clearing_makes_a_new_cache_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_web.api import market
+
+    _client(tmp_path, monkeypatch)
+    before = market._fingerprint(tmp_path)
+    marker = tmp_path / "store" / "promotions" / "BIG.json"
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text("{}", encoding="utf-8")
+    pending = market._fingerprint(tmp_path)
+    assert pending != before
+    marker.unlink()
+    assert market._fingerprint(tmp_path) == before

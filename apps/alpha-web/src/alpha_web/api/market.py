@@ -16,14 +16,15 @@ _cache: dict[tuple[object, ...], dict[str, Any]] = {}
 
 
 def _fingerprint(root: Path) -> tuple[tuple[str, int, int], ...]:
-    """Name, change time and size of every stored bar, action and pull-record file.
+    """Name, change time and size of every stored bar, action, pull-record and promotion file.
 
     The overview reads prices adjusted by the stored corporate actions, so a changed action or
-    pull-record file must change the key just as a changed bar file does.
+    pull-record file must change the key just as a changed bar file does. A promotion marker
+    (a series being replaced) appears and disappears, so a cached answer never hides or keeps it.
     """
     files = sorted(
         path
-        for folder in ("bars", "actions", "provenance")
+        for folder in ("bars", "actions", "provenance", "promotions")
         for path in root.glob(f"store*/{folder}/**/*")
         if path.is_file()
     )

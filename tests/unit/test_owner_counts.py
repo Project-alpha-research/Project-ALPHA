@@ -10,6 +10,7 @@ import pytest
 
 from alpha_cli.rules_cmds import rule_path
 from alpha_cli.spine.owner_reading import count_sentence
+from alpha_cli.spine.owner_rule import OwnerRule
 from alpha_cli.spine.reading import stored_reading
 from alpha_cli.spine.recheck import recheck_idea
 from alpha_cli.spine.run import run_idea
@@ -166,6 +167,7 @@ def test_an_old_run_rechecks_to_a_match_after_the_saved_rule_is_edited(home: Pat
     stored = json.loads((Path(first["run_dir"]) / "spec.json").read_text())
     stored.pop("spec_sha256")
     old = IdeaSpec.model_validate(stored)
+    assert isinstance(old.rule, OwnerRule)
     assert old.rule.spec["long_when"][0]["right"] == {"value": 45.0}
     found = recheck_idea(old, home=home, quick=True)["results"][0]["recheck"]
     assert found["match"] is True and found["computed"] is True

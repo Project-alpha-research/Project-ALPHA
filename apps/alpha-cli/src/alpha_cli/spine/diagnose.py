@@ -79,9 +79,9 @@ def variant_specs(idea: IdeaSpec, spec: _runner.RunSpec) -> list[tuple[str, str,
     ]
     if isinstance(idea.rule, OwnerRule):
         # Each parameter variant is a full-sample re-run of the neighbour rule, one try each.
-        for label, neighbour in owner_variants(idea.rule.spec):
-            rule = OwnerRule(kind="owner", spec=neighbour)
-            variants.append((label, "parameter", replace(spec, rules_spec=rule.rules_json)))
+        for label, changed_spec in owner_variants(idea.rule.spec):
+            moved = OwnerRule(kind="owner", spec=changed_spec)
+            variants.append((label, "parameter", replace(spec, rules_spec=moved.rules_json)))
         return variants
     for key, value in idea.rule.params.items():
         for factor in (0.8, 1.2):

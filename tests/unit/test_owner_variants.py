@@ -66,7 +66,7 @@ def test_the_list_is_capped_in_a_fixed_order() -> None:
     assert len(found) == MAX_VARIANTS == 8
     assert len({name for name, _ in found}) == 8
     assert found == owner_variants(spec)
-    assert "condition 1 left window 14 to 11" == found[0][0]
+    assert found[0][0] == "condition 1 left window 14 to 11"
 
 
 def test_every_variant_is_a_valid_owner_rule_that_differs_from_the_original() -> None:

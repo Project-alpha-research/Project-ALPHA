@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 
 from alpha_cli.rules_cmds import rule_path
+from alpha_cli.spine.owner_rule import OwnerRule
 from alpha_cli.spine.spec import load_spec
 from alpha_core import DataError
 from alpha_strategies.rules import canonical_json, parse_rule_spec
@@ -64,6 +65,7 @@ def test_a_later_edit_of_the_saved_rule_does_not_change_a_loaded_spec(tmp_path: 
     _save(home, "rsi-dip", edited)
     after = load_spec(_file(tmp_path, "rsi-dip"), data_dir=home)
     assert before.spec_sha256 != after.spec_sha256
+    assert isinstance(before.rule, OwnerRule)
     assert before.rule.spec["long_when"][0]["right"] == {"value": 30}
 
 

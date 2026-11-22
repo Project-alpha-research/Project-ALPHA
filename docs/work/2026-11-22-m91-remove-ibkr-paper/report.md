@@ -74,6 +74,12 @@ Change it to `nautilus-trader==1.228.0` and re-lock (`uv.lock` is protected: not
 - remove `apps/alpha-cli/src/alpha_cli/ibkr_what_if.py::IBAPITransport.preview`
 - lower `apps/alpha-cli/src/alpha_cli/providers.py::provider_definitions` to 275
 
+## Known red from the brief's own rule
+
+`test_task_folders_hold_a_plan_and_only_stage_files` fails on this branch: the task folder holds only `report.md`, and the
+brief said not to copy `brief.md` here. It passes once the brief branch is merged (it supplies `brief.md`). A 2026-11-22 CI run
+also failed `test_component_pages_state_purpose_reasoning_plan_and_place` (I had dropped the ADR link in `nautilus.md`); fixed.
+
 ## Checks run
 
 `gate.py check --base origin/main` passes (ruff, format, docs, import contracts, mypy, mapped pytest).

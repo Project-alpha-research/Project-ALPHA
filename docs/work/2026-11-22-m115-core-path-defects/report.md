@@ -106,3 +106,12 @@ Rules: `docs/work/2026-11-21-common-build-rules/brief.md`.
   `alpha follow update` (injected clock), runs it again, appends 3 more and runs it twice: the journal holds exactly the 5
   appended sessions, once each, in order (older ones `missed`, the newest one of each batch a `bar`). It passed on the first
   run: the behaviour was right, only unproven.
+
+## Landing state
+
+- Main was merged in once (merge commit). Conflicts in `research/tools/rule-test.md` and `library.md`: main's text kept,
+  with this branch's offline-search line. The merge made `propfirm run` 152+ lines; it is split (`_report`, `_refuse_unknown`).
+- Local gate: every test of this branch passes. Red on `origin/main` as well, so not this branch's: `test_reading_rule.py` (3),
+  `test_reading_ledger_setup.py` (1) (pinned run ids) and 3 `test_research_playbook.py` checks (new toolbox cards on main).
+- CI: the pull request is a draft as the rules ask, so `ci-ok` runs the quick checks only (they pass) and then fails by
+  design. The full run starts when the owner or the reviewer marks it ready for review.

@@ -207,7 +207,7 @@ def test_cli_imports_and_emits_json_or_a_summary_line(
     argv = ["research", "import-pdf", PROJECT_ID, "--file", str(source_file)]
     result = runner.invoke(app, [*argv, "--title", "Owner-provided paper", "--json"])
     assert result.exit_code == 0, result.output
-    payload = json.loads(result.output)
+    payload = json.loads(result.stdout)
     assert payload["acquisition"]["sha256"] == DIGEST
     assert payload["document"]["status"] == "extracted"
     source_id = payload["source"]["source_id"]
@@ -215,4 +215,4 @@ def test_cli_imports_and_emits_json_or_a_summary_line(
 
     again = runner.invoke(app, [*argv, "--title", "Owner-provided paper"])
     assert again.exit_code == 0, again.output
-    assert again.output.strip() == f"imported owner-provided PDF source {source_id}"
+    assert again.stdout.strip() == f"imported owner-provided PDF source {source_id}"

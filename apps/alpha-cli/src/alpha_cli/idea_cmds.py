@@ -9,7 +9,7 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.spine import idea_card as cards
-from alpha_cli.spine import idea_file, idea_notes, idea_rdagent
+from alpha_cli.spine import idea_file, idea_notes, idea_rdagent, papers
 from alpha_cli.spine.errors import SpineError, fail
 from alpha_cli.spine.idea_file_text import render
 from alpha_core.config import AlphaSettings
@@ -54,6 +54,10 @@ def new(
     edge_lasts: str = typer.Option("", help="How long the edge should last."),
     supersedes: str = typer.Option("", help="Id of the card this one replaces."),
     from_file: Annotated[Path | None, typer.Option("--from", help="A card file.")] = None,
+    paper: Annotated[
+        list[str] | None,
+        typer.Option("--paper", help="A paper id from `alpha library papers`; repeat for more."),
+    ] = None,
     from_rdagent: Annotated[
         str, typer.Option("--from-rdagent", help="Make the card from <run>/<idea> of RD-Agent.")
     ] = "",
@@ -92,7 +96,11 @@ def new(
             card = cards.card_from_file(from_file)
         else:
             card = cards.IdeaCard(**flags)
+        for wanted in paper or []:
+            papers.load(home, wanted)
         identity, created = cards.save(home, card)
+        for wanted in paper or []:
+            papers.link(home, identity, wanted)
         if from_rdagent:
             idea_rdagent.link(home, identity, from_rdagent)
     except SpineError as exc:
@@ -100,7 +108,12 @@ def new(
     path = home / "ideas" / f"{identity}.toml"
     word = "saved" if created else "already saved"
     emit(
-        {"id": identity, "created": created, "path": str(path)},
+        {
+            "id": identity,
+            "created": created,
+            "path": str(path),
+            "papers": papers.papers_of(home, identity),
+        },
         json_out=json_out,
         fallback=f"Idea card {identity} {word}.\nTo link a test to it, add idea_card = "
         f'"{identity}" to the spec.\nRead it again: alpha idea show {identity}',

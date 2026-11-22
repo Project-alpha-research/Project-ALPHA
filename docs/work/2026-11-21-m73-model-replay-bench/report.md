@@ -70,3 +70,7 @@ Four more findings were correct and are fixed, each with a failing test first:
 Two more findings were correct and are fixed, each with a failing test first:
 1. Output folders are named with a reversible encoding of the model name (`a/b` and `a__b` no longer share one).
 2. Stored samples are found by the exact prompt id plus a numeric suffix (`p` no longer reads the samples of `p.extra`).
+
+## Review round 4 (Codex)
+A call that fails after dispatch (for example a provider timeout) may still be billed. Its estimate is now charged to the month ledger and
+kept in the store (`unsettled-spend.jsonl`), so a rerun counts it against the 10 USD run cap. A refusal before dispatch charges nothing.

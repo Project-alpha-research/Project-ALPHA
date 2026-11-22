@@ -24,6 +24,8 @@ from alpha_cli.rdagent_bench_model import (
     prompt_sha,
 )
 
+UNSETTLED = "unsettled-spend.jsonl"
+
 
 def _record(
     model: str,
@@ -83,6 +85,22 @@ def _charge(spend: Path, now: datetime, record: dict[str, Any]) -> float:
     return float(record["charged_usd"])
 
 
+def _charge_unsettled(spend: Path, store: Path, now: datetime, estimate: float) -> None:
+    """A call that failed after dispatch may still have been billed. Charge its estimate to the
+    month ledger, and note it in the store so a rerun counts it against the run cap."""
+    _charge(spend, now, {"charged_usd": estimate, "usd_source": None})
+    store.mkdir(parents=True, exist_ok=True)
+    with (store / UNSETTLED).open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps({"ts": now.isoformat(), "usd": estimate}) + "\n")
+
+
+def _unsettled_usd(store: Path) -> float:
+    path = store / UNSETTLED
+    if not path.exists():
+        return 0.0
+    return sum(float(json.loads(x)["usd"]) for x in path.read_text().splitlines() if x.strip())
+
+
 def _stored(
     prompts: list[StoredPrompt], models: list[str], samples: int, store: Path
 ) -> tuple[set[tuple[str, str, int]], float]:
@@ -104,7 +122,7 @@ def _stored(
                     )
                 done.add((model, p.id, sample))
                 spent += float(record["charged_usd"])
-    return done, spent
+    return done, spent + _unsettled_usd(store)
 
 
 def run_bench(
@@ -146,7 +164,13 @@ def run_bench(
                         f"of {RUN_MAX_USD:g} USD per run or {MONTH_MAX_USD:g} USD per month. "
                         "The stored outputs are kept."
                     )
-                reply = client.complete(model, p, sample)
+                try:
+                    reply = client.complete(model, p, sample)
+                except BenchError:
+                    raise  # refused before dispatch: nothing was sent, nothing is charged
+                except Exception:
+                    _charge_unsettled(spend, store, now, estimate)
+                    raise
                 if reply.cost is not None and not (
                     isinstance(reply.cost, int | float)
                     and math.isfinite(reply.cost)
@@ -154,7 +178,7 @@ def run_bench(
                 ):
                     # The call was made: charge its estimate, then stop. A bad charge never
                     # lowers the spend so far.
-                    _charge(spend, now, {"charged_usd": estimate, "usd_source": None})
+                    _charge_unsettled(spend, store, now, estimate)
                     raise BenchError(
                         f"{model} reported the cost {reply.cost!r} for prompt '{p.id}'. A cost "
                         "must be a finite number of zero or more. The run stopped; its estimate "

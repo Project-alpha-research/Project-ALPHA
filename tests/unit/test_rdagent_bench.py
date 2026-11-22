@@ -12,6 +12,7 @@ from typer.testing import CliRunner
 from alpha_cli.rdagent_bench_clients import FakeClient, GatewayClient
 from alpha_cli.rdagent_bench_model import (
     BenchError,
+    Reply,
     StoredPrompt,
     load_prices,
     load_prompts,
@@ -535,3 +536,44 @@ def test_prompt_ids_with_dots_do_not_share_samples(tmp_path: Path) -> None:
     assert scored.outputs == 3
     assert scored.by_prompt["p"] == pytest.approx(1.0)
     assert scored.by_prompt["p.extra"] == pytest.approx(0.0)
+
+
+class _FailingClient:
+    """A client whose calls fail after the provider may have taken the request."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def complete(self, model: str, prompt: StoredPrompt, sample: int) -> Reply:
+        self.calls += 1
+        raise TimeoutError("the provider timed out")
+
+
+def test_a_failed_call_is_charged_its_estimate(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 1), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    spend = _spend(tmp_path)
+    with pytest.raises(TimeoutError):
+        run_bench(prompts, ["a"], 1, prices, _FailingClient(), tmp_path / "store", spend=spend)
+    rows = [json.loads(line) for line in spend.read_text().splitlines()]
+    assert [r["usd"] for r in rows] == [pytest.approx(0.002, rel=1e-9, abs=1e-12)]
+    assert rows[0]["estimated"] is True
+
+
+def test_repeated_failed_calls_reach_the_run_cap(tmp_path: Path) -> None:
+    folder = _prompts(tmp_path / "pr", 2)
+    for file in folder.glob("*.json"):
+        row = json.loads(file.read_text())
+        row["prompt_tokens"], row["completion_tokens"] = 4_500_000, 0
+        file.write_text(json.dumps(row))
+    prompts = load_prompts(folder, None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    client = _FailingClient()
+    store = tmp_path / "store"
+    for _ in range(2):
+        with pytest.raises(TimeoutError):
+            run_bench(prompts, ["a"], 1, prices, client, store, spend=_spend(tmp_path))
+    # 9 USD is already charged for the two failed attempts: a third would pass the 10 USD cap.
+    with pytest.raises(BenchError, match="10"):
+        run_bench(prompts, ["a"], 1, prices, client, store, spend=_spend(tmp_path))
+    assert client.calls == 2

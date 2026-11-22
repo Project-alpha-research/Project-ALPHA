@@ -19,6 +19,7 @@ from alpha_cli import ml_cmds
 from alpha_cli._ml_replay import run_ml_replay
 from alpha_cli._runner import parse_as_of
 from alpha_cli.ml_contract import (
+    MIN_SYMBOLS,
     MLContractError,
     canonical_json_bytes,
     prepare_exchange,
@@ -27,6 +28,7 @@ from alpha_cli.ml_contract import (
 from alpha_cli.ml_input import export_input
 from alpha_cli.spine import reserve
 from alpha_cli.spine.ledger import append_trial
+from alpha_cli.spine.reading import old_grade_text
 from alpha_core import DataError
 from alpha_data.snapshot import create_snapshot, resolve_snapshot_dir
 from alpha_data.store import ParquetStore
@@ -62,6 +64,11 @@ def _read(spec_path: Path) -> dict[str, Any]:
     assets = spec.get("assets")
     if not isinstance(assets, list) or not assets or not all(isinstance(a, str) for a in assets):
         raise MlRunError('The spec needs `assets`: a list of symbols, such as ["SPY", "QQQ"].')
+    if len(set(assets)) < MIN_SYMBOLS:
+        raise MlRunError(
+            f"A model needs at least {MIN_SYMBOLS} assets; the spec has {len(set(assets))}. "
+            "Add more symbols to `assets`; see research/examples/ml-gbm-etfs.toml."
+        )
     if spec.get("model", MODELS[0]) not in MODELS:
         raise MlRunError(f"The model must be {' or '.join(MODELS)}. The worker offers no other.")
     if spec.get("features", FEATURES[0]) not in FEATURES:
@@ -197,6 +204,7 @@ def _count_try(
             "store": snapshot_id,
             "run_id": run_id,
             "labels": [],
+            "evidence": old_grade_text(None),  # a replay has no reading; do not list it as a fault
         },
     )
     if "repeat" in row["labels"]:

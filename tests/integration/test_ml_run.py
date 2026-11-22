@@ -149,6 +149,13 @@ def test_bad_spec_fails_loud(home: Path, tmp_path: Path, extra: str, words: str)
         ml_run.run_spec(_spec(tmp_path, extra), data_dir=home)
 
 
+def test_too_few_assets_say_how_many_are_needed(home: Path, tmp_path: Path) -> None:
+    spec = tmp_path / "few.toml"
+    spec.write_text('assets = ["S00", "S01", "S02"]\n', encoding="utf-8")
+    with pytest.raises(ml_run.MlRunError, match=r"at least 20 assets.*has 3.*ml-gbm-etfs\.toml"):
+        ml_run.run_spec(spec, data_dir=home)
+
+
 def test_cli_command_is_registered(home: Path, tmp_path: Path) -> None:
     out = CliRunner().invoke(app, ["ml", "run", str(tmp_path / "missing.toml")])
     assert out.exit_code != 0
@@ -199,3 +206,11 @@ def test_a_tampered_snapshot_is_not_reused(home: Path) -> None:
     assert store._bars_path(SYMBOLS[0]).is_file()
     with pytest.raises(ml_run.MlRunError, match="changed while it was frozen"):
         ml_run._freeze(home, SYMBOLS)
+
+
+def test_results_list_an_ml_run_without_calling_it_a_fault(home: Path, tmp_path: Path) -> None:
+    run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
+    listed = CliRunner().invoke(app, ["results"])
+    line = next(line for line in listed.output.splitlines() if run_id in line)
+    assert "ml_run" in line
+    assert "fault" not in line

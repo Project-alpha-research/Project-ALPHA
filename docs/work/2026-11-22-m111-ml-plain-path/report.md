@@ -58,3 +58,8 @@ The old path (Workstation, `alpha ml export-input --spec`, then `prepare`, `trai
 - `alpha results` lists rule tests only. I did not check that `alpha report` or the figures read an `ml_replay` run; `alpha ml replay` already produced the same kind of run before this change.
 - PR #392 was not on main; I merged `origin/chore/m101-no-project-ids` into this branch.
 - `gate.py check --base origin/main` passes in full after review round 1.
+
+## Landing review
+- Fixed: a spec with fewer than 20 assets now stops before any work and says how many are needed (the worker's own limit) and points to the example spec.
+- Fixed: `alpha results` listed an ml run as `fault`; it now says "recorded without a reading", like other rows with no reading.
+- Real run (copy of the data home, 20 stored symbols, `alpha ml run`): worked in 148 s; `alpha results` and `alpha report` read it.

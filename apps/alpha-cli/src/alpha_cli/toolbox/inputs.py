@@ -49,6 +49,8 @@ class RunSeries:
     opens: dict[datetime, float]
     benchmark_equity: dict[datetime, float]
     positions: tuple[bool, ...] = ()
+    # The run's own bars, already cut at the held-back boundary (empty when a caller gives none).
+    bars: tuple[Bar, ...] = ()
 
     def reserve_labels(self) -> tuple[str, ...]:
         last = self.manifest["metadata"].get("last_ts")
@@ -258,6 +260,7 @@ def load_run(home: Path, target: Target) -> RunSeries:
         opens={bar.ts: float(bar.open) for bar in bars},
         benchmark_equity=dict(zip(dates, buy_and_hold(bars, dividends), strict=True)),
         positions=tuple(states[ts] for ts in dates),
+        bars=tuple(bars),
     )
 
 

@@ -45,7 +45,9 @@ The result is then marked `declared`, otherwise `exploratory`. Nothing is refuse
 - Wins and losses cluster or alternate: `risk.loss_streaks`, `performance.streaks`, `timeseries.autocorrelation`, `timeseries.compressibility`,
   `risk.var_independence`, `trades.dependence`, `timeseries.ljung_box`, `timeseries.variance_ratio`, `timeseries.up_down_runs`, `resampling.return_shuffle`
 - Which side earned the profit: `trades.side_contribution`
-- Fragile to costs: `performance.holding_period`, `costs.break_even`
+- Fragile to costs: `performance.holding_period`, `costs.break_even`, `cost_realism.cost_sweep`, `cost_realism.churn_budget`, `cost_realism.financing_cost`,
+  `cost_realism.after_tax`, `cost_realism.spread_estimates`, `cost_realism.gap_stress`, `cost_realism.market_impact`, `cost_realism.capacity_curve`,
+  `cost_realism.commission_schedule`, `cost_realism.share_rounding`, `cost_realism.volume_share`, `cost_realism.limit_fill`
 - Is this just the market going up: `market.attribution`, `costs.break_even`, `context.published_factors`, `regimes.bull_bear`, `regimes.asymmetric_beta`
 - Return compared with the risk taken: `overfit_controls.required_history`, `overfit_controls.shrunk_sharpe`, `risk.kelly`, `risk.fractional_kelly`,
   `risk.optimal_f`, `risk.vol_target`, `performance.ulcer`, `performance.pain`, `performance.sterling_burke`, `performance.gain_to_pain`, `performance.kappa`,

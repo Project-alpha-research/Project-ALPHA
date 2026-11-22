@@ -3,6 +3,7 @@
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.toolbox.contract import ToolSpec
 from alpha_cli.toolbox.families.context import PUBLISHED_FACTORS
+from alpha_cli.toolbox.families.cost_realism import CHECKS as COST_REALISM_CHECKS
 from alpha_cli.toolbox.families.costs import BREAK_EVEN
 from alpha_cli.toolbox.families.market import ATTRIBUTION, CHANGEPOINTS, VOL_REGIMES
 from alpha_cli.toolbox.families.montecarlo import STUDENT_T_PATHS
@@ -40,6 +41,7 @@ SPECS = (
     BLOCK_PATHS,
     STUDENT_T_PATHS,
     PUBLISHED_FACTORS,
+    *COST_REALISM_CHECKS,
     *REGIME_CHECKS,
     *TIMESERIES_CHECKS,
     *OVERFIT_CONTROLS,

@@ -73,6 +73,21 @@ def _forecast_use(manifest: dict[str, Any]) -> str:
     return "use: not recorded"
 
 
+def _echo_reading(manifest: dict[str, Any], plain: bool) -> None:
+    """A rule test or gauntlet run gets the plain summary (--json has every field)."""
+    if not plain:
+        for shown in (reading_line(manifest), costs_line(manifest)):
+            if shown:
+                typer.echo(shown)
+        return
+    found, diagnostics = None, None
+    if isinstance(manifest.get("oos_metrics"), dict):
+        diagnostics = read_json(Path(manifest["__dir"]) / "diagnostics.json")
+        found = stored_reading(manifest, diagnostics)
+    for text in plain_report_lines(manifest, found, diagnostics):
+        typer.echo(text)
+
+
 def report(
     run_id: str,
     json_out: Annotated[bool, typer.Option("--json")] = False,
@@ -240,17 +255,7 @@ def report(
         for text in monte_carlo_lines(manifest):
             typer.echo(text)
     plain = isinstance(manifest.get("verdict"), dict)
-    if plain:  # a rule test or gauntlet run: the plain summary; --json has every field
-        found, diagnostics = None, None
-        if isinstance(manifest.get("oos_metrics"), dict):
-            diagnostics = read_json(Path(manifest["__dir"]) / "diagnostics.json")
-            found = stored_reading(manifest, diagnostics)
-        for text in plain_report_lines(manifest, found, diagnostics):
-            typer.echo(text)
-    else:
-        for shown in (reading_line(manifest), costs_line(manifest)):
-            if shown:
-                typer.echo(shown)
+    _echo_reading(manifest, plain)
     if "oos_metrics" in manifest and not plain:
         metrics = ", ".join(f"{k}={_fmt(v)}" for k, v in sorted(manifest["oos_metrics"].items()))
         typer.echo(f"OOS metrics: {metrics}")

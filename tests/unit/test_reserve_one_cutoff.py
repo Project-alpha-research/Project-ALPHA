@@ -138,8 +138,10 @@ def test_the_crypto_panel_read_returns_no_row_from_the_reserved_period(
     days, _, _ = _crypto_panel.crypto_panel(tmp_path, spec)
     assert reached and max(reached) < FIRST
     assert max(days) == RESERVED_DAY  # the last 2023 bar, known when it closes at midnight
-    assert spec["reserve"]["held_back_rows"] > 0 and "held_back_bars" not in spec["reserve"]
-    sentence = reserve.describe(spec["reserve"])
+    assert "reserve" not in spec  # the count is a shown fact of the result, not of the spec (M97)
+    shown = _hypothesis_scan.evaluate_spec(tmp_path, spec)["reserve"]
+    assert shown["held_back_rows"] > 0 and "held_back_bars" not in shown
+    sentence = reserve.describe(shown)
     assert "rows" in sentence and " bars from" not in sentence
 
 

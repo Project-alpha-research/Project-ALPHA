@@ -17,7 +17,7 @@ alpha test --rule ma_cross --param fast=50 --param slow=200 --asset SPY --idea "
 alpha test <spec.toml> --recheck --json   # system check, not a trial; exit 4 if the result differs
 ```
 A spec file holds `name`, `idea`, `assets`, a `[rule]` table (`kind` plus its numbers) and an optional `[costs]` table
-(`fee_bps`, `slippage_bps`, or `costs = "class-default"`). Kinds: `ma_cross` (`fast`, `slow`), `breakout` (`window`), `tsmom` (`lookback`, `skip`), and `owner`
+(`fee_bps`, `slippage_bps`); without it each asset takes its asset class's costs. Kinds: `ma_cross` (`fast`, `slow`), `breakout` (`window`), `tsmom` (`lookback`, `skip`), and `owner`
 (a `[rule.spec]` table: [language](../../docs/reference/owner-rule-language.md); `examples/owner-rsi-dip.toml`, `examples/owner-breakout-rsi-cross.toml`).
 Asset: symbol or symbol@store. No file with flags. `--quick`: small gauntlet. `idea_card`: [card](idea-card.md). `[context]`, `when`: `--plan` only.
 **How to read it**

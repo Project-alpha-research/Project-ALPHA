@@ -32,6 +32,7 @@ from alpha_cli._rdagent_clocks import (
     overall_status,
     trial_clocks,
 )
+from alpha_cli._rdagent_costs import costs_text, judge_costs, other_cost_note, other_cost_rows
 from alpha_cli._rdagent_judge import (
     ANNUAL_DAYS as ANNUAL_DAYS,
 )
@@ -237,7 +238,7 @@ def _inputs(
             "request_sha256": sha(request_bytes),
             "factors_sha256": sha(value_bytes),
             "evaluator_fingerprint": fingerprint,
-            "configuration_sha256": sha(canonical(CONFIG)),
+            "configuration_sha256": sha(canonical({**CONFIG, "costs": judge_costs()})),
             "universe_sha256": sha(canonical(universes.frozen(run / "panel"))),
         },
     )
@@ -388,6 +389,7 @@ def _report(
     universe_text: str | None = None,
 ) -> tuple[dict[str, Any] | None, dict[str, Any], dict[str, Any], bool, str]:
     """Lead factor, RD-Agent's result keys, disclosures, ALPHA's decision and feedback text."""
+    costs = judge_costs()
     # The lead is the best candidate when there is one, so RD-Agent's stored result matches the
     # decision; otherwise the lowest q among this request's new factors.
     candidates = [row for row in rows if row["status"] == "CANDIDATE"]
@@ -448,6 +450,7 @@ def _report(
             "prefix invariance at fixed cuts only; not proof against leakage within cuts"
         ),
         **CONFIG,
+        "costs": costs,
     }
     if spec != universes.DEFAULT:
         disclosures["universe"] = spec
@@ -462,9 +465,11 @@ def _report(
         f"{EXPLORATION[0]}..{EXPLORATION[1]}; history 2017-08-17..2020-12-31; panel ends "
         f"{PANEL_END}; {RESERVED_START}+ reserved, never evaluated. Decide at close, fill next "
         "open; daily (1-day), weekly (7-day), monthly (28-day) non-overlapping holding clocks "
-        "phased at 2021-01-01; ALPHA canonical synchronized replay, not Nautilus; 10 bps "
-        "fee + 6 bps slippage per side. Prefix invariance is a fixed-cut check, not proof. "
+        "phased at 2021-01-01; ALPHA canonical synchronized replay, not Nautilus; "
+        f"{costs_text(costs)} (cost table, {costs['asset_class']}). Prefix invariance is a "
+        "fixed-cut check, not proof. "
     )
+    feedback += other_cost_note(other_cost_rows(history, costs)) + " "
     feedback += CONFIG["residual_trades"] + " "
     feedback += " ".join(
         clock_feedback(row) + " " + row.get("writeoff_message", "") for row in rows

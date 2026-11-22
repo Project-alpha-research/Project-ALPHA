@@ -16,8 +16,7 @@ rules require.
 
 A believable result needs a realistic simulation: orders, fills, fees and positions handled the
 way a real trading engine handles them. NautilusTrader already does this well, so ALPHA uses it
-rather than writing a simulator of its own. It is ALPHA's only simulation and execution engine;
-paper sessions run through it too ([ADR-0017](../../../adr/0017-authoritative-daily-data-and-broker-paper-boundary.md)).
+rather than writing a simulator of its own. It is ALPHA's only simulation engine.
 
 ## Its job in the research loop
 

@@ -83,12 +83,11 @@ errors, settings and structural protocols that every other package imports. Proj
 
 ## Settings
 
-- `AlphaSettings` reads `ALPHA_*` environment variables and `.env`. `paper_enabled` and `ibkr_paper_enabled`
-  default to False; both must be true before execution clients may be built. Never change these defaults.
-  [research integrity § No live capital](research-integrity.md#no-live-capital).
+- `AlphaSettings` reads `ALPHA_*` environment variables and `.env`. No setting builds
+  an execution client. [research integrity § No live capital](research-integrity.md#no-live-capital).
 - `data_dir` stays the authority for manifests, control state and sensitive metadata; `bulk_data_dir` may
   live on a separately pinned volume for public bulk datasets only.
-- Paper sessions, `ibkr_gateway_app`, `forecast_hub_cache` and `forecast_local_only` are machine-local
+- `forecast_hub_cache` and `forecast_local_only` are machine-local
   execution details: never put them in run ids, manifests or signal-cache keys. Kronos weight identity is
   model id plus revision. [ADR-0010](../../adr/0010-local-kronos-weights-offline-policy.md).
 - `random_seed` (default 7) is a setting; research D0/D1 seeds are frozen, not derived from settings.

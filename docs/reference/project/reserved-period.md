@@ -109,7 +109,7 @@ These still read bars from the date on.
     `alpha backtest holdout` is the revealed holdout itself.
   - `alpha strategy-candidate run --analysis holdout`: it reads its own sealed window as given, and that window may lie past the boundary. Owner to decide.
 - Label only (display or forward use): `alpha chart`, `alpha data` reads, the assistant context.
-- Exempt (forward paper use): paper trading, IBKR Paper and the daily scheduler.
+- Exempt (forward paper use): `alpha follow`.
 - Data health (`alpha data health`, and `--check-data` on a rule test or setup) checks every stored bar, the held-back ones too.
   Its verdict can label or stop a run; its numbers do not enter a result.
 - `alpha project reveal-holdout` is a separate owner-only action on a project's sealed holdout. Whether it is tied to this date: not verified.

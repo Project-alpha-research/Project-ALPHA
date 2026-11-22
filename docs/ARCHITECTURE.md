@@ -149,8 +149,6 @@ another package is named.
 | `strategy-workspaces/` | `project_workspace` | Disposable hash-only per-project workspace projections. |
 | `crypto/` | `crypto_data_cmds`, `_crypto_panel` | Crypto manifests, asset masters, coverage profiles/batches, backfill ledgers and `storage-config.json`. |
 | `quantpad/` | none (code removed 2026-11-14) | Old QuantPad archive manifests; nothing reads or writes them any more. |
-| `paper/` | `paper_store` | Operational paper-session journal (outside deterministic run directories). |
-| `operations/` | `daily_scheduler` | Daily scheduler cycle records (`operations/daily-cycles/<symbol>`). |
 | `web/` | `alpha_web._workspaces` | Workstation UI workspace layouts (`web/workspaces`); no research authority. |
 
 Native fixture/rule jobs also use per-job `payload-<job_id>` directories directly under the
@@ -445,37 +443,6 @@ surface itself crashes, an operating-system child may survive: reconciliation ca
 orphan is dead or that physical heavyweight capacity is free, so an operator must confirm/reap it
 before reconciling and relaunching. There is intentionally no automatic PID recovery.
 
-The operational paper plane deliberately shares strategy code but not research identity. Crypto
-retains public Binance data with local Sandbox execution; equities consume only scheduler-issued
-Tiingo snapshot intents through native IBKR Paper:
-
-```mermaid
-flowchart LR
-    REG["CLI ProviderDefinition registry"] --> CRYPTO["verified ccxt:binance snapshot"]
-    CRYPTO --> BINANCE["Nautilus<br/>public Binance data + local Sandbox"]
-    REG --> TIINGO["Tiingo receipt → gate → snapshot"]
-    TIINGO --> SIM["deterministic Nautilus simulation"]
-    SIM --> INTENT["immutable one-shot OrderIntent<br/>strategy + snapshot + target + cutoff"]
-    INTENT --> IB["Nautilus native IBKR Paper<br/>loopback:4002 · DU account · reconciliation"]
-    BINANCE --> SINK["ExecutionEventSink"]
-    IB --> SINK
-    SINK --> PAPER[("data_dir/paper/session UUID<br/>session.json + atomic events")]
-    WEB["Workstation Paper Monitor"] --> PAPER
-```
-
-Binance admission requires `ALPHA_PAPER_ENABLED=true`, a supported rule strategy, and an immutable
-same-symbol `ccxt:binance` snapshot; only public data and local Nautilus Sandbox execution exist.
-IBKR admission additionally requires a qualified Tiingo snapshot, exact unexpired scheduler intent,
-both paper enable flags, loopback paper port 4002, a digest-pinned gateway, a `DU…` account,
-instrument/client-ID allowlists, a quote no older than five seconds, and exact account/journal
-reconciliation. An atomic release claim makes the intent hash one-shot across process restarts; the
-same hash is journaled before submission and becomes the broker client-order ID. Reconciled
-overnight units seed the strategy's target delta rather than assuming a flat account.
-Safe stop cancels ALPHA DAY orders and never flattens. Mutable UUID/PID/heartbeat/event state never
-enters `RUN_DIRS`, `RunSpec`, run hashing, or strategy-validation evidence. See
-[ADR-0012](adr/0012-operational-paper-sessions.md) and
-[ADR-0017](adr/0017-authoritative-daily-data-and-broker-paper-boundary.md).
-
 ## 5. Cross-cutting Invariants
 
 These hold across every layer; the [golden rules in `CLAUDE.md`](../CLAUDE.md) are authoritative — summarized here with their governing ADR.
@@ -490,7 +457,6 @@ These hold across every layer; the [golden rules in `CLAUDE.md`](../CLAUDE.md) a
 - **Model leakage is labeled, never silent.** Pretrained-forecaster runs record `pretrain` overlap vs the assumed training cutoff, warn loudly, and split eval metrics pre/post cutoff. → [ADR-0009](adr/0009-forecast-leakage-and-tier2-cost-policy.md)
 - **Model weights are local and machine-scoped.** The Kronos cache path and offline-only switch never enter run ids or manifests; missing offline weights fail loudly before network access. → [ADR-0010](adr/0010-local-kronos-weights-offline-policy.md)
 - **External integrations are evidence-gated.** A repository recommendation is not an adoption decision; every new integration must prove a missing capability, boundary fit, maintenance and license posture, deterministic behavior, and a replacement path. → [ADR-0011](adr/0011-evidence-gated-external-integrations.md)
-- **Operational sessions are not research runs.** Paper sessions use UUIDs, clocks, heartbeats, and an operational event journal outside deterministic `RUN_DIRS`; they never become validation evidence or alter a research `run_id`. → [ADR-0012](adr/0012-operational-paper-sessions.md)
 - **Vendor bytes qualify before strategy visibility.** Tiingo daily responses become immutable receipts and candidates; only the configured authority can auto-promote after every critical check, and no comparison feed can silently replace it. → [ADR-0017](adr/0017-authoritative-daily-data-and-broker-paper-boundary.md)
 - **Development state is external lineage.** Mutable projects, stages, attempts, sealed holdouts, jobs, and decisions are atomic CLI-owned SQLite records; immutable manifests are never edited to attach workflow state. Append-only project-scope selection events support point-in-time AgentBrief projections. Direct and suite Qlib/Kronos launches share one transactional capacity class. → [ADR-0014](adr/0014-cli-owned-development-control-plane.md)
 - **Project workspaces are disposable projections.** Each project gets deterministic hash-only research/source/data/study/promotion/version/experiment/run/validation/figure/report/sandbox indexes. Immutable revisions and an atomic current pointer preserve the last valid view; tamper requires explicit quarantine-and-rebuild recovery. SQLite and immutable artifacts remain authority, and the workspace confers no execution capability. → [ADR-0014](adr/0014-cli-owned-development-control-plane.md)
@@ -503,7 +469,7 @@ These hold across every layer; the [golden rules in `CLAUDE.md`](../CLAUDE.md) a
 - **Generic crypto studies reuse two non-authoritative geometries.** Causal technical events and registered Bybit BTCUSDT crowding events project through `EventTableV1`; exact-universe Binance BTC/ETH cross-sectional observations project through `FactorObservationTableV1`. Both preserve provider-native instrument/venue, separate family lineage, unit, vintage, universe, and availability clocks, round-trip deterministically, and remain `authority: none`. S7 adds no new dependency, and these S8 acceptance fixtures create no D2, promotion, execution, paper, broker, or order path. → [ADR-0035](adr/0035-generic-study-composition-and-external-capability-adapters.md)
 - **Intraday research cannot inherit daily authority.** Gate 1 uses only synthetic fixed-duration proxy bars. There is no qualified real intraday adapter, and research bars/results cannot enter daily snapshots, validation, holdout, paper, or orders. → [ADR-0020](adr/0020-intraday-event-research-is-not-daily-validation-evidence.md)
 - **Surface state is bounded and recoverable.** REST publishes an explicit contract version and endpoint limits; chart windows filter bars and every linked evidence series together; figures report downsampling bounds; the terminal shell mounts only the active document; direct and suite durable jobs rehydrate, expose failure, and use owner-driven heartbeat/cancellation/reconciliation rather than raw PID authority. Journal recovery alone does not prove an orphan child has stopped.
-- **Paper authority is narrow and never live capital.** Crypto execution is local Sandbox only. IBKR is paper-account only and consumes an exact immutable intent after reconciliation, dual flags, fresh quote, and cutoff checks. Futures remain connectivity probes, not research. Kronos has no live-paper support without a separately approved causal cache.
+- **No code path reaches live capital or a broker.** Forward paper tracking is `alpha follow`.
 - **Private local use only.** Distribution-only release gates are out of scope. Preserve dependency notices and provider/data terms; reopen distribution governance only if the owner explicitly changes this scope.
 
 ## 6. Key Decisions (ADR index)

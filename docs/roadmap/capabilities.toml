@@ -860,28 +860,6 @@ state = "Partial"
 missing = "job list tested only with a stand-in command; provider checks need real providers"
 
 [[capability]]
-id = "paper-trading"
-name = "Paper trading: practice trading with no real money"
-codes = ["IBKR Paper"]
-what = "Run a strategy against live public prices in a local practice account, or an IBKR practice account; nothing touches real money."
-see_it = [
-  "uv run alpha paper readiness",
-  "Workstation: View → Paper sessions",
-]
-entry_points = [
-  "cli: alpha paper run",
-  "cli: alpha paper readiness",
-  "cli: alpha paper ibkr-run",
-  "api: GET /api/paper/sessions",
-  "panel: apps/alpha-web/frontend/src/panels/PaperMonitor.tsx",
-]
-proof_synthetic = []
-real_data = "not yet confirmed (to check on the Mac later)"
-needs = ["an opt-in setting, live Binance public data, and an IBKR practice account and gateway for stocks"]
-state = "Partial"
-missing = "no end-to-end test; parts tested with stand-ins"
-
-[[capability]]
 id = "ml-lab"
 name = "Machine-learning experiments with Qlib"
 what = "Prepare data, train Qlib models in a separate environment, and replay their predictions as a costed ALPHA backtest."

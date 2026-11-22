@@ -153,11 +153,7 @@ an ADR, never a quiet code change.
 
 ## No live capital
 
-- No code path places live-capital orders. Crypto execution is the local Sandbox only; IBKR is a
-  paper account only, with explicit opt-in flags that default to off.
-  [ADR-0017](../../adr/0017-authoritative-daily-data-and-broker-paper-boundary.md)
-- Paper sessions are operational records, not research runs; they never become validation evidence.
-  [ADR-0012](../../adr/0012-operational-paper-sessions.md)
+- No code path places live-capital orders or reaches a broker. Forward paper tracking is `alpha follow`.
 
 ## Protected and hidden tests
 

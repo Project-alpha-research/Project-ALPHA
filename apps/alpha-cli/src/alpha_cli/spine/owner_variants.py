@@ -74,9 +74,8 @@ def _changed(
     try:
         return canonical_spec(edit)
     except ValueError:
-        pass
-    # The window outgrew the history: widen it only as far as the changed rule needs.
-    bare = {key: val for key, val in edit.items() if key != "history"}
+        # The window outgrew the history: widen it only as far as the changed rule needs.
+        bare = {key: val for key, val in edit.items() if key != "history"}
     try:
         warmup = parse_rule_spec({**bare, "name": CONSTANT_NAME}).warmup
         return canonical_spec({**bare, "history": max(int(spec["history"]), warmup)})

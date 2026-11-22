@@ -17,7 +17,6 @@ const DOCUMENTS = [
   { title: 'Strategy Performance Report', id: 'report' },
   { title: 'Compare', id: 'compare' },
   { title: 'Forecast', id: 'forecast' },
-  { title: 'Machine learning', id: 'ml-lab' },
   { title: 'Jobs', id: 'jobs' },
   { title: 'Governance', id: 'governance' },
 ] as const
@@ -3158,20 +3157,6 @@ test('a failed job row shows the CLI error message, never a box border', async (
   await expect(row.getByRole('cell').nth(6)).toHaveText(message)
   await expect(page.getByTitle(message)).toBeVisible()
   await expect(page.getByText(/[─│╭╮╰╯]/)).toHaveCount(0)
-  await expectReleaseAccessibility(page)
-})
-
-test('ML diagnostics render bounded Qlib evidence and the permanent authority warning', async ({ page }) => {
-  await preparePage(page, { mlDiagnostics: true })
-  await openDocument(page, 'Machine learning')
-  await openTask(page, 'Results', 'ML diagnostics')
-
-  await expect(page.locator('.rd-head').filter({ hasText: 'Score distribution' })).toBeVisible()
-  await expect(page.locator('.rd-head').filter({ hasText: 'IC / RankIC timeline' })).toBeVisible()
-  await expect(page.locator('.rd-head').filter({ hasText: 'Feature importance' })).toBeVisible()
-  await expect(page.getByText(/MODEL NOT RECOMPUTED UNDER COUNTERFACTUAL/i).first()).toBeVisible()
-  await expect(page.getByText('0.9.7', { exact: true })).toBeVisible()
-  await expect(page.getByText(/panel crashed/i)).toHaveCount(0)
   await expectReleaseAccessibility(page)
 })
 

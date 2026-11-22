@@ -16,15 +16,12 @@ import { CompareRuns } from '../panels/CompareRuns'
 import { GovernanceDocument } from '../panels/Governance'
 import { JobMonitor } from '../panels/JobMonitor'
 import { KronosStudio } from '../panels/KronosStudio'
-import { MlDiagnostics } from '../panels/MlDiagnostics'
 import { PriceChart } from '../panels/PriceChart'
 import { RdAgentPanel } from '../panels/RdAgentPanel'
 import { IdeaWorkspace } from '../panels/idea/IdeaWorkspace'
 import { SetupLabPanel } from '../panels/SetupLabPanel'
-import { RiskMonitor } from '../panels/RiskMonitor'
 import { Scanner } from '../panels/Scanner'
 import { StrategyBuilder } from '../panels/StrategyBuilder'
-import { AssetMemory, MlResearch } from '../panels/V3Workbenches'
 import { RunDetail } from '../panels/rundetail'
 import type { DockId, WindowId } from './profiles'
 
@@ -118,17 +115,6 @@ export const DOCUMENTS: readonly DocumentDefinition[] = [
     kind: 'forecast',
     title: 'Forecast',
     panes: [{ name: 'KronosStudio', title: 'Forecast', component: KronosStudio }],
-  },
-  {
-    id: 'ml-lab',
-    kind: 'ml',
-    title: 'Machine learning',
-    panes: [
-      { name: 'MlResearch', title: 'ML lab', component: MlResearch },
-      { name: 'MlDiagnostics', title: 'ML diagnostics', component: MlDiagnostics },
-      { name: 'RiskMonitor', title: 'Risk', component: RiskMonitor },
-      { name: 'AssetMemory', title: 'Findings', component: AssetMemory, area: 'side' },
-    ],
   },
   {
     id: 'jobs',

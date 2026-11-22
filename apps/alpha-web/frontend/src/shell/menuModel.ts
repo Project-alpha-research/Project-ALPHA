@@ -108,7 +108,6 @@ const COMMAND_HOMES: Readonly<Record<string, CommandHome>> = {
   assistant: { kind: 'window', id: 'chart' },
   rules: { kind: 'window', id: 'builder' },
   provider: { kind: 'window', id: 'jobs' },
-  ml: { kind: 'window', id: 'ml-lab' },
   data: { kind: 'dock', id: 'DataManager' },
   'crypto-data': { kind: 'dock', id: 'DataManager' },
 }

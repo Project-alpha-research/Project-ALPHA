@@ -47,7 +47,7 @@ describe('PROFILES', () => {
   it('market-neutral windows appear in both', () => {
     for (const id of ['crypto', 'equities'] as const) {
       for (const window of MARKET_NEUTRAL_WINDOWS) expect(showsWindow(id, window)).toBe(true)
-      for (const window of ['forecast', 'ml-lab', 'jobs', 'governance'] as const) {
+      for (const window of ['forecast', 'jobs', 'governance'] as const) {
         expect(showsWindow(id, window)).toBe(true)
       }
     }

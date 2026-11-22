@@ -22,7 +22,7 @@ export interface WorkflowPage { id: PageId; title: string; description: string; 
 const DOCUMENT_PAGE: Record<WindowId, PageId> = {
   chart: 'data', report: 'results', compare: 'results', builder: 'strategies', scanner: 'strategies',
   rdagent: 'research', ideas: 'research', 'setup-lab': 'research', governance: 'settings', forecast: 'results',
-  'ml-lab': 'results', jobs: 'operations',
+  jobs: 'operations',
 }
 
 export function workflowPages(profile: Profile): WorkflowPage[] {

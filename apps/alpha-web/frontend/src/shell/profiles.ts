@@ -16,7 +16,6 @@ export type WindowId =
   | 'setup-lab'
   | 'governance'
   | 'forecast'
-  | 'ml-lab'
   | 'jobs'
 
 export type DockId = 'MarketWatch' | 'Navigator' | 'DataManager' | 'Toolbox'
@@ -50,7 +49,6 @@ export const MARKET_NEUTRAL_WINDOWS: readonly WindowId[] = Object.freeze([
   'setup-lab',
   'governance',
   'forecast',
-  'ml-lab',
   'jobs',
 ])
 

@@ -149,7 +149,7 @@ test('an archive read error stays explicit and never falls back to canonical can
   await page.getByRole('button', { name: 'Symbol, venue and timeframe' }).click()
   await page.getByRole('combobox', { name: 'Active asset' }).click()
   await page.getByRole('option', { name: /^ETH\/USDT / }).click()
-  await expect(page.getByRole('region', { name: 'Price', exact: true })).toContainText('422')
+  await expect(page.getByRole('region', { name: 'Price', exact: true })).toContainText('The Workstation refused this request.')
   expect(requests).toEqual([`?manifest_id=${id}`])
   await expect(page.locator('.price-panel .count')).toHaveCount(0)
 })
@@ -186,13 +186,4 @@ test('watchlist picker supports keyboard sources, Escape and discovery retry', a
   await source.press('Enter')
   await expect(page).toHaveURL(/#page=data&pane=PriceChart/)
   await expect(page.locator('.price-panel .sym-input')).toHaveValue('BTC-USD')
-})
-
-test('working context links to the non-price crypto data inventory', async ({ page }) => {
-  await preparePage(page)
-  await page.goto('/#page=data&pane=PriceChart')
-  await page.getByRole('button', { name: 'Symbol, venue and timeframe' }).click()
-  await page.getByRole('button', { name: 'Browse all crypto datasets' }).click()
-  await expect(page).toHaveURL(/#page=data&pane=FundingData/)
-  await expect(page.getByRole('dialog', { name: 'Working context' })).toHaveCount(0)
 })

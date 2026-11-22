@@ -72,6 +72,10 @@ def _cli_environment(
     allowed = _PROCESS_ENV_NAMES | _DATA_ENV_NAMES | _credential_names_for_command(args)
     if args[:1] == ["assistant"]:
         allowed = allowed | frozenset({"HOME", "CODEX_HOME", "ALPHA_CODEX_MODEL"})
+    if args[:2] == ["idea", "file"]:
+        # The idea file reads linked RD-Agent journeys from the same record store the RD-Agent
+        # screen reads. A path setting is not a secret; no other command gets it.
+        allowed = allowed | frozenset({"ALPHA_RDAGENT_RUNS_DIR"})
     environment = {name: value for name, value in os.environ.items() if name in allowed}
     environment["ALPHA_DATA_DIR"] = str(data_dir)
     # Plain Click errors (`Error: ...`), never Rich panels whose box borders would become the

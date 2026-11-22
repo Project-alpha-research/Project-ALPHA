@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/papers.py
   - apps/alpha-cli/src/alpha_cli/spine/library.py
   - apps/alpha-cli/src/alpha_cli/spine/library_import.py
-verified: 445857b6fb8af7f7
+verified: 563e9cc54e1c1da5
 ---
 # Library of published ideas
 

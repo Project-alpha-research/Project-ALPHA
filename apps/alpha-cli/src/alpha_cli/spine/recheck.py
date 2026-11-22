@@ -26,12 +26,12 @@ from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import read_json
 from alpha_cli.spine.ledger import read_trials_readonly
 from alpha_cli.spine.recheck_compare import MISMATCH_EXIT, compare_runs
-from alpha_cli.spine.run import new_result, prepare_asset, write_run
+from alpha_cli.spine.run import gauntlet_knobs, new_result, prepare_asset, write_run
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.trial_reader import spine_snapshot
 from alpha_cli.spine.trial_record import TestKey, row_test_key
 
-__all__ = ["MISMATCH_EXIT", "NOTHING", "recheck_idea"]
+__all__ = ["MISMATCH_EXIT", "NOTHING", "recheck_idea", "recheck_one"]
 
 NOTHING = "no stored result to compare with"
 DATA_CHANGED = (
@@ -193,6 +193,64 @@ def _nothing(why: str) -> dict[str, Any]:
     return {"compared_with": None, "computed": False, "match": None, "reason": why}
 
 
+def _recheck_asset(
+    idea: IdeaSpec,
+    asset: str,
+    home: Path,
+    knobs: _gauntlet.GauntletParams,
+    rows: list[dict[str, Any]],
+    result: dict[str, Any],
+    accept_bad_data: str | None = None,
+    report_time: datetime | None = None,
+) -> None:
+    """Fill ``result`` (from `new_result`) with the recheck of one asset."""
+    prepared = prepare_asset(
+        idea,
+        asset,
+        home,
+        knobs,
+        result,
+        accept_bad_data=accept_bad_data,
+        report_time=report_time,
+    )
+    key = spine_test_key(
+        idea.spec_sha256,
+        result["symbol"],
+        result["first_ts"],
+        result["last_ts"],
+        result["periods_per_year"],
+        store=result["store"],
+        data_id=result["idea_id"],
+    )
+    stored = _stored_run(
+        home,
+        rows,
+        key,
+        _settings(knobs, result["labels"]),
+        (idea.spec_sha256, result["symbol"], result["store"]),
+    )
+    result["recheck"] = (
+        _nothing(stored)
+        if isinstance(stored, str)
+        else _compute(idea, prepared, home, knobs, result, stored)
+    )
+
+
+def recheck_one(
+    idea: IdeaSpec,
+    asset: str,
+    *,
+    home: Path,
+    knobs: _gauntlet.GauntletParams,
+    quick: bool,
+    no_diagnose: bool,
+) -> dict[str, Any]:
+    """The recheck of one asset with the given engine settings; raises on any failure."""
+    result = new_result(asset, quick=quick, no_diagnose=no_diagnose)
+    _recheck_asset(idea, asset, home, knobs, read_trials_readonly(home), result)
+    return result
+
+
 def recheck_idea(
     idea: IdeaSpec,
     *,
@@ -205,46 +263,13 @@ def recheck_idea(
 ) -> dict[str, Any]:
     """One recheck per asset, in the shape of a rule-test result with a `recheck` block."""
     idea_card.require(home, idea.idea_card)
-    knobs = _gauntlet.GauntletParams(seed=seed)
-    if quick:
-        knobs = replace(
-            knobs, tier1_paths=20, tier2_paths=4, tier3_paths=4, n_resamples=50, max_workers=1
-        )
+    knobs = gauntlet_knobs(seed, quick)
     rows = read_trials_readonly(home)
     results = []
     for asset in idea.assets:
         result = new_result(asset, quick=quick, no_diagnose=no_diagnose)
         try:
-            prepared = prepare_asset(
-                idea,
-                asset,
-                home,
-                knobs,
-                result,
-                accept_bad_data=accept_bad_data,
-                report_time=report_time,
-            )
-            key = spine_test_key(
-                idea.spec_sha256,
-                result["symbol"],
-                result["first_ts"],
-                result["last_ts"],
-                result["periods_per_year"],
-                store=result["store"],
-                data_id=result["idea_id"],
-            )
-            stored = _stored_run(
-                home,
-                rows,
-                key,
-                _settings(knobs, result["labels"]),
-                (idea.spec_sha256, result["symbol"], result["store"]),
-            )
-            result["recheck"] = (
-                _nothing(stored)
-                if isinstance(stored, str)
-                else _compute(idea, prepared, home, knobs, result, stored)
-            )
+            _recheck_asset(idea, asset, home, knobs, rows, result, accept_bad_data, report_time)
         except SpineError:
             raise
         except Exception as exc:  # one asset's failure is reported; the others continue

@@ -42,3 +42,20 @@ entries are in the first. New entries are appended at the end of this file.
   system. A map of the code showed no feature joined on all eight connection tests.
 - **Governs:** [project overview](overview.md); [RD-Agent](components/rd-agent.md);
   [reserved period](reserved-period.md); [file-system measurement](file-system-measurement.md).
+
+### 2026-11-22 No Touch ID for the final check; Claude runs it on request
+
+- **Said:** "Get rid of Touch ID, it's annoying and makes things difficult and turns into a blocker."
+  Through the question prompt, for the final check on held-back data: "No confirmation step"; for all
+  other uses of Touch ID: "Remove it everywhere". Also: build the system robust and in the simplest
+  usable form, with no extra defence layers.
+- **Decided:** the final check on the [reserved period](reserved-period.md#the-owners-confirmation)
+  needs no Touch ID and no confirmation step. Claude runs `alpha confirm run` when the owner asks in
+  chat, and shows the plan first. The ten slots, one look per idea and per rule family on one asset,
+  the frozen test, the receipt before the read and the stored result stay. Touch ID for the other
+  owner actions is removed in a separate, later change.
+- **Context:** the first build asked for a Touch ID touch on a local web page within 60 seconds, and
+  signed and hash-chained each slot. The owner found the step a blocker.
+- **Governs:** [reserved period](reserved-period.md); the
+  [card](../../../research/tools/reserved-confirmation.md);
+  [owner authority](../invariants/research-integrity.md#owner-authority).

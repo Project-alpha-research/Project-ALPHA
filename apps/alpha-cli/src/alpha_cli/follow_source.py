@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from alpha_cli.spine.errors import SpineError
+from alpha_cli.spine.reserve import CONFIRMATION
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_data.sessions import CalendarRangeError, supported_range
@@ -69,6 +70,12 @@ def rule_test_source(home: Path, run_id: str) -> Source:
             "FOLLOW_SOURCE_UNKNOWN",
             f"There is no rule test with the run id {run_id!r}.",
             "Use the run id that `alpha test` printed.",
+        )
+    if CONFIRMATION in (spine.get("labels") or []):
+        raise refuse(
+            "FOLLOW_CONFIRMATION_RUN",
+            f"Run {run_id} is the owner's one look at the reserved period, not a rule test.",
+            "Follow the confirmed rule test itself: alpha confirm show names it.",
         )
     store = spine.get("store", "home")
     asset = symbol if store == "home" else f"{symbol}@{store}"

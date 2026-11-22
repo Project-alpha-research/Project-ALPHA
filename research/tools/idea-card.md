@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/idea_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/idea_card.py
   - apps/alpha-cli/src/alpha_cli/spine/idea_file.py
-verified: 302a29c82e740a2b
+verified: 3e53a2ada31a328f
 ---
 # Idea card
 
@@ -32,8 +32,8 @@ A card holds nine short fields: the idea, why it could work, the other side, wha
 - A run first stored with the link names the card in `manifest.json` (`spine.idea_card` for a rule test,
   `idea_card` for a setup find). "Linked to a test" needs a stored result. An unknown id stops the test.
 - RD-Agent: `idea link --rdagent` links a stored journey (`--unlink` adds a later line). `note` is append-only.
-- `alpha next` counts the cards. `alpha idea file <id> [--json]` is one read-only page. `link --rdagent` links a stored
-  journey (`--unlink` adds a later line); `note` is append-only. From a published idea: `alpha library card <id>`.
+- `alpha next` counts the cards. `alpha idea file <id> [--json]` is one read-only page (card, map, readings, paper follows, counts).
+  From a published idea: `alpha library card <id>`.
 
 **What it cannot tell you** Whether the idea is good. A card is a note made before the data.
 

@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_docs_links.py
   - tests/unit/test_repo_awareness_drift.py
   - tests/unit/test_roadmap_index.py
-verified: 0030464104c76524
+verified: ceb51c1ae476edc9
 ---
 
 # Documentation invariants

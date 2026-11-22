@@ -17,6 +17,7 @@ from uuid import uuid4
 
 import numpy as np
 
+from alpha_cli._screen_trials import record_screen_trials, record_uncounted_trials
 from alpha_cli.spine import reserve
 from alpha_core import DataError, UniverseMembership, members_as_of
 from alpha_research import panel
@@ -557,6 +558,13 @@ def _attempt(
             "attempt_id": attempt_id,
             "result_digest": result_digest,
         }
+        # The tries are counted before the result is stored or shown: an interrupt in between
+        # leaves the tries counted, never a stored result whose tries were not counted.
+        counted = (
+            record_uncounted_trials(data_dir, spec, payload)
+            if replay_id is not None
+            else record_screen_trials(data_dir, spec, payload)
+        )
         _publish(root / "result.json", payload)
     except (KeyboardInterrupt, SystemExit) as exc:
         _publish(
@@ -594,7 +602,7 @@ def _attempt(
             "authority": "none",
         },
     )
-    return payload
+    return {**payload, "counted": counted}
 
 
 def run_hypotheses(data_dir: Path, request: Mapping[str, Any]) -> dict[str, Any]:

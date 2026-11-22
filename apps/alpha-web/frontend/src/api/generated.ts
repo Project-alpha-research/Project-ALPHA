@@ -7148,6 +7148,8 @@ export interface components {
             caveat: string;
             /** Etag */
             etag: string;
+            /** Explanation */
+            explanation: string[];
             /** Figure Id */
             figure_id: string;
             /** Format */
@@ -7174,6 +7176,8 @@ export interface components {
             truncation_note: string | null;
             /** Uncertainty */
             uncertainty: string;
+            /** Variant */
+            variant: string;
             /** Width In */
             width_in: number;
             /** X Label */
@@ -12533,6 +12537,8 @@ export interface components {
             n_bars: number | null;
             /** Name */
             name: string | null;
+            /** Rule Family */
+            rule_family?: string | null;
             /** Rule Kind */
             rule_kind: string | null;
             /** Rule Params */
@@ -19288,6 +19294,8 @@ export interface operations {
             query?: {
                 /** @description Image format. */
                 fmt?: "svg" | "png";
+                /** @description plain is the standard chart; annotated adds callouts and a long reading. */
+                variant?: "plain" | "annotated";
             };
             header?: never;
             path: {
@@ -19323,6 +19331,8 @@ export interface operations {
             query?: {
                 /** @description Image format. */
                 fmt?: "svg" | "png";
+                /** @description plain is the standard chart; annotated adds callouts and a long reading. */
+                variant?: "plain" | "annotated";
                 /** @description Expected cache key. */
                 key?: string | null;
             };

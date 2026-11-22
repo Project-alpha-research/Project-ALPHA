@@ -3,6 +3,7 @@ import { FigureCard } from '../../components/FigureCard'
 import { TearSheetStack } from '../../components/tearsheet/TearSheetStack'
 import { ReadingBlock } from '../../components/ReadingBlock'
 import { GLOSSARY } from '../../explain/glossary'
+import { RuleWords } from './RuleWords'
 import { Timestamp } from '../../util/formatTime'
 import { parseReading } from '../readingModel'
 import {
@@ -93,6 +94,7 @@ export function RuleTestReport({ test, manifest, runId, runName, figures, figure
   const quick = quickCaveat(test)
   return (
     <section className="rule-test" aria-label="Rule test">
+      <RuleWords test={test} />
       <h2>{summaryHeadline(test, manifest.spine?.periods?.tradable)}</h2>
       {checks !== undefined && <Reading checks={checks} manifest={manifest} labels={test.labels} />}
       {health && <p>{health}</p>}

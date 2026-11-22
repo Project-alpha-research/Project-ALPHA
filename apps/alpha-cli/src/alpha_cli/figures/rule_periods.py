@@ -7,7 +7,7 @@ from itertools import accumulate
 from typing import Any
 
 from alpha_cli.figures import _sources as src
-from alpha_cli.figures._builders import BuildContext, mult, pct
+from alpha_cli.figures._common import BuildContext, mult, pct
 from alpha_core import DataError
 from alpha_research.figures import (
     FigureDefinition,
@@ -63,6 +63,25 @@ def _legacy_basis(frame: Any) -> str:
     return "with dividends" if kinds == {"passive_open_to_open_with_dividends"} else "price only"
 
 
+def _padded_limits(values: tuple[float, ...]) -> tuple[float, float]:
+    """Room above and below the line so its end label never sits on the frame."""
+    low, high = min(0.0, *values), max(0.0, *values)
+    pad = 0.14 * ((high - low) or 0.01)
+    return low - pad, high + pad
+
+
+def _plotted_subtitle(ctx: BuildContext, frame: Any) -> str:
+    """Name the dates actually drawn; a run's stored window can be wider than its curve."""
+    first, last = frame["ts"][0].date().isoformat(), frame["ts"][-1].date().isoformat()
+    parts = [ctx.symbol, ctx.strategy, f"plotted {first} to {last}"]
+    start, end = ctx.field("start", "first_ts"), ctx.field("end", "last_ts")
+    if isinstance(start, str) and isinstance(end, str) and (start[:10], end[:10]) != (first, last):
+        parts.append(
+            f"run data {start[:10]} to {end[:10]}; the plotted curve covers part of that window"
+        )
+    return "  ·  ".join(parts)
+
+
 def build(ctx: BuildContext, figure_id: str, row: dict[str, Any] | None) -> FigureSpec:
     """Both charts for one dated row; ``row`` is None for runs that predate period records.
 
@@ -82,7 +101,8 @@ def build(ctx: BuildContext, figure_id: str, row: dict[str, Any] | None) -> Figu
         basis = basis or _legacy_basis(frame)
         lower = tuple(s / b - 1 for s, b in zip(strategy, passive, strict=True))
         reference, reference_label = passive, f"Buy and hold ({basis})"
-        axis = "Ahead/behind (%)"
+        # One short line: a two-line label is wider than the left margin and is clipped.
+        axis = "Ahead (%)"
         lead = lower[-1]
         relation = "ahead of" if lead >= 0 else "behind"
         answer = (
@@ -93,14 +113,17 @@ def build(ctx: BuildContext, figure_id: str, row: dict[str, Any] | None) -> Figu
             else f"Strategy and buy and hold both finished at {mult(strategy[-1])}, level at 0.0%."
         )
         same = (
-            f"Both lines use the same opening prices and dividend rule ({basis}). "
+            f"Both lines use the same opening prices and dividend rule ({basis}). Rule tests "
+            "add dividends when the store holds them. "
             if row
-            else f"Buy and hold is the stored {basis} line; this run did not record the "
-            "strategy's dividend basis. "
+            else f"Buy and hold is the stored {basis} line. Backtest and validate runs use the "
+            "engine's built-in buy-and-hold, which never adds dividends, so the same asset can "
+            "read price only here and with dividends in a rule test. "
         )
         caveat = (
             same + "The strategy pays recorded fees and slippage; buy and hold pays none. "
-            "The lower panel divides strategy growth by buy-and-hold growth and subtracts one."
+            "The lower panel (Ahead) divides strategy growth by buy-and-hold growth and "
+            "subtracts one: above zero is ahead, below zero is behind."
         )
     else:
         reference = tuple(accumulate(strategy, max))
@@ -174,13 +197,14 @@ def build(ctx: BuildContext, figure_id: str, row: dict[str, Any] | None) -> Figu
                 y_unit="percent",
                 y_percent=True,
                 y_zero_rule=True,
+                y_limits=_padded_limits(lower),
                 legend=False,
                 marks=tuple(lower_marks),
             ),
         ),
     )
     if row is None:
-        return replace(spec, caveat=caveat)
+        return replace(spec, caveat=caveat, subtitle=_plotted_subtitle(ctx, frame))
     period = PERIOD_WORDS.get(row["period"], row["period"])
     dates = f"{row['first_ts'][:10]} to {row['last_ts'][:10]}"
     return replace(

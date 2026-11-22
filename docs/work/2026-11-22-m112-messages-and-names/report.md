@@ -2,6 +2,7 @@
 
 Decisions are listed per item. Fail-first evidence: each test failed before its change.
 
+- The task folder also holds `brief.md` (a copy of the brief), because `test_filesystem_contract` needs a plan or a brief in every task folder.
 - Trailer: the commit trailer follows the session attribution (Sonnet 5.5), not the brief's Fable 5.2 line, because the first names the real author.
 
 ## 1. Short asset names
@@ -21,7 +22,7 @@ The gap found: a dash-quoted crypto ticker from a stock-data vendor (BTC-USD) wa
 - `alpha data coverage [--json]` (new `data_update_cmds.py`): symbol, first date, last date, bars, last health (pass, warn, fail, unchecked, out of date). Bars come through the existing cut read, so the last date stops at the held-back boundary.
 - `alpha data update [--dry-run]`: runs `alpha data pull` per symbol with the recorded source, through the nightly refresh's own `_plan`/`pull_tail` (one mechanism). DECISION: it starts at the FIRST stored bar, not the last. A pull replaces the whole stored series (after freezing it), so a pull from the last date would cut the history. The dry run prints each command. A failed or unpullable symbol is named; the exit code is 1.
 - `alpha data market-overview` text now says "over the last N days" beside each percent. The web panel already states the window in its headings and was left alone.
-- Health: `_series` computes the report when none exists (it also did so only on `--check-data` before). A stale report is still only redone on `--check-data`. Tests that pinned "unchecked" for a never-checked symbol were updated.
+- Health on first use: NOT DONE. I built it (compute the report when none exists), and the full unit run then showed 190 failing tests: every synthetic fixture fails the health checks (weekend bars, flat prices), so each first use would stop with `Data health: fail`. Fixing them means `--accept-bad-data` across the suite, which weakens what they check. I reverted it. It needs the owner's decision: either first use computes the report and a failing verdict stops the test (right for real data; the fixtures change), or first use computes it and only shows the result. `coverage` already shows 'unchecked' per symbol.
 - Not tested: a real network update. The pull is called as a child process; the test fakes it.
 
 ## 6. Ledger
@@ -46,3 +47,7 @@ Finding: the toolbox number and the test's stored deflated Sharpe come from the 
 - `alpha results show RUN` prints a summary of at most 40 lines (`results_summary.py`): data health, reading, up to 8 key numbers, counts of checks, flags, labels, tool count, charts, and the line `Full detail: alpha results show RUN --json`. `--json` keeps the full output. The old text dumped the whole JSON.
 - `alpha results` (and `--symbol`) prints an aligned table with a header row; labels are joined with commas; a missing value is a dash.
 - Sentences: the stored relation words stay in the stored file and in the web panel (they are machine values with their own tests). The text now reads "this rule's Sharpe is above/below buy-and-hold's by more than the uncertainty in the estimate" or "buy-and-hold's Sharpe is inside this rule's 95% range, so this test cannot tell the two apart". The resize line reads "N entries were made smaller, because the cash did not cover the full order at the next open plus fees. The result already uses the smaller size." Tests: `test_results_plain_text.py` (fails at import before), `test_reading_rule.py`, `test_entry_gap_sizing.py` updated.
+
+## Checks
+Full unit run before the health revert: 190 failures. After it, on the failing files: 18 failed and 15 errors. On origin/main the same files already fail: `test_reading_rule` (3), `test_reading_ledger_setup` (1), `test_research_playbook`, `test_suite_plan_golden`; `web-frontend.md` is 204 lines (limit 200) and `research/tools/rule-test.md` line 12 is too long. Not mine, not touched. The process-group tests (assistant cleanup, durable lease, suite executor, web invoke, native daily, research execution, CI bootstrap, home backup, model gateway) error in this container; I did not check them on main.
+Fixed from my own changes: `scan`/`data` lazy imports, the structural-digest reader list (commands are now plain decorators), an empty results table.

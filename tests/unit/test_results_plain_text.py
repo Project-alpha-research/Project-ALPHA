@@ -85,3 +85,7 @@ def test_table_and_summary_helpers_show_a_missing_value_as_a_dash() -> None:
     lines = summary_lines({"run_id": "r", "facts": [{"metric": "x_y", "value": None}]})
     assert not any("x y" in line for line in lines)
     assert lines[-1] == "Full detail: alpha results show r --json"
+
+
+def test_an_empty_table_keeps_its_header() -> None:
+    assert table(("a", "bb"), []) == ["a  bb"]

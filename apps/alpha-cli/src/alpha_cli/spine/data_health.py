@@ -48,8 +48,7 @@ def _series(
     store = asset.daily_store()
     saved = read_report(store, asset.symbol)
     fingerprint = current_fingerprint(store, asset.symbol, saved)
-    # A symbol used for the first time gets its report now; a stale one is redone on request.
-    if saved is None or (check_data and saved.source_fingerprint != fingerprint):
+    if check_data and (saved is None or saved.source_fingerprint != fingerprint):
         saved = compute_report(
             store,
             asset.symbol,

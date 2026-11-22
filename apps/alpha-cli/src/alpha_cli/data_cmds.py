@@ -11,7 +11,6 @@ from typing import Annotated, NoReturn
 
 import typer
 
-from alpha_cli.data_update_cmds import coverage, update
 from alpha_cli.market_overview_cmds import run_market_overview
 from alpha_cli.providers import (
     HistoricalAdapterFactory,
@@ -40,8 +39,6 @@ from alpha_data.store import ParquetStore
 from alpha_data.timeframe import DAILY, BarTimeframe, parse_timeframe, store_dir
 
 data_app = typer.Typer(help="Data ingestion, snapshots, and integrity.")
-data_app.command("coverage")(coverage)
-data_app.command("update")(update)
 
 # adapter registry — tests monkeypatch this to inject offline fakes
 _ADAPTERS: dict[str, HistoricalAdapterFactory] = historical_adapter_factories()
@@ -388,6 +385,26 @@ def pull(
     )
     for line in report.lines():
         typer.echo(line)
+
+
+@data_app.command("coverage")
+def coverage(json_out: bool = typer.Option(False, "--json", help="emit JSON")) -> None:
+    """Per stored symbol: first date, last date, bars and the last health result."""
+    from alpha_cli.data_update_cmds import run_coverage
+
+    run_coverage(json_out)
+
+
+@data_app.command("update")
+def update(
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="print what would be pulled; pull nothing"
+    ),
+) -> None:
+    """Pull every stored symbol up to today, from the source recorded for it."""
+    from alpha_cli.data_update_cmds import run_update
+
+    run_update(dry_run)
 
 
 @data_app.command("source-status")

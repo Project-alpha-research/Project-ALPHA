@@ -14,8 +14,6 @@ from pathlib import Path
 
 import typer
 
-from alpha_cli._data_health import current_fingerprint, read_report
-from alpha_cli.nightly_refresh import _bars, _plan, _span
 from alpha_cli.nightly_steps import alpha_argv
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
@@ -24,6 +22,8 @@ from alpha_data.timeframe import DAILY, store_dir
 
 
 def _health(store: ParquetStore, symbol: str) -> str:
+    from alpha_cli._data_health import current_fingerprint, read_report
+
     try:
         saved = read_report(store, symbol)
         if saved is None:
@@ -35,6 +35,8 @@ def _health(store: ParquetStore, symbol: str) -> str:
 
 
 def coverage_rows(data_dir: Path) -> list[dict[str, object]]:
+    from alpha_cli.nightly_refresh import _bars, _span
+
     store = ParquetStore(store_dir(data_dir, DAILY))
     rows: list[dict[str, object]] = []
     for symbol in store.list_symbols():
@@ -52,8 +54,7 @@ def coverage_rows(data_dir: Path) -> list[dict[str, object]]:
     return rows
 
 
-def coverage(json_out: bool = typer.Option(False, "--json", help="emit JSON")) -> None:
-    """Per stored symbol: first date, last date, bars and the last health result."""
+def run_coverage(json_out: bool) -> None:
     rows = coverage_rows(AlphaSettings().data_dir)
     if json_out:
         typer.echo(json.dumps({"symbols": rows}, sort_keys=True))
@@ -71,12 +72,9 @@ def coverage(json_out: bool = typer.Option(False, "--json", help="emit JSON")) -
         )
 
 
-def update(
-    dry_run: bool = typer.Option(
-        False, "--dry-run", help="print what would be pulled; pull nothing"
-    ),
-) -> None:
-    """Pull every stored symbol up to today, from the source recorded for it."""
+def run_update(dry_run: bool) -> None:
+    from alpha_cli.nightly_refresh import _plan
+
     home = AlphaSettings().data_dir
     today = datetime.now(UTC).date()
     symbols = ParquetStore(store_dir(home, DAILY)).list_symbols()

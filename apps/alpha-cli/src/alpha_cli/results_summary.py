@@ -25,7 +25,7 @@ def cell(value: object) -> str:
 def table(headers: Sequence[str], rows: Sequence[Sequence[object]]) -> list[str]:
     """Header line, then one line per row, columns padded to the widest cell."""
     body = [[cell(value) for value in row] for row in rows]
-    widths = [max(len(head), *(len(row[i]) for row in body)) for i, head in enumerate(headers)]
+    widths = [max([len(head), *(len(row[i]) for row in body)]) for i, head in enumerate(headers)]
 
     def line(parts: Sequence[str]) -> str:
         return "  ".join(

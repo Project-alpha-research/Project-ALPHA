@@ -198,6 +198,15 @@ class IdeaSpec(FrozenModel):
         return hashlib.sha256(self.canonical().encode()).hexdigest()
 
 
+def _read_spec_file(path: Path) -> IdeaSpec:
+    if path.suffix.lower() == ".toml":
+        with path.open("rb") as stream:
+            return IdeaSpec.model_validate(tomllib.load(stream))
+    if path.suffix.lower() == ".json":
+        return IdeaSpec.model_validate_json(path.read_text(encoding="utf-8"))
+    raise ValueError("spec file must have .toml or .json suffix")
+
+
 def load_spec(
     path: Path | None,
     *,
@@ -212,15 +221,24 @@ def load_spec(
 ) -> IdeaSpec:
     """Read one file or an equivalent complete set of flags, never a silent override."""
     if path is not None:
-        flags = (rule, param, asset, name, idea, fee_bps, slippage_bps, idea_card)
-        if any(value is not None for value in flags):
-            raise ValueError("a spec path and rule flags cannot be used together")
-        if path.suffix.lower() == ".toml":
-            with path.open("rb") as stream:
-                return IdeaSpec.model_validate(tomllib.load(stream))
-        if path.suffix.lower() == ".json":
-            return IdeaSpec.model_validate_json(path.read_text(encoding="utf-8"))
-        raise ValueError("spec file must have .toml or .json suffix")
+        flags = {
+            "--rule": rule,
+            "--param": param,
+            "--asset": asset,
+            "--name": name,
+            "--idea": idea,
+            "--fee-bps": fee_bps,
+            "--slippage-bps": slippage_bps,
+        }
+        given = [flag for flag, value in flags.items() if value is not None]
+        if given:
+            raise ValueError(
+                f"{', '.join(given)} cannot be used with a spec file. "
+                "Put it in the spec file, or leave out the spec file."
+            )
+        spec = _read_spec_file(path)
+        # The card is a label: the flag wins over the file, and no identity holds it.
+        return spec.model_copy(update={"idea_card": idea_card}) if idea_card else spec
     if rule == "owner":
         raise ValueError("an owner rule needs a spec file with a [rule.spec] table")
     values: dict[str, Any] = {"kind": rule}

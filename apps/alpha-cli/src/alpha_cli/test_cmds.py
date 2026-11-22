@@ -228,6 +228,7 @@ def test_rule(
     snapshot = spine_snapshot(settings.data_dir)
     lines = [
         f"Test {output['test_id']} — {output['name']}",
+        *([f"Linked to idea card {parsed.idea_card}."] if parsed.idea_card else []),
         "ASSET\tRUN\tREADING\tOOS SHARPE\tLABELS / ERROR",
     ]
     for result in output["results"]:

@@ -3,13 +3,21 @@ import { expect, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { writeFile } from 'node:fs/promises'
 
+
+// The real test store holds crypto pairs: start each journey on the Crypto market.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('alpha.settings')) localStorage.setItem('alpha.settings', JSON.stringify({ profile: 'crypto', profileChosen: true }))
+  })
+})
+
 test('real workflow navigation, asset selection, chart and history', async ({ page }) => {
   test.setTimeout(120_000)
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByRole('menubar', { name: 'Terminal menu' })).toBeVisible()
-  for (const [section, task] of [['Data & Assets', 'Data downloads'], ['Research', 'Research Case'], ['Strategies & Tests', 'Builder'], ['Results', 'Run library'], ['Operations', 'Jobs'], ['Settings', 'Governance']]) {
+  for (const [section, task] of [['Data & Assets', 'Data downloads'], ['Research', 'Ideas'], ['Strategies & Tests', 'Builder'], ['Results', 'All tests'], ['Results', 'Run library'], ['Operations', 'Jobs'], ['Settings', 'Governance']]) {
     await openTask(page, section, task)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width)
     await expect(page.getByText(/panel crashed/i)).toHaveCount(0)
@@ -23,7 +31,7 @@ test('real workflow navigation, asset selection, chart and history', async ({ pa
   await expect(page.getByRole('dialog', { name: 'Working context' })).toHaveCount(0)
   await openTask(page, 'Data & Assets', 'Price')
   await expect(page.getByRole('region', { name: 'Price', exact: true }).locator('.count')).toHaveText('400 bars', { timeout: 30_000 })
-  await openTask(page, 'Research', 'Research Case')
+  await openTask(page, 'Research', 'Ideas')
   await page.goBack()
   await expect(page.getByRole('tab', { name: 'Price', exact: true })).toHaveAttribute('aria-selected', 'true')
   await page.reload()

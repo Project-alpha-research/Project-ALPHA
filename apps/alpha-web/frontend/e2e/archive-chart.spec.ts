@@ -112,7 +112,7 @@ test('main dropdown groups aliases and opens every archive pair with exact sourc
       bars: [{ t: 1788220800, o: 100, h: 110, l: 90, c: 105, v: 1000 }],
     } })
   })
-  await page.goto('/#page=research&pane=ResearchCockpit')
+  await page.goto('/#page=research&pane=IdeaWorkspace')
   await page.getByRole('button', { name: 'Symbol, venue and timeframe' }).click()
   const input = page.getByRole('combobox', { name: 'Active asset' })
   await input.click()

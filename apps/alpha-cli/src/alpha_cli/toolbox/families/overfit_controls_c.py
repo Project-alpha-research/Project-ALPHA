@@ -6,7 +6,6 @@ import math
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from scipy import stats
 
 from alpha_cli.toolbox.contract import Output, Param, Result, Value
 from alpha_cli.toolbox.families.overfit_controls_base import BASIS, blank, check, sample
@@ -21,6 +20,8 @@ POSITIVE = "The {name} must be above zero."
 
 
 def required_history(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
+    from scipy import stats
+
     from alpha_research import required_observations_known_sigma
 
     keys = ("required_bars", "required_years", "detectable_sharpe", "run_bars", "run_years")

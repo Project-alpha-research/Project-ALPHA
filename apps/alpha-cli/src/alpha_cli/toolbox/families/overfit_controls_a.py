@@ -5,8 +5,6 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING, Any
 
-from scipy import special, stats
-
 from alpha_cli.toolbox.contract import Output, Param, Result, Value
 from alpha_cli.toolbox.families.overfit_controls_base import (
     BASIS,
@@ -33,6 +31,8 @@ CONFIDENCE = Param("confidence", float, 0.95, (0.9, 0.95, 0.99), "Confidence lev
 
 def _variance(data: Sample) -> float:
     """Sharpe estimator variance factor 1 - g3*SR + (g4 - 1)/4*SR^2 (Mertens 2002)."""
+    from scipy import stats
+
     skew = float(stats.skew(data.returns, bias=True))
     kurt = float(stats.kurtosis(data.returns, fisher=False, bias=True))
     sr = data.sharpe_bar
@@ -61,6 +61,8 @@ def probabilistic(inputs: Inputs, params: dict[str, Any], rng: Generator | None)
 
 
 def track_record(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
+    from scipy import stats
+
     keys = ("sharpe", "min_bars", "min_years", "bars")
     data = sample(inputs)
     if data.reason:
@@ -82,6 +84,8 @@ def track_record(inputs: Inputs, params: dict[str, Any], rng: Generator | None) 
 
 
 def haircut(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
+    from scipy import special, stats
+
     keys = (
         "sharpe",
         "trials",

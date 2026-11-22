@@ -8,15 +8,13 @@ verified: 8a77650b29ee8769
 | file | owns | load when |
 |---|---|---|
 | [research-integrity.md](research-integrity.md) | project-wide honesty rules: point-in-time, fills, authority | any change to research, data or results |
-| [engineering.md](engineering.md) | project-wide coding rules | writing or reviewing code |
-| [documentation.md](documentation.md) | rules for documents under docs/ | adding or changing a document |
+| [engineering.md](engineering.md), [documentation.md](documentation.md) | coding rules; rules for docs/ | writing code; changing a document |
 | [testing.md](testing.md) | test layout, markers, tiers, sweeps | adding or moving tests |
 | [core.md](core.md) | alpha_core: domain values, errors, settings | editing alpha-core |
 | [data.md](data.md), [data-freeze-before-replace.md](data-freeze-before-replace.md) | alpha_data: storage, snapshots, pull freeze | editing alpha-data |
 | [data-crypto.md](data-crypto.md) | alpha_data crypto: storage, identity, offline Bybit context | editing crypto storage or identity |
 | [data-context.md](data-context.md) | alpha_data context: macro series, SEC filings, derivatives | editing context data |
-| [data-options.md](data-options.md) | alpha_data options: chain records, point-in-time store, fixture | editing options data |
-| [data-free-sources.md](data-free-sources.md) | free data on the Dell and provider limits | adding or judging a free data source |
+| [data-options.md](data-options.md), [data-free-sources.md](data-free-sources.md) | options store; free data limits | options data, free sources |
 | [data-bar-timeframes.md](data-bar-timeframes.md) | bars of any timeframe in the store | touching bar timeframes |
 | [crypto-providers.md](crypto-providers.md) | crypto provider modules and coverage profiles | editing crypto providers |
 | [patterns.md](patterns.md) | alpha_patterns: pattern geometry, indicators | editing alpha-patterns |
@@ -29,7 +27,8 @@ verified: 8a77650b29ee8769
 | [mcp.md](mcp.md) | alpha-mcp tools and their limits | editing the MCP server |
 | [web-api.md](web-api.md) | Workstation backend: CLI relay, JSON, SSE | editing alpha_web routes |
 | [web-api-reads.md](web-api-reads.md) | what the backend reads, writes and relays | changing what a route reads or writes |
-| [web-frontend.md](web-frontend.md), [web-frontend-ideas.md](web-frontend-ideas.md) | Workstation app; the Ideas page | editing the browser app |
+| [web-frontend.md](web-frontend.md) | Workstation app | editing the browser app |
+| [web-frontend-charts.md](web-frontend-charts.md), [web-frontend-ideas.md](web-frontend-ideas.md) | charts, exports; Ideas | charts; Ideas page |
 | [web-run-detail.md](web-run-detail.md) | run detail, journey, Setup Lab, RD-Agent panel fields | editing the run detail panels |
 | [web-research.md](web-research.md) | assistant, rule conditions, scans, case read plane | editing research surfaces in the web app |
 | [workers.md](workers.md) | shared rules; Qlib, literature, AFML workers | editing anything under workers/ |

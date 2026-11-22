@@ -52,7 +52,7 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
 
 ## Interactive rule-test chart
 
-- The rule-test Summary opens with the interactive stack (`components/tearsheet/TearSheetStack.tsx`, [rule](web-frontend.md#charts)). The
+- The rule-test Summary opens with the interactive stack (`components/tearsheet/TearSheetStack.tsx`, [rule](web-frontend-charts.md#charts)). The
   stored matplotlib figures stay below it, and their strip reads “Saved image”. Loading, error and a missing price each say so in words.
   Covered by `components/tearsheet/tearSheetModel.test.ts` and `e2e/rule-test-summary.spec.ts`.
 - An owner-rule run (`rule.kind = "owner"`) opens the rule-test Summary and the Gates tab with its rule in one plain sentence, its family

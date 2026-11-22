@@ -18,7 +18,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 |---|---|
 | Stored symbols and history, add a symbol; a missing split, gaps or bad timestamps | [stored data](data.md), [daily data health](data-health.md) |
 | "Has the chart looked like this before?"; a Kronos range of paths | [lookalike and unusual](lookalike.md), [forecast](forecast.md) |
-| "Which check fits my situation?", "a better model for RD-Agent?" | [toolbox by situation](toolbox-by-situation.md), [cost realism](toolbox-cost-realism.md), [model bench](rdagent-model-bench.md) |
+| "Which check fits my situation?", "a better model for RD-Agent?" | [toolbox by situation](toolbox-by-situation.md), [model bench](rdagent-model-bench.md) |
 | An idea to test ([idea card](idea-card.md), [library](library.md)) | [rule test](rule-test.md), [follow](follow.md), [final](reserved-confirmation.md) |
 | "Does the pipeline still work?", "did last night fail?", "is the disk filling up?" | [nightly run](nightly-run.md), [failure marker, disk](nightly-alert.md) |
 | A copy of everything stored here, and proof the copy is good | [back up and restore the data home](home-backup.md) |
@@ -32,7 +32,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | Works in some years only | [benchmark and drawdowns](benchmark-and-drawdowns.md) (`by_year`), [walk-forward](walk-forward.md) |
 | Few trades; profit from a handful of trades | [diagnose and audit](diagnose-and-audit.md) (`enough-trades`), [trade streaks](run-level-checks.md) |
 | Would a slightly different data feed change the answer? | [price-noise robustness](price-noise.md) |
-| Fragile to costs, to a one-bar delay or to nearby settings | [sensitivity](sensitivity.md), [break-even cost](run-level-checks.md) |
+| Fragile to costs, delay or nearby settings | [sensitivity](sensitivity.md), [break-even](run-level-checks.md), [cost realism](toolbox-cost-realism.md) |
 | "Does it hold up out of sample?" | [walk-forward efficiency](walk-forward.md) |
 | "Is this just the market going up?", "a known factor?" | [inverted control](inverted-signal-control.md), [published factors](published-factors.md) |
 | Market beta, calm or turbulent regimes, "when did it change?" | [attribution, regimes and change points](attribution-regimes-changepoints.md) |

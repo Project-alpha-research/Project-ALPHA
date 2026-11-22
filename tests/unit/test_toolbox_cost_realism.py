@@ -68,11 +68,16 @@ def trade(
 
 
 def flat_equity(folder: Path, value: float = 1000.0) -> None:
+    """A flat curve as the engine stores it: 1.0 at the start, in units of the starting cash."""
     dates = [START + i * DAY for i in range((END - START).days + 1)]
     pl.DataFrame(
-        {"ts": dates, "equity": [value] * len(dates), "gross_return": [0.0] * len(dates)}
+        {"ts": dates, "equity": [1.0] * len(dates), "gross_return": [0.0] * len(dates)}
         | {"cost_return": [0.0] * len(dates)}
     ).write_parquet(folder / "equity_curve.parquet")
+    path = folder / "manifest.json"
+    manifest = json.loads(path.read_text())
+    manifest["metadata"]["starting_cash"] = value
+    path.write_text(json.dumps(manifest))
 
 
 def make_run(home: Path, rows: list[dict[str, Any]], equity: float = 1000.0) -> Path:

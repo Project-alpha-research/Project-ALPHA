@@ -110,15 +110,21 @@ def closed_trades(inputs: Inputs, *columns: str) -> pl.DataFrame | None:
 
 
 def equity_at(inputs: Inputs, when: list[datetime]) -> FloatArray:
-    """Stored equity at or before each instant; a trade before the curve starts is an error."""
+    """Account value in currency at or before each instant; a trade before the curve is an error.
+
+    The stored curve starts at 1.0, in units of the starting cash, so it is scaled by that cash.
+    """
     import numpy as np
 
+    cash = inputs.stored.manifest["metadata"].get("starting_cash")
+    if not isinstance(cash, int | float) or isinstance(cash, bool) or not cash > 0:
+        raise ValueError("manifest.json requires a positive metadata.starting_cash")
     frame = inputs.stored.table("stored_equity", "ts", "equity")
     dates = inputs.stored.dates(frame, "stored_equity")
     position = [bisect_right(dates, ts) - 1 for ts in when]
     if min(position) < 0:
         raise ValueError("A trade starts before the stored equity curve")
-    return np.asarray(frame["equity"].to_numpy()[position])
+    return np.asarray(frame["equity"].to_numpy()[position]) * float(cash)
 
 
 def run_bars(inputs: Inputs) -> tuple[Bar, ...]:

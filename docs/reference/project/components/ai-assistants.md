@@ -68,13 +68,12 @@ by the program and the tool server. For the rest see the capabilities below on
 ## Where it lives
 
 - **Workspaces:** `apps/alpha-mcp`
-- **Capabilities:** `ai-investigations`, `ai-tools-connection`, `honesty-selftest`
+- **Capabilities:** `ai-tools-connection`, `honesty-selftest`
 - Partner instructions: `research/PLAYBOOK.md`, `research/tools/`, `research/lessons/`,
   `.agents/skills/`; routed from [research/CONTEXT.md](../../../../research/CONTEXT.md).
-- Code: `apps/alpha-mcp/src/`; the `alpha assistant` and `alpha research investigations` commands
+- Code: `apps/alpha-mcp/src/`; the `alpha assistant` commands
   in `apps/alpha-cli/`.
 - How to change it: [apps/alpha-mcp/CONTEXT.md](../../../../apps/alpha-mcp/CONTEXT.md).
-- Runbook: [Codex investigations](../../../operations/codex-investigations.md).
 - Decision records: [ADR-0022](../../../adr/0022-codex-collaboration-surface.md),
   [ADR-0015](../../../adr/0015-evidence-ledger-not-agent-memory.md).
 - **Plan:** [stage 8](../../../roadmap/production-scope-2.md#8-ai-partner) of the checklist;
@@ -89,7 +88,8 @@ by the program and the tool server. For the rest see the capabilities below on
   ([log](../owner-decisions-3.md#2026-11-15-what-production-grade-means)). Earlier entries are in
   the [owner decisions log](../owner-decisions.md).
 - 2026-11-15: the in-product assistant panel is removed once the investigation trail screen
-  exists ([log](../owner-decisions-3.md#2026-11-15-five-scope-answers), answer 3).
+  exists; 2026-11-21: the owner retired the in-app AI (Codex Bench, investigations, Standalone Sandbox)
+  ([log](../owner-decisions-3.md#2026-11-15-five-scope-answers), answer 3).
 
 ## Never
 

@@ -31,7 +31,7 @@ function ProviderCard({
   onCheck: (providerId: string) => void
 }) {
   const missing = missingCredentialNames(provider)
-  const canCheck = ['tiingo', 'ibkr'].includes(provider.id) && provider.configured
+  const canCheck = ['tiingo'].includes(provider.id) && provider.configured
   return (
     <article className="provider-card">
       <div className="provider-card-head">
@@ -76,7 +76,7 @@ function ProviderCard({
         {provider.granted_capabilities.length ? (
           <span className="mono muted">granted: {provider.granted_capabilities.join(' · ')}</span>
         ) : null}
-        {['tiingo', 'ibkr'].includes(provider.id) ? (
+        {['tiingo'].includes(provider.id) ? (
           <button className="btn" disabled={!canCheck || checking} onClick={() => onCheck(provider.id)}>
             {checking ? 'checking…' : 'run explicit check'}
           </button>
@@ -136,11 +136,6 @@ export function ProviderSystem() {
     <div className="panel">
       <div className="panel-toolbar">
         <span className="title">Providers · System</span>
-        {system ? (
-          <span className={`chip ${system.paper_enabled ? 'pass' : 'fail'}`}>
-            PAPER {system.paper_enabled ? 'ENABLED' : 'DISABLED'}
-          </span>
-        ) : null}
         <span className="muted">refresh is local-only · checks run only when clicked</span>
         <div className="spacer" />
         <button className="btn" onClick={load}>
@@ -195,13 +190,6 @@ export function ProviderSystem() {
                     {system.kronos_cache.local_only ? 'local-only' : 'network loading allowed'} ·{' '}
                     {system.kronos_cache.exists ? 'present' : 'absent'}
                   </span>
-                </div>
-                <div className="metric">
-                  <span className="eyebrow">ALPHA_PAPER_ENABLED</span>
-                  <span className={`metric-val mono ${system.paper_enabled ? 'pos' : 'neg'}`}>
-                    {String(system.paper_enabled)}
-                  </span>
-                  <span className="muted">explicit opt-in required</span>
                 </div>
               </div>
             </section>

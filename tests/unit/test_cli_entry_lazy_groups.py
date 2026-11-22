@@ -147,7 +147,6 @@ def test_full_app_keeps_every_command_group() -> None:
             "optim",
             "options",
             "owner-auth",
-            "paper",
             "partner",
             "project",
             "propfirm",

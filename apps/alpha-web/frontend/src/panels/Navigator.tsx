@@ -1,12 +1,12 @@
 // Navigator dock (spec 2026-09-01 §4.2 item 4): one tree of Strategies · Backtests · Research
-// cases · Data · Scripts · Paper sandbox, filed by the server's `market` field. Replaces the
+// cases · Data · Scripts filed by the server's `market` field. Replaces the
 // Library rail. Clicking a backtest opens its report document; a strategy or research case sets
 // the linked project.
 
 import { useEffect, useState } from 'react'
 
 import { api } from '../api/client'
-import type { CryptoStorage, PaperSession, ProjectSummary, RunListItem, StrategyDef } from '../api/types'
+import type { CryptoStorage, ProjectSummary, RunListItem, StrategyDef } from '../api/types'
 import { setLinked } from '../context/linked'
 import { pairsByVenue, useStoredVenues } from '../context/storedQuotes'
 import { dockOf } from '../shell/documents'
@@ -24,13 +24,11 @@ export function Navigator({ onOpenRun }: { onOpenRun: (runId: string, title: str
   const [runs, setRuns] = useState<RunListItem[]>([])
   const [projects, setProjects] = useState<ProjectSummary[]>([])
   const [strategies, setStrategies] = useState<StrategyDef[]>([])
-  const [sessions, setSessions] = useState<PaperSession[]>([])
   const [storage, setStorage] = useState<CryptoStorage | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const storeRevision = useActivityField('runsVersion')
   const controlVersion = useAreaVersion('control')
-  const paperVersion = useAreaVersion('paper')
 
   useEffect(() => {
     let live = true
@@ -39,15 +37,13 @@ export function Navigator({ onOpenRun }: { onOpenRun: (runId: string, title: str
       api.runs('?limit=500'),
       api.projects(100, 0),
       api.strategies(),
-      api.paperSessions(),
       api.cryptoStorage().catch(() => null),
     ])
-      .then(([runList, projectPage, strategyList, sessionList, storageStatus]) => {
+      .then(([runList, projectPage, strategyList, storageStatus]) => {
         if (!live) return
         setRuns(runList.items)
         setProjects(projectPage.items as ProjectSummary[])
         setStrategies(strategyList)
-        setSessions(sessionList)
         setStorage(storageStatus)
         setLoaded(true)
       })
@@ -55,7 +51,7 @@ export function Navigator({ onOpenRun }: { onOpenRun: (runId: string, title: str
     return () => {
       live = false
     }
-  }, [storeRevision, controlVersion, paperVersion])
+  }, [storeRevision, controlVersion])
 
   const groups = navigatorTree({
     profile,
@@ -63,7 +59,6 @@ export function Navigator({ onOpenRun }: { onOpenRun: (runId: string, title: str
     runs,
     projects,
     strategies,
-    sessions,
     storage: storageRow(storage),
     pairsByVenue: pairsByVenue(venues),
   })

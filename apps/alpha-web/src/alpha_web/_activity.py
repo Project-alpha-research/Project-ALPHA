@@ -11,7 +11,7 @@ Events: an initial ``snapshot`` (counts), then ``run_added`` / ``run_updated`` (
 JSON), ``job_started`` / ``job_done`` / ``job_failed`` / ``job_cancelled`` (data = job summary
 JSON) and ``store_changed`` (data = ``{"area", "at"}``) whenever the newest mtime under one of
 the governed data areas in ``AREAS`` rises — research cases, the CLI control plane, the bar
-store, paper journals, web workspaces, scan alerts. The web never reads those bytes to notice
+store, web workspaces, scan alerts. The web never reads those bytes to notice
 a change; panels refetch their own public seam. No event ids: a reconnecting client refetches
 instead of replaying (the store is the durable record; the stream is only a change notification).
 """
@@ -41,7 +41,6 @@ AREAS: dict[str, tuple[str, ...]] = {
         "control/workstation.sqlite3-shm",
     ),
     "bars": ("store/bars",),
-    "paper": ("paper",),
     "workspaces": ("web/workspaces",),
     "alerts": ("scans/alerts.jsonl",),
 }

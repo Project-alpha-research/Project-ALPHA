@@ -11,7 +11,6 @@ import { ResearchGateLockNotice } from '../components/ResearchGateLockNotice'
 import { useLinked } from '../context/linked'
 import type { PanelHandleProps } from '../context/panelHandle'
 import { onLabPrefill, openRunDetail, takeLabPrefill, type LabPrefill } from './actions'
-import { livePaperStrategies } from './controlPlane'
 import { useLinkedProjectGate } from './useLinkedProjectGate'
 
 const SKIP_OPTS = new Set(['param', 'grid', 'json', 'strategy'])
@@ -35,7 +34,7 @@ export function StrategyLab(_props: PanelHandleProps) {
   const gate = useLinkedProjectGate()
 
   useEffect(() => {
-    api.commands().then((c) => setCommands(c.filter((x) => x.run_type || x.id === 'paper run')))
+    api.commands().then((c) => setCommands(c.filter((x) => x.run_type)))
     api.strategies().then(setStrategies)
   }, [])
 
@@ -72,11 +71,6 @@ export function StrategyLab(_props: PanelHandleProps) {
   }, [applyPrefill])
 
   const cmd = useMemo(() => commands.find((c) => c.id === cmdId), [commands, cmdId])
-  const isPaper = cmdId === 'paper run'
-  const visibleStrategies = useMemo(
-    () => (isPaper ? livePaperStrategies(strategies) : strategies),
-    [isPaper, strategies],
-  )
   const stratDef = useMemo(
     () => strategies.find((s) => s.name === strategy),
     [strategies, strategy],
@@ -100,14 +94,6 @@ export function StrategyLab(_props: PanelHandleProps) {
     for (const p of stratDef.params) d[p.name] = String(p.default)
     setParams(d)
   }, [stratDef])
-
-  useEffect(() => {
-    if (!isPaper) return
-    if (!visibleStrategies.some((item) => item.name === strategy)) {
-      setStrategy(visibleStrategies[0]?.name ?? '')
-    }
-    if (symbols === 'SPY') setSymbols('BTC/USDT')
-  }, [isPaper, strategy, symbols, visibleStrategies])
 
   function launch(sandbox = false): void {
     if (gate.lock) return
@@ -208,7 +194,7 @@ export function StrategyLab(_props: PanelHandleProps) {
                 value={strategy}
                 onChange={(e) => setStrategy(e.target.value)}
               >
-                {visibleStrategies.map((s) => (
+                {strategies.map((s) => (
                   <option key={s.name} value={s.name}>
                     {s.name}
                   </option>

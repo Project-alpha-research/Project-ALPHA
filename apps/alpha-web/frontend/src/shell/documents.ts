@@ -25,7 +25,6 @@ import { MlDiagnostics } from '../panels/MlDiagnostics'
 import { NativeJobResult } from '../panels/NativeJobResult'
 import { NativeQlibDemo } from '../panels/NativeQlibDemo'
 import { NativeNautilusDemo, NativeQlibNautilusDemo } from '../panels/NativeNautilusDemo'
-import { PaperMonitor } from '../panels/PaperMonitor'
 import { Pipeline } from '../panels/Pipeline'
 import { PriceChart } from '../panels/PriceChart'
 import { ProviderSystem } from '../panels/ProviderSystem'
@@ -54,7 +53,6 @@ export type DocumentKind =
   | 'forecast'
   | 'ml'
   | 'jobs'
-  | 'paper'
   | 'data'
   | 'tools'
 
@@ -70,7 +68,6 @@ export const DOCUMENT_KINDS: readonly DocumentKind[] = Object.freeze([
   'forecast',
   'ml',
   'jobs',
-  'paper',
   'data',
   'tools',
 ])
@@ -192,12 +189,6 @@ export const DOCUMENTS: readonly DocumentDefinition[] = [
       { name: 'ActivityFeed', title: 'Activity', component: ActivityFeed, area: 'side' },
     ],
   },
-  {
-    id: 'paper',
-    kind: 'paper',
-    title: 'Paper sessions',
-    panes: [{ name: 'PaperMonitor', title: 'Paper sessions', component: PaperMonitor }],
-  },
   // Equities-only windows.
   {
     // Split/dividend actions arrive with a Tiingo pull; the Data Manager is where they are pulled
@@ -297,7 +288,7 @@ export const DOCKS: readonly DockDefinition[] = [
     id: 'Toolbox',
     side: 'bottom',
     title: 'Toolbox',
-    tabs: ['Jobs', 'Trades', 'Backtests', 'Data pulls', 'Log', 'Alerts'],
+    tabs: ['Jobs', 'Backtests', 'Data pulls', 'Log', 'Alerts'],
   },
 ]
 

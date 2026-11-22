@@ -63,7 +63,6 @@ export const GROUP_MENU: Readonly<Record<string, MenuName>> = Object.freeze({
   'monte-carlo': 'Backtest',
   propfirm: 'Backtest',
   risk: 'Backtest',
-  paper: 'Backtest',
   info: 'Help',
 })
 
@@ -120,7 +119,6 @@ const COMMAND_HOMES: Readonly<Record<string, CommandHome>> = {
   research: { kind: 'window', id: 'research' },
   assistant: { kind: 'window', id: 'chart' },
   rules: { kind: 'window', id: 'builder' },
-  paper: { kind: 'window', id: 'paper' },
   provider: { kind: 'window', id: 'jobs' },
   ml: { kind: 'window', id: 'ml-lab' },
   data: { kind: 'dock', id: 'DataManager' },

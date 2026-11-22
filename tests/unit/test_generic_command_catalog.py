@@ -61,7 +61,6 @@ def test_empty_generic_command_is_unknown() -> None:
         (["setup", "trade"], "empirical"),
         (["data", "audit"], "safe"),
         (["data", "repair"], "owner_only"),
-        (["paper", "run"], "owner_only"),
         (["pricing", "price"], "unknown"),
         (["screener", "run"], "unknown"),
     ],
@@ -77,7 +76,7 @@ def _subcommands(root: str) -> list[str]:
 
 
 @pytest.mark.parametrize(
-    "root", ["context", "crypto-data", "provider", "strategy-candidate", "data", "paper"]
+    "root", ["context", "crypto-data", "provider", "strategy-candidate", "data"]
 )
 def test_every_served_subcommand_of_a_classified_root_is_not_unknown(root: str) -> None:
     """An unlisted verb must fail this test rather than silently classify ``unknown``."""

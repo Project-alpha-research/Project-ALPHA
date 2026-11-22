@@ -10,7 +10,7 @@ from alpha_web._activity import AREAS, snapshot_areas
 
 
 def test_areas_are_the_six_governed_roots() -> None:
-    assert set(AREAS) == {"research", "control", "bars", "paper", "workspaces", "alerts"}
+    assert set(AREAS) == {"research", "control", "bars", "workspaces", "alerts"}
 
 
 def test_missing_roots_are_absent_not_zero(tmp_path: Path) -> None:

@@ -1,12 +1,6 @@
 import type { ProviderDefinition } from '../api/types'
 import { validateDates } from './dataManagerModel'
 
-export function livePaperStrategies<T extends { supports_live_paper?: boolean }>(
-  strategies: T[],
-): T[] {
-  return strategies.filter((strategy) => strategy.supports_live_paper === true)
-}
-
 export function historicalProviders(providers: ProviderDefinition[]): ProviderDefinition[] {
   return providers.filter(
     (provider) => provider.installed && provider.capabilities.includes('historical_bars'),

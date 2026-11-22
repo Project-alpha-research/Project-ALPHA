@@ -21,7 +21,6 @@ const DOCUMENTS = [
   { title: 'Forecast', id: 'forecast' },
   { title: 'Machine learning', id: 'ml-lab' },
   { title: 'Jobs & providers', id: 'jobs' },
-  { title: 'Paper sessions', id: 'paper' },
   { title: 'Governance', id: 'governance' },
 ] as const
 
@@ -32,7 +31,7 @@ export async function openDocument(page: Page, title: string): Promise<void> {
     'Build': ['Strategies & Tests', 'Strategy Development'], 'Strategy Builder': ['Strategies & Tests', 'Builder'],
     'Scanner': ['Strategies & Tests', 'Scanner'], 'Strategy Performance Report': ['Results', 'Report'],
     'Compare': ['Results', 'Compare'], 'Forecast': ['Results', 'Forecast'], 'Machine learning': ['Results', 'ML lab'],
-    'Jobs & providers': ['Operations', 'Jobs'], 'Paper sessions': ['Operations', 'Paper sessions'],
+    'Jobs & providers': ['Operations', 'Jobs'],
     'Governance': ['Settings', 'Governance'], 'Funding': ['Data & Assets', 'Funding'],
     'Corporate actions': ['Data & Assets', 'Data downloads'],
   }
@@ -60,8 +59,6 @@ async function switchProfile(page: Page, profile: 'crypto' | 'equities'): Promis
 
 const EMPTY_PAGE = { items: [], limit: 50, offset: 0, has_more: false }
 const SYSTEM_STATUS = {
-  paper_enabled: false,
-  ibkr_paper_enabled: false,
   counts: { symbols: 0, snapshots: 0 },
   data_dir: {
     path: '/deterministic-test-data',
@@ -2284,8 +2281,7 @@ function responseFor(route: Route, options: MockOptions): unknown {
       symbol,
       snapshot_id: null,
       bars,
-      paper_markers: [],
-      provenance: {
+            provenance: {
         symbol,
         source: 'ccxt:binance',
         timeframe: '1D',
@@ -2363,17 +2359,6 @@ function responseFor(route: Route, options: MockOptions): unknown {
   if (url.pathname === '/api/system') return SYSTEM_STATUS
   if (url.pathname === '/api/jobs') return options.jobs ?? []
   if (url.pathname === '/api/workspaces') return []
-  if (url.pathname === '/api/paper/sessions') return []
-  if (url.pathname === '/api/paper/readiness') return {
-    schema_version: 1,
-    status: 'pending',
-    paper_passed: false,
-    requirements: [],
-    blocking_events: [],
-    futures_research_supported: false,
-    live_capital_routing: 'absent',
-    derived_from_elapsed_time: false,
-  }
   if (options.researchGateLock && url.pathname === '/api/projects') {
     return { items: [GATED_PROJECT, UNGATED_PROJECT], limit: 50, offset: 0, has_more: false }
   }
@@ -3383,25 +3368,6 @@ test('dense causal chart layers cap visuals without hiding returned evidence', a
   await expect(page.getByText(/1–80 \/ 180 RETURNED EVENTS/)).toBeVisible()
 })
 
-test('only the active document mounts', async ({ page }) => {
-  const requested: string[] = []
-  page.on('request', (request) => requested.push(new URL(request.url()).pathname))
-  await preparePage(page)
-
-  // Research is the opening document. Closed documents and inactive tabs must not fetch:
-  // the Paper sessions document polls /api/paper/readiness only while it is mounted.
-  const sessions = () => requested.filter((path) => path === '/api/paper/readiness').length
-  expect(sessions()).toBe(0)
-
-  await openDocument(page, 'Paper sessions')
-  await expect.poll(sessions).toBeGreaterThan(0)
-  const polled = sessions()
-  // Switching back to Research unmounts Paper sessions: no further session requests.
-  await openDocument(page, 'Research')
-  await page.waitForTimeout(1_200)
-  expect(sessions()).toBe(polled)
-})
-
 test('legacy trace rerun opens the governed Development Center', async ({ page }) => {
   await preparePage(page, { chartBundle: causalChartBundle(false), runs: [HEAVY_LIBRARY_RUN] })
   await openHeavyPrice(page)
@@ -3592,7 +3558,7 @@ test('the Governance document holds the hazard sentences the working documents n
   await expect(dialog.getByRole('tree', { name: 'Governance pages' }).getByRole('treeitem')).toHaveCount(7)
   for (const sentence of [
     'RESEARCH SANDBOX · SYNTHETIC D0 IS NOT REAL-MARKET EVIDENCE OR A TRADING SIGNAL',
-    'PAPER ONLY · BINANCE LOCAL SANDBOX + IBKR PAPER · LIVE-CAPITAL ROUTING ABSENT',
+    'NO LIVE-CAPITAL ROUTING EXISTS',
     'STANDALONE_UNQUALIFIED · THESE RUNS CAN NEVER COUNT AS GOVERNED RESEARCH EVIDENCE',
     'SANDBOX · PUBLIC BINANCE DATA · REAL EXECUTION IS NOT AVAILABLE',
     'LOCAL CONFIRMATION · NO OVERRIDE · NO LIVE TRADING',
@@ -3977,24 +3943,14 @@ test('a store change outside the browser refreshes the panel watching its area',
   await expect(page.getByRole('row').filter({ hasText: 'data pull XRP/USDT' })).toHaveCount(1)
   await expect(page.getByRole('row').filter({ hasText: 'backtest run SPY' })).toHaveCount(0)
 
-  // Trades mounts the paper monitor; a paper journal change on disk makes it refetch.
-  let sessionReads = 0
-  page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/paper/sessions') sessionReads += 1
-  })
-  await openTask(page, 'Operations', 'Paper sessions')
-  await expect.poll(() => sessionReads).toBeGreaterThanOrEqual(1)
-  const before = sessionReads
+  // The Log names what changed.
   await page.evaluate(() => {
     ;(window as unknown as { __alphaStream: EventTarget }).__alphaStream.dispatchEvent(
-      new MessageEvent('store_changed', { data: '{"area":"paper","at":1}' }),
+      new MessageEvent('store_changed', { data: '{"area":"alerts","at":1}' }),
     )
   })
-  await expect.poll(() => sessionReads).toBeGreaterThan(before)
-
-  // The Log names what changed.
   await openTask(page, 'Operations', 'Activity')
-  await expect(page.getByText('paper journal changed')).toBeVisible()
+  await expect(page.getByText('scan alerts changed')).toBeVisible()
 })
 
 test('a running case offers confirmed pause and cancel where the next action is printed', async ({ page }) => {

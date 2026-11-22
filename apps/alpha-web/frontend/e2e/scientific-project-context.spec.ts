@@ -30,7 +30,7 @@ test('project inventory follows pages and no-project browsing retains the viewed
   const archiveRequests: string[] = []
   await page.route('**/api/candles/BTCUSD?*', route => {
     archiveRequests.push(new URL(route.request().url()).searchParams.get('manifest_id') ?? '')
-    return route.fulfill({ json: { symbol: 'BTCUSD', snapshot_id: null, paper_markers: [], bars, provenance: {
+    return route.fulfill({ json: { symbol: 'BTCUSD', snapshot_id: null, bars, provenance: {
       source: 'bybit:derivative_bars', venue: 'bybit', timeframe: '1H', snapshot_id: null, provenance_sha256: manifest,
       receipt_id: null, knowledge_cutoff: null, quality_status: 'qualified', manifest_id: manifest, market_type: 'inverse',
       volume_unit: 'quote', history_kind: 'reconstructed_from_verified_archive',

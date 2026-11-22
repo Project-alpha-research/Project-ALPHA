@@ -136,7 +136,14 @@ def direct_spec(home: Path, options: SpecOptions) -> Path:
     key = hashlib.sha256(json.dumps(build_spec(options), sort_keys=True).encode()).hexdigest()
     named = replace(options, name=f"quick-{key[:8]}")
     path = _file(home, named.name)
+    text = spec_text(named)
     if not path.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
-        write_text(path, spec_text(named))
+        write_text(path, text)
+    elif path.read_text(encoding="utf-8") != text:
+        raise SpineError(
+            "SPEC_CHANGED",
+            f"The saved spec was edited and no longer matches your options: {path}",
+            "Run it by path with alpha setup find, or delete that file.",
+        )
     return path

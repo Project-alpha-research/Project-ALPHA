@@ -51,3 +51,9 @@ A first run needs no file now. Both gaps are closed on the CLI side only. `worke
 Both new test files failed at collection before the code existed (`No module named alpha_cli._setup_spec_build`, then
 `alpha_cli.rdagent_defaults`). After the code: `test_setup_new.py` 14 passed, `test_rdagent_defaults.py` 12 passed;
 the existing setup and RD-Agent run tests still pass.
+
+## Review round 1 (three findings, all fixed)
+1. An edited `specs/quick-<hash>.toml` is refused, not used, and not overwritten.
+2. `--accept-bad-data` now reaches the find that `study` and `trade` run first.
+3. `--recheck` with direct options is refused before any file is written.
+Each has a test in `test_setup_new.py`; two of them failed before the fix.

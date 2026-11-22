@@ -419,7 +419,14 @@ def _recheck(
         raise typer.Exit(MISMATCH_EXIT)
 
 
-def _find_id(find_id: str | None, given: tuple[Any, ...], check_data: bool, json_out: bool) -> str:
+def _find_id(
+    find_id: str | None,
+    given: tuple[Any, ...],
+    check_data: bool,
+    accept_bad_data: str | None,
+    recheck: bool,
+    json_out: bool,
+) -> str:
     """The find to measure: the one named, or a find run now from the options given."""
     asset, when, horizon, stop, target = given
     try:
@@ -427,6 +434,12 @@ def _find_id(find_id: str | None, given: tuple[Any, ...], check_data: bool, json
             raise SpineError("BAD_OPTION", NOT_BOTH, "Remove one of the two and run it again.")
         if find_id is not None:
             return find_id
+        if recheck:
+            raise SpineError(
+                "BAD_OPTION",
+                "--recheck needs a find id: a recheck writes nothing, and options run a find.",
+                "Run the find first, then recheck it by its id.",
+            )
         if all(v is None for v in given):
             raise SpineError(
                 "BAD_OPTION",
@@ -435,9 +448,14 @@ def _find_id(find_id: str | None, given: tuple[Any, ...], check_data: bool, json
             )
         home = AlphaSettings().data_dir
         options = _options("quick", asset, when, horizon, stop, target)
-        return str(
-            _find_from_options(home, options, check_data=check_data, json_out=json_out)["find_id"]
+        found = _find_from_options(
+            home,
+            options,
+            check_data=check_data,
+            accept_bad_data=accept_bad_data,
+            json_out=json_out,
         )
+        return str(found["find_id"])
     except (DataError, ValueError, OSError) as exc:
         fail(setup_error(exc), json_out)
     except SpineError as exc:
@@ -476,7 +494,8 @@ def study_command(
     from alpha_cli.spine.setup_study import run_study
     from alpha_cli.spine.setup_trade_figure import study_text
 
-    find_id = _find_id(find_id, (asset, when, horizon, stop, target), check_data, json_out)
+    given = (asset, when, horizon, stop, target)
+    find_id = _find_id(find_id, given, check_data, accept_bad_data, recheck, json_out)
     if recheck:
         _recheck("study", find_id, check_data, accept_bad_data, json_out)
         return
@@ -529,7 +548,8 @@ def trade_command(
     from alpha_cli.spine.setup_trade import run_trade
     from alpha_cli.spine.setup_trade_figure import trade_text
 
-    find_id = _find_id(find_id, (asset, when, horizon, stop, target), check_data, json_out)
+    given = (asset, when, horizon, stop, target)
+    find_id = _find_id(find_id, given, check_data, accept_bad_data, recheck, json_out)
     if recheck:
         _recheck("trade", find_id, check_data, accept_bad_data, json_out)
         return

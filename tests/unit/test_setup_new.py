@@ -145,3 +145,39 @@ def test_study_runs_a_find_first_when_given_options(
     assert result.exit_code == 0, result.output
     assert len(list((home / "setups").glob("*/manifest.json"))) == 1
     assert list((home / "setup-studies").glob("*/manifest.json"))
+
+
+def test_an_edited_quick_spec_is_refused_not_used(home: Path) -> None:
+    from alpha_cli._setup_spec_build import direct_spec
+
+    path = direct_spec(home, SpecOptions(name="quick"))
+    path.write_text(path.read_text().replace("20", "21"))
+    with pytest.raises(SpineError) as caught:
+        direct_spec(home, SpecOptions(name="quick"))
+    assert "edited" in str(caught.value)
+    assert "21" in path.read_text()
+
+
+def test_recheck_with_options_writes_nothing(home: Path) -> None:
+    result = RUNNER.invoke(setup_cmds.setup_app, ["study", "--when", "volume == 1", "--recheck"])
+    assert result.exit_code == 1 and "--recheck needs a find id" in result.output
+    assert not (home / "specs").exists()
+
+
+def test_accept_bad_data_reaches_the_first_find(
+    home: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: list[str | None] = []
+
+    def fake(
+        home: Path, options: SpecOptions, *, accept_bad_data: str | None = None, **kw: object
+    ) -> dict[str, str]:
+        seen.append(accept_bad_data)
+        raise SpineError("STOP", "stop", "stop")
+
+    monkeypatch.setattr(setup_cmds, "_find_from_options", fake)
+    for kind in ("study", "trade"):
+        RUNNER.invoke(
+            setup_cmds.setup_app, [kind, "--when", "volume == 1", "--accept-bad-data", "why"]
+        )
+    assert seen == ["why", "why"]

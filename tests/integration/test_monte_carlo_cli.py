@@ -384,7 +384,11 @@ def test_kronos_monte_carlo_replays_fake_ohlcv_paths_through_engine(
     source_manifest = json.loads((home / "runs" / source / "manifest.json").read_text())
     n_bars = source_manifest["spine"]["data_period"]
     train = source_manifest["metadata"]["train_size"]
-    assert synthetic.height == 2 * (source_manifest["metadata"]["n_bars"] - train)
+    window = source_manifest["metadata"]["embargo"] + source_manifest["metadata"]["test_size"] + 1
+    assert manifest["synthetic_tail_horizon"] == min(
+        window, source_manifest["metadata"]["n_bars"] - train
+    )
+    assert synthetic.height == 2 * manifest["synthetic_tail_horizon"]
     assert n_bars["last_ts"] <= reserve.CUTOFF.isoformat()
     assert synthetic.select("path_index").n_unique() == 2
     assert paths.height == 2 * manifest["horizon"]

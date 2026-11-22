@@ -77,7 +77,7 @@ def forecast_fan(ctx: BuildContext) -> FigureSpec:
                         position=origin,
                         role="reference",
                         width=1.0,
-                        label="Forecast origin",
+                        label="As-of date (last bar the model saw)",
                     ),
                 ),
             ),

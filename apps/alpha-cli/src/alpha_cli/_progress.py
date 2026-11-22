@@ -15,18 +15,22 @@ EVERY_SECONDS = 10.0
 
 
 @contextmanager
-def heartbeat(label: str, every: float = EVERY_SECONDS) -> Iterator[None]:
+def heartbeat(
+    label: str, every: float = EVERY_SECONDS, expected: float | None = None
+) -> Iterator[None]:
     """Print `label: still running, N seconds so far` to stderr every `every` seconds.
 
-    A run shorter than `every` prints nothing. stderr keeps `--json` output on stdout clean.
+    With ``expected`` (a rough estimate in seconds) the line also says how long the run should
+    take. A run shorter than `every` prints nothing. stderr keeps `--json` output on stdout clean.
     """
+    of = f" of about {round(expected)} expected" if expected is not None else ""
     stop = threading.Event()
     started = time.monotonic()
 
     def beat() -> None:
         while not stop.wait(every):
             seconds = round(time.monotonic() - started)
-            typer.echo(f"{label}: still running, {seconds} seconds so far.", err=True)
+            typer.echo(f"{label}: still running, {seconds} seconds so far{of}.", err=True)
 
     thread = threading.Thread(target=beat, daemon=True)
     thread.start()

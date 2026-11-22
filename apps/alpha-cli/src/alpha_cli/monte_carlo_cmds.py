@@ -20,7 +20,7 @@ import polars as pl
 import typer
 
 from alpha_cli import _artifacts, _forecast, _forecast_cache, _mc_reading, _runner
-from alpha_cli._progress import with_heartbeat
+from alpha_cli._progress import heartbeat, with_heartbeat
 from alpha_cli._seeds import semantic_seed, semantic_seeds
 from alpha_cli.artifact_contract import sha256_file
 from alpha_cli.spine import reserve
@@ -100,14 +100,11 @@ def _verified_forecast_eval(
     if manifest.get("command") != "forecast_eval":
         raise DataError(f"run {run_id!r} must be a completed forecast_eval run")
     source_metadata = source_manifest["metadata"]
+    # The cut-off dates may differ in name only (a weekend date names the same last bar); the
+    # caller then checks that the evaluation hashed exactly the source run's bars.
     for label, source_value, eval_value in (
         ("symbol", source_metadata.get("symbol"), manifest.get("symbol")),
         ("snapshot", source_metadata.get("snapshot_id"), manifest.get("snapshot_id")),
-        (
-            "research cutoff",
-            source_manifest.get("research_cutoff"),
-            manifest.get("research_cutoff"),
-        ),
     ):
         if source_value != eval_value:
             raise DataError(
@@ -613,13 +610,17 @@ def classical(
 
 
 @monte_carlo_app.command("kronos")
-@with_heartbeat("Monte Carlo (Kronos)")
 def kronos(
     from_run: str = typer.Option(..., "--from-run", help="completed validation run id"),
     forecast_eval_run: str = typer.Option(
         ..., "--forecast-eval-run", help="matching rolling-origin Kronos evaluation run id"
     ),
-    paths: int = typer.Option(128, "--paths", min=1),
+    paths: int = typer.Option(8, "--paths", min=1, help="synthetic paths, made in one batch"),
+    horizon: int | None = typer.Option(
+        None,
+        min=1,
+        help="future sessions Kronos makes per path (default: the first test window; at most 512)",
+    ),
     context: int | None = typer.Option(
         None, help="real training-prefix bars supplied to Kronos (default: settings value)"
     ),
@@ -646,7 +647,6 @@ def kronos(
         else settings.forecast_tokenizer_revision
     )
     resolved_device = device if device is not None else settings.forecast_device
-    resolved_context = context if context is not None else settings.forecast_context
     resolved_seed = settings.random_seed if seed is None else seed
 
     try:
@@ -672,17 +672,34 @@ def kronos(
             as_of=as_of,
         )
         if _runner.source_fingerprint(bars) != eval_manifest.get("source_fingerprint"):
-            raise DataError("forecast evaluation does not hash the source run's exact bar history")
+            raise DataError(
+                f"The forecast evaluation read different bars from run {from_run}. Make a new "
+                f"one with: alpha forecast eval {symbol} --as-of {cutoff or reserve.CUTOFF_DATE}"
+            )
         spec = _spec_from_validation(source_manifest)
         if spec.train_size >= len(bars):
             raise DataError("source validation has no future tail after its training prefix")
         training_prefix = list(bars[: spec.train_size])
-        future_timestamps = tuple(bar.ts for bar in bars[spec.train_size :])
-        if resolved_context < 2 or resolved_context > len(training_prefix):
+        future = len(bars) - spec.train_size
+        # Kronos re-reads its window at every step, so the cost grows with the tail: by default
+        # it makes the first test window only (one fold), and never more than its 512-bar window.
+        if horizon is None:
+            steps = min(spec.embargo + spec.test_size + 1, future, _forecast.MAX_WINDOW)
+        elif horizon > min(future, _forecast.MAX_WINDOW):
             raise DataError(
-                f"Kronos context must be between 2 and training prefix {len(training_prefix)}, "
-                f"got {resolved_context}"
+                f"--horizon {horizon} is too long: the largest that works is "
+                f"{min(future, _forecast.MAX_WINDOW)} (Kronos makes at most "
+                f"{_forecast.MAX_WINDOW} sessions; the run has {future} after training)."
             )
+        else:
+            steps = horizon
+        future_timestamps = tuple(bar.ts for bar in bars[spec.train_size :][:steps])
+        resolved_context, lowered = _forecast.fit_context(
+            context,
+            default=settings.forecast_context,
+            available=len(training_prefix),
+            what=f"training bars in run {from_run}",
+        )
         model_input = training_prefix[-resolved_context:]
         forecaster = _forecaster_factory(
             model=resolved_model,
@@ -709,31 +726,35 @@ def kronos(
                     f"Kronos generator {field} {provenance.get(field)!r} differs from "
                     f"forecast evaluation {evaluated_model.get(field)!r}"
                 )
-        synthetic_rows: list[dict[str, object]] = []
-        engine_paths: list[np.ndarray] = []
-        adjustment_count = 0
-        path_seeds: list[int] = []
-        for path_index in range(paths):
-            path_seed = semantic_seed(resolved_seed, f"monte_carlo.kronos.path.{path_index}")
-            path_seeds.append(path_seed)
+        expected = _forecast.estimate_seconds(context=resolved_context, horizon=steps, rows=paths)
+        for line in (lowered, _forecast.expected_time_line(resolved_model, expected)):
+            if line is not None:
+                typer.echo(line)
+        generator_seed = semantic_seed(resolved_seed, "monte_carlo.kronos.paths")
+        with heartbeat("Monte Carlo (Kronos)", expected=expected):
             generated = forecaster.forecast(
                 model_input,
-                horizon=len(future_timestamps),
-                sample_count=1,
+                horizon=steps,
+                sample_count=paths,
                 temperature=temperature,
                 top_p=top_p,
                 top_k=top_k,
-                seed=path_seed,
+                seed=generator_seed,
                 step_ts=future_timestamps,
             )
-            if generated.step_ts != future_timestamps:
-                raise DataError(f"Kronos path {path_index} changed the frozen future timestamps")
-            if len(generated.samples) != 1:
-                raise DataError(f"Kronos path {path_index} did not return exactly one sample")
+        if generated.step_ts != future_timestamps:
+            raise DataError("Kronos changed the frozen future timestamps")
+        if len(generated.samples) != paths:
+            raise DataError(f"Kronos returned {len(generated.samples)} paths, not {paths}")
+        synthetic_rows: list[dict[str, object]] = []
+        engine_paths: list[np.ndarray] = []
+        adjustment_count = 0
+        scored_ts: list[datetime] = []
+        for path_index, sample in enumerate(generated.samples):
             projected, rows, adjusted = _project_forecast_path(
                 symbol=symbol,
                 timestamps=future_timestamps,
-                sample=generated.samples[0],
+                sample=sample,
                 path_index=path_index,
             )
             synthetic_rows.extend(rows)
@@ -743,7 +764,7 @@ def kronos(
                 scenario_bars,
                 spec,
                 data_dir=settings.data_dir,
-                seed=path_seed,
+                seed=generator_seed,
             )
             oos, _ = _runner.fresh_oos_execution(
                 scenario_bars,
@@ -751,8 +772,12 @@ def kronos(
                 dividends=dividends,
             )
             engine_paths.append(oos.oos_returns)
+            scored_ts = list(oos.oos_timestamps)
         path_matrix = np.asarray(engine_paths, dtype=np.float64)
-        source_equity = _artifacts.read_equity(source_dir)
+        # Compare with the same sessions of the observed out-of-sample equity.
+        source_equity = _artifacts.read_equity(source_dir)[: len(scored_ts)]
+        if [ts for ts, _ in source_equity] != scored_ts:
+            raise DataError("Kronos paths do not cover the source run's first out-of-sample days")
         source_info = _mc_reading.built_from(from_run, source_dir, source_equity, "kronos")
         source_horizon = source_info["n_returns"]
         if path_matrix.shape != (paths, source_horizon):
@@ -824,8 +849,8 @@ def kronos(
             "top_p": top_p,
             "top_k": top_k,
             "master_seed": resolved_seed,
-            "path_seeds": path_seeds,
-            "generator_version": 1,
+            "generator_seed": generator_seed,
+            "generator_version": 2,
             "model_identity": model_identity,
             "model": provenance,
         }
@@ -925,7 +950,14 @@ def kronos(
     except (DataError, KeyError, TypeError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
 
-    typer.echo(f"monte-carlo kronos -> run {identity.run_id}: {paths} full-engine paths")
+    typer.echo(
+        f"monte-carlo kronos -> run {identity.run_id}: {paths} full-engine paths over the first "
+        f"{source_horizon} out-of-sample days"
+    )
+    typer.echo(
+        f"More paths give a fuller fan: --paths {4 * paths} takes "
+        f"{_forecast.say_time(4 * expected)} on a desktop CPU."
+    )
     typer.echo(
         f"{_mc_reading.built_from_sentence(source_info)}\nmanifest at {rdir / 'manifest.json'}"
     )

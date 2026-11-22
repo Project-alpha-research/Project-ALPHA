@@ -56,7 +56,7 @@ describe('control-plane API client', () => {
   it('surfaces non-success responses for panel error states', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('offline', { status: 503 })))
 
-    await expect(api.providers()).rejects.toThrow('503')
+    await expect(api.providers()).rejects.toThrow('The Workstation server could not answer this request. Try again. If it keeps failing, restart the Workstation.')
   })
 
   it('uses bounded artifact endpoints for causal charts and native analytics', async () => {
@@ -99,7 +99,8 @@ describe('control-plane API client', () => {
   it('extracts ApiErrorV1 messages without leaking JSON response framing', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(apiError('run has no equity stream', 422)))
 
-    await expect(api.providers()).rejects.toThrow('422 — run has no equity stream')
+    await expect(api.providers()).rejects.toThrow('run has no equity stream')
+    await expect(api.providers()).rejects.not.toThrow('422')
     await expect(api.providers()).rejects.not.toThrow('{"message"')
   })
 

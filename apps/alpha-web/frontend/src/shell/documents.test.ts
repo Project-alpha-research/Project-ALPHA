@@ -45,11 +45,11 @@ describe('document registry', () => {
     expect(report.panes).toHaveLength(1)
   })
 
-  it('keeps research primary and separate from development', () => {
-    expect(documentOf('research').panes[0].name).toBe('ResearchCockpit')
-    const build = documentOf('build').panes
-    expect(build.map((pane) => pane.name)).not.toContain('AiConsole')
-    expect(build.map((pane) => pane.name)).not.toContain('ResearchCockpit')
+  it('lists no removed product part: research cases, projects or crypto-only data windows', () => {
+    const ids = DOCUMENTS.map((item) => item.id as string)
+    for (const removed of ['research', 'build', 'funding', 'open-interest', 'onchain', 'dex', 'crowding', 'corporate-actions']) {
+      expect(ids).not.toContain(removed)
+    }
   })
 
   it('carries no Glossary pane — it lives on the Governance document', () => {
@@ -73,9 +73,6 @@ describe('document registry', () => {
       expect(main.length).toBeGreaterThan(0)
       expect(main.length + side.length).toBe(definition.panes.length)
     }
-    expect(panesByArea(documentOf('build')).side.map((pane) => pane.title)).toEqual([
-      'Development Next Step',
-    ])
     expect(panesByArea(documentOf('report')).side).toEqual([])
   })
 

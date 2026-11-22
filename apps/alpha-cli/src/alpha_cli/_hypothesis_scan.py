@@ -97,6 +97,15 @@ def _digest(value: object) -> str:
         raise DataError("screening values must have finite canonical JSON") from exc
 
 
+def scan_digest(spec: Mapping[str, Any]) -> str:
+    """The scan id: the spec without its crypto manifest ids, which also name held-back rows.
+
+    The spec carries ``data_hash``, a hash of the rows before the reserved day: the only rows the
+    screen may read. The manifest ids stay in the stored spec to find those rows again.
+    """
+    return _digest({key: value for key, value in spec.items() if key != "crypto_inputs"})
+
+
 def runtime_identity() -> dict[str, str]:
     """Hash installed execution sources without the process cache used by legacy runs."""
     digest = hashlib.sha256()
@@ -241,18 +250,14 @@ def freeze_spec(data_dir: Path, request: Mapping[str, Any]) -> dict[str, Any]:
         **runtime_identity(),
     }
     if options["lane"] == "crypto":
-        from alpha_cli._crypto_panel import freeze_crypto_inputs, held_back_rows
+        from alpha_cli._crypto_panel import cut_rows, freeze_crypto_inputs
 
-        result["crypto_inputs"] = freeze_crypto_inputs(data_dir, options)
-        held = reserve.Hold(None, reserve.CUTOFF_DATE, held_back_rows(data_dir, result), "rows")
-        if held.held_back:
-            result.update(held.fields())
+        inputs = freeze_crypto_inputs(data_dir, options)
+        result["crypto_inputs"] = inputs
+        result["data_hash"] = _digest(cut_rows(data_dir, inputs))
         return result
-    from alpha_data.snapshot import resolve_snapshot_dir, snapshot_manifest_hash
     from alpha_data.store import ParquetStore
 
-    snapshot = resolve_snapshot_dir(data_dir / "snapshots", options["snapshot"])
-    result["snapshot_hash"] = snapshot_manifest_hash(snapshot)
     memberships = []
     if options["universe"] is not None:
         memberships = ParquetStore(data_dir / "store").read_universe(options["universe"])
@@ -260,24 +265,53 @@ def freeze_spec(data_dir: Path, request: Mapping[str, Any]) -> dict[str, Any]:
         options["symbols"] = sorted({item.symbol for item in memberships})
     result["memberships"] = [item.model_dump(mode="json") for item in memberships]
     result["membership_hash"] = _digest(result["memberships"])
-    held = reserve.hold_many(
-        options["symbols"], data_dir, as_of=options["as_of"], snapshot_id=options["snapshot"]
-    )
-    if held.held_back:
-        result.update(held.fields())
+    result["data_hash"] = _equity_data_hash(data_dir, options)
     return result
+
+
+def _equity_data_hash(data_dir: Path, options: Mapping[str, Any]) -> str:
+    """Hash of the snapshot rows before the reserved day, per name; held-back rows are not read."""
+    from alpha_cli._runner import load_bars, source_fingerprint
+    from alpha_data.snapshot import resolve_snapshot_dir
+
+    snapshot = resolve_snapshot_dir(data_dir / "snapshots", options["snapshot"])
+    available = set(json.loads((snapshot / "manifest.json").read_text())["symbols"])
+    cut = {
+        name: source_fingerprint(
+            load_bars(
+                name, data_dir=data_dir, snapshot_id=options["snapshot"], as_of=reserve.CUTOFF
+            )[0]
+        )
+        for name in options["symbols"]
+        if name in available
+    }
+    return _digest(cut)
+
+
+def _held_fields(data_dir: Path, spec: Mapping[str, Any]) -> dict[str, Any]:
+    """The held-back count and label, a displayed fact of the result and never of the identity."""
+    options = spec["options"]
+    if options["lane"] == "crypto":
+        from alpha_cli._crypto_panel import held_back_rows
+
+        held = reserve.Hold(None, reserve.CUTOFF_DATE, held_back_rows(data_dir, spec), "rows")
+    else:
+        held = reserve.hold_many(
+            options["symbols"], data_dir, as_of=options["as_of"], snapshot_id=options["snapshot"]
+        )
+    return {"labels": held.label([]), **held.record_fields()} if held.held_back else {}
 
 
 def equity_panel(
     data_dir: Path, spec: Mapping[str, Any]
 ) -> tuple[list[date], np.ndarray, list[str]]:
     from alpha_cli._runner import load_bars
-    from alpha_data.snapshot import resolve_snapshot_dir, snapshot_manifest_hash
+    from alpha_data.snapshot import resolve_snapshot_dir
 
     options = spec["options"]
     snapshot = resolve_snapshot_dir(data_dir / "snapshots", options["snapshot"])
-    if snapshot_manifest_hash(snapshot) != spec["snapshot_hash"]:
-        raise DataError("frozen equity snapshot hash changed")
+    if _equity_data_hash(data_dir, options) != spec["data_hash"]:
+        raise DataError("frozen equity snapshot rows changed")
     if _digest(spec["memberships"]) != spec["membership_hash"]:
         raise DataError("frozen membership hash changed")
     day = date.fromisoformat(options["as_of"])
@@ -453,7 +487,7 @@ def evaluate_spec(
     return {
         "authority": "none",
         "execution_authority": False,
-        **{key: spec[key] for key in ("reserve", "labels") if key in spec},
+        **_held_fields(data_dir, spec),
         "results": results,
         "trials": len(signals) * len(options["horizons"]),
         "missing": missing,
@@ -505,8 +539,10 @@ def _attempt(
         if replay_id is None:
             assert request is not None
             spec = freeze_spec(data_dir, request)
-            scan_id = _digest(spec)
-            _publish(_storage_path(data_dir, "specs", f"{scan_id}.json"), spec)
+            scan_id = scan_digest(spec)
+            stored = _storage_path(data_dir, "specs", f"{scan_id}.json")
+            if not stored.exists():  # an equal scan id means equal rows before the boundary
+                _publish(stored, spec)
         else:
             if len(replay_id) != 64 or any(char not in "0123456789abcdef" for char in replay_id):
                 raise DataError("scan_id must be a lowercase SHA-256 digest")
@@ -515,7 +551,7 @@ def _attempt(
                 spec = json.loads(path.read_text())
             except (OSError, ValueError) as exc:
                 raise DataError("frozen scan specification is unavailable or corrupt") from exc
-            if not isinstance(spec, dict) or _digest(spec) != replay_id:
+            if not isinstance(spec, dict) or scan_digest(spec) != replay_id:
                 raise DataError("frozen scan specification integrity failure")
         if spec.get("schema_version") != 1 or spec.get("panel_version") != panel.PANEL_VERSION:
             raise DataError("unsupported frozen scan version")
@@ -637,7 +673,7 @@ def verified_screening_reference(
 
     spec, spec_hash = read("specs", f"{scan_id}.json")
     if (
-        _digest(spec) != scan_id
+        scan_digest(spec) != scan_id
         or spec.get("authority") != "none"
         or spec.get("schema_version") != 1
     ):

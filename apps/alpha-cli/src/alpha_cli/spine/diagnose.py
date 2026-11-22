@@ -39,7 +39,7 @@ from alpha_cli.spine.macro import macro_window
 from alpha_cli.spine.owner_reading import owner_counts
 from alpha_cli.spine.owner_rule import OwnerRule
 from alpha_cli.spine.owner_variants import owner_variants
-from alpha_cli.spine.price_noise import price_noise
+from alpha_cli.spine.price_noise import engine_runs, price_noise
 from alpha_cli.spine.reserve import CONFIRMATION
 from alpha_cli.spine.spec import IdeaSpec, Rule
 from alpha_cli.spine.trial_reader import LedgerSnapshot, spine_snapshot
@@ -364,6 +364,7 @@ def write_diagnostics(
     result: dict[str, Any],
     *,
     snapshot: LedgerSnapshot | None = None,
+    workers: int = 1,
 ) -> _gauntlet.GauntletOutput:
     rdir = Path(result["run_dir"])
     full, dates, equity = full_sample(bars, dividends, spec)
@@ -406,16 +407,20 @@ def write_diagnostics(
     document["concentration"] = d.concentration([trade.realized_pnl for trade in full.trades])
     variants = []
     confirmation = CONFIRMATION in result.get("labels", [])
-    for name, kind, changed in variant_specs(idea, spec, costs_only=confirmation):
-        result["variants_evaluated"] += 1
-        rerun = _runner.run_full_backtest(bars, changed, dividends=dividends)
+    named = variant_specs(idea, spec, costs_only=confirmation)
+    tasks = [(bars, changed, dividends) for _, _, changed in named]
+    # Every attempt counts, a failed one too: a pool starts all of them, one worker one at a time.
+    batches = [tasks] if workers > 1 else [[task] for task in tasks]
+    reruns = []
+    for batch in batches:
+        result["variants_evaluated"] += len(batch)
+        reruns.extend(engine_runs(batch, workers))
+    for (name, kind, _), (rerun_equity, _) in zip(named, reruns, strict=True):
         variants.append(
             {
                 "name": name,
                 "kind": kind,
-                **d.performance(
-                    [v for _, v in rerun.equity_curve], ppy, "full-sample engine re-run"
-                ),
+                **d.performance(rerun_equity, ppy, "full-sample engine re-run"),
             }
         )
     document["sensitivity"] = {
@@ -427,7 +432,7 @@ def write_diagnostics(
     document["inverted_signal"] = _inverted_control(bars, dividends, spec, full, document)
     document["walk_forward_efficiency"] = _efficiency(out, full, ppy)
     document["price_noise"] = price_noise(
-        bars, dividends, spec, identity.run_id, document["full_sample"]["sharpe"]
+        bars, dividends, spec, identity.run_id, document["full_sample"]["sharpe"], workers
     )
     returns = to_returns([float(bar.close) for bar in bars])
     weights, costs = surrogate_for(spec).weights_and_costs(returns)

@@ -70,6 +70,7 @@ def publication(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Publication:
         result: dict[str, Any],
         *,
         snapshot: LedgerSnapshot | None = None,
+        workers: int = 1,
     ) -> SimpleNamespace:
         _publish(
             Path(result["run_dir"]),

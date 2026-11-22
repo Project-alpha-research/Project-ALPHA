@@ -32,7 +32,8 @@ _FOLDS: Final[Text] = (
     ),
     (
         "Each bar is one fold's out-of-sample Sharpe ratio, and the dashed line is the "
-        "mean across folds. The second panel shows each fold's out-of-sample return."
+        "mean of the folds that have a Sharpe. The second panel shows each fold's "
+        "out-of-sample return."
     ),
     (
         "Look at how many folds sit above the dashed line and whether one tall bar "

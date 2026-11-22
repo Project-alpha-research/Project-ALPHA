@@ -391,7 +391,7 @@ test('@reference-only loading, empty and failed candle states stay explicit', as
   })
   fail = true
   await page.reload()
-  await expect(page.locator('.price-panel .placeholder')).toContainText('Error: 503 Service Unavailable')
+  await expect(page.locator('.price-panel .placeholder')).toContainText('The Workstation server could not answer this request.')
   await expect(page.locator('.technical-host')).toHaveCount(0)
 })
 

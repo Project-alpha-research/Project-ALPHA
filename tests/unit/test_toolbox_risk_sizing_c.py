@@ -183,3 +183,10 @@ def test_vol_target_caps_the_leverage(tmp_path: Path) -> None:
     put_returns(tmp_path, r)
     values = read(tmp_path, "risk.vol_target", "max_leverage=1.5")["values"]
     assert values["average_leverage"] == pytest.approx(1.5, rel=REL, abs=ABS)
+
+
+@pytest.mark.parametrize("tool", ["risk.kelly", "risk.fractional_kelly", "risk.optimal_f"])
+def test_after_cost_sizing_checks_do_not_reuse_version_one_results(tool: str) -> None:
+    from alpha_cli.toolbox.registry import get
+
+    assert get(tool).version == 2

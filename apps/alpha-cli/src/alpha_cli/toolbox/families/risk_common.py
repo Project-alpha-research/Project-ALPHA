@@ -111,6 +111,7 @@ def check(
     params: tuple[Param, ...] = (),
     family: str = "risk",
     cost: Literal["instant", "seconds", "minutes"] = "instant",
+    version: int = 1,
 ) -> ToolSpec:
     """One diagnostic check: its reference is the known-answer test named like the check."""
     return ToolSpec(
@@ -127,6 +128,7 @@ def check(
         reference=f"tests/unit/{tests}.py::test_{tool_id.split('.')[1]}",
         compute=compute,
         cost=cost,
+        version=version,
         time_safety="hindsight",
         poison_test=POISON,
     )

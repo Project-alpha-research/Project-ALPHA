@@ -100,12 +100,14 @@ class Target:
         """The rule-test block; a model run has none, so its fields are the few that apply."""
         if self.is_ml:
             return {"store": self.manifest.get("snapshot_hash"), "labels": []}
-        return self.manifest["spine"]
+        spine: dict[str, Any] = self.manifest["spine"]
+        return spine
 
     @property
     def metadata(self) -> dict[str, Any]:
         if not self.is_ml:
-            return self.manifest["metadata"]
+            found: dict[str, Any] = self.manifest["metadata"]
+            return found
         return {
             "symbol": ",".join(self.manifest["universe"]),
             "last_ts": self.last_ts.isoformat(),

@@ -62,7 +62,7 @@ def look_today(
         max_distance=threshold,
     )
     last_history = len(history) - 1
-    rows = [
+    rows: list[dict[str, Any]] = [
         {
             "start": _day(match.start_ts),
             "end": _day(match.end_ts),
@@ -73,7 +73,7 @@ def look_today(
         }
         for match in result.matches
     ]
-    summary = {}
+    summary: dict[str, dict[str, Any]] = {}
     for h in horizons:
         values = [v for row in rows if (v := row["followed"][str(h)]) is not None]
         summary[str(h)] = {

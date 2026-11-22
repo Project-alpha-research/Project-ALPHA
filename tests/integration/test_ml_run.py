@@ -297,7 +297,8 @@ def test_every_check_either_runs_or_says_why_on_an_ml_run(home: Path, tmp_path: 
 
     run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
     stored = {"stored_equity", "run_trades"}
-    ran, refused = [], []
+    ran: list[str] = []
+    refused: list[str] = []
     for spec in SPECS:
         if spec.compute is None or not set(spec.needs) <= stored:
             continue

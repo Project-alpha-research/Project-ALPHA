@@ -194,3 +194,15 @@ def test_a_repeat_hit_shows_this_searchs_relevance_not_the_first(
     second = _facts(tmp_path, "library", "search", "reversal", "--unpaywall-email", "x@example.org")
     assert second["papers"][0]["relevance_explanation"] == "title shares: reversal"
     assert len(_facts(tmp_path, "library", "papers")["papers"]) == 2
+
+
+def test_a_hostile_file_name_and_title_cannot_leave_the_library_folder(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    odd = tmp_path / "..%2f..%2fescape;$(x) .pdf"
+    odd.write_bytes(PDF)
+    code, _ = _cli(home, "library", "import-pdf", str(odd), "--title", "../../../escape", "--json")
+    assert code == 0
+    written = {p for p in tmp_path.rglob("*") if p.is_file()}
+    assert all(p == odd or home in p.parents for p in written)
+    assert all(str(home / "library" / "papers") in str(p) for p in written if p != odd)
+    assert not (tmp_path / "escape").exists()

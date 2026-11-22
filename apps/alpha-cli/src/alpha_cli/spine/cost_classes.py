@@ -29,6 +29,8 @@ BORROW_LABEL = "borrow-at-class-rate"
 # Owner decision: a short's borrow is stated as a fact, never charged in the result.
 BORROW_NOT_CHARGED = "short-borrow-not-charged"
 STOCK_SESSIONS = 252
+# Broad US index funds, known by symbol when the store records no asset class (yfinance does not).
+US_LARGE_ETFS = frozenset({"SPY", "QQQ", "IWM", "DIA", "VOO", "IVV", "VTI"})
 CRYPTO_DAYS = 365
 
 
@@ -106,7 +108,8 @@ def asset_class(resolved: ResolvedAsset) -> str | None:
     """The row key for a stored asset, or None when its record does not say.
 
     A stored dataset identity decides. Without one, a crypto provider or a slash pair is crypto
-    spot; an equity provider alone does not tell a stock from an ETF, so it is not known.
+    spot and a broad US index fund is known by its symbol; otherwise an equity provider alone does
+    not tell a stock from an ETF, so it is not known.
     """
     path = ParquetStore(store_dir(resolved.data_dir, DAILY))._provenance_path(resolved.symbol)
     provenance: dict[str, Any] = {}
@@ -126,6 +129,8 @@ def asset_class(resolved: ResolvedAsset) -> str | None:
     parts = set(resolved.source.lower().split(":"))
     if "/" in resolved.symbol or parts & CRYPTO_PROVIDERS:
         return "crypto_spot"
+    if resolved.symbol in US_LARGE_ETFS:
+        return "us_large_etf"
     return None
 
 

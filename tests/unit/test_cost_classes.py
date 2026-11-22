@@ -42,7 +42,9 @@ def _key(home: Path, symbol: str) -> str | None:
         ("AAPL", "tiingo", {"asset_class": "stock", "venue": "US"}, "us_stock"),
         ("BTC/USDT", "binance", {"asset_class": "crypto", "venue": "BINANCE"}, "crypto_spot"),
         ("ETH/USDT", "ccxt:binance", None, "crypto_spot"),
-        ("QQQ", "tiingo", None, None),
+        ("QQQ", "tiingo", None, "us_large_etf"),
+        ("SPY", "yfinance", None, "us_large_etf"),
+        ("XYZ", "tiingo", None, None),
         ("ES", "vendor", {"asset_class": "future", "venue": "CME"}, None),
         ("VOD", "tiingo", {"asset_class": "stock", "venue": "LSE"}, None),
     ],
@@ -179,7 +181,7 @@ def test_borrow_fact_is_absent_for_a_long_only_run(tmp_path: Path) -> None:
     assert "no short" in result["reasons"]["result_after_borrow"].lower()
 
 
-def test_follow_refuses_class_default_costs(tmp_path: Path) -> None:
+def test_follow_refuses_class_default_costs_not_stored(tmp_path: Path) -> None:
     from alpha_cli.follow_source import frozen_idea
     from alpha_cli.spine.errors import SpineError
 
@@ -193,6 +195,22 @@ def test_follow_refuses_class_default_costs(tmp_path: Path) -> None:
     with pytest.raises(SpineError) as raised:
         frozen_idea(tmp_path, "abcdef0123456789", idea.spec_sha256)
     assert raised.value.payload["code"] == "FOLLOW_COSTS_BY_CLASS"
+
+
+def test_follow_takes_the_costs_a_class_default_run_stored(tmp_path: Path) -> None:
+    from alpha_cli.follow_source import frozen_idea
+
+    idea = _idea("class-default")
+    folder = tmp_path / "runs" / "abcdef0123456789"
+    folder.mkdir(parents=True)
+    used = {"fee_bps": 1.0, "slippage_bps": 1.0}
+    (folder / "manifest.json").write_text(json.dumps({"spine": {"costs": used}}))
+    (folder / "spec.json").write_text(
+        json.dumps({**idea.model_dump(mode="json"), "spec_sha256": idea.spec_sha256})
+    )
+    followed = frozen_idea(tmp_path, "abcdef0123456789", idea.spec_sha256)
+    assert (followed.costs.fee_bps, followed.costs.slippage_bps) == (1.0, 1.0)
+    assert not followed.costs_class_default
 
 
 def test_borrow_charge_is_set_against_equity_in_starting_cash_units(tmp_path: Path) -> None:

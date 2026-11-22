@@ -21,8 +21,13 @@ from alpha_data.store import ParquetStore
 RUN = "a" * 16
 START = datetime(2026, 11, 19, 8, 0, tzinfo=UTC)
 FIRST = date(2026, 11, 19)
+# A rule test stored with its costs stated, as every run before M99 was.
 IDEA = IdeaSpec.model_validate(
-    {"assets": ["SPY"], "rule": {"kind": "ma_cross", "fast": 3, "slow": 5}}
+    {
+        "assets": ["SPY"],
+        "rule": {"kind": "ma_cross", "fast": 3, "slow": 5},
+        "costs": {"fee_bps": 1.0, "slippage_bps": 2.0},
+    }
 )
 DAYS = sessions_between("XNYS", date(2026, 6, 1), date(2026, 12, 31))
 F0 = DAYS.index(FIRST)

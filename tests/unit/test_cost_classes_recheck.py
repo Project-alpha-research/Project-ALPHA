@@ -36,9 +36,13 @@ def _home(root: Path, idea: IdeaSpec) -> Path:
     return home
 
 
+# Every run stored before M99 states the flat default in its stored spec.
+FLAT = {"fee_bps": 1.0, "slippage_bps": 2.0}
+
+
 @pytest.fixture(scope="module")
 def stated(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    return _home(tmp_path_factory.mktemp("stated"), _idea())
+    return _home(tmp_path_factory.mktemp("stated"), _idea(FLAT))
 
 
 @pytest.fixture(scope="module")
@@ -62,7 +66,7 @@ def test_recheck_of_a_run_stored_before_the_costs_line_matches(
     if isinstance(manifest.get("reading"), dict):
         manifest["reading"].pop("costs", None)
     path.write_text(json.dumps(manifest))
-    found = _recheck(home, _idea())
+    found = _recheck(home, _idea(FLAT))
     assert found["computed"] is True
     assert found["match"] is True, found["differences"]
 
@@ -82,3 +86,24 @@ def test_recheck_of_a_class_default_run_uses_the_frozen_costs(
     assert found["computed"] is True
     assert found["match"] is True, found["differences"]
     assert used["fee_bps"] not in {99.0, *(row.fee_bps for row in changed.values())}
+
+
+@pytest.fixture(scope="module")
+def plain(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    return _home(tmp_path_factory.mktemp("plain"), _idea())
+
+
+def test_a_new_test_without_costs_takes_the_us_large_etf_row(plain: Path) -> None:
+    stored = json.loads(next((plain / "runs").iterdir()).joinpath("manifest.json").read_text())
+    used = stored["spine"]["costs"]
+    assert (used["fee_bps"], used["slippage_bps"]) == (1.0, 1.0)
+    assert used["asset_class"] == "us_large_etf"
+    assert used["line"].endswith("the default for a US large ETF.")
+    assert cc.CLASS_DEFAULT_LABEL in stored["spine"]["labels"]
+
+
+def test_an_explicit_cost_still_wins(stated: Path) -> None:
+    stored = json.loads(next((stated / "runs").iterdir()).joinpath("manifest.json").read_text())
+    used = stored["spine"]["costs"]
+    assert (used["fee_bps"], used["slippage_bps"]) == (1.0, 2.0)
+    assert cc.CLASS_DEFAULT_LABEL not in stored["spine"]["labels"]

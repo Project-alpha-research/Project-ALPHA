@@ -104,12 +104,13 @@ ROWS: dict[str, CostRow] = {
 CONSERVATIVE = max(ROWS.values(), key=lambda row: row.fee_bps + row.slippage_bps)
 
 
-def asset_class(resolved: ResolvedAsset) -> str | None:
+def asset_class(resolved: ResolvedAsset, *, by_symbol: bool = False) -> str | None:
     """The row key for a stored asset, or None when its record does not say.
 
     A stored dataset identity decides. Without one, a crypto provider or a slash pair is crypto
-    spot and a broad US index fund is known by its symbol; otherwise an equity provider alone does
-    not tell a stock from an ETF, so it is not known.
+    spot; an equity provider alone does not tell a stock from an ETF, so it is not known. When
+    costs are chosen by class (``by_symbol``), a broad US index fund is also known by its symbol;
+    a run with stated costs records only what the store says, as every stored run did.
     """
     path = ParquetStore(store_dir(resolved.data_dir, DAILY))._provenance_path(resolved.symbol)
     provenance: dict[str, Any] = {}
@@ -129,7 +130,7 @@ def asset_class(resolved: ResolvedAsset) -> str | None:
     parts = set(resolved.source.lower().split(":"))
     if "/" in resolved.symbol or parts & CRYPTO_PROVIDERS:
         return "crypto_spot"
-    if resolved.symbol in US_LARGE_ETFS:
+    if by_symbol and resolved.symbol in US_LARGE_ETFS:
         return "us_large_etf"
     return None
 

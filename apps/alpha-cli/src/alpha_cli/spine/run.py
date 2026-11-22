@@ -8,6 +8,7 @@ import hashlib
 import io
 import json
 import math
+import os
 from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
@@ -174,7 +175,7 @@ def prepare_asset(
     ppy, basis = annualisation([bar.ts for bar in bars], bar_size=DAILY)
     result["periods_per_year"] = ppy
     result["periods_per_year_basis"] = basis
-    klass = cost_classes.asset_class(resolved)
+    klass = cost_classes.asset_class(resolved, by_symbol=idea.costs_class_default)
     row, assumed = cost_classes.class_row(klass)
     chosen = row if idea.costs_class_default else None
     if chosen is not None:
@@ -342,6 +343,7 @@ def write_run(
         home,
         result,
         snapshot=snapshot,
+        workers=knobs.max_workers or 1,
     )
     stored = report_to_manifest(out.report)
     stored.update(
@@ -443,6 +445,16 @@ def new_result(asset: str, *, quick: bool, no_diagnose: bool) -> dict[str, Any]:
     return result
 
 
+def gauntlet_knobs(seed: int, quick: bool) -> _gauntlet.GauntletParams:
+    """The full gauntlet runs its independent engine runs on all cores but one (results do not
+    depend on the worker count); ``quick`` is the small serial gauntlet."""
+    if quick:
+        return _gauntlet.GauntletParams(
+            seed=seed, tier1_paths=20, tier2_paths=4, tier3_paths=4, n_resamples=50, max_workers=1
+        )
+    return _gauntlet.GauntletParams(seed=seed, max_workers=max(1, (os.cpu_count() or 1) - 1))
+
+
 def run_idea(
     idea: IdeaSpec,
     *,
@@ -456,11 +468,7 @@ def run_idea(
 ) -> dict[str, Any]:
     """Run assets independently; ledger failures remain fatal rather than losing trial history."""
     idea_card.require(home, idea.idea_card)
-    knobs = _gauntlet.GauntletParams(seed=seed)
-    if quick:
-        knobs = replace(
-            knobs, tier1_paths=20, tier2_paths=4, tier3_paths=4, n_resamples=50, max_workers=1
-        )
+    knobs = gauntlet_knobs(seed, quick)
     results: list[dict[str, Any]] = []
     prepared: list[Prepared | None] = []
     for asset in idea.assets:

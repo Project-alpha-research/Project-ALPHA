@@ -106,4 +106,5 @@ def test_an_explicit_cost_still_wins(stated: Path) -> None:
     stored = json.loads(next((stated / "runs").iterdir()).joinpath("manifest.json").read_text())
     used = stored["spine"]["costs"]
     assert (used["fee_bps"], used["slippage_bps"]) == (1.0, 2.0)
+    assert used["asset_class"] is None  # as every stored stated-cost run of SPY recorded it
     assert cc.CLASS_DEFAULT_LABEL not in stored["spine"]["labels"]

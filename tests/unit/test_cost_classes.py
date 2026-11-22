@@ -42,9 +42,7 @@ def _key(home: Path, symbol: str) -> str | None:
         ("AAPL", "tiingo", {"asset_class": "stock", "venue": "US"}, "us_stock"),
         ("BTC/USDT", "binance", {"asset_class": "crypto", "venue": "BINANCE"}, "crypto_spot"),
         ("ETH/USDT", "ccxt:binance", None, "crypto_spot"),
-        ("QQQ", "tiingo", None, "us_large_etf"),
-        ("SPY", "yfinance", None, "us_large_etf"),
-        ("XYZ", "tiingo", None, None),
+        ("QQQ", "tiingo", None, None),
         ("ES", "vendor", {"asset_class": "future", "venue": "CME"}, None),
         ("VOD", "tiingo", {"asset_class": "stock", "venue": "LSE"}, None),
     ],
@@ -54,6 +52,18 @@ def test_class_lookup(
 ) -> None:
     _asset(tmp_path, symbol, source, dataset)
     assert _key(tmp_path, symbol) == expected
+
+
+@pytest.mark.parametrize(
+    ("symbol", "expected"), [("SPY", "us_large_etf"), ("QQQ", "us_large_etf"), ("XYZ", None)]
+)
+def test_class_costs_know_a_broad_us_fund_by_its_symbol(
+    tmp_path: Path, symbol: str, expected: str | None
+) -> None:
+    _asset(tmp_path, symbol, "yfinance", None)
+    resolved = resolve_asset(symbol, data_dir=tmp_path)
+    assert cc.asset_class(resolved, by_symbol=True) == expected
+    assert cc.asset_class(resolved) is None  # a stated-cost run records only what the store says
 
 
 def test_table_rows_and_unknown_class_is_the_most_cautious() -> None:

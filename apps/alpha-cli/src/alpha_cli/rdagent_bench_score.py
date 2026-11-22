@@ -131,8 +131,12 @@ def _mean(values: list[float]) -> float | None:
 def _load(store: Path, model: str, prompt: StoredPrompt) -> list[dict[str, Any]]:
     """Every stored sample of one prompt, in sample order."""
     folder = output_path(store, model, prompt.id, 0).parent
-    paths = folder.glob(f"{prompt.id}.*.json") if folder.is_dir() else []
-    found = [(int(p.stem.rsplit(".", 1)[1]), p) for p in paths]
+    exact = re.compile(re.escape(prompt.id) + r"\.([0-9]+)\.json")
+    found = [
+        (int(m.group(1)), p)
+        for p in (folder.iterdir() if folder.is_dir() else [])
+        if (m := exact.fullmatch(p.name))
+    ]
     return [json.loads(p.read_text(encoding="utf-8")) for _, p in sorted(found)]
 
 

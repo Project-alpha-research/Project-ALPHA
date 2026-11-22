@@ -10,6 +10,7 @@ import hashlib
 import json
 import math
 import tomllib
+import urllib.parse
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass
 from datetime import datetime
@@ -189,4 +190,4 @@ def prompt_sha(p: StoredPrompt) -> str:
 
 
 def output_path(store: Path, model: str, prompt_id: str, sample: int) -> Path:
-    return store / "outputs" / model.replace("/", "__") / f"{prompt_id}.{sample}.json"
+    return store / "outputs" / urllib.parse.quote(model, safe="") / f"{prompt_id}.{sample}.json"

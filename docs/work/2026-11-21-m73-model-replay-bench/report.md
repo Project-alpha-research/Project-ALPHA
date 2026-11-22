@@ -65,3 +65,8 @@ Four more findings were correct and are fixed, each with a failing test first:
 2. The report reads every stored sample; the `--samples` option on `report` is gone.
 3. A charge the gateway reports (`usage.cost`) is booked as the cost. A token-price estimate is labelled as an estimate.
 4. A model name given twice is refused before any call.
+
+## Review round 3 (Codex)
+Two more findings were correct and are fixed, each with a failing test first:
+1. Output folders are named with a reversible encoding of the model name (`a/b` and `a__b` no longer share one).
+2. Stored samples are found by the exact prompt id plus a numeric suffix (`p` no longer reads the samples of `p.extra`).

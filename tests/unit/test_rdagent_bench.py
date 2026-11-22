@@ -492,3 +492,46 @@ def test_a_reported_cost_that_is_negative_or_not_finite_is_refused(
     with pytest.raises(BenchError, match="cost"):
         run_bench(prompts, ["a"], 1, prices, client, tmp_path / "store", spend=_spend(tmp_path))
     assert not _spend(tmp_path).exists() or "NaN" not in _spend(tmp_path).read_text()
+
+
+def test_model_names_that_look_alike_keep_separate_output_folders(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 1), None)
+    names = ["a/b", "a__b"]
+    prices_file = tmp_path / "pr.toml"
+    prices_file.write_text(
+        '["a/b"]\nin_per_mtok = 1.0\nout_per_mtok = 2.0\n'
+        '["a__b"]\nin_per_mtok = 1.0\nout_per_mtok = 2.0\n'
+    )
+    prices = load_prices(prices_file, names)
+    data = {name: {"p0": [_reply(1000, 500)]} for name in names}
+    client = FakeClient(data)
+    spend = _spend(tmp_path)
+    run_bench(prompts, names, 1, prices, client, tmp_path / "store", spend=spend)
+    assert client.calls == 2 and len(spend.read_text().splitlines()) == 2
+
+
+def test_prompt_ids_with_dots_do_not_share_samples(tmp_path: Path) -> None:
+    folder = _prompts(tmp_path / "pr", 1)
+    row = json.loads((folder / "p0.json").read_text())
+    (folder / "short.json").write_text(json.dumps({**row, "id": "p"}))
+    (folder / "long.json").write_text(json.dumps({**row, "id": "p.extra"}))
+    prompts = [p for p in load_prompts(folder, None) if p.id in ("p", "p.extra")]
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    good = {**_reply(1, 1)}
+    bad = {**_reply(1, 1), "text": "not json"}
+    data = {"a": {"p": [good], "p.extra": [bad, bad]}}
+    store = tmp_path / "store"
+    run_bench(prompts, ["a"], 1, prices, FakeClient(data), store, spend=_spend(tmp_path))
+    run_bench(
+        [q for q in prompts if q.id == "p.extra"],
+        ["a"],
+        2,
+        prices,
+        FakeClient(data),
+        store,
+        spend=_spend(tmp_path),
+    )
+    scored = score_store(prompts, ["a"], store, closed=set(), dropped=set()).models["a"]
+    assert scored.outputs == 3
+    assert scored.by_prompt["p"] == pytest.approx(1.0)
+    assert scored.by_prompt["p.extra"] == pytest.approx(0.0)

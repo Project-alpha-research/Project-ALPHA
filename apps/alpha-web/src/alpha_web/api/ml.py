@@ -88,7 +88,6 @@ class MlPreflightCheck(StrictModel):
 
 class MlExperimentPreflight(StrictModel):
     schema_version: Literal[1]
-    project_id: str
     experiment_id: str | None
     snapshot_id: str | None
     universe_count: int = Field(ge=0, le=512)
@@ -554,9 +553,12 @@ class MlPrepareRequest(MlJobScope):
     exchange_id: OpaqueId | None = None
 
 
-class MlInputGenerateRequest(StrictModel):
-    project_id: str = Field(min_length=1, max_length=64)
-    experiment_id: str = Field(pattern=r"^ex_[0-9a-f]{64}$")
+class MlSpecRequest(StrictModel):
+    # The experiment spec: snapshot_id, universe, split_policy, costs, seeds, stage_config.
+    spec: dict[str, object]
+
+
+class MlInputGenerateRequest(MlSpecRequest):
     input_bundle_id: OpaqueId | None = None
     timeout_seconds: int = Field(default=3600, ge=60, le=3600)
 
@@ -565,16 +567,12 @@ class MlInputJobAccepted(StrictModel):
     job_id: str
     status: Literal["queued"]
     action: Literal["export-input"]
-    project_id: str
-    experiment_id: str = Field(pattern=r"^ex_[0-9a-f]{64}$")
     input_bundle_id: OpaqueId
 
 
-class MlExperimentGenerateRequest(MlTabularParameters):
+class MlExperimentGenerateRequest(MlSpecRequest, MlTabularParameters):
     # None keeps the experiment's frozen recipe; a name explicitly publishes a schema-3 override.
     model: TabularModelName | None = None
-    project_id: str = Field(min_length=1, max_length=64)
-    experiment_id: str | None = Field(default=None, pattern=r"^ex_[0-9a-f]{64}$")
     timeout_seconds: int = Field(default=3600, ge=60, le=3600)
 
     @model_validator(mode="after")
@@ -588,8 +586,6 @@ class MlExperimentJobAccepted(StrictModel):
     job_id: str
     status: Literal["queued"]
     action: Literal["generate-experiment"]
-    project_id: str
-    experiment_id: str = Field(pattern=r"^ex_[0-9a-f]{64}$")
     input_bundle_id: OpaqueId
     exchange_id: OpaqueId
 
@@ -679,8 +675,7 @@ def generate_input(body: MlInputGenerateRequest) -> dict[str, object]:
     try:
         return _ml.launch_input_generation(
             data_dir=data_dir(),
-            project_id=body.project_id,
-            experiment_id=body.experiment_id,
+            spec=body.spec,
             input_bundle_id=body.input_bundle_id or _ml.new_input_id(),
             timeout_seconds=body.timeout_seconds,
         )
@@ -711,18 +706,11 @@ def get_experiments(
         raise _http_error(exc) from exc
 
 
-@router.get("/experiments/preflight", response_model=MlExperimentPreflight)
-def get_experiment_preflight(
-    project_id: str,
-    experiment_id: str | None = None,
-) -> dict[str, object]:
-    """Recompute project, data, gate, worker, and capacity prerequisites without launching."""
+@router.post("/experiments/preflight", response_model=MlExperimentPreflight)
+def post_experiment_preflight(body: MlSpecRequest) -> dict[str, object]:
+    """Recompute spec, data, worker, and capacity prerequisites without launching."""
     try:
-        return _ml.experiment_preflight(
-            project_id=project_id,
-            experiment_id=experiment_id,
-            data_dir=data_dir(),
-        )
+        return _ml.experiment_preflight(spec=body.spec, data_dir=data_dir())
     except (RuntimeError, OSError) as exc:
         raise _http_error(exc) from exc
 
@@ -735,11 +723,7 @@ def get_experiment_preflight(
 def generate_experiment(body: MlExperimentGenerateRequest) -> dict[str, object]:
     """One-click verified snapshot export followed by immutable worker-exchange preparation."""
     try:
-        preflight = _ml.experiment_preflight(
-            data_dir=data_dir(),
-            project_id=body.project_id,
-            experiment_id=body.experiment_id,
-        )
+        preflight = _ml.experiment_preflight(data_dir=data_dir(), spec=body.spec)
         if preflight.get("ready") is not True:
             checks = cast(list[dict[str, object]], preflight.get("checks", []))
             blocked = [
@@ -748,8 +732,7 @@ def generate_experiment(body: MlExperimentGenerateRequest) -> dict[str, object]:
             raise _ml.MlError("ML experiment preflight blocked: " + " ".join(blocked))
         return _ml.launch_experiment_generation(
             data_dir=data_dir(),
-            project_id=body.project_id,
-            experiment_id=body.experiment_id,
+            spec=body.spec,
             timeout_seconds=body.timeout_seconds,
             model=body.model,
             parameters=body.parameters,

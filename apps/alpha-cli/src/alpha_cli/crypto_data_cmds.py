@@ -25,9 +25,6 @@ from alpha_cli._crypto_acquisition import (
 from alpha_cli._crypto_acquisition import bybit_plan, option_quote_frame
 from alpha_cli._crypto_acquisition_errors import FixtureAccountingBlocked
 from alpha_cli._crypto_analysis import (
-    LegacyUnscopedEventError as _LegacyUnscopedEventError,
-)
-from alpha_cli._crypto_analysis import (
     coverage_row as _coverage_row,
 )
 from alpha_cli._crypto_analysis import (
@@ -39,9 +36,6 @@ from alpha_cli._crypto_analysis import (
 from alpha_cli._crypto_analysis import (
     feature_projection as _feature_projection,
 )
-from alpha_cli._crypto_analysis import (
-    manifest_acquisition_scope as _manifest_acquisition_scope,
-)
 from alpha_cli._crypto_asset_master_sources import (
     builtin_asset_master,
     verify_asset_master_sources,
@@ -52,7 +46,6 @@ from alpha_cli._crypto_snapshot_members import (
     resolve_creation_members,
     resolve_member,
 )
-from alpha_cli.control_store import ControlStore, research_case_revision
 from alpha_cli.research_crypto_data import load_crypto_crowding_observations
 from alpha_cli.research_crypto_strategy import load_hedged_basis_observations
 from alpha_core import DataError
@@ -67,7 +60,6 @@ from alpha_data.crypto.asset_master import (
 from alpha_data.crypto.capabilities import project_provider_capabilities
 from alpha_data.crypto.contracts import (
     FAMILY_AUTHORITIES,
-    CryptoAcquisitionScopeV1,
     CryptoDatasetIdentityV1,
     CryptoFamily,
     CryptoMarketType,
@@ -207,7 +199,6 @@ _OBSERVATIONS_PER_DAY: Final = {
 }
 _NATIVE_NETWORKS: Final = {"BTC": "bitcoin", "ETH": "ethereum", "XRP": "xrp", "SOL": "solana"}
 _SHA256: Final = re.compile(r"^[0-9a-f]{64}$")
-_CASE_BOUND_EVENT_FAMILIES: Final = frozenset({"derivative_trades", "derivative_book_snapshots"})
 
 
 @dataclass(frozen=True)
@@ -371,39 +362,6 @@ def _bulk_store() -> CryptoBulkStore:
     return configured_crypto_bulk_store(settings)
 
 
-def _control_store() -> ControlStore:
-    return ControlStore(AlphaSettings().data_dir)
-
-
-def _acquisition_scope(
-    family: CryptoFamily,
-    *,
-    case_id: str | None,
-    expected_case_revision: str | None,
-    reason: str | None,
-    captured_at: datetime,
-) -> CryptoAcquisitionScopeV1 | None:
-    supplied = any(value is not None for value in (case_id, expected_case_revision, reason))
-    if family not in _CASE_BOUND_EVENT_FAMILIES:
-        if supplied:
-            raise DataError("research-case scope is only valid for derivative event capture")
-        return None
-    if not case_id or not expected_case_revision or not reason:
-        raise DataError(
-            "derivative trades and books require --case-id, --expected-case-revision, and --reason"
-        )
-    current = _control_store().research_case_summary(case_id)
-    revision = research_case_revision(current)
-    if revision != expected_case_revision:
-        raise DataError("research case changed before derivative event capture; refresh and retry")
-    return CryptoAcquisitionScopeV1(
-        project_id=case_id,
-        case_revision=revision,
-        reason=reason,
-        captured_at=captured_at,
-    )
-
-
 def _snapshot_root() -> Path:
     return AlphaSettings().data_dir / "crypto" / "snapshots"
 
@@ -489,9 +447,8 @@ def _verify_snapshot_members(
     *,
     required_families: tuple[CryptoFamily, ...],
     purpose: CryptoResearchPurpose,
-    tolerate_legacy_scope: bool,
-) -> tuple[CryptoSnapshotV1, dict[str, CryptoQualityReportV1], CryptoResearchEligibilityV1, bool]:
-    """Reverify one snapshot's bytes, identity, and member scope; report scope eligibility."""
+) -> tuple[CryptoSnapshotV1, dict[str, CryptoQualityReportV1], CryptoResearchEligibilityV1]:
+    """Reverify one snapshot's bytes and identity."""
     snapshot = _read_snapshot(snapshot_id)
     store = _bulk_store()
     if snapshot.asset_master_version not in REVIEWED_NATIVE_LABELS:
@@ -500,17 +457,9 @@ def _verify_snapshot_members(
             raise DataError("crypto snapshot asset-master identity is mismatched")
     retained = store.inventory()
     raw_by_id = {str(manifest["manifest_id"]): manifest for manifest in retained}
-    scope_eligible = True
     reports: dict[str, CryptoQualityReportV1] = {}
     for member in snapshot.members:
         manifest = resolve_member(member, retained, raw_by_id)
-        if tolerate_legacy_scope:
-            try:
-                _manifest_acquisition_scope(manifest, member.dataset)
-            except _LegacyUnscopedEventError:
-                scope_eligible = False
-        else:
-            _manifest_acquisition_scope(manifest, member.dataset)
         reports[member.artifact_sha256] = CryptoQualityReportV1.from_dict(manifest.get("quality"))
     check_dataset_ranges((member, reports[member.artifact_sha256]) for member in snapshot.members)
     projection = assess_crypto_snapshot(
@@ -519,7 +468,7 @@ def _verify_snapshot_members(
         required_families=required_families,
         purpose=purpose,
     )
-    return snapshot, reports, projection, scope_eligible
+    return snapshot, reports, projection
 
 
 def _verified_snapshot(
@@ -528,13 +477,9 @@ def _verified_snapshot(
     required_families: tuple[CryptoFamily, ...],
     purpose: CryptoResearchPurpose,
 ) -> tuple[CryptoSnapshotV1, dict[str, CryptoQualityReportV1], CryptoResearchEligibilityV1]:
-    snapshot, reports, projection, _ = _verify_snapshot_members(
-        snapshot_id,
-        required_families=required_families,
-        purpose=purpose,
-        tolerate_legacy_scope=False,
+    return _verify_snapshot_members(
+        snapshot_id, required_families=required_families, purpose=purpose
     )
-    return snapshot, reports, projection
 
 
 def _crypto_crowding_requirements(
@@ -770,14 +715,11 @@ def crypto_hedged_basis_observations(
 
 
 def _integrity_verified_snapshot(snapshot_id: str) -> tuple[CryptoSnapshotV1, bool]:
-    """Verify historical bytes and identity without promoting legacy scope into evidence."""
-    snapshot, _, projection, scope_eligible = _verify_snapshot_members(
-        snapshot_id,
-        required_families=(),
-        purpose="research",
-        tolerate_legacy_scope=True,
+    """Verify historical bytes and identity; report whether the snapshot is research-eligible."""
+    snapshot, _, projection = _verify_snapshot_members(
+        snapshot_id, required_families=(), purpose="research"
     )
-    return snapshot, scope_eligible and projection.eligible
+    return snapshot, projection.eligible
 
 
 def crypto_snapshot_registration(snapshot_id: str, *, symbol: str) -> dict[str, object]:
@@ -2508,11 +2450,6 @@ def _acquire_result(
     metrics: str | None = typer.Option(None, help="comma-separated reviewed Coin Metrics metrics"),
     start: str | None = typer.Option(None, help="provider-native bounded start time"),
     end: str | None = typer.Option(None, help="provider-native bounded end time"),
-    case_id: str | None = typer.Option(None, help="research case for derivative event capture"),
-    expected_case_revision: str | None = typer.Option(
-        None, help="fresh research-case revision for derivative event capture"
-    ),
-    reason: str | None = typer.Option(None, help="bounded event-capture reason"),
     max_requests: int | None = None,
     max_total_bytes: int | None = None,
     http_attempt_hook: HttpAttemptHook | None = None,
@@ -2548,13 +2485,6 @@ def _acquire_result(
             ):
                 raise DataError("strict budgets require bounded Binance spot daily REST bars")
             budget = RequestBudget(max_requests, max_total_bytes)
-        acquisition_scope = _acquisition_scope(
-            dataset_family,
-            case_id=case_id,
-            expected_case_revision=expected_case_revision,
-            reason=reason,
-            captured_at=fetched_at,
-        )
         store = store if store is not None else _bulk_store()
         store.verify_ready(required_bytes=0)
         if provider == "bybit":
@@ -2608,13 +2538,6 @@ def _acquire_result(
             )
             plan = fetched.plan
         fetched_at = _now()
-        acquisition_scope = _acquisition_scope(
-            dataset_family,
-            case_id=case_id,
-            expected_case_revision=expected_case_revision,
-            reason=reason,
-            captured_at=fetched_at,
-        )
         if plan.parser_at is not None:
             plan = replace(plan, parser=plan.parser_at(fetched_at))
             if isinstance(fetched, _FetchedPagedAcquisition):
@@ -2647,7 +2570,6 @@ def _acquire_result(
                 period_start_timestamps=fetched.period_start_timestamps,
                 correction_lineage=correction_lineage,
                 unexplained_revision=bool(correction_lineage),
-                acquisition_scope=acquisition_scope,
             )
             quality = paged_result.quality
             normalized_manifest = paged_result.normalized_manifest
@@ -2673,7 +2595,6 @@ def _acquire_result(
                 period_start_timestamps=plan.period_start_timestamps,
                 correction_lineage=correction_lineage,
                 unexplained_revision=bool(correction_lineage),
-                acquisition_scope=acquisition_scope,
             )
             quality = paged_result.quality
             normalized_manifest = paged_result.normalized_manifest
@@ -2721,7 +2642,6 @@ def _acquire_result(
                 period_start_timestamps=period_start_timestamps,
                 correction_lineage=correction_lineage,
                 unexplained_revision=bool(correction_lineage),
-                acquisition_scope=acquisition_scope,
             )
             quality, normalized_manifest = single_result.quality, single_result.normalized_manifest
             raw_manifests = (single_result.raw_manifest,)
@@ -2767,11 +2687,6 @@ def acquire(
     metrics: str | None = typer.Option(None, help="comma-separated reviewed Coin Metrics metrics"),
     start: str | None = typer.Option(None, help="provider-native bounded start time"),
     end: str | None = typer.Option(None, help="provider-native bounded end time"),
-    case_id: str | None = typer.Option(None, help="research case for derivative event capture"),
-    expected_case_revision: str | None = typer.Option(
-        None, help="fresh research-case revision for derivative event capture"
-    ),
-    reason: str | None = typer.Option(None, help="bounded event-capture reason"),
     max_requests: int | None = typer.Option(None, help="strict total HTTP attempt cap"),
     max_total_bytes: int | None = typer.Option(None, help="strict total response body byte cap"),
     json_out: bool = typer.Option(False, "--json", help="emit JSON"),
@@ -2791,9 +2706,6 @@ def acquire(
         metrics=metrics,
         start=start,
         end=end,
-        case_id=case_id,
-        expected_case_revision=expected_case_revision,
-        reason=reason,
         max_requests=max_requests,
         max_total_bytes=max_total_bytes,
     )
@@ -3362,7 +3274,7 @@ def _backfill_acquire(
     """Call the acquisition path in-process with every unused typer default made explicit.
 
     ``_acquire_result``'s defaults are ``typer.Option`` sentinels when it is called as a plain
-    function, and a sentinel is ``not None`` — the research-case scope check would misfire.
+    function, and a sentinel is ``not None``.
     """
     try:
         return _acquire_result(
@@ -3373,9 +3285,6 @@ def _backfill_acquire(
             network=None,
             pool_address=None,
             metrics=None,
-            case_id=None,
-            expected_case_revision=None,
-            reason=None,
             **window,  # type: ignore[arg-type]
         )
     except typer.BadParameter as exc:

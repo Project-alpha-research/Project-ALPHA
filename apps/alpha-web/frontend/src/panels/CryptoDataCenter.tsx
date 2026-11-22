@@ -93,14 +93,10 @@ function defaultInstrument(family: CryptoFamily): string {
 }
 
 export function CryptoDataCenter({
-  projectId,
-  caseRevision,
   onRegistered,
   initialSection,
   initialFamily,
 }: {
-  projectId: string | null
-  caseRevision: string | null
   onRegistered?: () => void
   /** The section a document opens on; an unknown id falls back to Derivatives & Funding. */
   initialSection?: CryptoDataSection
@@ -126,7 +122,6 @@ export function CryptoDataCenter({
   const [network, setNetwork] = useState('eth')
   const [poolAddress, setPoolAddress] = useState('')
   const [metrics, setMetrics] = useState('AdrActCnt,TxCnt,FeeTotNtv')
-  const [eventReason, setEventReason] = useState('Capture this bounded derivative event for the selected research case.')
   const [start, setStart] = useState('2025-01-01T00:00:00Z')
   const [end, setEnd] = useState('2026-01-01T00:00:00Z')
   const [days, setDays] = useState(30)
@@ -251,8 +246,6 @@ export function CryptoDataCenter({
     cryptoMarketChoicesForFamily(family)
   const frequencyChoices = cryptoAcquisitionFrequencies(family, provider)
   const qualifiedCount = coverage?.items.filter((item) => item.state === 'qualified').length ?? 0
-  const caseBoundEvent = family === 'derivative_trades' || family === 'derivative_book_snapshots'
-  const eventCaptureReady = !caseBoundEvent || Boolean(projectId && caseRevision && eventReason.trim())
   const action = cryptoCanonicalAction({
     loading,
     storageState: storage?.state,
@@ -376,9 +369,6 @@ export function CryptoDataCenter({
           : [],
         start: (provider === 'coinmetrics' && family === 'onchain_metrics') || provider === 'ccxt:coinbase' || (provider === 'bybit' && BYBIT_RANGED_FAMILIES.has(family)) ? start : null,
         end: (provider === 'coinmetrics' && family === 'onchain_metrics') || provider === 'ccxt:coinbase' || (provider === 'bybit' && BYBIT_RANGED_FAMILIES.has(family)) ? end : null,
-        case_id: caseBoundEvent ? projectId : null,
-        expected_case_revision: caseBoundEvent ? caseRevision : null,
-        reason: caseBoundEvent ? eventReason.trim() : null,
       }
       const accepted = await api.cryptoAcquire(request)
       setJobId(accepted.job_id)
@@ -576,9 +566,6 @@ export function CryptoDataCenter({
         metrics={metrics}
         start={start}
         end={end}
-        caseBoundEvent={caseBoundEvent}
-        eventReason={eventReason}
-        eventCaptureReady={eventCaptureReady}
         storageReady={storage?.state === 'ready'}
         estimate={estimate}
         busyAction={busyAction}
@@ -596,7 +583,6 @@ export function CryptoDataCenter({
         onMetricsChange={setMetrics}
         onStartChange={setStart}
         onEndChange={setEnd}
-        onEventReasonChange={setEventReason}
         onEstimate={() => void estimateAcquisition()}
         onAcquire={() => void acquire()}
       />

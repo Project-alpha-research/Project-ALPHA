@@ -53,6 +53,8 @@ PATH_FILTERS: dict[str, tuple[str, ...]] = {
     # The worker job also runs ALPHA's root checks over the installed worker (the `alpha labels`
     # smoke check, its poison guard, parity with ALPHA's statistics); the root job skips them.
     "afml": ("workers/afml/", "apps/alpha-cli/src/alpha_cli/labels_cmds.py", *AFML_ROOT_TESTS),
+    # The web build and browser journeys: on a pull request only when the web app changed.
+    "web": ("apps/alpha-web/", "pyproject.toml", "uv.lock"),
 }
 
 

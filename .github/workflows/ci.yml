@@ -28,6 +28,7 @@ jobs:
       literature: ${{ steps.select.outputs.literature }}
       afml: ${{ steps.select.outputs.afml }}
       quant: ${{ steps.select.outputs.quant }}
+      web: ${{ steps.select.outputs.web }}
     steps:
       - uses: actions/checkout@v6.0.3
         with:
@@ -56,12 +57,30 @@ jobs:
         # The stdlib-only runner owns uv lock --check and uv sync --locked.
         run: uv run --no-project --python 3.12 python scripts/gate.py component backend-static
 
+  quick:
+    # The pull-request check (owner decision 2026-11-22): lint, types, import rules and the tests
+    # mapped from the changed files, which always include the bias guards, the quick oracles and
+    # the acceptance tests. The full suite below runs on main after the merge. A pull request used
+    # to start nine jobs; about ten open at once filled the 20-job limit and each waited an hour.
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft != true
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6.0.3
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+        with:
+          bundle: "true"
+      - name: Fast check on the changed files
+        run: uv run python scripts/gate.py check
+
   tests:
     name: tests (${{ matrix.shard }}/4)
     # Every root test except `network` and `slow_oracle`, split by file into four shards.
-    # A draft pull request runs only `changes` and `static`: the full run starts when it is marked
-    # ready (owner decision 2026-11-21: every push to a draft filled the queue with 20-minute runs).
-    if: github.event.pull_request.draft != true
+    # Runs on main after each merge, not on a pull request (see `quick`). A failure here means a
+    # merged change broke something the mapped tests did not cover: fix or revert it at once.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     # 40, not 25: with many runs active a shard that needs 23 minutes was cancelled and repeated.
     timeout-minutes: 40
@@ -143,7 +162,11 @@ jobs:
 
   frontend:
     # Lint, build, unit tests, API freshness, and the browser journeys at one viewport.
-    if: github.event.pull_request.draft != true
+    # On a pull request only when the web app changed; always on main.
+    needs: changes
+    if: >-
+      github.event.pull_request.draft != true
+      && (github.event_name != 'pull_request' || needs.changes.outputs.web == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -206,7 +229,7 @@ jobs:
     # The one check branch protection requires. Add every new job to `needs`; then
     # jobs can be added, removed or renamed without touching repository settings.
     if: always()
-    needs: [changes, static, tests, coverage, quant, frontend, qlib-worker, literature-worker, afml-worker]
+    needs: [changes, static, quick, tests, coverage, quant, frontend, qlib-worker, literature-worker, afml-worker]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -225,13 +248,17 @@ jobs:
           # Conditional job -> the `changes` output that decides it. Only these may be skipped,
           # and only when `changes` succeeded and said the job was not needed.
           CONDITIONAL: >-
-            {"quant": "quant", "qlib-worker": "qlib", "literature-worker": "literature", "afml-worker": "afml"}
+            {"quant": "quant", "qlib-worker": "qlib", "literature-worker": "literature", "afml-worker": "afml",
+             "frontend": "web"}
+          # Jobs that do not run for this event: the full suite on a pull request, `quick` on main.
+          NOT_FOR_EVENT: ${{ github.event_name == 'pull_request' && '["tests","coverage"]' || '["quick"]' }}
         run: |
           echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
-          failed=$(echo "$RESULTS" | jq -r --argjson conditional "$CONDITIONAL" '
+          failed=$(echo "$RESULTS" | jq -r --argjson conditional "$CONDITIONAL" --argjson off "$NOT_FOR_EVENT" '
             (if .changes.result == "success" then .changes.outputs else {} end) as $selected
             | [ to_entries[]
                 | select(.value.result != "success")
+                | select((.value.result == "skipped" and (.key as $k | $off | index($k))) | not)
                 | select(
                     (.value.result == "skipped"
                       and ($conditional[.key] // "") != ""

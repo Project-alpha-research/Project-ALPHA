@@ -30,7 +30,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | Big drawdown in a short period | [benchmark and drawdowns](benchmark-and-drawdowns.md), then the macro row below |
 | Works in some years only | [benchmark and drawdowns](benchmark-and-drawdowns.md) (`by_year`), [walk-forward](walk-forward.md) |
 | Few trades; profit from a handful of trades | [diagnose and audit](diagnose-and-audit.md) (`enough-trades`), [trade streaks](run-level-checks.md) |
-| Would a slightly different data feed change the answer? | [price-noise robustness](price-noise.md) |
+| Would a slightly different data feed change the answer? | [price-noise robustness](price-noise.md), [re-runs](toolbox-parameter-robustness.md) |
 | Fragile to costs, delay or nearby settings | [sensitivity](sensitivity.md), [break-even](run-level-checks.md), [cost realism](toolbox-cost-realism.md) |
 | "Does it hold up out of sample?" | [walk-forward efficiency](walk-forward.md) |
 | "Is this just the market going up?", "a known factor?" | [inverted control](inverted-signal-control.md), [published factors](published-factors.md) |

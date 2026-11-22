@@ -38,6 +38,12 @@ def _compute(spec: ToolSpec, series: inputs.RunSeries, seed: int = 7, **params: 
     return spec.compute(inputs.Inputs(series, None, seed, series.home), settings, rng)
 
 
+def _num(values: dict[str, Any], key: str) -> float:
+    value = values[key]
+    assert isinstance(value, float), key
+    return value
+
+
 def _tries(home: Path) -> list[dict[str, Any]]:
     return [row for row in read_trials(home) if row["kind"] == "screen_trial"]
 
@@ -168,8 +174,10 @@ def test_worst_neighbour_is_the_lowest_return(
 
 def _trades(series: inputs.RunSeries, change: signals.SignalChange | None) -> list[Any]:
     assert series.spec is not None
-    kwargs = {"signal_filter": change} if change else {}
-    return list(_runner.run_full_backtest(list(series.bars), series.spec, **kwargs).trades)
+    bars = list(series.bars)
+    if change is None:
+        return list(_runner.run_full_backtest(bars, series.spec).trades)
+    return list(_runner.run_full_backtest(bars, series.spec, signal_filter=change).trades)
 
 
 def test_entry_delay_enters_later_and_leaves_on_time(series: inputs.RunSeries) -> None:
@@ -208,7 +216,7 @@ def test_cost_ladder_lowers_the_return(series: inputs.RunSeries) -> None:
     direct = _direct(series, doubled)
     assert values["return_2"] == pytest.approx(direct["total_return"], rel=REL, abs=ABS)
     base = series.equity[-1] / series.equity[0] - 1
-    assert base > values["return_2"] > values["return_3"] > values["return_5"]
+    assert base > _num(values, "return_2") > _num(values, "return_3") > _num(values, "return_5")
 
 
 def test_start_date_starts_later(series: inputs.RunSeries) -> None:
@@ -243,7 +251,7 @@ def test_skipping_no_entry_reproduces_the_rule(series: inputs.RunSeries) -> None
     assert not none.trades
     values = _compute(BY_ID["parameters.skip_entries"], series, copies=2).values
     assert values["engine_runs"] == 6
-    assert values["sharpe_low_10"] <= values["sharpe_high_10"]
+    assert _num(values, "sharpe_low_10") <= _num(values, "sharpe_high_10")
 
 
 def test_price_noise_spreads_around_the_rule(series: inputs.RunSeries) -> None:
@@ -251,7 +259,8 @@ def test_price_noise_spreads_around_the_rule(series: inputs.RunSeries) -> None:
 
     result = _compute(BY_ID["parameters.price_noise"], series, seed=3)
     values = result.values
-    assert values["p05_sharpe"] <= values["median_sharpe"] <= values["p95_sharpe"]
+    low, mid, high = (_num(values, k) for k in ("p05_sharpe", "median_sharpe", "p95_sharpe"))
+    assert low <= mid <= high
     assert values["engine_runs"] == 50
     assert series.spec is not None
     copy = noisy_bars(list(series.bars), f"{RUN}:3", 0)

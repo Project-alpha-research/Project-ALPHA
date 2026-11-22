@@ -2,7 +2,7 @@
 
 ## Result
 The rule-test report and the Gates screen now show an owner rule as one plain sentence, with its family and each label's meaning.
-Screenshots (synthetic run): `report-owner-rule.png`, `gates-owner-rule.png`.
+Screenshots (synthetic run; a task folder may hold no images): `docs/assets/workstation/owner-rule-report.png`, `docs/assets/workstation/owner-rule-gates.png`.
 
 ## What changed
 1. `apps/alpha-web/src/alpha_web/_owner_rule_words.py` (new, 112 lines): `owner_rule_sentence(spec)` builds the sentence from the stored JSON.

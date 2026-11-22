@@ -31,11 +31,6 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
 - The rule-test Summary lists “Checks run on this test”: each stored toolbox result (plain name, stored reading, labels in words,
   time) or “could not run: <stored error code>”, from GET `/api/runs/{id}/checks`. With none it quotes
   `alpha tool run-set market-context <run_id>`. Nothing is computed in the browser. Covered by `rundetail/RuleTestChecks.test.tsx`.
-- An owner-rule run (`rule.kind = "owner"`) opens the rule-test Summary and the Gates tab with its rule in one plain sentence, its family
-  (`owner:<12 hex>`) and each label with a one-line meaning (`RuleWords.tsx`, one label table in `ruleTestModel.ts`). The backend builds the
-  sentence from the stored `spine.rule.spec` only (`_owner_rule_words.py`); an operand it does not know shows its stored text with "not yet
-  described". A run with no stored rule reads "the rule was not stored with this run". The three old kinds keep their wording.
-  Covered by `tests/unit/test_web_owner_rule_words.py` and `e2e/owner-rule-words.spec.ts`.
 - Rule tests and Setup Lab show a non-pass data health line under the headline; old runs read “Data health: not recorded.”
 - The backtest result card is opt-in (`backtestResultCard` defaults to `false`). With malformed, legacy or failed evidence it
   renders as unavailable. Enforced by `e2e/backtest-result-card.spec.ts`.
@@ -60,6 +55,11 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
 - The rule-test Summary opens with the interactive stack (`components/tearsheet/TearSheetStack.tsx`, [rule](web-frontend.md#charts)). The
   stored matplotlib figures stay below it, and their strip reads “Saved image”. Loading, error and a missing price each say so in words.
   Covered by `components/tearsheet/tearSheetModel.test.ts` and `e2e/rule-test-summary.spec.ts`.
+- An owner-rule run (`rule.kind = "owner"`) opens the rule-test Summary and the Gates tab with its rule in one plain sentence, its family
+  (`owner:<12 hex>`) and each label with a one-line meaning (`RuleWords.tsx`, one label table in `ruleTestModel.ts`). The backend builds the
+  sentence from the stored `spine.rule.spec` only (`_owner_rule_words.py`); an operand it does not know shows its stored text with "not yet
+  described". A run with no stored rule reads "the rule was not stored with this run". The three old kinds keep their wording.
+  Covered by `tests/unit/test_web_owner_rule_words.py` and `e2e/owner-rule-words.spec.ts`.
 
 ## Reading block
 

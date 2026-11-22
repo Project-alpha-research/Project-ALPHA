@@ -25,3 +25,18 @@ Rules: `docs/work/2026-11-21-common-build-rules/brief.md`.
   there, on stdout. A refusal prints only the plan and the reason ("... No slot was used.").
 - Tests: `tests/unit/test_confirm_run_words.py` (fail first: the slot line was in the refused output);
   `test_reserved_confirmation_surfaces.py` now asserts the slot line is absent when the run is refused.
+
+### 3. No trades in the held-back years read as a fault
+
+- Cause: the reading treated a missing Sharpe as a fault in every case, and the report library's charts divided by zero on the
+  flat equity line of a rule with no trades (the numpy and scipy warnings came from `render_tearsheet_html`).
+- Change: `spine/reading.no_trades`: 0 scored trades and a volatility of exactly 0 give the sentence "The rule made no trades
+  from <first> to <last>; nothing can be concluded from this period." with `too little to read`; the numbers check is
+  `not-checked`. Any other missing statistic stays a fault. The same applies in an ordinary `alpha test` and in the old-style
+  report line (`report_readings`). The tearsheet render hides warnings only when every out-of-sample return is 0.
+  `confirm plan` (and the plan that `confirm run` prints) states the trades per year of the earlier scored period and warns in
+  one sentence when fewer than 5 trades are to be expected in the held-back span; computed from the stored run only.
+- Tests: `tests/unit/test_confirm_no_trades.py` (fail first: all 4 failed on the old code; the repro printed
+  "Reading: fault. Fault: the out-of-sample Sharpe could not be computed." and the numpy warnings).
+- Docs: `cli-rule-readings.md` (the exception), `research/tools/reserved-confirmation.md`.
+- Seen, not mine: `test_reading_rule.py` (3) and `test_reading_ledger_setup.py` (1) fail on `origin/main` too (pinned run ids).

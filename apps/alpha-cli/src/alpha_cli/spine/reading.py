@@ -97,7 +97,23 @@ def _sharpe_ci(manifest: Mapping[str, Any]) -> Mapping[str, Any]:
     return found
 
 
-def _checks(manifest: Mapping[str, Any], diagnostics: Mapping[str, Any]) -> list[dict[str, str]]:
+def no_trades(manifest: Mapping[str, Any], trades: int | None) -> str | None:
+    """The plain sentence for a scored span in which the rule made no trades, else None.
+
+    No trade and no movement of equity (volatility exactly 0) is a real outcome, not a fault:
+    the Sharpe and the risk of ruin then have nothing to measure. A missing count never counts."""
+    if trades != 0 or _num(_get(manifest, "oos_metrics", "annualized_vol")) != 0.0:
+        return None
+    scored = _get(manifest, "spine", "periods", "scored")
+    first = str(_get(scored, "first_ts") or "")[:10]
+    last = str(_get(scored, "last_ts") or "")[:10]
+    span = f"from {first} to {last}" if first and last else "in the scored days (dates not stored)"
+    return f"The rule made no trades {span}; nothing can be concluded from this period."
+
+
+def _checks(
+    manifest: Mapping[str, Any], diagnostics: Mapping[str, Any], trades: int | None
+) -> list[dict[str, str]]:
     metrics = manifest.get("oos_metrics")
     missing = [
         label
@@ -109,9 +125,14 @@ def _checks(manifest: Mapping[str, Any], diagnostics: Mapping[str, Any]) -> list
         if _num(_get(metrics, key)) is None
     ]
     computed = (
-        {"state": "fault", "detail": f"the {missing[0]} could not be computed"}
-        if missing
-        else {"state": "sound", "detail": "every statistic was computed"}
+        {"state": "sound", "detail": "every statistic was computed"}
+        if not missing
+        else {
+            "state": "not-checked",
+            "detail": "the rule made no trades, so there was nothing to measure",
+        }
+        if no_trades(manifest, trades)
+        else {"state": "fault", "detail": f"the {missing[0]} could not be computed"}
     )
     audit = {item.get("check"): item for item in diagnostics.get("audit", [])}
     fills = audit.get("fills-after-decisions", {}).get("status")
@@ -272,9 +293,12 @@ def _sentence(
     evidence: Mapping[str, Any],
     aim: Mapping[str, Any],
     counts: Mapping[str, Any],
+    idle: str | None = None,
 ) -> str:
     if faults:
         return f"Fault: {faults[0]}. Fix this first. No reading."
+    if idle:
+        return f"{idle} Evidence strength: {evidence['word']}."
     parts = []
     if aim["rows"]:
         row = aim["rows"][0]
@@ -313,9 +337,9 @@ def build_reading(
 ) -> dict[str, Any]:
     """Arrange a stored run's numbers as a reading; works for old manifests too."""
     diag: Mapping[str, Any] = diagnostics or {}
-    checks = _checks(manifest, diag)
-    faults = [c["detail"] for c in checks if c["state"] == "fault"]
     trades = _trades(manifest, diag)
+    checks = _checks(manifest, diag, trades)
+    faults = [c["detail"] for c in checks if c["state"] == "fault"]
     evidence = _evidence(manifest, diag, trades)
     aim = _aim(manifest)
     counts = _counts(manifest, diag)
@@ -330,7 +354,7 @@ def build_reading(
         "evidence": evidence,
         "aim": aim,
         "counts": counts,
-        "sentence": _sentence(faults, evidence, aim, counts),
+        "sentence": _sentence(faults, evidence, aim, counts, no_trades(manifest, trades)),
         **reading_additions(diag),
     }
 

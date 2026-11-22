@@ -40,6 +40,17 @@ def _rule_words(rule: dict[str, Any]) -> str:
     )
 
 
+def _rate_lines(rate: dict[str, Any]) -> list[str]:
+    """How often the rule traded before; read from the earlier period only."""
+    if rate["per_year"] is None:
+        return [f"  Trades per year (earlier period): not known; {rate['reason']}."]
+    lines = [
+        f"  Trades per year (earlier period): {rate['per_year']:.1f} "
+        f"({rate['trades']} trades in {rate['years']:.1f} years)."
+    ]
+    return [*lines, f"  {rate['warning']}"] if rate["warning"] else lines
+
+
 def _plan_lines(found: dict[str, Any]) -> list[str]:
     frozen, slots, earlier = found["frozen"], found["slots"], found["earlier_reading"]
     engine = "the small (quick) gauntlet" if frozen["quick"] else "the full gauntlet"
@@ -58,6 +69,7 @@ def _plan_lines(found: dict[str, Any]) -> list[str]:
         f"  Earlier period (already seen): {sentence}",
         f"  Reserved period (not seen): {frozen['reserved_first'][:10]} to "
         f"{frozen['reserved_end'][:10]}, {frozen['reserved_bars']} bars",
+        *_rate_lines(found["trade_rate"]),
         "  Code: "
         + (
             "CHANGED since the stored test. The earlier period must still compute the same."

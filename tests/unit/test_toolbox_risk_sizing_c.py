@@ -5,9 +5,11 @@ from itertools import product
 from pathlib import Path
 
 import numpy as np
+import polars as pl
 import pytest
 
 from tests.unit.risk_sizing_support import put_returns, put_trades, read, stored
+from tests.unit.test_spine_tools import RUN
 
 REL, ABS = 1e-9, 1e-12
 GAINS = [0.2, -0.1] * 10
@@ -15,7 +17,7 @@ GAINS = [0.2, -0.1] * 10
 
 def with_trades(home: Path, ret: list[float]) -> None:
     stored(home)
-    put_trades(home, [r * 1000 for r in ret], ret)
+    put_trades(home, [r * 1000 for r in ret])
 
 
 def test_kelly(tmp_path: Path) -> None:
@@ -29,6 +31,20 @@ def test_kelly(tmp_path: Path) -> None:
     assert values["kelly_simple"] == pytest.approx(0.25, rel=REL, abs=ABS)
     assert values["kelly_growth"] == pytest.approx(2.5, rel=REL, abs=ABS)
     assert values["growth_at_kelly"] == pytest.approx(math.log(1.125) / 2, rel=REL, abs=ABS)
+
+
+def test_kelly_uses_after_cost_profit_not_the_price_return(tmp_path: Path) -> None:
+    stored(tmp_path)
+    # The stored price return says every trade gained; after commissions they lost money.
+    put_trades(tmp_path, [-1.0, -2.0] * 10)
+    folder = tmp_path / "runs" / RUN
+    frame = pl.read_parquet(folder / "trades.parquet")
+    frame.with_columns(pl.lit(0.05).alias("realized_return")).write_parquet(
+        folder / "trades.parquet"
+    )
+    doc = read(tmp_path, "risk.kelly")
+    assert doc["values"]["kelly_growth"] is None
+    assert "winning" in doc["reasons"]["kelly_growth"]
 
 
 def test_kelly_without_an_edge_is_zero(tmp_path: Path) -> None:

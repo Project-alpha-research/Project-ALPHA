@@ -154,7 +154,7 @@ def test_the_monthly_heatmap_scale_is_in_the_unit_its_label_and_cells_use(
         "monthly_heatmap", run_id=rdir.name, rdir=rdir, manifest=manifest, data_dir=data_dir
     )
     mark = next(m for m in spec.panels[0].marks if isinstance(m, HeatmapMark))
-    assert mark.colorbar_label == "Return (%)"
+    assert mark.colorbar_label == "Monthly return (%), pale yellow is zero"
     for row, texts in zip(mark.values, mark.cell_text, strict=True):
         for value, text in zip(row, texts, strict=True):
             if value is not None and text:
@@ -219,10 +219,9 @@ def _blend(foreground: str, background: str, alpha: float) -> str:
 
 
 # ------------------------------------------------------------------ items 2, 3, 7
-def test_a_thirty_year_heatmap_thins_its_labels_and_drops_cell_text(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from tests.unit._figure_probe import measure
+def test_a_thirty_year_heatmap_keeps_every_year_and_its_numbers(tmp_path: Path) -> None:
+    from alpha_cli.figures.plain_spec import draw_spec
+    from alpha_cli.figures.variants import explanation
 
     rng = np.random.default_rng(1)
     rows = [
@@ -237,11 +236,20 @@ def test_a_thirty_year_heatmap_thins_its_labels_and_drops_cell_text(
     pl.DataFrame(rows).write_parquet(rdir / "calendar_returns.parquet")
     spec = _build(rdir, "monthly_heatmap")
     mark = spec.panels[0].marks[0]
-    assert mark.cell_text == ()
-    assert len(mark.rows) == 30
-    assert sum(1 for label in mark.rows if label.strip()) <= 8
-    seen = measure(spec, monkeypatch)
-    assert seen.outside() == [] and seen.overlapping_ticks() == []
+    # The approved sample: every year labelled, every cell numbered; the figure grows instead.
+    assert len(mark.rows) == 30 and all(label.strip() for label in mark.rows)
+    assert len(mark.cell_text) == 30 and mark.cell_text[0][0]
+    # The product's own renderer: no two year labels overlap and none leaves the figure.
+    for variant in ("plain", "annotated"):
+        figure = draw_spec(spec, variant, explanation(spec))
+        figure.canvas.draw()
+        renderer = figure.canvas.get_renderer()
+        boxes = [t.get_window_extent(renderer) for t in figure.axes[0].get_yticklabels()]
+        assert len(boxes) == 30
+        assert all(
+            a.y0 >= b.y1 - 1 or b.y0 >= a.y1 - 1 for a, b in zip(boxes, boxes[1:], strict=False)
+        )
+        assert all(box.x0 >= 0 and box.y0 >= 0 for box in boxes)
 
 
 def test_a_short_history_keeps_every_year_and_its_numbers(tmp_path: Path) -> None:
@@ -651,7 +659,9 @@ def test_every_price_mark_shares_the_plotted_window_and_the_first_candle_stays(
             else:
                 assert min(mark.x) >= low - 1.0 and max(mark.x) <= high + 1.0
         if hasattr(mark, "x0"):
-            assert mark.x0 >= low - 1.0 and mark.x1 <= high + 1.0
+            # Held periods are always shaded now (sample standard); cut to the plotted window.
+            assert spec.x_limits is not None
+            assert spec.x_limits[0] <= mark.x0 and mark.x1 <= spec.x_limits[1]
     assert spec.x_limits is not None
     assert spec.x_limits[0] < low < high < spec.x_limits[1]
 

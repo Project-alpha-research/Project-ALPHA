@@ -6,3 +6,7 @@ Decisions are listed per item. Fail-first evidence: each test failed before its 
 
 ## 1. Short asset names
 `resolve_asset` (spine/stores.py) maps a short name to the one stored symbol with that first part. Otherwise the error lists the closest stored names and names `alpha data symbols`. Fail-first: 3 new tests in `tests/unit/test_spine_stores.py` failed before.
+
+## 2. Crypto default costs
+The #393 mechanism (spec without costs = `class-default`, class from `cost_classes.asset_class`) already gives a slash symbol or crypto provider the crypto row (10+5 bps). A test pins this (`test_cost_classes_crypto_default.py`); it passed before any change, so the tester ran an older build.
+The gap found: a dash-quoted crypto ticker from a stock-data vendor (BTC-USD) was "not known". With class-default costs it is now crypto spot, by symbol, like the ETF rule. Fail-first: the ticker test failed before. Not changed: stated costs.

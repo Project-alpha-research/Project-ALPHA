@@ -161,3 +161,20 @@ def test_init_says_what_it_could_not_find_and_what_to_run(
     assert "Not found" in result.output
     assert "rdagent_source" in result.output and "factor_python" in result.output
     assert "bash scripts/setup_rdagent.sh --with-factor-runtime" in result.output
+
+
+def test_a_data_home_inside_a_git_folder_is_refused_in_one_sentence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    m = machine(tmp_path, monkeypatch)
+    inside = tmp_path / "repo"
+    (inside / ".git").mkdir(parents=True)
+    home = inside / "data"
+    home.mkdir()
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
+    result = RUNNER.invoke(rdagent_app, ["run", "--dry-run"])
+    assert result.exit_code == 2 and isinstance(result.exception, SystemExit)
+    assert result.output.count("git") >= 1 and "data_dir" in result.output
+    assert "ALPHA_DATA_DIR" in result.output
+    assert len([x for x in result.output.splitlines() if "does not exist" in x or "git" in x]) == 1
+    assert m.home.is_dir()

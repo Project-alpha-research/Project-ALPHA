@@ -57,3 +57,8 @@ the existing setup and RD-Agent run tests still pass.
 2. `--accept-bad-data` now reaches the find that `study` and `trade` run first.
 3. `--recheck` with direct options is refused before any file is written.
 Each has a test in `test_setup_new.py`; two of them failed before the fix.
+
+## Review round 2
+Codex found that the launcher refuses runs, gateway state and the ledger inside any git work tree, while the default data
+home is `data/` in the checkout when `ALPHA_DATA_DIR` is unset. A dry run passed and a real run failed. Now a data home inside
+a git folder gives one sentence that says to set `ALPHA_DATA_DIR` outside the checkout. The test failed before the fix.

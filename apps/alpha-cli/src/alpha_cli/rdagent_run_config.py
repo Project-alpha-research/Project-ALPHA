@@ -144,6 +144,27 @@ def _inside(path: Path, folder: Path) -> bool:
     return path == folder or folder in path.parents
 
 
+def _in_git(path: Path) -> bool:
+    """True when the path, or a folder above it, holds a `.git`: the launcher refuses those."""
+    return any((folder / ".git").exists() for folder in (path, *path.parents))
+
+
+def _git_problems(config: RdagentConfig) -> list[str]:
+    """The launcher needs runs, gateway state and the ledger outside every git work tree."""
+    root = runs_root(config)
+    if _in_git(root):
+        fix = "Set ALPHA_DATA_DIR to a folder outside the Project-ALPHA checkout, or set data_dir."
+        return [f"The setting data_dir is inside a git folder: {config.data_dir}. Fix: {fix}"]
+    return [
+        f"The setting {name} is inside a git folder: {path}. Fix: set {name} outside it."
+        for name, path in (
+            ("gateway_data_dir", config.gateway_data_dir),
+            ("trial_ledger", config.trial_ledger),
+        )
+        if _in_git(path)
+    ]
+
+
 def _problem(name: str, path: Path) -> str:
     fix = rdagent_defaults.FIXES.get(name, f"Fix {name} in the config, or remove it.")
     return f"The path for {name} does not exist: {path}. Fix: {fix}"
@@ -221,7 +242,7 @@ def load_config(path: Path | None, environ: dict[str, str] | None = None) -> Rda
         config = RdagentConfig.model_validate(raw)
     except ValidationError as error:
         raise RdagentConfigError("\n".join(_words(error))) from error
-    if problems := _missing(config, env):
+    if problems := [*_git_problems(config), *_missing(config, env)]:
         raise RdagentConfigError("\n".join(problems))
     return config
 

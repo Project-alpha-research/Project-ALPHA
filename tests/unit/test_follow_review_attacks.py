@@ -176,7 +176,9 @@ class _Store:
         ParquetStore(self.home / "store").write_bars(self.symbol, pl.DataFrame(rows))
 
     def follow(self, at: datetime) -> str:
-        idea = IdeaSpec.model_validate({"assets": [self.symbol], "rule": RULE})
+        idea = IdeaSpec.model_validate(
+            {"assets": [self.symbol], "rule": RULE, "costs": {"fee_bps": 1.0, "slippage_bps": 2.0}}
+        )
         run = self.home / "runs" / ("c" * 16)
         run.mkdir(parents=True)
         spine = {"spec_sha256": idea.spec_sha256, "store": "home", "idea_card": ""}

@@ -15,7 +15,7 @@ from typing import Any
 
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.reserve import CONFIRMATION
-from alpha_cli.spine.spec import IdeaSpec
+from alpha_cli.spine.spec import Costs, IdeaSpec
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_data.sessions import CalendarRangeError, supported_range
 
@@ -252,13 +252,28 @@ def frozen_idea(home: Path, source_id: str, spec_sha256: str) -> IdeaSpec:
             "Do not edit stored runs. Start a new follow from a rule test that still verifies.",
         )
     if idea.costs_class_default:
-        raise refuse(
-            "FOLLOW_COSTS_BY_CLASS",
-            f"Rule test {source_id} takes its costs from the asset class. A follow needs costs "
-            "stated in the spec.",
-            "Test the rule again with costs stated, then follow that test.",
-        )
+        # The class row was chosen when the run was made; follow with the numbers it stored.
+        spine = _stored_spine(folder)
+        used = spine.get("costs") if isinstance(spine, dict) else None
+        if not isinstance(used, dict):
+            raise refuse(
+                "FOLLOW_COSTS_BY_CLASS",
+                f"Rule test {source_id} takes its costs from the asset class but stored none.",
+                "Test the rule again, then follow that test.",
+            )
+        costs = Costs(fee_bps=used["fee_bps"], slippage_bps=used["slippage_bps"])
+        idea = idea.model_copy(update={"costs": costs})
     return idea
+
+
+def _stored_spine(folder: Path | None) -> object:
+    if folder is None:
+        return None
+    try:
+        manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return manifest.get("spine") if isinstance(manifest, dict) else None
 
 
 def forward_bars(home: Path, asset: str, now: datetime) -> tuple[list[Bar], str | None]:

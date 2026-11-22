@@ -3,13 +3,21 @@ import { expect, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { writeFile } from 'node:fs/promises'
 
+
+// The real test store holds crypto pairs: start each journey on the Crypto market.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('alpha.settings')) localStorage.setItem('alpha.settings', JSON.stringify({ profile: 'crypto', profileChosen: true }))
+  })
+})
+
 test('real workflow navigation, asset selection, chart and history', async ({ page }) => {
   test.setTimeout(120_000)
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByRole('menubar', { name: 'Terminal menu' })).toBeVisible()
-  for (const [section, task] of [['Data & Assets', 'Data downloads'], ['Research', 'Research Case'], ['Strategies & Tests', 'Builder'], ['Results', 'Run library'], ['Operations', 'Jobs'], ['Settings', 'Governance']]) {
+  for (const [section, task] of [['Data & Assets', 'Data downloads'], ['Research', 'Ideas'], ['Strategies & Tests', 'Builder'], ['Results', 'All tests'], ['Results', 'Run library'], ['Operations', 'Jobs'], ['Settings', 'Governance']]) {
     await openTask(page, section, task)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width)
     await expect(page.getByText(/panel crashed/i)).toHaveCount(0)
@@ -23,7 +31,7 @@ test('real workflow navigation, asset selection, chart and history', async ({ pa
   await expect(page.getByRole('dialog', { name: 'Working context' })).toHaveCount(0)
   await openTask(page, 'Data & Assets', 'Price')
   await expect(page.getByRole('region', { name: 'Price', exact: true }).locator('.count')).toHaveText('400 bars', { timeout: 30_000 })
-  await openTask(page, 'Research', 'Research Case')
+  await openTask(page, 'Research', 'Ideas')
   await page.goBack()
   await expect(page.getByRole('tab', { name: 'Price', exact: true })).toHaveAttribute('aria-selected', 'true')
   await page.reload()
@@ -46,7 +54,7 @@ test('real rule validation, persistence, scanner and workspace round trip', asyn
   await page.getByRole('listbox', { name: 'Stored assets' }).getByRole('option', { name: /BTC\/USDT/ }).click()
   await editor.getByLabel('File name').fill(rule)
   await editor.getByRole('button', { name: 'Save rule set' }).click()
-  await expect(editor.getByRole('button', { name: 'Test in sandbox' })).toBeEnabled({ timeout: 30_000 })
+  await expect(editor.getByRole('button', { name: 'Run a backtest' })).toBeEnabled({ timeout: 30_000 })
   const persisted = await request.get(`/api/rules/${rule}`)
   expect(persisted.ok()).toBe(true)
   expect((await persisted.json()).long_conditions).toEqual(['sma:5 > sma:20'])
@@ -119,8 +127,9 @@ test('@reference-only every real workflow task opens in both market profiles', a
   await writeFile(inventory, JSON.stringify({ audit, failures, errors }, null, 2))
   await info.attach('real-task-inventory', { path: inventory, contentType: 'application/json' })
   expect(errors).toEqual([])
-  expect(audit.filter(item => item.profile === 'crypto').length).toBeGreaterThan(30)
-  expect(audit.filter(item => item.profile === 'equities').length).toBeGreaterThan(25)
+  // Both markets show the same tasks since the crypto-only windows were removed.
+  expect(audit.filter(item => item.profile === 'crypto').length).toBeGreaterThan(15)
+  expect(audit.filter(item => item.profile === 'equities').length).toBe(audit.filter(item => item.profile === 'crypto').length)
   expect(failures).toEqual([])
   expect(audit.filter(item => item.alerts.length)).toEqual([])
 })
@@ -136,7 +145,7 @@ test('@reference-only real sandbox execution produces a persisted report and one
   await page.getByRole('combobox', { name: 'Test asset' }).click()
   await page.getByRole('listbox', { name: 'Stored assets' }).getByRole('option', { name: /SPY/ }).click()
   const accepted = page.waitForResponse(response => response.url().endsWith('/api/jobs') && response.request().method() === 'POST')
-  await page.getByRole('button', { name: 'Test in sandbox', exact: true }).click()
+  await page.getByRole('button', { name: 'Run a backtest', exact: true }).click()
   const response = await accepted
   expect(response.ok(), await response.text()).toBe(true)
   const { job_id: jobId } = await response.json() as { job_id: string }

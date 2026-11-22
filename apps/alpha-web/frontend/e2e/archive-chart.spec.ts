@@ -112,7 +112,7 @@ test('main dropdown groups aliases and opens every archive pair with exact sourc
       bars: [{ t: 1788220800, o: 100, h: 110, l: 90, c: 105, v: 1000 }],
     } })
   })
-  await page.goto('/#page=research&pane=ResearchCockpit')
+  await page.goto('/#page=research&pane=IdeaWorkspace')
   await page.getByRole('button', { name: 'Symbol, venue and timeframe' }).click()
   const input = page.getByRole('combobox', { name: 'Active asset' })
   await input.click()
@@ -149,8 +149,8 @@ test('an archive read error stays explicit and never falls back to canonical can
   await page.getByRole('button', { name: 'Symbol, venue and timeframe' }).click()
   await page.getByRole('combobox', { name: 'Active asset' }).click()
   await page.getByRole('option', { name: /^ETH\/USDT / }).click()
-  await expect(page.getByRole('region', { name: 'Price', exact: true })).toContainText('422')
-  expect(requests).toEqual([`?manifest_id=${id}`])
+  await expect.poll(() => requests).toEqual([`?manifest_id=${id}`])
+  await expect(page.locator('.price-panel .placeholder')).toContainText('The Workstation refused this request.')
   await expect(page.locator('.price-panel .count')).toHaveCount(0)
 })
 
@@ -186,13 +186,4 @@ test('watchlist picker supports keyboard sources, Escape and discovery retry', a
   await source.press('Enter')
   await expect(page).toHaveURL(/#page=data&pane=PriceChart/)
   await expect(page.locator('.price-panel .sym-input')).toHaveValue('BTC-USD')
-})
-
-test('working context links to the non-price crypto data inventory', async ({ page }) => {
-  await preparePage(page)
-  await page.goto('/#page=data&pane=PriceChart')
-  await page.getByRole('button', { name: 'Symbol, venue and timeframe' }).click()
-  await page.getByRole('button', { name: 'Browse all crypto datasets' }).click()
-  await expect(page).toHaveURL(/#page=data&pane=FundingData/)
-  await expect(page.getByRole('dialog', { name: 'Working context' })).toHaveCount(0)
 })

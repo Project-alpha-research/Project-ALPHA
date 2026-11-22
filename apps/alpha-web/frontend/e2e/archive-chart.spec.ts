@@ -26,7 +26,7 @@ test('archive chart identity stays distinct from the strategy context', async ({
         manifest_id: manifest, market_type: 'inverse', volume_unit: 'quote', history_kind: 'reconstructed_from_verified_archive' },
     } })
   })
-  await page.goto('/')
+  await page.goto('/#legacy')
   await openDocument(page, 'Chart')
   await page.getByRole('button', { name: 'External archive…' }).click()
   await page.getByRole('button', { name: 'Open BTCUSD', exact: true }).click()

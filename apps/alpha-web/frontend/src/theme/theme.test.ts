@@ -9,17 +9,31 @@ import { readTokens } from '../util/tokens'
 const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8')
 const css = readFileSync(new URL('../index.css', import.meta.url), 'utf8')
 
+function headScript(saved: string | null, hash: string): { dataset: Record<string, string> } {
+  const head = html.split('</head>')[0]
+  const script = head.match(/<script>([\s\S]*?)<\/script>/)?.[1]
+  expect(script).toBeDefined()
+  const documentElement: { dataset: Record<string, string> } = { dataset: {} }
+  runInNewContext(script!, {
+    document: { documentElement }, location: { hash, pathname: '/' }, URLSearchParams,
+    localStorage: { getItem: (key: string) => key === 'alpha.theme.v1' ? saved : null },
+  })
+  return documentElement
+}
+
 describe('workstation themes', () => {
   it.each([[null, 'light'], ['unknown', 'light'], ['dim', 'dim'], ['dark', 'dark']])(
-    'applies the stored choice %s in the document head before paint', (saved, expected) => {
-      const head = html.split('</head>')[0]
-      const script = head.match(/<script>([\s\S]*?)<\/script>/)?.[1]
-      expect(script).toBeDefined()
-      const documentElement = { dataset: { theme: '' } }
-      runInNewContext(script!, { document: { documentElement }, localStorage: { getItem: (key: string) => key === 'alpha.theme.v1' ? saved : null } })
+    'applies the stored choice %s to the old shell in the document head before paint', (saved, expected) => {
+      const documentElement = headScript(saved, '#legacy')
       expect(documentElement.dataset.theme).toBe(expected)
+      expect(documentElement.dataset.desk).toBeUndefined()
     },
   )
+
+  it.each(['', '#place=tests&run=0859801ce8721413'])('opens the desk dark before paint for %s', hash => {
+    const documentElement = headScript('light', hash)
+    expect(documentElement.dataset).toEqual({ theme: 'dark', desk: 'v2' })
+  })
 
   for (const theme of ['light', 'dim', 'dark']) {
     it(`checks every chrome text role and surface in ${theme}`, () => {

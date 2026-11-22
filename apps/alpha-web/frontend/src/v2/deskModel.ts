@@ -20,9 +20,14 @@ export type Place = (typeof PLACES)[number]['id']
 
 export interface Route { place: Place; run: string | null; symbol: string | null }
 
-/** The old shell keeps its own URLs (`#page=…`) and `#legacy` until later slices replace it. */
+/**
+ * The old shell keeps `#legacy` and its own links (`#page=…`, `#run=…` without a desk place) until
+ * later slices replace it.
+ */
 export function isLegacyHash(hash: string): boolean {
-  return /^#(legacy\b|page=|pane=)/.test(hash) || /[#&]page=/.test(hash)
+  if (/^#legacy\b/.test(hash)) return true
+  const params = new URLSearchParams(hash.replace(/^#/, ''))
+  return !params.has('place') && (params.has('page') || params.has('pane') || params.has('run'))
 }
 
 export function parseRoute(hash: string): Route {

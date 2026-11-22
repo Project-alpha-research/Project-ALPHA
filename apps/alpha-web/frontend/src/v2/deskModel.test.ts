@@ -15,6 +15,8 @@ describe('desk routes', () => {
   it('keeps the old shell URLs on the old shell', () => {
     expect(isLegacyHash('#legacy')).toBe(true)
     expect(isLegacyHash('#page=results&pane=RunDetail')).toBe(true)
+    expect(isLegacyHash('#run=0859801ce8721413')).toBe(true)
+    expect(isLegacyHash('#place=tests&run=0859801ce8721413')).toBe(false)
     expect(isLegacyHash('#place=tests')).toBe(false)
     expect(isLegacyHash('')).toBe(false)
   })

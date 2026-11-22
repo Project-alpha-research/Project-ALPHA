@@ -42,7 +42,7 @@ test.afterAll(async () => {
 })
 
 async function openProductionQuality(page: Page) {
-  await page.goto(endpoint)
+  await page.goto(endpoint + '/#legacy')
   await page.getByLabel('Market profile').selectOption('crypto')
   await page.goto(endpoint+'/#page=data&pane=FundingData')
   const center = page.getByRole('region', {name: 'Crypto Data Center'})

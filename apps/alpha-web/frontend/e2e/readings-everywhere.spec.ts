@@ -126,7 +126,7 @@ for (const theme of THEMES) {
 test('the command palette lists a run with its evidence word', async ({ page }) => {
   await preparePage(page, { runs: [listed('f'.repeat(16), { evidence: 'some evidence', verdict: 'B', passed: true }),
     listed('0'.repeat(15) + '1', { evidence: null, verdict: 'C', passed: false })] })
-  await page.goto('/')
+  await page.goto('/#legacy')
   await expect(page.getByRole('combobox', { name: 'Theme', exact: true })).toBeVisible()
   await page.keyboard.press('Control+K')
   await page.getByRole('option', { name: /Open run/ }).click()

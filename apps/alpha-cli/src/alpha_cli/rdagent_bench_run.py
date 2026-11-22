@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import fcntl
 import json
 import math
 from collections.abc import Mapping
@@ -72,38 +73,56 @@ def _estimate(p: StoredPrompt, price: tuple[float, float]) -> float:
     return ((p.prompt_tokens or 0) * price[0] + (p.completion_tokens or 0) * price[1]) / 1e6
 
 
-def _charge(spend: Path, now: datetime, record: dict[str, Any]) -> float:
-    """Write the spend of one call. A call without token counts is charged its estimate."""
-    spend.parent.mkdir(parents=True, exist_ok=True)
+def _append(spend: Path, now: datetime, usd: float, estimated: bool) -> None:
     with spend.open("a", encoding="utf-8") as stream:
-        row = {
-            "ts": now.isoformat(),
-            "usd": record["charged_usd"],
-            "estimated": record["usd_source"] != "reported by the gateway",
-        }
+        row = {"ts": now.isoformat(), "usd": usd, "estimated": estimated}
         stream.write(json.dumps(row) + "\n")
-    return float(record["charged_usd"])
 
 
-def _charge_unsettled(spend: Path, store: Path, now: datetime, estimate: float) -> None:
-    """A call that failed after dispatch may still have been billed. Charge its estimate to the
-    month ledger, and note it in the store so a rerun counts it against the run cap."""
-    _charge(spend, now, {"charged_usd": estimate, "usd_source": None})
+def _reserve(spend: Path, now: datetime, estimate: float) -> None:
+    """Check the month cap and write the call's reservation under one lock, so two bench
+    processes sharing the ledger cannot both take the last dollars."""
+    spend.parent.mkdir(parents=True, exist_ok=True)
+    with spend.with_suffix(".lock").open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        spent = month_spent(spend, now)
+        if spent + estimate > MONTH_MAX_USD:
+            raise BenchError(
+                f"Stopped: {spent:.2f} USD is spent this month and the next call may cost "
+                f"{estimate:.2f} USD. That would pass the {MONTH_MAX_USD:g} USD monthly cap."
+            )
+        _append(spend, now, estimate, True)
+
+
+def _settle(spend: Path, now: datetime, estimate: float, record: dict[str, Any]) -> None:
+    """Replace the reservation by the charge that was reported or estimated from tokens."""
+    delta = float(record["charged_usd"]) - estimate
+    if delta != 0:
+        spend.parent.mkdir(parents=True, exist_ok=True)
+        with spend.with_suffix(".lock").open("w") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            _append(spend, now, delta, record["usd_source"] != "reported by the gateway")
+
+
+def _note_failed(store: Path, now: datetime, estimate: float) -> None:
+    """A call that failed after dispatch may still have been billed. Its reservation stays in the
+    month ledger; the store keeps it so a rerun counts it against the run's cost and call caps."""
     store.mkdir(parents=True, exist_ok=True)
     with (store / UNSETTLED).open("a", encoding="utf-8") as stream:
         stream.write(json.dumps({"ts": now.isoformat(), "usd": estimate}) + "\n")
 
 
-def _unsettled_usd(store: Path) -> float:
+def _unsettled(store: Path) -> tuple[float, int]:
     path = store / UNSETTLED
     if not path.exists():
-        return 0.0
-    return sum(float(json.loads(x)["usd"]) for x in path.read_text().splitlines() if x.strip())
+        return 0.0, 0
+    rows = [json.loads(x) for x in path.read_text().splitlines() if x.strip()]
+    return sum(float(r["usd"]) for r in rows), len(rows)
 
 
 def _stored(
     prompts: list[StoredPrompt], models: list[str], samples: int, store: Path
-) -> tuple[set[tuple[str, str, int]], float]:
+) -> tuple[set[tuple[str, str, int]], float, int]:
     """The outputs already stored and what they cost. A stored output made from a different
     prompt text is refused: the same id must mean the same prompt."""
     done: set[tuple[str, str, int]] = set()
@@ -122,7 +141,8 @@ def _stored(
                     )
                 done.add((model, p.id, sample))
                 spent += float(record["charged_usd"])
-    return done, spent + _unsettled_usd(store)
+    failed_usd, failed_calls = _unsettled(store)
+    return done, spent + failed_usd, failed_calls
 
 
 def run_bench(
@@ -145,9 +165,9 @@ def run_bench(
     check_outside_git(store)
     now = datetime.now(UTC)
     month = month_spent(spend, now)
-    done, run_usd = _stored(prompts, models, samples, store)
-    make_plan(prompts, models, samples, prices, month, done)
-    new, new_usd = 0, 0.0
+    done, run_usd, failed = _stored(prompts, models, samples, store)
+    make_plan(prompts, models, samples, prices, month, done, failed)
+    new = 0
     for model in models:
         for p in prompts:
             for sample in range(samples):
@@ -157,19 +177,21 @@ def run_bench(
                 if max_new_calls is not None and new >= max_new_calls:
                     return RunResult(new_calls=new, finished=False)
                 estimate = _estimate(p, prices[model])
-                if run_usd + estimate > RUN_MAX_USD or month + new_usd + estimate > MONTH_MAX_USD:
+                if run_usd + estimate > RUN_MAX_USD:
                     raise BenchError(
-                        f"Stopped after {new} new calls: {run_usd:.2f} USD spent in this run and "
-                        f"{month + new_usd:.2f} USD this month. The next call would pass the cap "
-                        f"of {RUN_MAX_USD:g} USD per run or {MONTH_MAX_USD:g} USD per month. "
+                        f"Stopped after {new} new calls: {run_usd:.2f} USD spent in this run. "
+                        f"The next call would pass the cap of {RUN_MAX_USD:g} USD per run. "
                         "The stored outputs are kept."
                     )
+                _reserve(spend, now, estimate)
                 try:
                     reply = client.complete(model, p, sample)
                 except BenchError:
-                    raise  # refused before dispatch: nothing was sent, nothing is charged
+                    # Refused before dispatch: nothing was sent, so the reservation is released.
+                    _settle(spend, now, estimate, {"charged_usd": 0.0, "usd_source": None})
+                    raise
                 except Exception:
-                    _charge_unsettled(spend, store, now, estimate)
+                    _note_failed(store, now, estimate)
                     raise
                 if reply.cost is not None and not (
                     isinstance(reply.cost, int | float)
@@ -178,7 +200,7 @@ def run_bench(
                 ):
                     # The call was made: charge its estimate, then stop. A bad charge never
                     # lowers the spend so far.
-                    _charge_unsettled(spend, store, now, estimate)
+                    _note_failed(store, now, estimate)
                     raise BenchError(
                         f"{model} reported the cost {reply.cost!r} for prompt '{p.id}'. A cost "
                         "must be a finite number of zero or more. The run stopped; its estimate "
@@ -188,8 +210,7 @@ def run_bench(
                 path.parent.mkdir(parents=True, exist_ok=True)
                 with path.open("x", encoding="utf-8") as stream:
                     stream.write(json.dumps(record, sort_keys=True, allow_nan=False) + "\n")
-                charged = _charge(spend, now, record)
-                run_usd += charged
-                new_usd += charged
+                _settle(spend, now, estimate, record)
+                run_usd += float(record["charged_usd"])
                 new += 1
     return RunResult(new_calls=new, finished=True)

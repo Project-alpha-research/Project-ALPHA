@@ -465,8 +465,10 @@ def test_the_gateways_reported_charge_is_what_is_booked(tmp_path: Path) -> None:
     spend = _spend(tmp_path)
     store = tmp_path / "store"
     run_bench(prompts, ["a"], 1, prices, FakeClient(data), store, spend=spend)
-    row = json.loads(spend.read_text().splitlines()[0])
-    assert row["usd"] == pytest.approx(1.0) and row["estimated"] is False
+    rows = [json.loads(line) for line in spend.read_text().splitlines()]
+    # A reservation of the estimate, then a settlement to the reported charge.
+    assert sum(r["usd"] for r in rows) == pytest.approx(1.0)
+    assert rows[-1]["estimated"] is False
     record = json.loads(next((store / "outputs" / "a").glob("*.json")).read_text())
     assert record["usd"] == pytest.approx(1.0) and record["usd_source"] == "reported by the gateway"
 
@@ -577,3 +579,46 @@ def test_repeated_failed_calls_reach_the_run_cap(tmp_path: Path) -> None:
     with pytest.raises(BenchError, match="10"):
         run_bench(prompts, ["a"], 1, prices, client, store, spend=_spend(tmp_path))
     assert client.calls == 2
+
+
+def test_a_call_in_flight_is_reserved_in_the_shared_month_ledger(tmp_path: Path) -> None:
+    folder = _prompts(tmp_path / "pr", 1)
+    row = json.loads((folder / "p0.json").read_text())
+    row["prompt_tokens"], row["completion_tokens"] = 1_000_000, 0  # one USD at the test price
+    (folder / "p0.json").write_text(json.dumps(row))
+    prompts = load_prompts(folder, None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    spend = _spend(tmp_path)
+    spend.parent.mkdir(parents=True)
+    spend.write_text(json.dumps({"ts": datetime.now(UTC).isoformat(), "usd": 48.5}) + "\n")
+    outcome: list[str] = []
+    second = FakeClient({"a": {"p0": [_reply(1_000_000, 0)]}})
+
+    class _Racing:
+        """While this call is in flight, a second bench process asks for the same last dollar."""
+
+        calls = 0
+
+        def complete(self, model: str, prompt: StoredPrompt, sample: int) -> Reply:
+            try:
+                run_bench(prompts, ["a"], 1, prices, second, tmp_path / "other", spend=spend)
+                outcome.append("second run was allowed")
+            except BenchError:
+                outcome.append("second run was refused")
+            return Reply("{}", "h", 1_000_000, 0, 1.0)
+
+    run_bench(prompts, ["a"], 1, prices, _Racing(), tmp_path / "store", spend=spend)
+    assert outcome == ["second run was refused"]
+
+
+def test_failed_dispatches_count_against_the_call_cap(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 1), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    client = _FailingClient()
+    store = tmp_path / "store"
+    for _ in range(60):
+        with pytest.raises(TimeoutError):
+            run_bench(prompts, ["a"], 1, prices, client, store, spend=_spend(tmp_path))
+    with pytest.raises(BenchError, match="60"):
+        run_bench(prompts, ["a"], 1, prices, client, store, spend=_spend(tmp_path))
+    assert client.calls == 60

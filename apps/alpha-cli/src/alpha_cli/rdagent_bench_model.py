@@ -129,6 +129,7 @@ def make_plan(
     prices: Mapping[str, tuple[float, float]],
     month_spent: float,
     done: Collection[tuple[str, str, int]] = (),
+    failed_attempts: int = 0,
 ) -> Plan:
     """The calls and cost of a plan. Outputs in `done` are already paid for and in the month's
     spend, so only the calls still missing count against the month cap."""
@@ -152,8 +153,11 @@ def make_plan(
         per_model[model] = (samples * len(prompts), usd)
     calls = sum(c for c, _ in per_model.values())
     usd = sum(u for _, u in per_model.values())
-    if calls > RUN_MAX_CALLS:
-        raise BenchError(f"The plan has {calls} calls. The cap is {RUN_MAX_CALLS} per run.")
+    if calls + failed_attempts > RUN_MAX_CALLS:
+        raise BenchError(
+            f"The plan has {calls} calls and {failed_attempts} earlier attempts failed. "
+            f"The cap is {RUN_MAX_CALLS} per run."
+        )
     if usd > RUN_MAX_USD:
         raise BenchError(f"The plan costs about {usd:.2f} USD. The cap is {RUN_MAX_USD:g} per run.")
     if month_spent + missing_usd > MONTH_MAX_USD:

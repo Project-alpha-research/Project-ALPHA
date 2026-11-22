@@ -74,3 +74,8 @@ Two more findings were correct and are fixed, each with a failing test first:
 ## Review round 4 (Codex)
 A call that fails after dispatch (for example a provider timeout) may still be billed. Its estimate is now charged to the month ledger and
 kept in the store (`unsettled-spend.jsonl`), so a rerun counts it against the 10 USD run cap. A refusal before dispatch charges nothing.
+
+## Review round 5 (Codex)
+1. Each call now reserves its estimate in the shared month ledger under a file lock before it is sent, and settles to the reported or token-based
+   charge after. A second bench process sees the reservation, so two runs cannot both take the last dollars. A refusal before dispatch releases it.
+2. Failed dispatches are counted (in `unsettled-spend.jsonl`) against the 60-call cap on a rerun, as well as against the cost cap.

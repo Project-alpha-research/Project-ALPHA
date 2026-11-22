@@ -52,7 +52,9 @@ SCAN = [
 # Pinned before the reserved period was held back in the scan: a store with no bar from the
 # reserved day on keeps its result and its frozen inputs (the code hashes are left out).
 PINNED_PRE_RESULT = "dc9436f022aea1c10d0209d806834da05e5f99555405054c17cbfbd47f1c80b1"
-PINNED_PRE_INPUTS = "475596025090f0bb5623dd7f20baeef3bb2dab1e6857334ac7f8c43ec84e5079"
+# The inputs pin moved in M97 only because the frozen spec holds `data_hash` (rows before the
+# boundary) in place of the whole-snapshot `snapshot_hash`; the result pin is unchanged.
+PINNED_PRE_INPUTS = "a53eb5c8f97a1b438998ed38407424530decb9f3f4ded0b3ab4c4b062bcd79ac"
 PINNED_PRE_ARCHIVE_RUN = "8a7424386db8ec4a"
 
 
@@ -172,7 +174,8 @@ def test_equity_scan_never_loads_a_held_back_bar_and_equals_the_cut_store(
     assert max(held["dates"]) < RESERVED_START
     assert_equal_results(_result_part(held), _result_part(plain))
     spec = json.loads((poisoned / "scans/hypotheses/specs" / f"{held['scan_id']}.json").read_text())
-    assert spec["research_cutoff"] == "2023-12-31" and spec["reserve"] == held["reserve"]
+    # The held-back count is a shown fact of the result, never part of the frozen spec (M97).
+    assert "research_cutoff" not in spec and "reserve" not in spec
 
 
 def test_text_replay_and_an_earlier_user_cutoff(

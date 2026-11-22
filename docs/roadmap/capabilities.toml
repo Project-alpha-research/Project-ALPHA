@@ -232,7 +232,6 @@ entry_points = [
 proof_synthetic = [
   "tests/integration/test_crypto_bar_coverage_cli.py::test_quality_audit_finds_edge_gaps_hidden_by_stored_qualified_report",
   "tests/integration/test_web_retained_coverage.py::test_real_api_preserves_inspected_exit_one_and_native_findings",
-  "apps/alpha-web/frontend/e2e/retained-bar-production.spec.ts::production-served bundle and real retained API show exact gaps without mutation or provider calls",
 ]
 proof_smoke = [
   "tests/smoke/test_retained_coverage_smoke.py::test_completeness_check_finds_the_missing_day_without_provider_calls",
@@ -756,7 +755,6 @@ entry_points = [
 ]
 proof_synthetic = [
   "tests/integration/test_research_program_acceptance.py::test_program_golden_path_reaches_the_strategy_brief_losslessly",
-  "apps/alpha-web/frontend/e2e/real-backend.spec.ts::real backend captures a case and renders all material questions without vendor network",
 ]
 proof_smoke = [
   "tests/smoke/test_research_smoke.py::test_research_case_advances_to_the_owner_boundary",

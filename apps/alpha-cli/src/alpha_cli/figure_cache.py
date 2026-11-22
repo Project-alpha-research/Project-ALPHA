@@ -38,13 +38,13 @@ FIGURES_CACHE_VERSION: Final = 1
 #: Identity of the one standard figure look; part of every cache key, so a change of look
 #: re-renders everything. ``plain`` is the standard notebook chart, ``annotated`` the same
 #: chart with callouts and a long explanation.
-STYLE_ID: Final = "plain-notebook-v1"
+STYLE_ID: Final = "plain-notebook-v2"  # v2: the approved sample standard (2026-11-22)
 VARIANTS: Final = ("plain", "annotated")
 
 #: Bump when a builder in ``alpha_cli.figures`` (or the Setup Lab drawing) changes what a figure
 #: shows. ``RENDERER_VERSION`` lives in a protected package and only moves with the drawing
 #: code, so a builder-only fix would otherwise keep serving the old bytes from the cache.
-BUILDER_REVISION: Final = 1
+BUILDER_REVISION: Final = 2
 
 FIGURE_ROOT: Final = "figures"
 FIGURE_ID_RE: Final = re.compile(r"[a-z0-9]+(?:_[a-z0-9]+)*")

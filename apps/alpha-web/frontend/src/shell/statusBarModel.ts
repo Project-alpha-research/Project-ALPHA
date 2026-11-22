@@ -1,32 +1,21 @@
 import { formatTime } from '../util/formatTime'
-// Status bar (spec 2026-09-01 §4.2 item 8; artboard 1-Terminal): `For Help, press F1` · profile ·
-// provider ticks by display name · storage state · `Paper only · no live routing` ·
-// UTC date-time · hovered OHLCV · bars loaded. Pure: the clock is injected, the storage segment is
-// the Data Manager's honest storage row (never a cached "ready"), a missing hovered bar reads `—`,
-// and a non-finite price throws rather than printing a number.
+// Status bar: `For Help, press F1` · market · UTC date-time · hovered OHLCV · bars loaded.
+// Pure: the clock is injected, a missing hovered bar reads `—`, and a non-finite price throws
+// rather than printing a number.
 
 import type { Candle } from '../api/types'
-import type { StorageRow } from '../panels/dataManagerModel'
-import { venueLabel as providerLabel } from '../panels/marketWatchModel'
 import type { Profile } from '../state/settings'
 import { profile as manifest } from './profiles'
 
 export interface StatusSegment {
-  id: 'help' | 'profile' | 'providers' | 'ssd' | 'paper' | 'clock' | 'ohlc' | 'bars'
+  id: 'help' | 'profile' | 'clock' | 'ohlc' | 'bars'
   text: string
   tone: 'none' | 'ok' | 'warn'
   title?: string
 }
 
-export interface ProviderTick {
-  id: string
-  configured: boolean
-}
-
 export interface StatusBarInput {
   profile: Profile
-  providers: readonly ProviderTick[]
-  storage: StorageRow
   /** Milliseconds since the epoch, injected by the caller. */
   now: number
   hovered: Candle | null
@@ -55,26 +44,10 @@ export function barsText(loaded: number): string {
   return `${text} / ${text} bars`
 }
 
-export function ssdText(storage: StorageRow): string {
-  return storage.label
-}
-
 export function statusSegments(input: StatusBarInput): StatusSegment[] {
-  const shown = new Set(manifest(input.profile).providers)
-  const ticks = input.providers
-    .filter((item) => shown.has(item.id))
-    .map((item) => `${providerLabel(item.id)} ${item.configured ? '✓' : '·'}`)
   return [
     { id: 'help', text: 'For Help, press F1', tone: 'none' },
-    { id: 'profile', text: `Profile: ${manifest(input.profile).label}`, tone: 'none' },
-    { id: 'providers', text: ticks.length ? ticks.join('  ') : 'providers —', tone: 'none' },
-    {
-      id: 'ssd',
-      text: ssdText(input.storage),
-      tone: input.storage.tone === 'ok' ? 'ok' : 'warn',
-      title: input.storage.detail,
-    },
-    { id: 'paper', text: 'Paper only · no live routing', tone: 'none' },
+    { id: 'profile', text: `Market: ${manifest(input.profile).label}`, tone: 'none' },
     { id: 'clock', text: utcClock(input.now), tone: 'none', title: new Date(input.now).toISOString() },
     { id: 'ohlc', text: hoveredText(input.hovered), tone: 'none' },
     { id: 'bars', text: barsText(input.barsLoaded), tone: 'none' },

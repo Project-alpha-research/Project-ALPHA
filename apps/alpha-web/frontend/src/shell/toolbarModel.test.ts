@@ -16,8 +16,8 @@ describe('toolbarModel', () => {
 
   it('titles the window the artboard way from the profile and the active context', () => {
     expect(windowTitle('crypto', { symbol: 'BTC/USDT', timeframe: 'D1' })).toBe('ALPHA Terminal — Crypto — [BTCUSDT,D1]')
-    expect(windowTitle('equities', { symbol: 'AAPL', timeframe: 'D1' })).toBe('ALPHA Terminal — Equities — [AAPL,D1]')
-    expect(windowTitle('equities', null)).toBe('ALPHA Terminal — Equities')
+    expect(windowTitle('equities', { symbol: 'AAPL', timeframe: 'D1' })).toBe('ALPHA Terminal — Stocks & ETFs — [AAPL,D1]')
+    expect(windowTitle('equities', null)).toBe('ALPHA Terminal — Stocks & ETFs')
     expect(windowTitle('crypto', { symbol: null, timeframe: 'D1' })).toBe('ALPHA Terminal — Crypto')
     // Any other document is titled by its own name — a report by its display name.
     expect(windowTitle('crypto', { symbol: 'BTC/USDT', timeframe: 'D1' }, 'sma D1 — BTC/USDT · run 1a2b3c4d')).toBe(

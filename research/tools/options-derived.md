@@ -14,7 +14,7 @@ high or low for this name, are puts richer than calls, is the term upward or dow
 **Command**
 
 ```text
-uv run alpha options derived AAA --series iv30 --series skew_25d --rows 20 --json
+alpha options derived AAA --series iv30 --series skew_25d --rows 20 --json
 ```
 
 **How to read it**

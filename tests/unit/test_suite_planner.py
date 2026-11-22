@@ -683,7 +683,7 @@ def test_qlib_plan_derives_opaque_control_resources_and_all_four_steps(
     assert "<managed-exchange:" in rendered
     assert "<isolated-worker-lock>" in rendered
     assert str(tmp_path) not in rendered
-    assert plan.steps[0].argv[4].startswith(str(tmp_path / "control" / "ml" / "inputs"))
+    assert plan.steps[0].argv[2].startswith(str(tmp_path / "control" / "ml" / "inputs"))
     assert plan.steps[1].argv[4].startswith(str(tmp_path / "control" / "ml" / "exchanges"))
     assert public["estimated_workload"] == {
         "class": "heavyweight",

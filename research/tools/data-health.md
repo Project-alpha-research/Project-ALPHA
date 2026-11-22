@@ -12,7 +12,7 @@ verified: 26641097485296d3
 
 **Reach for it when** you want to know whether a stored daily series has a known data fault before you test on it.
 
-**Command** `uv run alpha data health SPY@home`. A symbol alone searches every registered store.
+**Command** `alpha data health SPY@home`. A symbol alone searches every registered store.
 Add `--universe members.csv` (membership intervals) to check survivorship. `--json` adds thresholds and all dates.
 
 **How to read it** Four groups come in order: adjustments, timestamps, gaps, survivorship.

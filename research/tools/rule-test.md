@@ -12,12 +12,12 @@ verified: d240366b057727b7
 **Reach for it when** the owner states a price rule or asks "does X work": the one route for a new idea.
 **Command**
 ```text
-uv run alpha test <spec.toml> --json
-uv run alpha test --rule ma_cross --param fast=50 --param slow=200 --asset SPY --idea "<owner's words>" --json
-uv run alpha test <spec.toml> --recheck --json   # system check, not a trial; exit 4 if the result differs
+alpha test <spec.toml> --json
+alpha test --rule ma_cross --param fast=50 --param slow=200 --asset SPY --idea "<owner's words>" --json
+alpha test <spec.toml> --recheck --json   # system check, not a trial; exit 4 if the result differs
 ```
 A spec file holds `name`, `idea`, `assets`, a `[rule]` table (`kind` plus its numbers) and an optional `[costs]` table
-(`fee_bps`, `slippage_bps`, or `costs = "class-default"`). Kinds: `ma_cross` (`fast`, `slow`), `breakout` (`window`), `tsmom` (`lookback`, `skip`), and `owner`
+(`fee_bps`, `slippage_bps`); else class costs. Kinds: `ma_cross` (`fast`, `slow`), `breakout` (`window`), `tsmom` (`lookback`, `skip`), `owner`
 (a `[rule.spec]` table: [language](../../docs/reference/owner-rule-language.md); `examples/owner-rsi-dip.toml`, `examples/owner-breakout-rsi-cross.toml`).
 Asset: symbol or symbol@store. No file with flags. `--quick`: small gauntlet. `idea_card`: [card](idea-card.md). `[context]`, `when`: `--plan` only.
 **How to read it**
@@ -37,4 +37,4 @@ Asset: symbol or symbol@store. No file with flags. `--quick`: small gauntlet. `i
   all-in sizing; no exits, shorts or volume in an owner rule. Say so, or use `alpha backtest run <SYMBOL> --timeframe 1h`
   (intraday): a plain backtest, no diagnostics, not in the ledger. Label it so.
 - Whether the result is real. Read [diagnose and audit](diagnose-and-audit.md) first.
-**Next** `uv run alpha diagnose <run_id> --json`, then the card that matches the first flag.
+**Next** `alpha diagnose <run_id> --json`, then the card that matches the first flag.

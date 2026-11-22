@@ -21,8 +21,7 @@ Rules for the crypto part of `alpha_data`: storage, identity, features and offli
   with identical bytes. Revision lookup uses a per-store in-memory raw-manifest index, built once and updated on each write: discovery only, never evidence.
 - Normalized bytes publish only after every input raw manifest re-verifies and the bytes match the quality report hash. Derived artifacts accept only
   normalized inputs.
-- Bybit derivative trades and order-book snapshots require a `CryptoAcquisitionScopeV1` (research case, revision, reason); any other family refuses a
-  scope. Unscoped historical captures stay readable but cannot enter governed snapshots.
+- Bybit derivative trades and order-book snapshots need no research-case scope. An older manifest that carries `acquisition_scope` stays valid.
 - Storage paths are confined to their root; symlinks are refused.
 - Cleanup deletes only `bulk/cache`. Staging, raw, normalized, snapshot, manifest and control roots are never removed.
 - Retirement appends a hash-bound receipt under the admission lock and never deletes manifests, raw lineage or payloads. Only `inactive_quarantined` and

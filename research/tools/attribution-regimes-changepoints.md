@@ -14,10 +14,10 @@ verified: 96231f129d35a504
 regimes?" or "when did it stop working?".
 
 ```text
-uv run alpha tool run-set market-context <run_id> --json
-uv run alpha tool run market.attribution <run_id> --param benchmark=SPY --json
-uv run alpha tool describe market.vol_regimes
-uv run alpha tool describe market.changepoints
+alpha tool run-set market-context <run_id> --json
+alpha tool run market.attribution <run_id> --param benchmark=SPY --json
+alpha tool describe market.vol_regimes
+alpha tool describe market.changepoints
 ```
 
 **How to read it**

@@ -395,3 +395,26 @@ def test_the_price_chart_refuses_in_plain_words_when_bars_changed(
     monkeypatch.setattr(_runner, "source_fingerprint", lambda *a, **k: "0" * 64)
     with pytest.raises(DataError, match="no longer match the bars this run used"):
         _build(stored_run, "price_signal")
+
+
+def test_the_price_chart_of_a_built_in_rule_draws_buy_and_sell_markers(
+    stored_run: tuple[Path, dict[str, Any]],
+) -> None:
+    from alpha_research.figures import ScatterMark
+
+    rdir, _ = stored_run
+    fills = pl.read_parquet(rdir / "fills.parquet")
+    spec = _build(stored_run, "price_signal")
+    scatters = [m for m in spec.panels[0].marks if isinstance(m, ScatterMark)]
+    drawn = {m.label: len(m.x) for m in scatters}
+    assert drawn.get("Buy fill", 0) == fills.filter(pl.col("side") == "BUY").height
+    assert drawn.get("Sell fill", 0) == fills.filter(pl.col("side") == "SELL").height
+
+
+def test_the_price_chart_text_says_only_what_is_drawn(
+    stored_run: tuple[Path, dict[str, Any]],
+) -> None:
+    spec = _build(stored_run, "price_signal")
+    assert "no snapshot" not in spec.caption
+    assert "emitted no chart annotations" not in spec.caption
+    assert "run " in spec.caption and "contract v" in spec.caption

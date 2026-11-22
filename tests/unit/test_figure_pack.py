@@ -515,9 +515,10 @@ def test_price_is_cut_to_the_run_and_many_fills_become_shading(
     xs = [x for m in price.marks if hasattr(m, "x") and isinstance(m.x, tuple) for x in m.x]
     assert max(xs) <= run_days[-1].timestamp()
     kinds = {type(m).__name__ for m in price.marks}
-    assert "ScatterMark" not in kinds and "ZoneMark" in kinds
+    assert "ScatterMark" in kinds and "ZoneMark" in kinds
     assert price.note is None
-    assert "no chart annotations" in spec.caption and "shaded held periods" in spec.caption
+    assert "80 fills drawn as small triangles" in spec.caption
+    assert "no chart annotations" not in spec.caption
 
 
 # ------------------------------------------------------------------ item 10

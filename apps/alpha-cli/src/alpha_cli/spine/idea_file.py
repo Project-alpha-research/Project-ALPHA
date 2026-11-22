@@ -226,6 +226,9 @@ def build(home: Path, wanted: str) -> dict[str, Any]:
         extra["rdagent"] = worked
     if notes:
         extra["notes"] = notes
+    linked = papers.papers_of(home, identity)
+    if linked:  # an idea file with no linked paper keeps its old shape
+        extra["papers"] = linked
     return {
         **extra,
         "card": {
@@ -235,7 +238,6 @@ def build(home: Path, wanted: str) -> dict[str, Any]:
             "supersedes": card.supersedes or None,
             "superseded_by": newer[0] if newer else None,
         },
-        "papers": papers.papers_of(home, identity),
         "map": steps,
         "readings": readings,
         "counts": {

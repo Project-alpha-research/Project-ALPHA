@@ -32,6 +32,10 @@ Answer: `alpha ml run <spec.toml>` now goes from a plain spec to a stored, coste
 - Fixed: the output now lists every rolling fold and says the model was refit N times, each on days before its own test days.
 - Fixed: the finished-run cache key now includes the worker `uv.lock` hash.
 
+## Review round 2
+- Fixed: non-repeat `ml_run` rows now count in the `qlib` family total (`counts_for_deflation`); other families are unchanged because deflation filters by family id. Test: `reader_trials == 1` after a run and its repeat.
+- Fixed: each run key builds under an exclusive file lock (`ml_runs/<key>.lock`), so a second run waits and then reuses the finished exchange. I did not write a true two-process race test; the test only checks reuse and the lock file.
+
 ## Fail-first evidence
 I wrote the tests before `ml_run.py`, but I did not run them before the module existed. The first run against the new code failed on a too-short fixture (728 sessions before the held-back day; 756 needed). I lengthened the fixture and all 7 passed. This is weaker than a true red run.
 

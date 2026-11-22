@@ -6,6 +6,7 @@ exchange, train in the isolated worker, replay through the engine with costs, co
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 import shutil
@@ -185,25 +186,9 @@ def _count_try(
     return "This run counted 1 try in family qlib. A later `alpha ledger summary` shows the total."
 
 
-def run_spec(
-    spec_path: Path,
-    *,
-    data_dir: Path,
-    as_of: str | None = None,
-    worker_project: Path | None = None,
-) -> dict[str, Any]:
-    """Run the plain spec end to end and return the reading; raise `MlRunError` in plain words."""
-    spec = _read(spec_path)
-    project = worker_project
-    project = _require_worker(project)
-    snapshot_id = _freeze(data_dir, spec["assets"])
-    experiment = _experiment(spec, snapshot_id)
-    key = hashlib.sha256(
-        canonical_json_bytes(
-            {"e": experiment, "as_of": as_of, "lock": sha256_file(project / "uv.lock")}
-        )
-    ).hexdigest()[:16]
-    base = data_dir / "ml_runs" / key
+def _build(base: Path, experiment: dict[str, Any], project: Path, as_of: str | None) -> None:
+    """Export, prepare and train into `base` unless a finished exchange is already there."""
+    data_dir = base.parents[1]
     if not (base / "done").is_file():
         shutil.rmtree(base, ignore_errors=True)
         base.mkdir(parents=True)
@@ -233,6 +218,31 @@ def run_spec(
         except (DataError, MLContractError, OSError):
             shutil.rmtree(base, ignore_errors=True)
             raise
+
+
+def run_spec(
+    spec_path: Path,
+    *,
+    data_dir: Path,
+    as_of: str | None = None,
+    worker_project: Path | None = None,
+) -> dict[str, Any]:
+    """Run the plain spec end to end and return the reading; raise `MlRunError` in plain words."""
+    spec = _read(spec_path)
+    project = worker_project
+    project = _require_worker(project)
+    snapshot_id = _freeze(data_dir, spec["assets"])
+    experiment = _experiment(spec, snapshot_id)
+    key = hashlib.sha256(
+        canonical_json_bytes(
+            {"e": experiment, "as_of": as_of, "lock": sha256_file(project / "uv.lock")}
+        )
+    ).hexdigest()[:16]
+    base = data_dir / "ml_runs" / key
+    base.parent.mkdir(parents=True, exist_ok=True)
+    with base.with_suffix(".lock").open("a+b") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)  # one build per key; a second waits, then reuses
+        _build(base, experiment, project, as_of)
     replayed = run_ml_replay(base / "exchange", data_dir=data_dir)
     manifest = replayed.manifest
     folds = _folds(base)

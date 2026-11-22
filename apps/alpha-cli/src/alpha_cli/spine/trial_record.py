@@ -239,7 +239,11 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
         family_id=family,
         family_size_recorded=None,
         counts_for_deflation=kind == "rule_test"
-        or (kind in {"setup_study", "setup_trade"} and "repeat" not in labels),
+        or (
+            kind in {"setup_study", "setup_trade", "other"}
+            and "repeat" not in labels
+            and (kind != "other" or subkind == "ml_run")
+        ),
         name=row.get("name"),
         spec_hash=row.get("spec_sha256"),
         assets=_strings(row["assets"])

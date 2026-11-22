@@ -17,6 +17,7 @@ from alpha_cli import ml_cmds, ml_run
 from alpha_cli.main import app
 from alpha_cli.ml_contract import validate_result_bundle
 from alpha_cli.spine.ledger import read_trials
+from alpha_cli.spine.trial_reader import family_counts, spine_snapshot
 from alpha_cli.spine.trial_record import map_row
 from alpha_data.store import ParquetStore
 
@@ -159,3 +160,21 @@ def test_new_split_action_makes_a_new_snapshot(home: Path) -> None:
     actions.parent.mkdir(parents=True, exist_ok=True)
     actions.write_text("changed")
     assert ml_run._freeze(home, SYMBOLS) != first
+
+
+def test_ml_run_counts_in_family_qlib_totals(home: Path, tmp_path: Path) -> None:
+    spec = _spec(tmp_path)
+    ml_run.run_spec(spec, data_dir=home)
+    ml_run.run_spec(spec, data_dir=home)  # a repeat adds nothing
+    counts = {row["family_id"]: row for row in family_counts(spine_snapshot(home))}
+    assert counts["qlib"]["reader_trials"] == 1
+
+
+def test_a_finished_build_is_reused_under_its_lock_file(home: Path, tmp_path: Path) -> None:
+    """A second run on the same key reuses the finished exchange; a lock file guards builds."""
+    spec = _spec(tmp_path)
+    first = ml_run.run_spec(spec, data_dir=home)
+    base = next((home / "ml_runs").iterdir())
+    assert (base / "done").is_file()
+    assert (home / "ml_runs" / f"{base.name}.lock").is_file()
+    assert ml_run.run_spec(spec, data_dir=home)["run_id"] == first["run_id"]

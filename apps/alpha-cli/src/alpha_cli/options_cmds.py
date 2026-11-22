@@ -136,7 +136,10 @@ def derived(
         realized = _realized(underlying, root) if "iv_minus_rv" in chosen else {}
         result = derive(read, cfg, series=chosen, realized=realized)
     except (DataError, OSError, pl.exceptions.PolarsError) as exc:
-        raise typer.BadParameter(f"{exc}. Next: check the underlying and --series.") from None
+        said = str(exc).rstrip(".")
+        if said.startswith("No options data is stored yet"):
+            raise typer.BadParameter(f"{said}.") from None
+        raise typer.BadParameter(f"{said}. Next: check the underlying and --series.") from None
     shown = {n: (pts[-rows:] if rows > 0 else pts) for n, pts in result.series.items()}
     coverage = {n: _counts(pts) for n, pts in result.series.items()}
     payload = dict(

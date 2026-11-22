@@ -34,6 +34,6 @@ sources:
 - Each check says how many engine runs it makes and about how long, then prints a line every 10 seconds.
 
 **What these checks cannot tell you** They are full-sample re-runs, not walk-forward results. A stable result near your
-settings does not show that an edge exists. None picks a best setting. A control is not a way to pick a better variant: a changed rule is a new rule; test it as one.
+settings does not show that an edge exists. None picks a best setting. A control does not pick a better variant: a changed rule is a new rule; test it as one.
 
 **Next** [Sensitivity](sensitivity.md) for the stored variants. [Deflated Sharpe and trials](deflated-sharpe-and-trials.md).

@@ -17,7 +17,6 @@ export default defineConfig({
         'src/panels/RdAgentJourney.tsx',
         'src/context/panelLinkModel.ts',
         'src/panels/chartTableModel.ts',
-        'src/panels/codexBenchModel.ts',
         'src/panels/dataManagerModel.ts',
         'src/panels/durableJobs.ts',
         'src/panels/jobProgress.ts',

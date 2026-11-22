@@ -2,19 +2,15 @@
 owner: web research surfaces
 sources:
   - apps/alpha-web/src/alpha_web/_assistant.py
-  - apps/alpha-web/src/alpha_web/_investigations.py
   - apps/alpha-web/src/alpha_web/_rules.py
   - apps/alpha-web/src/alpha_web/_scans.py
   - apps/alpha-web/src/alpha_web/_research.py
   - apps/alpha-web/src/alpha_web/_development.py
   - apps/alpha-web/src/alpha_web/api/assistant.py
-  - apps/alpha-web/src/alpha_web/api/investigations.py
   - apps/alpha-web/src/alpha_web/api/rules.py
   - apps/alpha-web/src/alpha_web/api/rule_evaluation_models.py
   - apps/alpha-web/src/alpha_web/api/scans.py
-  - apps/alpha-web/frontend/src/panels/AssistantDock.tsx
   - apps/alpha-web/frontend/src/panels/ConditionChecklist.tsx
-  - apps/alpha-web/frontend/src/panels/RunInvestigation.tsx
   - apps/alpha-web/frontend/src/panels/StrategyBuilder.tsx
   - apps/alpha-web/frontend/src/panels/Scanner.tsx
   - apps/alpha-web/frontend/src/panels/Alerts.tsx
@@ -27,7 +23,7 @@ verified: 615c694221918d8f
 
 # Web research surfaces
 
-Rules for the Workstation surfaces closest to research decisions: the advisory assistant, Codex investigations, rule
+Rules for the Workstation surfaces closest to research decisions: the advisory assistant, rule
 conditions, the Strategy Builder, scans and alerts, the Research Case read plane and the project workspace. General
 backend rules are in [web-api.md](web-api.md), browser rules in [web-frontend.md](web-frontend.md), and the CLI side of
 the advisory surfaces in [cli-assistant.md](cli-assistant.md).
@@ -38,7 +34,7 @@ the advisory surfaces in [cli-assistant.md](cli-assistant.md).
   broker or order control. An owner step goes only through the owner confirmation routes
   ([web-api § Owner confirmation routes](web-api.md#owner-confirmation-routes)); see
   [research-integrity § Owner authority](research-integrity.md#owner-authority).
-- Assistant answers, structured rule drafts and investigation reports stay advisory: no model tools, no generated-code
+- Assistant answers, structured rule drafts stay advisory: no model tools, no generated-code
   execution, no automatic owner action.
 - The browser sends identifiers only (symbol, as-of date, run, snapshot, manifest, project, rule name and hash), never
   bars, market evidence or file paths. The CLI resolves and hashes the context.
@@ -52,22 +48,10 @@ the advisory surfaces in [cli-assistant.md](cli-assistant.md).
 - One turn at a time: starting a turn while another runs returns 409.
 - A session for a saved rule pins `rules_name` and `rules_sha256` when it is created; archive, run and snapshot sessions
   send no rule. Opening a scan result keeps the evaluated rule hash, so the session pins the rule that was scanned.
-- Before a draft is used, the dock calls `check` (the CLI re-verifies the context hash) and then `POST /api/rules/validate`.
+- Before a draft is used, the CLI session is checked with `check` (the CLI re-verifies the context hash) and then `POST /api/rules/validate`.
   A stale context or an invalid draft is refused and never applied.
-- The CLI journal outlives the in-memory job handle. While a saved turn is `running` the dock keeps polling the session,
+- The CLI journal outlives the in-memory job handle. While a saved turn is `running` the session stays pollable,
   and a failed or cancelled job's terminal error is shown even if no turn was recorded. Never invent a terminal state.
-
-## Codex investigations
-
-- `api/investigations.py` relays only `alpha research investigations list|eligibility|create|show|run|draft|acquire`
-  (`_investigations.py`) and imports no engine. Investigation ids are opaque 32-hex strings and run ids 16 hex, checked
-  by the path pattern.
-- Every mutating POST requires the local same-origin workstation (`same_origin`: loopback host, exactly matching Origin,
-  `Sec-Fetch-Site` absent or `same-origin`), else 403.
-- One investigation operation runs at a time (409). A price comparison is drafted first (`comparison-plan`, a preview)
-  and only then acquired as a separate job; never acquire without the explicit preview.
-- Evidence is immutable and budgets are durable, both owned by the CLI; the web adds only `active_job_id`.
-  Investigations do not reopen research admission, D2, paper, broker or order authority.
 
 ## Rule conditions and the Strategy Builder
 
@@ -77,7 +61,7 @@ the advisory surfaces in [cli-assistant.md](cli-assistant.md).
   no archive, run or snapshot field, and the checklist shows those contexts as unavailable instead of falling back.
 - Condition rows come from the strategy's own comparators. A side that short-circuits after a failed condition reports
   the rest as not evaluated, and a missing operand is `unavailable` with a reason — never a guessed pass or fail.
-- `Test in sandbox` launches `backtest run --strategy rules --rules <id>` in the standalone sandbox; `Open in Strategy
+- `Test in sandbox` launches `backtest run --strategy rules --rules <id>` as a standalone run; `Open in Strategy
   Lab` only prefills a governed run.
 
 ## Scans and alerts

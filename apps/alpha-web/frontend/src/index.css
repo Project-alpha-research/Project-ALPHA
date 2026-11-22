@@ -4143,18 +4143,6 @@ textarea.field:focus {
 .evidence-hub-tabs .kbd.active { border-color: var(--accent); color: var(--accent-text); }
 .evidence-hub-body { display: grid; gap: 10px; }
 
-/* ── Codex Bench (R2) ─────────────────────────────────────────────────────── */
-.codex-bench section { margin-bottom: 14px; display: grid; gap: 8px; }
-.codex-packet-json {
-  max-height: 260px;
-  overflow: auto;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 8px;
-  font-size: var(--font-size);
-  margin: 0;
-}
-
 /* ============================================================================
    Workstation v4 — the figure report
    Server-rendered figures, each with the text that makes it readable. Layout is

@@ -45,10 +45,10 @@ describe('document registry', () => {
     expect(report.panes).toHaveLength(1)
   })
 
-  it('keeps research primary and standalone work visibly separate from development', () => {
+  it('keeps research primary and separate from development', () => {
     expect(documentOf('research').panes[0].name).toBe('ResearchCockpit')
     const build = documentOf('build').panes
-    expect(build.map((pane) => pane.title)).toContain('Standalone Sandbox')
+    expect(build.map((pane) => pane.name)).not.toContain('AiConsole')
     expect(build.map((pane) => pane.name)).not.toContain('ResearchCockpit')
   })
 
@@ -75,7 +75,6 @@ describe('document registry', () => {
     }
     expect(panesByArea(documentOf('build')).side.map((pane) => pane.title)).toEqual([
       'Development Next Step',
-      'Standalone Sandbox',
     ])
     expect(panesByArea(documentOf('report')).side).toEqual([])
   })

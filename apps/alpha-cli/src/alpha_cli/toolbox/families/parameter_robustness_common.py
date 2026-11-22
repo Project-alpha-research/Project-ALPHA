@@ -44,6 +44,10 @@ TRIES = Output(
     "Engine re-runs this check added to the trial ledger; a repeat of the same re-run adds none.",
     "count",
 )
+TRY_SENTENCE = (
+    " It made {engine_runs:.0f} engine runs. Making this reading added {tries_added:.0f} new "
+    "tries to the count; shown again, it adds none."
+)
 RUNS = Output("engine_runs", "Engine runs", "Engine re-runs this check made.", "count")
 
 

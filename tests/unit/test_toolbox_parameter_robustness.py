@@ -432,3 +432,27 @@ def test_cost_ladder_on_a_stored_run_matches_its_diagnostics(stored: tuple[Path,
     stored_x2 = next(v for v in diagnostics["sensitivity"]["variants"] if v["name"] == "costs_x2")
     assert doc["values"]["return_2"] == pytest.approx(stored_x2["total_return"], rel=REL, abs=ABS)
     assert get("parameters.cost_ladder").needs == ("run_rerun",)
+
+
+@pytest.mark.parametrize("spec", CHECKS, ids=lambda spec: spec.id)
+def test_reading_says_runs_and_tries_and_that_a_repeat_adds_none(spec: ToolSpec) -> None:
+    # A repeat shows the stored reading: its try count is of the first look, never of this one.
+    assert "{engine_runs:.0f} engine runs" in spec.reading
+    assert "shown again, it adds none" in spec.reading
+
+
+def test_a_final_check_run_is_never_re_run(stored: tuple[Path, str], tmp_path: Path) -> None:
+    from alpha_cli.spine.reserve import CONFIRMATION
+
+    home, run_id = stored
+    copy = tmp_path / "home"
+    shutil.copytree(home, copy)
+    path = copy / "runs" / run_id / "manifest.json"
+    manifest = json.loads(path.read_text())
+    manifest["spine"]["labels"] = [*manifest["spine"].get("labels", []), CONFIRMATION]
+    path.write_text(json.dumps(manifest))
+    before = read_trials(copy)
+    with pytest.raises(SpineError, match="one look at the reserved period") as caught:
+        inputs.load_rerun(copy, inputs.resolve(copy, run_id))
+    assert caught.value.payload["code"] == "CONFIRMATION_RUN"
+    assert read_trials(copy) == before

@@ -14,6 +14,6 @@ runner = CliRunner()
 def _invoke(*args: str) -> dict[str, object]:
     result = runner.invoke(app, ["research", *args, "--json"])
     assert result.exit_code == 0, result.output
-    value: object = json.loads(result.output)
+    value: object = json.loads(result.stdout)
     assert isinstance(value, dict)
     return value

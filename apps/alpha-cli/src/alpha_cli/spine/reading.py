@@ -12,6 +12,8 @@ import math
 from collections.abc import Mapping
 from typing import Any
 
+from alpha_cli.spine.owner_reading import reading_additions
+
 SCHEMA = "AlphaReadingV1"
 # The four evidence words and their fixed definitions. Each number below has one source.
 MIN_TRADES = 30  # spine/audit.py ENOUGH_TRADES: fewer closed trades are too few to judge
@@ -296,6 +298,16 @@ def _sentence(
     return " ".join(parts)
 
 
+def _costs(manifest: Mapping[str, Any]) -> dict[str, Any]:
+    """The costs and annualisation the run used, as stored; an older run did not store them."""
+    spine = manifest.get("spine")
+    costs = spine.get("costs") if isinstance(spine, Mapping) else None
+    if not isinstance(costs, Mapping) or not isinstance(costs.get("line"), str):
+        return {"line": None, "periods": None, "reason": "This run did not store its costs line."}
+    periods = costs.get("periods")
+    return {"line": costs["line"], "periods": periods if isinstance(periods, str) else None}
+
+
 def build_reading(
     manifest: Mapping[str, Any], diagnostics: Mapping[str, Any] | None = None
 ) -> dict[str, Any]:
@@ -312,13 +324,24 @@ def build_reading(
         aim = {"source": aim["source"], "basis": aim["basis"], "rows": []}
     return {
         "schema": SCHEMA,
+        "costs": _costs(manifest),
         "checks": checks,
         "measures": _measures(manifest, trades, bool(faults)),
         "evidence": evidence,
         "aim": aim,
         "counts": counts,
         "sentence": _sentence(faults, evidence, aim, counts),
+        **reading_additions(diag),
     }
+
+
+def reading_text(reading: Mapping[str, Any]) -> str:
+    """The reading sentence, then the costs line and the annualisation line when stored."""
+    costs = reading.get("costs")
+    extra = [
+        costs[key] for key in ("line", "periods") if isinstance(costs, Mapping) and costs.get(key)
+    ]
+    return "\n".join([reading["sentence"], *extra])
 
 
 def stored_reading(

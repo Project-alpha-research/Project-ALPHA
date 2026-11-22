@@ -3,7 +3,7 @@ owner: web frontend
 sources:
   - apps/alpha-web/frontend/src/panels/**
   - apps/alpha-web/frontend/e2e/**
-verified: b992a2b526e23e5f
+verified: ef6fe99a0b5d5a7b
 ---
 
 # Web run detail invariants
@@ -49,6 +49,17 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
   Stored figures have value tables. Trade return and initial risk display as percentages beside direction and R. The timeline
   keeps rejected matches grey. Values round only; no curve or total is calculated. Unstored parts say "not recorded". Tests:
   `SetupLabPanel.test.tsx`, `setupLabModel.test.ts`, `e2e/setup-lab.spec.ts`.
+
+## Interactive rule-test chart
+
+- The rule-test Summary opens with the interactive stack (`components/tearsheet/TearSheetStack.tsx`, [rule](web-frontend.md#charts)). The
+  stored matplotlib figures stay below it, and their strip reads “Saved image”. Loading, error and a missing price each say so in words.
+  Covered by `components/tearsheet/tearSheetModel.test.ts` and `e2e/rule-test-summary.spec.ts`.
+- An owner-rule run (`rule.kind = "owner"`) opens the rule-test Summary and the Gates tab with its rule in one plain sentence, its family
+  (`owner:<12 hex>`) and each label with a one-line meaning (`RuleWords.tsx`, one label table in `ruleTestModel.ts`). The backend builds the
+  sentence from the stored `spine.rule.spec` only (`_owner_rule_words.py`); an operand it does not know shows its stored text with "not yet
+  described". A run with no stored rule reads "the rule was not stored with this run". The three old kinds keep their wording.
+  Covered by `tests/unit/test_web_owner_rule_words.py` and `e2e/owner-rule-words.spec.ts`.
 
 ## Reading block
 

@@ -15,8 +15,14 @@ from typing import Any
 
 from alpha_cli import _artifacts, _gauntlet, _runner
 from alpha_cli._identity import RunIdentity
-from alpha_cli.spine import idea_card, reserve
-from alpha_cli.spine.data_health import health_labels, run_health_record, verify_inputs
+from alpha_cli.spine import cost_classes, idea_card, reserve
+from alpha_cli.spine.data_health import (
+    health_labels,
+    identity_labels,
+    identity_record,
+    run_health_record,
+    verify_inputs,
+)
 from alpha_cli.spine.deflation import (
     TrialFamily,
     count_snapshot,
@@ -27,6 +33,7 @@ from alpha_cli.spine.diagnose import staged_run, write_diagnostics
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import build_facts, read_json
 from alpha_cli.spine.ledger import append_trial, first_same_test, read_trials
+from alpha_cli.spine.owner_rule import OwnerRule, manifest_fields
 from alpha_cli.spine.reading import build_reading, ledger_fields, stored_reading
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import annualisation, resolve_asset
@@ -71,22 +78,32 @@ def _fields(obj: Any) -> dict[str, Any]:
     return {field.name: getattr(obj, field.name) for field in dataclasses.fields(obj)}
 
 
-def assemble_run_spec(idea: IdeaSpec, symbol: str, ppy: int, n_bars: int) -> _runner.RunSpec:
-    """Use the minimum strategy warm-up and near-annual folds covering almost all history."""
+def assemble_run_spec(
+    idea: IdeaSpec,
+    symbol: str,
+    ppy: int,
+    n_bars: int,
+    costs: cost_classes.CostRow | None = None,
+) -> _runner.RunSpec:
+    """Use the minimum strategy warm-up and near-annual folds covering almost all history.
+
+    `costs` is the class row of a `class-default` spec; any other spec keeps its stated costs.
+    """
     if idea.context is not None:
         raise DataError("the gated engine is not built yet: a context spec cannot run ungated")
     params = idea.rule.params
+    owner = isinstance(idea.rule, OwnerRule)
     spec = _runner.RunSpec(
-        lookback=params.get("lookback", 252),
-        skip=params.get("skip", 21),
+        lookback=int(params.get("lookback", 252)),
+        skip=int(params.get("skip", 21)),
         vol_window=63,
         target_vol=0.15,
         rebalance_every=1,
         max_leverage=1.0,
         allow_short=False,
         periods_per_year=ppy,
-        fee_bps=idea.costs.fee_bps,
-        slippage_bps=idea.costs.slippage_bps,
+        fee_bps=costs.fee_bps if costs else idea.costs.fee_bps,
+        slippage_bps=costs.slippage_bps if costs else idea.costs.slippage_bps,
         starting_cash=1_000_000.0,
         account_type="MARGIN" if "/" in symbol else "CASH",
         train_size=1,
@@ -94,10 +111,11 @@ def assemble_run_spec(idea: IdeaSpec, symbol: str, ppy: int, n_bars: int) -> _ru
         embargo=5,
         anchored=True,
         strategy_name=idea.rule.strategy,
-        strategy_params=tuple(sorted((key, float(value)) for key, value in params.items()))
-        if idea.rule.kind != "tsmom"
-        else (),
+        strategy_params=()
+        if owner or idea.rule.kind == "tsmom"
+        else tuple(sorted((key, float(value)) for key, value in params.items())),
         sizing="all_in",
+        rules_spec=idea.rule.rules_json if isinstance(idea.rule, OwnerRule) else None,
     )
     warmup = spec.min_train
     if n_bars < warmup + 60:
@@ -136,6 +154,7 @@ def prepare_asset(
     result.update(symbol=resolved.symbol, store=resolved.store_name, source=resolved.source)
     if resolved.defaulted:
         result["labels"].append("source-defaulted")
+    result["labels"].extend(idea.rule.labels)
     held_back = reserve.held_back_count(resolved)
     if held_back:
         result["labels"].append(reserve.HELD_BACK)
@@ -155,20 +174,37 @@ def prepare_asset(
     ppy, basis = annualisation([bar.ts for bar in bars], bar_size=DAILY)
     result["periods_per_year"] = ppy
     result["periods_per_year_basis"] = basis
-    spec = assemble_run_spec(idea, resolved.symbol, ppy, len(bars))
+    klass = cost_classes.asset_class(resolved)
+    row, assumed = cost_classes.class_row(klass)
+    chosen = row if idea.costs_class_default else None
+    if chosen is not None:
+        result["labels"].append(cost_classes.CLASS_DEFAULT_LABEL)
+        if assumed:
+            result["labels"].append(cost_classes.ASSUMED_LABEL)
+    spec = assemble_run_spec(idea, resolved.symbol, ppy, len(bars), chosen)
+    result["costs"] = {
+        "line": cost_classes.cost_line(spec.fee_bps, spec.slippage_bps, chosen, assumed),
+        "fee_bps": spec.fee_bps,
+        "slippage_bps": spec.slippage_bps,
+        "asset_class": klass,
+        "periods": cost_classes.periods_line(
+            ppy, basis, cost_classes.periods_rule_text(klass) if klass else None
+        ),
+    }
     identity = _runner.run_identity_for(
         {
             "command": "validate",
             "symbol": resolved.symbol,
             "snapshot_id": snapshot_id,
-            "research_cutoff": reserve.CUTOFF_DATE if held_back else None,
+            # Always the same: whether a bar was held back is a fact about held-back rows.
+            "research_cutoff": reserve.CUTOFF_DATE,
             **_fields(spec),
             **{key: value for key, value in _fields(knobs).items() if key != "max_workers"},
             "spec_sha256": idea.spec_sha256,
             "source": resolved.source,
             "store": resolved.store_name,
-            "labels": result["labels"],
-            "data_health": record,
+            "labels": identity_labels(result["labels"]),
+            "data_health": identity_record(record),
         },
         source_fingerprint=_runner.source_fingerprint(bars, dividends=dividends),
     )
@@ -271,7 +307,7 @@ def write_run(
         store=result.get("store"),
         data_id=result.get("idea_id"),
     )
-    count = count_snapshot(snapshot, idea.rule.kind, current)
+    count = count_snapshot(snapshot, idea.rule.family_key, current)
     sharpes = family_sharpes(snapshot, count.family_id, ppy, current)
     n = count.prior_trials + count.this_run + count.unknown_rows
     out = _gauntlet.run_gauntlet(
@@ -310,7 +346,11 @@ def write_run(
     stored = report_to_manifest(out.report)
     stored.update(
         data_health=result["data_health"],
-        spine={"labels": result["labels"], "periods": result.get("periods", {})},
+        spine={
+            "labels": result["labels"],
+            "periods": result.get("periods", {}),
+            "costs": result.get("costs"),
+        },
     )
     reading = build_reading(stored, read_json(rdir / "diagnostics.json"))
     # Only a held-back run names its cut-off, so every other run keeps its old identity.
@@ -337,9 +377,11 @@ def write_run(
                 "name": idea.name,
                 "idea": idea.idea,
                 "rule": idea.rule.model_dump(),
+                **manifest_fields(idea.rule),
                 "store": result["store"],
                 "deflation": result.get("deflation"),
                 "labels": list(result["labels"]),
+                "costs": result.get("costs"),
                 "annualisation": {
                     "periods_per_year": prepared.spec.periods_per_year,
                     "basis": result["periods_per_year_basis"],
@@ -467,14 +509,15 @@ def run_idea(
                 "name": idea.name,
                 "idea": idea.idea,
                 "spec_sha256": idea.spec_sha256,
-                "rule": idea.rule.kind,
+                "rule": idea.rule.family_key,
                 "params": idea.rule.params,
                 "costs": idea.costs.model_dump(),
                 **ledger_fields(result.get("reading")),
                 **{
                     key: value
                     for key, value in result.items()
-                    if key not in {"asset", "run_dir", "error", "facts", "reading", "executed"}
+                    if key
+                    not in {"asset", "run_dir", "error", "facts", "reading", "executed", "costs"}
                 },
             },
         )

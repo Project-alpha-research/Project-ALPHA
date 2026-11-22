@@ -36,6 +36,9 @@ from alpha_cli.spine.deflation import (
     spine_test_key,
 )
 from alpha_cli.spine.macro import macro_window
+from alpha_cli.spine.owner_reading import owner_counts
+from alpha_cli.spine.owner_rule import OwnerRule
+from alpha_cli.spine.owner_variants import owner_variants
 from alpha_cli.spine.price_noise import price_noise
 from alpha_cli.spine.spec import IdeaSpec, Rule
 from alpha_cli.spine.trial_reader import LedgerSnapshot, spine_snapshot
@@ -74,6 +77,12 @@ def variant_specs(idea: IdeaSpec, spec: _runner.RunSpec) -> list[tuple[str, str,
             replace(spec, fee_bps=spec.fee_bps * 2, slippage_bps=spec.slippage_bps * 2),
         )
     ]
+    if isinstance(idea.rule, OwnerRule):
+        # Each parameter variant is a full-sample re-run of the neighbour rule, one try each.
+        for label, changed_spec in owner_variants(idea.rule.spec):
+            moved = OwnerRule(kind="owner", spec=changed_spec)
+            variants.append((label, "parameter", replace(spec, rules_spec=moved.rules_json)))
+        return variants
     for key, value in idea.rule.params.items():
         for factor in (0.8, 1.2):
             neighbour = round(value * factor)
@@ -124,7 +133,9 @@ def trials(
         count.family_id, n_trials, max(n_trials, available), len(prior) + 1, count.repeats
     )
     value = family_deflation(returns, prior, family)
+    counts = owner_counts(rule_kind, symbol, n_trials, available, value["n_trials_used"])
     return {
+        **({"owner_counts": counts} if counts else {}),
         "basis": (
             "walk-forward out-of-sample returns, the same inputs as the verdict's dsr: spread from "
             "the idea family's distinct tests at this bar size and this run (sensitivity variants "
@@ -423,7 +434,7 @@ def write_diagnostics(
         out.oos.oos_returns,
         ppy,
         variants,
-        idea.rule.kind,
+        idea.rule.family_key,
         snapshot=snapshot,
         current_test=current,
     )

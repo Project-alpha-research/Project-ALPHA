@@ -144,6 +144,8 @@ class RuleTest(StrictModel):
     rule_params: dict[str, int]
     # the rule in one plain sentence; null for a rule kind this server cannot describe
     rule_sentence: str | None
+    # the ledger family of an owner rule (``owner:<12 hex>``); null for the three fixed kinds
+    rule_family: str | None = None
     symbol: str | None
     source: str | None
     store: str | None

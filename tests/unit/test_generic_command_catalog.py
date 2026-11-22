@@ -53,6 +53,8 @@ def test_empty_generic_command_is_unknown() -> None:
         (["follow", "start"], "owner_only"),
         (["follow", "stop", "x"], "owner_only"),
         (["follow"], "owner_only"),
+        (["home", "backup", "/tmp/x"], "owner_only"),
+        (["home", "verify-backup", "/tmp/x.tar"], "owner_only"),
         (["tool", "run"], "empirical"),
         (["setup", "find"], "empirical"),
         (["setup", "study"], "empirical"),

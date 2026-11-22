@@ -13,8 +13,6 @@ sources:
   - apps/alpha-cli/src/alpha_cli/_surrogate.py
   - apps/alpha-cli/src/alpha_cli/run_*.py
   - apps/alpha-cli/src/alpha_cli/*suite*.py
-  - apps/alpha-cli/src/alpha_cli/figure*.py
-  - apps/alpha-cli/src/alpha_cli/figures/*.py
   - apps/alpha-cli/src/alpha_cli/rules_cmds.py
   - apps/alpha-cli/src/alpha_cli/scan_cmds.py
   - apps/alpha-cli/src/alpha_cli/chart_cmds.py
@@ -29,10 +27,9 @@ sources:
   - tests/unit/test_run*.py
   - tests/unit/test_gauntlet*.py
   - tests/unit/test_suite_*.py
-  - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 401130b0343c2e7c
+verified: 4a642a5420f95c34
 ---
 
 # Command line runs invariants
@@ -71,6 +68,8 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - V1/v2 runs stay readable with `trace_unavailable`; never migrate or rewrite. No mutable state belongs in run directories.
 ## Validation and optimisation
 - `_gauntlet.py`/`_optim.py` refuse `--size-on-equity` and `--halt-drawdown`: the Tier-1 surrogate cannot model equity-path-dependent sizing.
+- `make_surrogate` takes an optional `path_signals`, one call per path; it must equal `signal_fn` on every prefix. The `rules`
+  strategy uses it (`rule_paths.py`, pinned bit for bit by `tests/unit/test_rule_paths.py`).
 - `--allow-short` on CASH fails loud (defaults: short-allowed MARGIN, long-flat CASH); `train_size` below the strategy warm-up floor fails loud.
 - `--snapshot` verifies and reads the frozen snapshot, never the live store.
 - The headline null must be beaten in every null tier that runs. [ADR-0006](../../adr/0006-two-tier-null-model.md); method rules in [research integrity §
@@ -95,6 +94,9 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - The test id hashes the spec hash and sorted prepared run ids. An identical retry verifies existing artifacts without rewriting them and appends a `repeat`
   trial; so does the same test after a code change ([test key](cli-trial-ledger.md#rule-test-counting));
   the manifest retains its original test association. `idea_id` hashes spec and data without code; `alpha results --idea-id` filters by it.
+- A spec rule is `ma_cross`, `breakout`, `tsmom` or `owner` ([language](../owner-rule-language.md)).
+  An owner rule runs the `rules` strategy; its ledger `rule` and family are `owner:<shape12>`.
+  The three old kinds keep canonical bytes, spec hash, test key and ledger keys (`tests/unit/test_spine_golden_pins.py`).
 - `alpha test` reads bars and dividends only up to 2023-12-31 ([reserved period](../project/reserved-period.md)).
   With held-back bars it adds the label `reserved-period-held-back`, prints one sentence, records `spine.reserve`
   and puts `research_cutoff` 2023-12-31 into the run identity. Without them the run id is unchanged.
@@ -145,17 +147,12 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - Suite Qlib, Kronos and Monte Carlo kinds share the heavyweight capacity class; see [command line control plane § Jobs, leases and
   capacity](cli-control-store.md#jobs-leases-and-capacity).
 ## Figures
-- Figures are a derived cache under `data_dir/figures/<run_id>/`, never run artifacts. Writing into a run directory would break the manifest's exact file set.
-- The cache key hashes renderer identity plus the run's declared artifact digests. Legacy runs fall back to size and mtime and are tagged so the two kinds of
-  key cannot collide (`figure_cache.input_digest`).
-- Write the image first and the JSON sidecar last; the sidecar marks completion. Forced re-renders must be byte-identical.
-- `figure_cache.py` must not import Polars, numpy, matplotlib or the renderer. Enforced by `tests/unit/test_figure_cache.py`.
-- `figures list --json` without `--run` publishes the key environment, so the web computes keys without the renderer.
-- Builders read declared artifacts only and report an honest unavailability reason instead of guessing.
-- RD-Agent [journeys](../../../research/tools/rdagent-journey.md) publish only under the selected journey folder and exclude reserved-period observations.
-- A run's price figure and chart candles read its snapshot at the run's own bar size: the manifest's `timeframe`, `source_timeframe` and `session` pass to
-  `alpha data candles` as single `--option=value` arguments; a daily manifest has none, so its call is unchanged
-  (`tests/unit/test_run_projection_security.py`).
+Figure cache, themes and builders: [command line figures](cli-figures.md).
+- A rule test saves no snapshot. `alpha data run-price <run_id> --json` (`run_price_cmds.py`; the web calls it through
+  `run_price.py`) reloads the stored bars at the research cut-off, cuts them at the run's last date, and returns them only
+  when `_runner.source_fingerprint` equals the manifest's `source_fingerprint`. Otherwise it returns a status and no bars
+  (`tests/unit/test_run_price_cmds.py`). `chart_bundle` keeps its older `bars_status` words; `run_projection.price_series`
+  gives the reason.
 ## Rules, scans and chart overlays
 - `alpha_strategies.rules` is the only rule parser; the CLI stores canonical JSON and interprets nothing.
 - `resolve_rules_spec` pairs the flags fail-closed: `--strategy rules` needs `--rules NAME`, `--rules` with any other strategy fails, and a frozen
@@ -169,6 +166,7 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   cost-adjusted spread charges `4 x horizon_turnover x` the one-way cost, where `horizon_turnover` is the bucket replacement between dates one horizon apart
   (a book rebalanced every horizon); `turnover` keeps the one-row figure. Equity outcomes are split-adjusted price returns without dividends. Checked against
   pandas and SciPy by `tests/oracles/test_differential_hypothesis_screen.py`.
+- `scan hypotheses` adds one ledger row per hypothesis and asset ([rule](cli-trial-ledger.md#screen-tries)); `replay` adds none.
 - `alpha chart overlays` reads the same point-in-time window as `alpha data candles`, nulls warm-up values only at the head, filters patterns through their
   `*_known_by(last)` check, and fails loud on any other non-finite value. Only the indicators in `_NAN_AFTER_WARMUP` may null a legitimately undefined later
   window. Each indicator refuses a window shorter than its longest lookback, and each pattern names in `reason` the bar it became drawable. Enforced by

@@ -1654,12 +1654,19 @@ const FIGURE_META = {
   renderer_version: 1,
   cache_key: 'figkey',
   etag: 'etag-1',
-  image_url: '/api/runs/run-1/figures/equity_curve/image?fmt=svg&key=figkey',
+  image_url: '/api/runs/run-1/figures/equity_curve/image?fmt=svg&variant=plain&key=figkey',
+  variant: 'plain',
+  explanation: [
+    'The horizontal axis is the date.',
+    'The line is equity after costs.',
+    'Look at how deep the dips go.',
+    'The chart cannot tell you what comes next.',
+  ],
 } satisfies components['schemas']['FigureMetadata']
 
 const FIGURE_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" width="440" height="200" viewBox="0 0 440 200">'
-  + '<rect width="440" height="200" fill="#000000"/><polyline points="10,180 200,120 430,20" fill="none" stroke="#316ac5" stroke-width="3"/></svg>'
+  + '<rect width="440" height="200" fill="#ffffff"/><polyline points="10,180 200,120 430,20" fill="none" stroke="#316ac5" stroke-width="3"/></svg>'
 
 const LIBRARY_RUN = {
   run_id: 'abcdef0123456789',
@@ -2146,6 +2153,15 @@ function responseFor(route: Route, options: MockOptions): unknown {
     return ML_DIAGNOSTIC_TEARSHEET
   }
   if (/^\/api\/runs\/[a-f0-9]{16}\/equity$/.test(url.pathname)) return { ts: [], equity: [], drawdown: [] }
+  if (/^\/api\/runs\/[a-f0-9]{16}\/series$/.test(url.pathname)) {
+    const run_id = url.pathname.split('/')[3]
+    return {
+      run_id, ts: [], equity: [], drawdown: [], benchmark: null, exposure: null, trades: [],
+      bands: { tradable: null, scored: null, folds: [] }, price: null,
+      bounds: { points: { original: 0, returned: 0, truncated: false, sampling: 'all' }, trades: { original: 0, returned: 0, truncated: false, cap: 2000 } },
+      provenance: { artifact_sha256: {} },
+    }
+  }
   if (options.chartBundle && url.pathname === `/api/runs/${HEAVY_RUN_ID}/chart-bundle`) {
     return options.chartBundle
   }
@@ -2248,7 +2264,8 @@ function responseFor(route: Route, options: MockOptions): unknown {
     }
   }
   if (url.pathname === `/api/runs/${LIBRARY_RUN.run_id}/figures/${FIGURE_ITEM.figure_id}`) {
-    return FIGURE_META
+    const variant = url.searchParams.get('variant') === 'annotated' ? 'annotated' : 'plain'
+    return { ...FIGURE_META, variant }
   }
   if (url.pathname === '/api/chart-datasets') return { datasets: [], authority: 'none', state: 'unavailable' }
   if (url.pathname === '/api/symbols') return { symbols: Object.keys(options.candles ?? {}) }
@@ -3423,7 +3440,7 @@ test('a figure maximises into a dialog with Save PNG, Save SVG, Copy and Esc', a
   await expect(card.locator('.figure-explain')).toHaveClass(/sr-only/)
   await expect(card.locator('.figure-explain')).toContainText('In-sample only.')
 
-  const expand = card.getByRole('button', { name: 'Expand' })
+  const expand = card.getByRole('button', { name: 'Open full screen' })
   await expand.click()
   const dialog = page.getByRole('dialog', { name: 'Equity curve' })
   await expect(dialog).toBeVisible()
@@ -3462,6 +3479,26 @@ test('a figure maximises into a dialog with Save PNG, Save SVG, Copy and Esc', a
   await expect(expand).toBeFocused()
 })
 
+test('a figure card shows the plain chart, a toggle for the annotated chart and the long explanation on white', async ({ page }) => {
+  await preparePage(page, { runs: [LIBRARY_RUN], figureCatalogue: true })
+  await openTask(page, 'Results', 'Run library')
+  await backtestLeaf(page, LIBRARY_RUN.display_name).click()
+  await page.getByRole('button', { name: 'Ratios & performance' }).click()
+  const card = page.locator('.figure-card')
+  await expect(card).toHaveCount(1)
+  const image = card.locator('.figure-image')
+  await expect(image).toHaveAttribute('src', /variant=plain/)
+  await expect(card.getByRole('complementary', { name: 'How to read this chart' })).toContainText(
+    'The horizontal axis is the date.',
+  )
+  await expect(card.locator('.figure-surface')).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+  await card.getByRole('button', { name: 'Show annotated' }).click()
+  await expect(image).toHaveAttribute('src', /variant=annotated/)
+  await expect(card.getByRole('button', { name: 'Show plain chart' })).toHaveAttribute('aria-pressed', 'true')
+  await card.getByRole('button', { name: 'Show plain chart' }).click()
+  await expect(image).toHaveAttribute('src', /variant=plain/)
+})
+
 test('Phase 3 acceptance: terminal chrome on every document, no hazard stripe, figures maximise, runs read like a trader', async ({ page }) => {
   await preparePage(page, { runs: [LIBRARY_RUN], figureCatalogue: true })
   for (const item of DOCUMENTS) {
@@ -3483,7 +3520,7 @@ test('Phase 3 acceptance: terminal chrome on every document, no hazard stripe, f
   const cards = page.locator('.figure-card')
   await expect(cards).toHaveCount(1)
   for (let index = 0; index < (await cards.count()); index += 1) {
-    await cards.nth(index).getByRole('button', { name: 'Expand' }).click()
+    await cards.nth(index).getByRole('button', { name: 'Open full screen' }).click()
     await expect(page.getByRole('dialog', { name: 'Equity curve' })).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('dialog', { name: 'Equity curve' })).toHaveCount(0)

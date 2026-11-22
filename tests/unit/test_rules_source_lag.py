@@ -50,13 +50,9 @@ def test_source_lag_is_a_strict_bounded_nonnegative_integer(lag: object) -> None
         parse_rule_spec(_momentum(lag))
 
 
-@pytest.mark.parametrize(
-    "operand",
-    [{"value": 1, "lag": 1}, {"indicator": "sma", "params": [2], "lag": 1}],
-)
-def test_lag_does_not_silently_apply_to_other_operand_kinds(operand: dict[str, object]) -> None:
+def test_lag_does_not_silently_apply_to_a_constant() -> None:
     with pytest.raises(DataError, match="unknown keys"):
-        parse_operand(operand, "operand")
+        parse_operand({"value": 1, "lag": 1}, "operand")
 
 
 def test_lag_sets_required_history_and_has_distinct_identity_and_label() -> None:

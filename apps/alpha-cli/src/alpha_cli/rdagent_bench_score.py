@@ -1,0 +1,266 @@
+"""Readings for the replay bench, from checks that already exist. No model judges another model.
+
+R1 refusal: the proposal falls in a closed idea family or repeats a dropped idea. The family rule is
+`workers/rdagent/idea_families.py` (standard library only); it runs in a child process, so no ALPHA
+package imports the worker. R3 buildability: parse and schema checks only. R4 prefix (no future
+data) needs the factor runtime and a frozen panel, so the bench names it as not run, with why.
+A missing value is shown with its reason and never counts as zero.
+"""
+
+from __future__ import annotations
+
+import ast
+import json
+import re
+import statistics
+import subprocess
+import sys
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+from alpha_cli.rdagent_bench_model import BenchError, StoredPrompt, output_path, prompt_sha
+
+WORKER = Path(__file__).resolve().parents[4] / "workers" / "rdagent"
+HELPER = """
+import json, sys
+sys.path.insert(0, sys.argv[1])
+import idea_families as f
+out = []
+for item in json.loads(sys.stdin.read()):
+    try:
+        f.declaration(item["description"]); ok = True
+    except ValueError:
+        ok = False
+    fam = f.idea_family(item["name"], item["description"], "", item.get("variables"))
+    out.append({"family": fam, "declared": ok})
+print(json.dumps(out))
+"""
+PREFIX_REASON = (
+    "not run: it needs the factor runtime and a frozen price panel, and none is budgeted"
+)
+FEEDBACK_KEYS = ("Observations", "Reasoning")
+FENCE = re.compile(r"```(?:python)?\n(.*?)```", re.S)
+
+
+@dataclass
+class Reading:
+    prompts: int = 0
+    outputs: int = 0
+    refusal: float | None = None
+    refusal_reason: str | None = None
+    buildable: float | None = None
+    buildable_reason: str | None = None
+    cost_per_call: float | None = None
+    cost_reason: str | None = None
+    latency_ms: float | None = None
+    latency_reason: str | None = None
+    prefix_reason: str = PREFIX_REASON
+    not_checked: int = 0
+    by_prompt: dict[str, float] = field(default_factory=dict)
+
+
+@dataclass
+class Pair:
+    count: int
+    buildable_diff: float | None
+
+
+@dataclass
+class Scored:
+    models: dict[str, Reading]
+    pairs: dict[tuple[str, str], Pair]
+
+    def text(self) -> str:
+        return render(self)
+
+
+def families(items: list[dict[str, str]]) -> list[dict[str, Any]]:
+    if not items:
+        return []
+    done = subprocess.run(
+        [sys.executable, "-I", "-c", HELPER, str(WORKER)],
+        input=json.dumps(items),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if done.returncode != 0:
+        raise BenchError(f"The family check failed: {done.stderr.strip()[-300:]}")
+    result: list[dict[str, Any]] = json.loads(done.stdout)
+    return result
+
+
+def _one(name: object, body: object) -> dict[str, Any] | None:
+    if not isinstance(name, str) or not isinstance(body, dict):
+        return None
+    if not isinstance(body.get("description"), str):
+        return None
+    return {"name": name, "description": body["description"], "variables": body.get("variables")}
+
+
+def _proposals(text: str) -> list[dict[str, Any]] | None:
+    """The proposals in one reply. The worker's format is an object keyed by factor name; a single
+    object with its own `name` and `description` is also read. Anything else is not a proposal."""
+    try:
+        raw = json.loads(text)
+    except ValueError:
+        return None
+    if not isinstance(raw, dict) or not raw:
+        return None
+    if isinstance(raw.get("name"), str):
+        single = _one(raw["name"], raw)
+        return [single] if single else None
+    found = [_one(name, body) for name, body in raw.items()]
+    return None if any(x is None for x in found) else [x for x in found if x is not None]
+
+
+def _code_text(text: str) -> str:
+    """The Python in a coder reply: the `code` string of a JSON envelope, else a fenced block,
+    else the reply itself."""
+    try:
+        raw = json.loads(text)
+    except ValueError:
+        raw = None
+    if isinstance(raw, dict) and "code" in raw:
+        return raw["code"] if isinstance(raw["code"], str) else ""
+    match = FENCE.search(text)
+    return match.group(1) if match else text
+
+
+def _code_builds(text: str) -> bool:
+    code = _code_text(text)
+    try:
+        ast.parse(code)
+    except SyntaxError:
+        return False
+    return bool(code.strip())
+
+
+def _mean(values: list[float]) -> float | None:
+    return statistics.fmean(values) if values else None
+
+
+def _load(store: Path, model: str, prompt: StoredPrompt) -> list[dict[str, Any]]:
+    """Every stored sample of one prompt, in sample order."""
+    folder = output_path(store, model, prompt.id, 0).parent
+    exact = re.compile(re.escape(prompt.id) + r"\.([0-9]+)\.json")
+    found = [
+        (int(m.group(1)), p)
+        for p in (folder.iterdir() if folder.is_dir() else [])
+        if (m := exact.fullmatch(p.name))
+    ]
+    records = [json.loads(p.read_text(encoding="utf-8")) for _, p in sorted(found)]
+    if any(r.get("prompt_sha256") != prompt_sha(prompt) for r in records):
+        raise BenchError(
+            f"Prompt '{prompt.id}' changed since an output was stored for {model}. "
+            "The readings would compare different requests."
+        )
+    return records
+
+
+def _feedback_ok(text: str) -> bool:
+    """The worker's feedback reply: an object whose Observations and Reasoning are text."""
+    try:
+        raw = json.loads(text)
+    except ValueError:
+        return False
+    return isinstance(raw, dict) and all(isinstance(raw.get(k), str) for k in FEEDBACK_KEYS)
+
+
+def _reading(
+    prompts: list[StoredPrompt],
+    rows: dict[str, list[dict[str, Any]]],
+    closed: set[str],
+    dropped: set[str],
+) -> Reading:
+    flat = [(p, r) for p in prompts for r in rows[p.id]]
+    reading = Reading(prompts=sum(1 for p in prompts if rows[p.id]), outputs=len(flat))
+    parsed = {i: _proposals(r["text"]) for i, (p, r) in enumerate(flat) if p.stage == "proposal"}
+    known = {i: xs for i, xs in parsed.items() if xs is not None}
+    items = [x for xs in known.values() for x in xs]
+    checks = iter(
+        families([{k: x[k] for k in ("name", "description", "variables")} for x in items])
+    )
+    info = {i: [next(checks) for _ in xs] for i, xs in known.items()}
+    refused = [
+        bool(set(c["family"].split("; ")) & closed) or x["name"].strip().lower() in dropped
+        for i, xs in known.items()
+        for x, c in zip(xs, info[i], strict=True)
+    ]
+    if refused:
+        reading.refusal = sum(refused) / len(refused)
+    else:
+        reading.refusal_reason = "no proposal output that parsed"
+    builds: dict[str, list[float]] = {}
+    for i, (p, r) in enumerate(flat):
+        if p.stage == "proposal":
+            ok = i in known and all(c["declared"] for c in info[i])
+        elif p.stage == "code":
+            ok = _code_builds(r["text"])
+        elif p.stage == "feedback":
+            ok = _feedback_ok(r["text"])
+        else:
+            reading.not_checked += 1
+            continue
+        builds.setdefault(p.id, []).append(1.0 if ok else 0.0)
+    reading.by_prompt = {k: statistics.fmean(v) for k, v in builds.items()}
+    reading.buildable = _mean([v for vs in builds.values() for v in vs])
+    if reading.buildable is None:
+        reading.buildable_reason = "no output stored"
+    costs = [r["usd"] for _, r in flat if r["usd"] is not None]
+    reading.cost_per_call = _mean(costs)
+    reading.cost_reason = None if costs else "no call reported token counts"
+    lat = [r["latency_ms"] for _, r in flat if r["latency_ms"] is not None]
+    reading.latency_ms = statistics.median(lat) if lat else None
+    reading.latency_reason = None if lat else "no call reported latency"
+    return reading
+
+
+def score_store(
+    prompts: list[StoredPrompt],
+    models: list[str],
+    store: Path,
+    closed: set[str],
+    dropped: set[str],
+) -> Scored:
+    readings: dict[str, Reading] = {}
+    for model in models:
+        rows = {p.id: _load(store, model, p) for p in prompts}
+        readings[model] = _reading(prompts, rows, closed, dropped)
+    pairs: dict[tuple[str, str], Pair] = {}
+    for i, a in enumerate(models):
+        for b in models[i + 1 :]:
+            shared = set(readings[a].by_prompt) & set(readings[b].by_prompt)
+            diffs = [readings[a].by_prompt[k] - readings[b].by_prompt[k] for k in sorted(shared)]
+            pairs[(a, b)] = Pair(count=len(diffs), buildable_diff=_mean(diffs))
+    return Scored(models=readings, pairs=pairs)
+
+
+def _num(value: float | None, reason: str | None, fmt: str) -> str:
+    return format(value, fmt) if value is not None else f"unknown ({reason})"
+
+
+def render(scored: Scored) -> str:
+    lines = ["Readings for each model. Each is a measurement, not a verdict."]
+    for model, r in scored.models.items():
+        lines += [
+            f"{model}: {r.prompts} prompts, {r.outputs} outputs",
+            f"  refusal rate: {_num(r.refusal, r.refusal_reason, '.2f')}",
+            f"  buildable (parse and schema only): {_num(r.buildable, r.buildable_reason, '.2f')}"
+            + (f" ({r.not_checked} outputs of other stages not checked)" if r.not_checked else ""),
+            f"  no-future-data prefix check: {r.prefix_reason}",
+            f"  cost per call, USD: {_num(r.cost_per_call, r.cost_reason, '.4f')}",
+            f"  median latency, ms: {_num(r.latency_ms, r.latency_reason, '.0f')}",
+        ]
+    for (a, b), pair in scored.pairs.items():
+        lines.append(
+            f"{a} minus {b}, buildable, same prompts: "
+            f"{_num(pair.buildable_diff, 'no shared prompt', '+.2f')} over {pair.count} prompts"
+        )
+    lines.append(
+        "What this shows: the same prompt went to every model, so each difference is within one "
+        "prompt. 30 pairs can show a large gap, about 3 prompts in 10 or more. They cannot show a "
+        "small gap, and they say nothing about trading results."
+    )
+    return "\n".join(lines)

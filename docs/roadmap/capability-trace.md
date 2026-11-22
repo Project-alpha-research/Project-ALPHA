@@ -18,7 +18,6 @@ table. A capability may serve several rows; a row may be served by several capab
 | `intraday-bars` | Any bar size from one minute up; the daily-only refusal removed |
 | `crypto-data` | Daily crypto bars: download, resume, freeze into a snapshot, verify |
 | `crypto-backfill` | Daily crypto bars: download, resume, freeze into a snapshot, verify |
-| `download-bookkeeping` | Download receipts and quota bookkeeping |
 | `crypto-derivatives-context` | Crypto context: funding rates, open interest, listings |
 | `filing-events` | Event calendar: central-bank meetings, inflation releases, an earnings-date proxy |
 | `positioning-short-volume-context` | Macro series as first published: rates, inflation, jobs, credit, volatility index |
@@ -63,6 +62,7 @@ table. A capability may serve several rows; a row may be served by several capab
 | `portfolio-book` | Paper trading: local crypto practice account or a broker practice account |
 | `follow-today-screen` | Paper trading: local crypto practice account or a broker practice account |
 | `nightly-run` | Every test, tool and variant counted in one ledger; the count printed on each result |
+| `home-backup` | Every test, tool and variant counted in one ledger; the count printed on each result |
 | `monte-carlo` | Path-risk simulation in three families (a fourth, Kronos paths, runs on a stand-in) |
 | `risk-numbers` | Risk figures that state their basis (value at risk, expected shortfall) |
 | `prop-firm-check` | Prop-firm challenge check, as an optional tool and never the goal |

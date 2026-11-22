@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 34 working, 38 partly working, 0 demo only, 3 shelved, 1 not started.
+- **Capabilities:** 35 working, 38 partly working, 0 demo only, 3 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 5.
 
@@ -25,7 +25,8 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Front door (alpha next)** — uv run alpha next
 - **Idea card (alpha idea)** — uv run alpha idea new --from research/examples/idea-card.example.toml
 - **Library of published ideas (alpha library)** — uv run alpha library list
-- **Nightly real run (alpha nightly)** — uv run alpha nightly status More: [research/tools/nightly-run.md](research/tools/nightly-run.md).
+- **Nightly real run (alpha nightly)** — uv run alpha nightly status More: [research/tools/nightly-run.md](research/tools/nightly-run.md). More: [research/tools/nightly-alert.md](research/tools/nightly-alert.md).
+- **Back up and restore the data home (alpha home)** — uv run alpha home backup <folder outside the data home> More: [research/tools/home-backup.md](research/tools/home-backup.md). More: [docs/operations/data-home-backup.md](docs/operations/data-home-backup.md).
 - **Risk numbers that state what they are based on (C04)** — uv run alpha risk scenario --from-run <run-id> --json --include-metric-basis (a real run is recorded)
 - **Quick idea screening (Phase C)** — uv run alpha scan hypotheses --as-of <date> (a real run is recorded)
 - **Machine-learning experiments with Qlib** — uv run alpha ml capabilities
@@ -105,9 +106,9 @@ Found by running the installed program; each has a check that will fail once it 
 
 ## Shelved
 
-- **Download bookkeeping: receipts and quota** — shelved 2026-11-14: not wired into any command; kept for a future download-budget policy and durable acquisition journal.
 - **Qlib model refit evidence (W11)** — shelved 2026-11-14: not wired into any fit; kept for Qlib fold retraining once the reviewed statistics modules exist.
 - **Qlib models inside research cases (W09)** — shelved 2026-11-14: unused groundwork, not wired in; kept for routing Qlib models through RD-Agent research cases after the daily rule study.
+- **Qlib and Nautilus demonstration views** — shelved 2026-11-14: made-up prices only, not a production path; kept as a demonstration that Qlib and Nautilus connect (it re-ran on this computer on 2026-11-14).
 
 ## Not started
 

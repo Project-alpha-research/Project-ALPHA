@@ -3095,6 +3095,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/runs/{run_id}/series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Run Series
+         * @description Stored equity, drawdown, trades, bands and verified price of one run, sampled to limit.
+         */
+        get: operations["run_series_api_runs__run_id__series_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/runs/{run_id}/tearsheet": {
         parameters: {
             query?: never;
@@ -7128,6 +7148,8 @@ export interface components {
             caveat: string;
             /** Etag */
             etag: string;
+            /** Explanation */
+            explanation: string[];
             /** Figure Id */
             figure_id: string;
             /** Format */
@@ -7154,6 +7176,8 @@ export interface components {
             truncation_note: string | null;
             /** Uncertainty */
             uncertainty: string;
+            /** Variant */
+            variant: string;
             /** Width In */
             width_in: number;
             /** X Label */
@@ -7315,6 +7339,11 @@ export interface components {
             decision: string;
             /** Entry Kind */
             entry_kind: string;
+            /**
+             * Exits
+             * @default []
+             */
+            exits: string[];
             /** Follow Id */
             follow_id: string;
             /** Group */
@@ -7334,6 +7363,11 @@ export interface components {
             sessions_ago?: number | null;
             /** Started At */
             started_at?: string | null;
+            /**
+             * Study Labels
+             * @default []
+             */
+            study_labels: string[];
         };
         /** FollowShow */
         FollowShow: {
@@ -12503,6 +12537,8 @@ export interface components {
             n_bars: number | null;
             /** Name */
             name: string | null;
+            /** Rule Family */
+            rule_family?: string | null;
             /** Rule Kind */
             rule_kind: string | null;
             /** Rule Params */
@@ -12993,6 +13029,27 @@ export interface components {
             /** Value */
             value: number;
         };
+        /** RunSeries */
+        RunSeries: {
+            bands: components["schemas"]["SeriesBands"];
+            /** Benchmark */
+            benchmark: (number | null)[] | null;
+            bounds: components["schemas"]["SeriesBounds"];
+            /** Drawdown */
+            drawdown: number[];
+            /** Equity */
+            equity: number[];
+            /** Exposure */
+            exposure: (number | null)[] | null;
+            price: components["schemas"]["SeriesPrice"] | null;
+            provenance: components["schemas"]["SeriesProvenance"];
+            /** Run Id */
+            run_id: string;
+            /** Trades */
+            trades: components["schemas"]["SeriesTrade"][];
+            /** Ts */
+            ts: number[];
+        };
         /** ScanAlert */
         ScanAlert: {
             /** Bar Date */
@@ -13168,6 +13225,87 @@ export interface components {
             point_id: string;
             /** Value */
             value: number;
+        };
+        /** SeriesBands */
+        SeriesBands: {
+            /** Folds */
+            folds: components["schemas"]["SeriesFold"][];
+            scored: components["schemas"]["SeriesPeriod"] | null;
+            tradable: components["schemas"]["SeriesPeriod"] | null;
+        };
+        /** SeriesBounds */
+        SeriesBounds: {
+            points: components["schemas"]["SeriesPointBounds"];
+            trades: components["schemas"]["SeriesTradeBounds"];
+        };
+        /** SeriesFold */
+        SeriesFold: {
+            /** End Ts */
+            end_ts: string;
+            /** Index */
+            index: number;
+            /** Start Ts */
+            start_ts: string;
+        };
+        /** SeriesPeriod */
+        SeriesPeriod: {
+            /** First Ts */
+            first_ts: string;
+            /** Last Ts */
+            last_ts: string;
+        };
+        /** SeriesPointBounds */
+        SeriesPointBounds: {
+            /** Original */
+            original: number;
+            /** Returned */
+            returned: number;
+            /** Sampling */
+            sampling: string;
+            /** Truncated */
+            truncated: boolean;
+        };
+        /** SeriesPrice */
+        SeriesPrice: {
+            /** Close */
+            close: number[];
+            /** Status */
+            status: string;
+            /** Ts */
+            ts: number[];
+        };
+        /** SeriesProvenance */
+        SeriesProvenance: {
+            /** Artifact Sha256 */
+            artifact_sha256: {
+                [key: string]: string;
+            };
+        };
+        /** SeriesTrade */
+        SeriesTrade: {
+            /** Entry Price */
+            entry_price: number;
+            /** Entry Ts */
+            entry_ts: number;
+            /** Exit Price */
+            exit_price: number;
+            /** Exit Ts */
+            exit_ts: number;
+            /** Realized Return */
+            realized_return: number;
+            /** Side */
+            side: string;
+        };
+        /** SeriesTradeBounds */
+        SeriesTradeBounds: {
+            /** Cap */
+            cap: number;
+            /** Original */
+            original: number;
+            /** Returned */
+            returned: number;
+            /** Truncated */
+            truncated: boolean;
         };
         /** SetupFigure */
         SetupFigure: {
@@ -19156,6 +19294,8 @@ export interface operations {
             query?: {
                 /** @description Image format. */
                 fmt?: "svg" | "png";
+                /** @description plain is the standard chart; annotated adds callouts and a long reading. */
+                variant?: "plain" | "annotated";
             };
             header?: never;
             path: {
@@ -19191,6 +19331,8 @@ export interface operations {
             query?: {
                 /** @description Image format. */
                 fmt?: "svg" | "png";
+                /** @description plain is the standard chart; annotated adds callouts and a long reading. */
+                variant?: "plain" | "annotated";
                 /** @description Expected cache key. */
                 key?: string | null;
             };
@@ -19436,6 +19578,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PropfirmPaths"];
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    run_series_api_runs__run_id__series_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunSeries"];
                 };
             };
             /** @description Stable, redacted Workstation error */

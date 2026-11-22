@@ -13,6 +13,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from alpha_cli.home_disk import disk_facts, disk_lines
+from alpha_cli.nightly_alert import failed_line
 from alpha_cli.nightly_record import ALL, SCENARIOS
 from alpha_cli.nightly_steps import COMPUTED, REUSED, UNKNOWN
 
@@ -185,12 +187,17 @@ def status_facts(home: Path, config: Path) -> dict[str, Any]:
         "rule": RULE,
         "open_defects": full[-1]["defects"] if full else [],
         "crontab_line": crontab_line(home, _known_config(records, config)),
+        "failed": failed_line(home),
+        "disk": disk_facts(home, records),
     }
 
 
 def last_night_line(home: Path) -> str | None:
+    """The last run's summary line, and the failure line too while the marker exists."""
     records = read_records(home)
-    return str(records[-1]["summary_line"]) if records else None
+    lines = [str(records[-1]["summary_line"])] if records else []
+    failed = failed_line(home)
+    return "\n".join([*lines, *([failed] if failed else [])]) or None
 
 
 def _row_text(row: dict[str, Any]) -> str:
@@ -204,10 +211,11 @@ def _row_text(row: dict[str, Any]) -> str:
 
 def status_text(facts: dict[str, Any]) -> str:
     last = facts["last"]
+    lines = [facts["failed"]] if facts.get("failed") else []
     if last is None:
-        lines = ["No nightly run is recorded yet. Start one with `alpha nightly run`."]
+        lines.append("No nightly run is recorded yet. Start one with `alpha nightly run`.")
     else:
-        lines = [f"{last['summary_line']} (run {last['date']}-{last['run_number']})"]
+        lines.append(f"{last['summary_line']} (run {last['date']}-{last['run_number']})")
     lines.append("Latest full-attempt runs (up to 5):")
     lines.extend(_row_text(row) for row in facts["recent"] or [])
     lines.append(f"Ready: {'yes' if facts['ready'] else 'no'}.")
@@ -219,6 +227,7 @@ def status_text(facts: dict[str, Any]) -> str:
         f"  {d['severity']} in {d['step']}: {d['text']}  To reproduce: {d['reproduce']}"
         for d in defects
     )
+    lines += disk_lines(facts["disk"]) if facts.get("disk") else []
     lines += [
         "Schedule it yourself. This command installs nothing. One crontab line:",
         f"  {facts['crontab_line']}",

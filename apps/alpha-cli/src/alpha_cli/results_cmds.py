@@ -30,7 +30,7 @@ from alpha_cli.spine.facts import (
     tool_outputs,
 )
 from alpha_cli.spine.ledger import read_trials
-from alpha_cli.spine.reading import stored_reading
+from alpha_cli.spine.reading import reading_text, stored_reading
 from alpha_cli.spine.reading_read import owner_word, run_reading
 from alpha_cli.spine.trial_reader import family_counts, spine_snapshot
 from alpha_cli.toolbox.registry import METRIC_OUTPUTS
@@ -188,7 +188,8 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
     from alpha_cli.toolbox.store import history
 
     diagnostics = read_json(rdir / "diagnostics.json")
-    rule = manifest.get("spine", {}).get("rule", {}).get("kind")
+    spine = manifest.get("spine", {})
+    rule = spine.get("family") or spine.get("rule", {}).get("kind")
     family_id = f"spine:{rule}" if rule else None
     counts = family_counts(spine_snapshot(home))
     current = next(
@@ -330,7 +331,7 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
         lines = [
             (f"{row['run_id']} — " if len(runs) > 1 else "")
             + row["data_health_sentence"]
-            + (f"\n{row['reading']['sentence']}" if isinstance(row.get("reading"), dict) else "")
+            + (f"\n{reading_text(row['reading'])}" if isinstance(row.get("reading"), dict) else "")
             for row in runs
         ]
         details = [_show_text_fields(row) for row in runs]

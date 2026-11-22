@@ -178,3 +178,19 @@ def test_old_commands_name_the_new_ones(tmp_path: Path) -> None:
     assert "alpha library import-pdf" in RUNNER.invoke(app, pdf, env=env).output
     find = ["research", "sources", "discover", "p1", "--query", "q", "--unpaywall-email", "e@x.org"]
     assert "alpha library search" in RUNNER.invoke(app, find, env=env).output
+
+
+def test_a_repeat_hit_shows_this_searchs_relevance_not_the_first(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _facts(tmp_path, "library", "search", "momentum", "--unpaywall-email", "x@example.org")
+    changed = {
+        **RECORDED_SEARCH,
+        "candidates": [
+            {**RECORDED_SEARCH["candidates"][0], "relevance_explanation": "title shares: reversal"}
+        ],
+    }
+    monkeypatch.setattr(library_papers_cmds, "_run_literature_worker", lambda argv, **kw: changed)
+    second = _facts(tmp_path, "library", "search", "reversal", "--unpaywall-email", "x@example.org")
+    assert second["papers"][0]["relevance_explanation"] == "title shares: reversal"
+    assert len(_facts(tmp_path, "library", "papers")["papers"]) == 2

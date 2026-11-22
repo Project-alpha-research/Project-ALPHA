@@ -87,7 +87,9 @@ def search(
                 },
                 extra={"relevance_explanation": candidate.get("relevance_explanation")},
             )
-            kept.append(papers.save(home, record)[0])
+            stored = papers.save(home, record)[0]
+            # The stored paper is kept once; the reason it matched belongs to this search.
+            kept.append({**stored, "relevance_explanation": record["relevance_explanation"]})
     except (DataError, SpineError) as exc:
         fail(
             SpineError("LIBRARY_SEARCH", str(exc), "Check the words and the network, then retry."),

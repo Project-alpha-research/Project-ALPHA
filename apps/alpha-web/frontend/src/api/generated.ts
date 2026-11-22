@@ -8982,6 +8982,8 @@ export interface components {
             run_id: string;
             /** Split Sentence */
             split_sentence: string | null;
+            /** Survivorship Warning */
+            survivorship_warning: string | null;
         };
         /** MlStoredRunList */
         MlStoredRunList: {

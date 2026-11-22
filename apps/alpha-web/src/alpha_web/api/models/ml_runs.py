@@ -36,6 +36,8 @@ class MlStoredRun(StrictModel):
     split_sentence: str | None
     n_oos_periods: int | None
     label: str | None
+    # The stored research limitation of a run on today's members; shown beside the reading.
+    survivorship_warning: str | None
     metrics: MlStoredMetrics
     folds: list[MlStoredFold]
     # All folds the run stored; `folds` keeps the first 200 for the table.

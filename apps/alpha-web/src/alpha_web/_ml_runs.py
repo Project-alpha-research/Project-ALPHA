@@ -93,6 +93,7 @@ def _row(record: Mapping[str, Any], *, data_dir: Path) -> dict[str, Any]:
     folds = all_folds[:MAX_FOLDS]
     universe = manifest.get("universe")
     periods = manifest.get("n_oos_periods")
+    warning = manifest.get("survivorship_warning")
     return {
         "run_id": str(record["run_id"]),
         "mtime": record["mtime"],
@@ -102,6 +103,7 @@ def _row(record: Mapping[str, Any], *, data_dir: Path) -> dict[str, Any]:
         "split_sentence": split_sentence(all_folds) if all_folds else None,
         "n_oos_periods": periods if isinstance(periods, int) else None,
         "label": manifest.get("label") if isinstance(manifest.get("label"), str) else None,
+        "survivorship_warning": warning if isinstance(warning, str) and warning else None,
         "metrics": metrics,
         "folds": folds,
         "folds_total": len(all_folds),

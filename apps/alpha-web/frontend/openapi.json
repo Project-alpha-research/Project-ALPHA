@@ -14195,6 +14195,17 @@
               }
             ],
             "title": "Split Sentence"
+          },
+          "survivorship_warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Survivorship Warning"
           }
         },
         "required": [
@@ -14206,6 +14217,7 @@
           "split_sentence",
           "n_oos_periods",
           "label",
+          "survivorship_warning",
           "metrics",
           "folds",
           "folds_total"

@@ -27,6 +27,7 @@ def _ml_run(home: Path, run_id: str, *, mtime: float, sharpe: float | None = 0.8
         "worker": {"kind": "qlib", "implementation_version": "1"},
         "costs": {"fee_bps": 1.0, "slippage_bps": 2.0},
         "n_oos_periods": 126,
+        "survivorship_warning": "Assets chosen from today's members can flatter the past.",
         "metrics": {
             "total_return": 0.085,
             "benchmark_total_return": 0.12,
@@ -94,6 +95,7 @@ def test_lists_only_ml_runs_with_split_assets_model_costs_and_folds(
     }
     assert run["metrics"]["total_return"] == pytest.approx(0.085, rel=1e-9, abs=1e-12)
     assert run["metrics"]["sharpe_reason"] is None
+    assert run["survivorship_warning"] == "Assets chosen from today's members can flatter the past."
 
 
 def test_a_missing_sharpe_stays_null_with_a_reason(

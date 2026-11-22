@@ -6,6 +6,7 @@ function run(extra: Partial<MlStoredRun['metrics']> = {}): MlStoredRun {
   return {
     run_id: 'a'.repeat(16), mtime: 1, assets: ['SPY', 'QQQ', 'IWM', 'TLT', 'GLD'], model: 'Qlib worker; the model type is not recorded in the run',
     costs: '1 bp fee and 2 bp slippage per trade', split_sentence: 'The model was refit 3 times.', n_oos_periods: 126,
+    survivorship_warning: null,
     label: 'OOS replay validated — model not recomputed under counterfactual',
     metrics: {
       total_return: 0.085, benchmark_total_return: 0.12, max_drawdown: -0.07, sharpe: 0.8, cagr: 0.04, mean_turnover: 0.3,

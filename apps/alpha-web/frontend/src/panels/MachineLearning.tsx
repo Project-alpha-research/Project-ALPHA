@@ -55,6 +55,7 @@ export function MachineLearningView({ run }: { run: MlStoredRun }) {
       </dl>
       <h3>Reading</h3>
       {readingWords(run).map(line => <p key={line}>{line}</p>)}
+      {run.survivorship_warning ? <p role="note" className="ml-warning"><strong>Limit:</strong> {run.survivorship_warning}</p> : null}
       <Charts runId={run.run_id} />
       <h3>Folds</h3>
       {rows.length ? (

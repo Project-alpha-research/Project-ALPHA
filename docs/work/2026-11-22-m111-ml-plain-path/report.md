@@ -26,6 +26,12 @@ Answer: `alpha ml run <spec.toml>` now goes from a plain spec to a stored, coste
 - Re-run: the work folder is `data_dir/ml_runs/<hash>/`; a finished one is reused and only the (idempotent) replay runs again. A failed run removes its folder.
 - Not regenerated, per the brief: `docs/reference/commands.md`, `STATUS.md`, `docs/roadmap/README.md`. `commands.md` is now stale for the new `run` command.
 
+## Review round 1 (Codex findings and CI)
+- CI `quick` failed: two tests needed the worker `.venv`, which CI does not have. They now run the repo's fake worker through `PYTHONPATH` (as `test_ml_cli.py` does) and stub `train_exchange` and the install check. I removed the internal `mode` argument.
+- Fixed: the snapshot key now hashes bars, corporate actions and provenance (test: a changed actions file gives a new snapshot).
+- Fixed: the output now lists every rolling fold and says the model was refit N times, each on days before its own test days.
+- Fixed: the finished-run cache key now includes the worker `uv.lock` hash.
+
 ## Fail-first evidence
 I wrote the tests before `ml_run.py`, but I did not run them before the module existed. The first run against the new code failed on a too-short fixture (728 sessions before the held-back day; 756 needed). I lengthened the fixture and all 7 passed. This is weaker than a true red run.
 
@@ -40,4 +46,4 @@ The old path (Workstation, `alpha ml export-input --spec`, then `prepare`, `trai
 ## Known gaps
 - `alpha results` lists rule tests only. I did not check that `alpha report` or the figures read an `ml_replay` run; `alpha ml replay` already produced the same kind of run before this change.
 - PR #392 was not on main; I merged `origin/chore/m101-no-project-ids` into this branch.
-- `gate.py check`: mypy found one error (fixed afterwards); the rest passed. I re-ran only the touched checks after the fix.
+- `gate.py check --base origin/main` passes in full after review round 1.

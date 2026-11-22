@@ -16,7 +16,12 @@ from typing import Any
 
 from alpha_cli import ml_cmds
 from alpha_cli._ml_replay import run_ml_replay
-from alpha_cli.ml_contract import MLContractError, canonical_json_bytes, prepare_exchange
+from alpha_cli.ml_contract import (
+    MLContractError,
+    canonical_json_bytes,
+    prepare_exchange,
+    sha256_file,
+)
 from alpha_cli.ml_input import export_input
 from alpha_cli.spine import reserve
 from alpha_cli.spine.ledger import append_trial
@@ -88,7 +93,9 @@ def _freeze(data_dir: Path, assets: list[str]) -> str:
             raise MlRunError(
                 f"No stored bars for {symbol}. Pull its data first with `alpha data pull`."
             )
-        digest.update(symbol.encode() + hashlib.sha256(bars.read_bytes()).digest())
+        for part in (bars, store._actions_path(symbol), store._provenance_path(symbol)):
+            digest.update(symbol.encode() + part.name.encode())
+            digest.update(hashlib.sha256(part.read_bytes()).digest() if part.is_file() else b"-")
         found = store.read_provenance(symbol)
         if found is None or (source is not None and found["source"] != source["source"]):
             raise MlRunError(
@@ -135,18 +142,28 @@ def _day(text: object) -> str:
     return str(text)[:10]
 
 
-def _split(base: Path) -> dict[str, str]:
+def _folds(base: Path) -> list[dict[str, str]]:
     folds = json.loads((base / "exchange" / "request.json").read_text(encoding="utf-8"))["folds"]
-    return {
-        "train_start": _day(folds[0]["train_start"]),
-        "train_end": _day(folds[0]["train_end"]),
-        "test_start": _day(folds[0]["test_start"]),
-        "test_end": _day(folds[-1]["test_end"]),
-    }
+    return [
+        {name: _day(fold[name]) for name in ("train_start", "train_end", "test_start", "test_end")}
+        for fold in folds
+    ]
+
+
+def _split_sentence(folds: list[dict[str, str]]) -> str:
+    first, last = folds[0], folds[-1]
+    return (
+        f"The model was refit {len(folds)} times, each time on days before its own test days. "
+        f"First model: trained {first['train_start']} to {first['train_end']}, "
+        f"tested {first['test_start']} to {first['test_end']}. "
+        f"Last model: trained {last['train_start']} to {last['train_end']}, "
+        f"tested {last['test_start']} to {last['test_end']}. "
+        "No model saw its own test days."
+    )
 
 
 def _count_try(
-    data_dir: Path, spec: dict[str, Any], run_id: str, snapshot_id: str, split: dict[str, str]
+    data_dir: Path, spec: dict[str, Any], run_id: str, snapshot_id: str, folds: list[dict[str, str]]
 ) -> str:
     row = append_trial(
         data_dir,
@@ -155,8 +172,8 @@ def _count_try(
             "name": str(spec.get("name", "qlib/lightgbm")),
             "spec_sha256": hashlib.sha256(canonical_json_bytes(spec)).hexdigest(),
             "assets": sorted(spec["assets"]),
-            "first_ts": split["train_start"],
-            "last_ts": split["test_end"],
+            "first_ts": folds[0]["train_start"],
+            "last_ts": folds[-1]["test_end"],
             "bar_size": "1D",
             "store": snapshot_id,
             "run_id": run_id,
@@ -174,19 +191,18 @@ def run_spec(
     data_dir: Path,
     as_of: str | None = None,
     worker_project: Path | None = None,
-    mode: str = "real",
 ) -> dict[str, Any]:
     """Run the plain spec end to end and return the reading; raise `MlRunError` in plain words."""
     spec = _read(spec_path)
-    project = (
-        ml_cmds._default_worker_project()
-        if mode == "fake" and worker_project is None
-        else worker_project
-    )
+    project = worker_project
     project = _require_worker(project)
     snapshot_id = _freeze(data_dir, spec["assets"])
     experiment = _experiment(spec, snapshot_id)
-    key = hashlib.sha256(canonical_json_bytes({"e": experiment, "as_of": as_of})).hexdigest()[:16]
+    key = hashlib.sha256(
+        canonical_json_bytes(
+            {"e": experiment, "as_of": as_of, "lock": sha256_file(project / "uv.lock")}
+        )
+    ).hexdigest()[:16]
     base = data_dir / "ml_runs" / key
     if not (base / "done").is_file():
         shutil.rmtree(base, ignore_errors=True)
@@ -208,7 +224,7 @@ def run_spec(
             )
             ml_cmds.train_exchange(
                 base / "exchange",
-                mode=mode,
+                mode="real",
                 worker_project=project,
                 no_sync=True,
                 timeout_seconds=7_200,
@@ -219,20 +235,16 @@ def run_spec(
             raise
     replayed = run_ml_replay(base / "exchange", data_dir=data_dir)
     manifest = replayed.manifest
-    split = _split(base)
+    folds = _folds(base)
     return {
         "status": "replayed",
         "run_id": replayed.run_id,
-        "split": split,
-        "split_sentence": (
-            f"Trained on {split['train_start']} to {split['train_end']}; "
-            f"tested on {split['test_start']} to {split['test_end']}. "
-            "The model never saw the test days."
-        ),
+        "folds": folds,
+        "split_sentence": _split_sentence(folds),
         "costs": f"{FEE_BPS} bp fee and {SLIPPAGE_BPS} bp slippage per trade",
         "n_oos_periods": manifest["n_oos_periods"],
         "metrics": manifest["metrics"],
-        "tries_sentence": _count_try(data_dir, spec, replayed.run_id, snapshot_id, split),
+        "tries_sentence": _count_try(data_dir, spec, replayed.run_id, snapshot_id, folds),
         **(
             {"reserve_sentence": reserve.describe(manifest["reserve"])}
             if "reserve" in manifest

@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -10,8 +13,9 @@ import polars as pl
 import pytest
 from typer.testing import CliRunner
 
-from alpha_cli import ml_run
+from alpha_cli import ml_cmds, ml_run
 from alpha_cli.main import app
+from alpha_cli.ml_contract import validate_result_bundle
 from alpha_cli.spine.ledger import read_trials
 from alpha_cli.spine.trial_record import map_row
 from alpha_data.store import ParquetStore
@@ -55,8 +59,31 @@ def _spec(tmp_path: Path, extra: str = "") -> Path:
     return path
 
 
+def _fake_worker(exchange: Path, **_: object) -> object:
+    """Run the repo's fake worker the way `test_ml_cli` does, then validate its result."""
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(REPO / "workers/qlib/src")
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "alpha_qlib_worker",
+            "fake",
+            str(exchange),
+            "--worker-lock",
+            str(REPO / "workers/qlib/uv.lock"),
+        ],
+        cwd=REPO,
+        env=env,
+        check=True,
+    )
+    return validate_result_bundle(exchange)
+
+
 @pytest.fixture
 def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    monkeypatch.setattr(ml_cmds, "train_exchange", _fake_worker)
+    monkeypatch.setattr(ml_run, "_require_worker", lambda project: REPO / "workers/qlib")
     data = tmp_path / "alpha-data"
     _seed_store(data)
     monkeypatch.setenv("ALPHA_DATA_DIR", str(data))
@@ -64,34 +91,39 @@ def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 def test_run_end_to_end_with_fake_worker(home: Path, tmp_path: Path) -> None:
-    result = ml_run.run_spec(_spec(tmp_path), data_dir=home, mode="fake")
+    result = ml_run.run_spec(_spec(tmp_path), data_dir=home)
     manifest = json.loads((home / "runs" / result["run_id"] / "manifest.json").read_text())
     assert manifest["command"] == "ml_replay"
     assert manifest["costs"]["fee_bps"] > 0
     # Training and test windows are stated and never overlap; nothing from the held-back day on.
-    split = result["split"]
-    assert split["train_end"] < split["test_start"]
-    assert split["test_end"] < "2024-01-01"
-    assert "tested on" in result["split_sentence"]
+    folds = result["folds"]
+    assert all(f["train_end"] < f["test_start"] for f in folds)
+    assert folds[-1]["test_end"] < "2024-01-01"
+    assert f"refit {len(folds)} times" in result["split_sentence"]
+    assert "No model saw its own test days" in result["split_sentence"]
     assert "Held back" in result["reserve_sentence"]
     assert manifest["reserve"]["held_back_bars"] > 0
 
 
 def test_run_counts_one_try_in_family_qlib(home: Path, tmp_path: Path) -> None:
     spec = _spec(tmp_path)
-    first = ml_run.run_spec(spec, data_dir=home, mode="fake")
+    first = ml_run.run_spec(spec, data_dir=home)
     rows = [row for row in read_trials(home) if row["kind"] == "ml_run"]
     assert len(rows) == 1
     assert rows[0]["run_id"] == first["run_id"]
     assert "1 try" in first["tries_sentence"]
-    again = ml_run.run_spec(spec, data_dir=home, mode="fake")
+    again = ml_run.run_spec(spec, data_dir=home)
     assert again["run_id"] == first["run_id"]
     assert "counted before" in again["tries_sentence"]
     mapped = map_row("spine", home / "ledger" / "trials.jsonl", 1, rows[0])
     assert mapped.family_id == "qlib"
 
 
-def test_missing_worker_environment_says_what_to_run(home: Path, tmp_path: Path) -> None:
+def test_missing_worker_environment_says_what_to_run(
+    home: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.undo()
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
     project = tmp_path / "worker"
     project.mkdir()
     (project / "pyproject.toml").write_text("[project]\nname='x'\n")
@@ -110,10 +142,20 @@ def test_missing_worker_environment_says_what_to_run(home: Path, tmp_path: Path)
 )
 def test_bad_spec_fails_loud(home: Path, tmp_path: Path, extra: str, words: str) -> None:
     with pytest.raises(ml_run.MlRunError, match=words):
-        ml_run.run_spec(_spec(tmp_path, extra), data_dir=home, mode="fake")
+        ml_run.run_spec(_spec(tmp_path, extra), data_dir=home)
 
 
 def test_cli_command_is_registered(home: Path, tmp_path: Path) -> None:
     out = CliRunner().invoke(app, ["ml", "run", str(tmp_path / "missing.toml")])
     assert out.exit_code != 0
     assert "missing.toml" in out.output
+
+
+def test_new_split_action_makes_a_new_snapshot(home: Path) -> None:
+    store = ParquetStore(home / "store")
+    first = ml_run._freeze(home, SYMBOLS)
+    assert ml_run._freeze(home, SYMBOLS) == first
+    actions = store._actions_path(SYMBOLS[0])
+    actions.parent.mkdir(parents=True, exist_ok=True)
+    actions.write_text("changed")
+    assert ml_run._freeze(home, SYMBOLS) != first

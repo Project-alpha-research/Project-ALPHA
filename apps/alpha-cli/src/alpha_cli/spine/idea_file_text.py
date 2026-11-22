@@ -195,7 +195,7 @@ def render(facts: dict[str, Any]) -> str:
         ("3. Readings so far, oldest first", _readings(facts["readings"])),
         ("4. Counts", _counts(facts["counts"])),
         ("5. Open points", _open(facts["open_points"])),
-        ("6. Papers it draws on", _papers(facts["papers"])),
+        ("6. Papers it draws on", _papers(facts.get("papers", []))),
     ]
     if facts.get("rdagent"):
         parts.append(("6. RD-Agent steps", _rdagent(facts["rdagent"])))

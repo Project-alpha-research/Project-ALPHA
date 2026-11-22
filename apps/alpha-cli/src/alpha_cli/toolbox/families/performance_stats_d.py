@@ -73,6 +73,7 @@ def payoff_expectancy(inputs: Inputs, params: dict[str, Any], rng: Generator | N
 
 PAYOFF_EXPECTANCY = ToolSpec(
     id="performance.payoff_expectancy",
+    version=2,
     situations=("risk-adjusted",),
     answers=(
         "Do the winning trades outsize the losing ones?",

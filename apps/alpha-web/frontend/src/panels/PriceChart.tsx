@@ -260,7 +260,7 @@ export function PriceChart(props: PanelHandleProps) {
         ) : null}
         {bundle ? <span className="chip chart-run-provenance">{bundle.provenance.command ?? 'run'} · artifact v{bundle.provenance.artifact_contract_version ?? 'legacy'}</span> : null}
         {!bundle && candleProvenance ? (
-          <span className="chip kind">{provenanceText(candleProvenance)}</span>
+          <span className="chip pass">{provenanceText(candleProvenance)}</span>
         ) : null}
         {bundle?.trace_status === 'available' ? (
           <span className="chart-layer-controls" aria-label="Chart evidence layer">

@@ -32,5 +32,11 @@ Each family has a look-ahead test in `tests/unit/test_pattern_events.py`.
 ## Fail-first evidence
 `tests/unit/test_chart_pattern_picture.py` first failed with `ModuleNotFoundError: alpha_cli.chart_pattern_picture`, before the module existed.
 
+## Fixes after a look at real pictures (made on a copy of the data home; the pictures are kept outside git)
+The first pictures drew every trend line at once: a tangle. Now markers are all drawn; lines and outlines only the 5 most recent that
+do not crowd, numbered with a legend; a grey low-to-high band so markers sit on bar extremes; a cross on the break day; head and
+shoulders drawn with its neckline and one event per head; labels say support line and resistance line; the note box has 4 to 7
+sentences for the family. A trend-line break study ran end to end through `alpha setup find` and `alpha setup study`.
+
 ## Not done
-No data of the owner's was used. Pictures were checked on synthetic random prices only: on random prices, many trend lines are normal.
+The picture reads every stored bar, including the period the setup tools hold back for the owner's confirmation.

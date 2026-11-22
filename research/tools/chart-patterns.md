@@ -16,6 +16,7 @@ verified: 0000000000000000
 uv run alpha chart overlays NVDA -p trendlines [--since 2024-01-01] [--end 2025-06-30]
 ```
 It writes a plain and an annotated picture and prints 3 lines: how many, the most recent and its date, the paths.
+Swings and other markers are all drawn; lines and outlines show the 5 most recent that do not crowd, numbered in the legend.
 The default window is the last two years. Families: swings, dc_extremes, structure_levels, trendlines, flags,
 head_shoulders, wedges, triple_taps, harmonics. Drawn only, no events: pips, market_profile, levels.
 

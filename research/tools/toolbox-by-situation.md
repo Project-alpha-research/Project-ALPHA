@@ -20,14 +20,17 @@ The result is then marked `declared`, otherwise `exploratory`. Nothing is refuse
   `resampling.drawdown_distribution`, `overfit.deflated_sharpe`
 - The result looks too good after many tries: `overfit.deflated_sharpe`
 - Big drawdown, or how deep the drop could get: `performance.downside_ratios`, `resampling.drawdown_distribution`, `resampling.block_bootstrap_paths`,
-  `resampling.student_t_paths`
-- How wide is the return range: `resampling.sharpe_interval`, `resampling.return_interval`, `resampling.block_bootstrap_paths`, `resampling.student_t_paths`
+  `resampling.student_t_paths`, `timeseries.normality`
+- How wide is the return range: `resampling.sharpe_interval`, `resampling.return_interval`, `resampling.block_bootstrap_paths`, `resampling.student_t_paths`,
+  `timeseries.normality`
 - Works in some years or windows only: `market.vol_regimes`, `market.changepoints`, `robustness.start_end_dates`
-- Does it earn in calm or turbulent markets: `market.vol_regimes`
-- When did the behaviour change: `market.changepoints`
+- Does it earn in calm or turbulent markets: `market.vol_regimes`, `timeseries.arch_lm`
+- When did the behaviour change: `market.changepoints`, `timeseries.dfa`, `timeseries.long_memory`, `timeseries.sample_entropy`,
+  `timeseries.permutation_entropy`, `timeseries.hurst`
 - Few trades: `trades.concentration`, `resampling.sharpe_interval`, `resampling.return_interval`, `trades.dependence`
 - Profit from a handful of trades: `trades.concentration`
-- Wins and losses cluster or alternate: `trades.dependence`
+- Wins and losses cluster or alternate: `timeseries.autocorrelation`, `timeseries.compressibility`, `trades.dependence`, `timeseries.ljung_box`,
+  `timeseries.variance_ratio`, `timeseries.up_down_runs`
 - Which side earned the profit: `trades.side_contribution`
 - Fragile to costs: `costs.break_even`
 - Is this just the market going up: `market.attribution`, `costs.break_even`, `context.published_factors`

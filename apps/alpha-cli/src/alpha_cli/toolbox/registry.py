@@ -15,6 +15,7 @@ from alpha_cli.toolbox.families.resampling import (
     SHARPE_INTERVAL,
 )
 from alpha_cli.toolbox.families.robustness import START_END_DATES
+from alpha_cli.toolbox.families.timeseries import CHECKS as TIMESERIES_CHECKS
 from alpha_cli.toolbox.families.trades import DEPENDENCE
 
 SPECS = (
@@ -34,6 +35,7 @@ SPECS = (
     BLOCK_PATHS,
     STUDENT_T_PATHS,
     PUBLISHED_FACTORS,
+    *TIMESERIES_CHECKS,
 )
 ALIASES = {
     "attribution": ATTRIBUTION.id,

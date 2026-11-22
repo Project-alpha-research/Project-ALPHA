@@ -49,10 +49,13 @@ class _Windows:
         size = max(1, _CELLS // self.history)
         return [(a, min(a + size, self.close.size)) for a in range(first, self.close.size, size)]
 
-    def rows(self, values: FloatArray, a: int, b: int) -> FloatArray:
+    def rows(self, values: FloatArray, a: int, b: int, lag: int = 0) -> FloatArray:
+        """The windows ending at ``a .. b - 1``, each cut to its first ``history - lag`` bars: an
+        operand read ``lag`` bars ago is the last value of that shorter window (every indicator is
+        causal, and each recursion starts at the window's first bar either way)."""
         first = a - self.history + 1
         view = sliding_window_view(values, self.history)[first : first + b - a]
-        return np.ascontiguousarray(view)
+        return np.ascontiguousarray(view[:, : self.history - lag])
 
 
 def _last_mean(rows: FloatArray, window: int) -> FloatArray:
@@ -150,22 +153,27 @@ def _block_values(w: _Windows, operand: Operand, a: int, b: int) -> FloatArray:
     name = operand.indicator
     if w.history < operand.bars_needed:  # still warming up on the last bar: the definition says
         return _fallback(w, operand, a, b)
+    lag = operand.lag
     if name == "sma":
-        return _last_mean(w.rows(w.close, a, b), int(p[0]))
+        return _last_mean(w.rows(w.close, a, b, lag), int(p[0]))
     if name == "ema":
-        return _last_ema(w.rows(w.close, a, b), int(p[0]))
+        return _last_ema(w.rows(w.close, a, b, lag), int(p[0]))
     if name == "rsi":
-        return _last_rsi(w.rows(w.close, a, b), int(p[0]))
+        return _last_rsi(w.rows(w.close, a, b, lag), int(p[0]))
     if name == "atr":
-        rows = (w.rows(w.high, a, b), w.rows(w.low, a, b), w.rows(w.close, a, b))
+        rows = (w.rows(w.high, a, b, lag), w.rows(w.low, a, b, lag), w.rows(w.close, a, b, lag))
         return _last_atr(*rows, int(p[0]))
     if name == "macd":
-        return _last_macd(w.rows(w.close, a, b), operand)
+        return _last_macd(w.rows(w.close, a, b, lag), operand)
+    if name in {"highest", "lowest"}:
+        source = {"high": w.high, "low": w.low, "close": w.close}[str(operand.field)]
+        tail = w.rows(source, a, b, lag)[:, -int(p[0]) :]
+        return np.asarray(tail.max(axis=1) if name == "highest" else tail.min(axis=1))
     if name == "bbands" and operand.field is not None:
-        mid = _last_mean(w.rows(w.close, a, b), int(p[0]))
+        mid = _last_mean(w.rows(w.close, a, b, lag), int(p[0]))
         if operand.field == "middle":
             return mid
-        sd = _last_std(w.close, a, b, int(p[0]))
+        sd = _last_std(w.close, a - lag, b - lag, int(p[0]))
         k = float(p[1])
         return np.asarray(mid + k * sd if operand.field == "upper" else mid - k * sd)
     return _fallback(w, operand, a, b)

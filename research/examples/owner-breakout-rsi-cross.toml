@@ -1,0 +1,17 @@
+# Example spec for `alpha test`: an owner rule with `lag` and a channel.
+# Long while the close is above the highest high of the 20 bars before today (a breakout; lag = 1 leaves today out),
+# and RSI(14) has crossed above 50 (above 50 now, at or below 50 one bar ago).
+name = "breakout-with-rsi-cross"
+idea = "Buy a close above the 20-day high when momentum has just turned up"
+assets = ["SPY", "QQQ"]
+
+[rule]
+kind = "owner"
+
+[rule.spec]
+history = 100  # bars each decision sees; it must be at least the longest window plus its lag (here 21)
+long_when = [
+  { left = { source = "close" }, op = ">", right = { indicator = "highest", params = [20], field = "high", lag = 1 } },
+  { left = { indicator = "rsi", params = [14] }, op = ">", right = { value = 50 } },
+  { left = { indicator = "rsi", params = [14], lag = 1 }, op = "<=", right = { value = 50 } },
+]

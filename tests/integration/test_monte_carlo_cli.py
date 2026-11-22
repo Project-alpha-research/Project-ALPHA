@@ -98,6 +98,7 @@ def test_classical_monte_carlo_publishes_three_auditable_families(
     assert result.exit_code == 0, result.output
     assert "iid_empirical" in result.output
     rdir = _new_run(home, source)
+    assert f"monte-carlo classical -> run {rdir.name}: manifest at" in result.output
     manifest = json.loads((rdir / "manifest.json").read_text())
 
     assert manifest["command"] == "monte_carlo_classical"

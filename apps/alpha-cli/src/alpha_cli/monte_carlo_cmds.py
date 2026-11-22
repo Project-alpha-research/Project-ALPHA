@@ -604,7 +604,7 @@ def classical(
         raise typer.BadParameter(str(exc)) from exc
 
     typer.echo(
-        f"monte-carlo classical -> run {identity.run_id}; manifest at {rdir / 'manifest.json'}"
+        f"monte-carlo classical -> run {identity.run_id}: manifest at {rdir / 'manifest.json'}"
     )
     _mc_reading.echo_family_lines(source, summaries, regime_caveats)
 

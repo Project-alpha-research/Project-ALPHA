@@ -17,7 +17,7 @@ uv run alpha test --rule ma_cross --param fast=50 --param slow=200 --asset SPY -
 uv run alpha test <spec.toml> --recheck --json   # system check, not a trial; exit 4 if the result differs
 ```
 A spec file holds `name`, `idea`, `assets`, a `[rule]` table (`kind` plus its numbers) and an optional `[costs]` table
-(`fee_bps`, `slippage_bps`). Kinds: `ma_cross` (`fast`, `slow`), `breakout` (`window`), `tsmom` (`lookback`, `skip`), and `owner`
+(`fee_bps`, `slippage_bps`, or `costs = "class-default"`). Kinds: `ma_cross` (`fast`, `slow`), `breakout` (`window`), `tsmom` (`lookback`, `skip`), and `owner`
 (a `[rule.spec]` table, long or flat: [language](../../docs/reference/owner-rule-language.md), `research/examples/owner-rsi-dip.toml`;
 `lag`, `highest`, `lowest`: `research/examples/owner-breakout-rsi-cross.toml`).
 Asset: symbol or symbol@store. No file with flags. `--quick`: small gauntlet. `idea_card`: [card](idea-card.md). `[context]`, `when`: `--plan` only.
@@ -25,7 +25,7 @@ Asset: symbol or symbol@store. No file with flags. `--quick`: small gauntlet. `i
 - Each asset carries its own [data health verdict](data-health.md). Use `--check-data` to check missing or changed inputs before testing.
 - The headline starts at the first open after warm-up; tiles, Sharpe and charts share each row’s dates (walk-forward only).
   Both lines use split-adjusted opens and one dividend basis. Missing period facts read “not recorded”.
-- Each asset has `run_id`, `reading`, `oos_sharpe`, `benchmark_sharpe`, `labels`, `flags`, `error`, `resized_entries`, `executed`.
+- Each asset has `run_id`, `reading` (costs line), `oos_sharpe`, `benchmark_sharpe`, `labels`, `flags`, `error`, `resized_entries`, `executed`.
   `trials_total` counts ledger trials; `test_id` names the test.
 - Quote the `reading`, never a grade: `clear of chance`, `some evidence`, `not clear of chance` or `too little to read`,
   and above, below or within the uncertainty of buy-and-hold. `Fault:` means no reading. `verdict` is the old letter.

@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { DEFAULT_LINKED, type LinkedState } from '../context/linked'
+import { EVIDENCE_LEGEND, provenanceText } from './chartHeaderModel'
 import type { PanelSource } from '../shell/chartWorkspaceModel'
 import type { ChartControls } from '../context/chartControls'
 import type { ChartLinkRegistry } from '../shell/chartLinkRegistry'
@@ -259,9 +260,7 @@ export function PriceChart(props: PanelHandleProps) {
         ) : null}
         {bundle ? <span className="chip chart-run-provenance">{bundle.provenance.command ?? 'run'} · artifact v{bundle.provenance.artifact_contract_version ?? 'legacy'}</span> : null}
         {!bundle && candleProvenance ? (
-          <span className={`chip ${candleProvenance.quality_status === 'legacy_unqualified' ? 'fail' : 'pass'}`}>
-            {candleProvenance.source} · {candleProvenance.venue ?? 'venue n/a'} · {candleProvenance.timeframe} · {candleProvenance.quality_status}
-          </span>
+          <span className="chip kind">{provenanceText(candleProvenance)}</span>
         ) : null}
         {bundle?.trace_status === 'available' ? (
           <span className="chart-layer-controls" aria-label="Chart evidence layer">
@@ -313,7 +312,7 @@ export function PriceChart(props: PanelHandleProps) {
               {candleProvenance?.volume_unit ? <span>VOLUME · {candleProvenance.volume_unit.toUpperCase()} ASSET</span> : null}
               <span>AS OF {linked.end ?? new Date((bundle?.provenance.as_of ?? bars.at(-1)!.t) * 1_000).toISOString().slice(0, 10)}</span>
               <span>{archive ? `ARCHIVE · ${archive.manifest_id.slice(0, 12)} · ${archive.market_type} · reconstructed history` : `SNAPSHOT · ${linked.snapshotId ?? 'CURRENT STORE'}`}</span>
-              <span>D decision · F fill · P paper journal event</span>
+              <span>{EVIDENCE_LEGEND}</span>
               {overlays ? <span className="overlay-legend">{overlayLegend(overlays.indicators, overlays.annotations)}</span> : null}
             </div>
           </ChartSurface>

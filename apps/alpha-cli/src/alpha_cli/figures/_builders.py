@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from alpha_cli.figures._common import BuildContext, money, mult, pct
+from alpha_cli.figures._price_signal import price_signal
 from alpha_cli.figures.builders_curves import (
     equity_underwater,
     equity_vs_passive,
@@ -46,7 +47,6 @@ from alpha_cli.figures.builders_portfolio import (
 )
 from alpha_cli.figures.builders_returns import qq_normal, return_distribution
 from alpha_cli.figures.builders_search import optim_surface, optim_trials, research_discovery_trace
-from alpha_cli.figures.builders_signal import price_signal
 from alpha_cli.figures.builders_tradestats import holding_period, trade_pnl, trade_runs_test
 from alpha_research.figures import FigureSpec
 

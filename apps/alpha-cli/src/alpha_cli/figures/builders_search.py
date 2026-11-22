@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from typing import Any
+
+import numpy as np
 
 from alpha_cli.figures import _sources as src
 from alpha_cli.figures._common import BuildContext, _truncation, mult
@@ -23,35 +26,68 @@ def optim_trials(ctx: BuildContext) -> FigureSpec:
     frame = src.require(ctx.rdir, "trials.parquet", "trial", "step")
     groups = frame.partition_by("trial", maintain_order=True)
     best_trial = ctx.manifest.get("best_trial")
-    marks: list[Mark] = []
-    finals: list[float] = []
+    curves: list[tuple[int, tuple[float, ...]]] = []
     for group in groups[:400]:
         trial = int(group["trial"].to_list()[0])
-        returns = src.floats(group["oos_return"], name="oos_return")
         equity, value = [], 1.0
-        for step in returns:
+        for step in src.floats(group["oos_return"], name="oos_return"):
             value *= 1.0 + step
             equity.append(value)
-        finals.append(value)
-        chosen = best_trial is not None and trial == best_trial
+        curves.append((trial, tuple(equity)))
+    if not curves:
+        raise DataError("no trials stored for this run")
+    finals = [curve[-1] for _, curve in curves]
+
+    def line(trial: int, curve: tuple[float, ...], **style: Any) -> LineMark:
+        return LineMark(x=tuple(float(i) for i in range(len(curve))), y=curve, **style)
+
+    # The categorical palette has four verified colours, so only the selected trial and the
+    # three best others are told apart and named; the rest stay a quiet backdrop.
+    others = sorted(
+        (item for item in curves if item[0] != best_trial), key=lambda item: -item[1][-1]
+    )
+    named = others[:3]
+    named_ids = {trial for trial, _ in named}
+    marks: list[Mark] = []
+    quiet = [item for item in others if item[0] not in named_ids]
+    for position, (trial, curve) in enumerate(quiet):
         marks.append(
-            LineMark(
-                x=tuple(float(i) for i in range(len(equity))),
-                y=tuple(equity),
-                role="feature" if chosen else "substrate",
-                alpha=1.0 if chosen else 0.5,
-                label="Selected configuration" if chosen else None,
-                z=2 if chosen else 0,
+            line(
+                trial,
+                curve,
+                role="substrate",
+                alpha=0.5,
+                label=f"Other trials ({len(quiet)})" if position == 0 else None,
             )
         )
-    if not marks:
-        raise DataError("no trials stored for this run")
+    for slot, (trial, curve) in enumerate(named):
+        marks.append(
+            line(
+                trial,
+                curve,
+                role="categorical",
+                palette_index=slot,
+                width=1.4,
+                label=f"Trial {trial} ({mult(curve[-1])})",
+            )
+        )
+    for trial, curve in curves:
+        if trial == best_trial:
+            marks.append(
+                line(
+                    trial,
+                    curve,
+                    role="feature",
+                    label="Selected configuration",
+                    z=2,
+                )
+            )
     return ctx.spec(
         "optim_trials",
         x_label="Out-of-sample step",
         x_kind="numeric",
         artifacts=("trials.parquet",),
-        truncation=_truncation(len(groups), len(marks), "trials"),
+        truncation=_truncation(len(groups), len(curves), "trials"),
         answer=(
             f"{len(groups):,} configurations were tried; their final equity ranged from "
             f"{mult(min(finals))} to {mult(max(finals))}."
@@ -127,7 +163,9 @@ def optim_surface(ctx: BuildContext) -> FigureSpec:
                         values=values,
                         cell_text=text,
                         colorbar_label="OOS Sharpe (sharpe)",
-                        diverging_center=0.0,
+                        # Centre on the sweep's own median: a fixed zero centre turns a sweep
+                        # of small, similar Sharpes into one flat grey.
+                        diverging_center=float(np.median(ok)) if ok else 0.0,
                     ),
                 ),
             ),

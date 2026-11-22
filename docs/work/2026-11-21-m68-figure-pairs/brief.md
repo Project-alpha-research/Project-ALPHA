@@ -15,7 +15,7 @@ Workspace: `apps/alpha-cli/CONTEXT.md` and `apps/alpha-web/CONTEXT.md`. Read the
 
 ## The approved style
 
-The reference is `reference_make_pairs.py` in this folder (a standalone script that made the ten approved sample pairs from a stored
+The reference is `reference_make_pairs.py` (in the branch history, commit `8c64207e`) (a standalone script that made the ten approved sample pairs from a stored
 `alpha validate` run). Copy its conventions, not its file layout.
 
 - **Plain:** white background, matplotlib default colour cycle, a light grid, a plain title ("SPY Drawdown (Underwater Curve)"), axis labels

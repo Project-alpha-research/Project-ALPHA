@@ -11,11 +11,15 @@ from typing import Annotated, Any, Self
 from pydantic import (
     BaseModel,
     ConfigDict,
+    Discriminator,
     Field,
     SerializerFunctionWrapHandler,
+    Tag,
     model_serializer,
     model_validator,
 )
+
+from alpha_cli.spine.owner_rule import OwnerRule
 
 
 class FrozenModel(BaseModel):
@@ -76,10 +80,33 @@ class Rule(FrozenModel):
         return {"kind": self.kind, **self.params}
 
     @property
+    def family_key(self) -> str:
+        """The ledger family of this rule: the kind itself, as it always was."""
+        return self.kind
+
+    @property
+    def default_name(self) -> str:
+        return "-".join([self.kind, *map(str, self.params.values())])
+
+    @property
+    def labels(self) -> tuple[str, ...]:
+        return ()
+
+    @property
     def strategy(self) -> str:
         return {"ma_cross": "ma_crossover", "breakout": "breakout", "tsmom": "ts_momentum"}[
             self.kind
         ]
+
+
+def _rule_tag(value: Any) -> str:
+    kind = value.get("kind") if isinstance(value, dict) else getattr(value, "kind", None)
+    return "owner" if kind == "owner" else "classic"
+
+
+AnyRule = Annotated[
+    Annotated[Rule, Tag("classic")] | Annotated[OwnerRule, Tag("owner")], Discriminator(_rule_tag)
+]
 
 
 class Costs(FrozenModel):
@@ -91,7 +118,7 @@ class IdeaSpec(FrozenModel):
     name: str = ""
     idea: str = ""
     assets: tuple[Annotated[str, Field(min_length=1)], ...] = Field(min_length=1)
-    rule: Rule
+    rule: AnyRule
     costs: Costs = Field(default_factory=Costs)
     # Context gate: `{alias: "series@key"}` and an expression over the aliases. A spec without
     # them dumps without these keys, so its hash, run id and stored spec stay as before. The
@@ -104,9 +131,7 @@ class IdeaSpec(FrozenModel):
     @model_validator(mode="after")
     def default_name(self) -> Self:
         if not self.name:
-            object.__setattr__(
-                self, "name", "-".join([self.rule.kind, *map(str, self.rule.params.values())])
-            )
+            object.__setattr__(self, "name", self.rule.default_name)
         return self
 
     @model_validator(mode="after")
@@ -168,6 +193,8 @@ def load_spec(
         if path.suffix.lower() == ".json":
             return IdeaSpec.model_validate_json(path.read_text(encoding="utf-8"))
         raise ValueError("spec file must have .toml or .json suffix")
+    if rule == "owner":
+        raise ValueError("an owner rule needs a spec file with a [rule.spec] table")
     values: dict[str, Any] = {"kind": rule}
     for item in param or []:
         key, separator, raw = item.partition("=")

@@ -184,9 +184,11 @@ def draw_zone(axes: Axes, mark: ZoneMark, kind: str, cycle_index: int) -> None:
     low, high = (float(v) for v in x_values((mark.x0, mark.x1), kind))
     colour = _kwargs(mark, cycle_index)["color"]
     if mark.y0 is None or mark.y1 is None:
-        axes.axvspan(low, high, facecolor=colour, alpha=0.15 * mark.alpha, lw=0)
+        axes.axvspan(low, high, facecolor=colour, alpha=0.15 * mark.alpha, lw=0, label=mark.label)
     else:
-        axes.fill_between([low, high], mark.y0, mark.y1, color=colour, alpha=0.15, lw=0)
+        axes.fill_between(
+            [low, high], mark.y0, mark.y1, color=colour, alpha=0.15, lw=0, label=mark.label
+        )
 
 
 def draw_rule(axes: Axes, mark: RuleMark, kind: str) -> None:
@@ -218,5 +220,6 @@ def draw_table(axes: Axes, mark: TableMark) -> None:
         cellText=cells, colLabels=list(mark.columns), loc="upper left", cellLoc="left"
     )
     table.auto_set_font_size(False)
-    table.set_fontsize(8)
+    table.set_fontsize(9)
     table.auto_set_column_width(list(range(len(mark.columns))))
+    table.scale(1.0, 1.5)

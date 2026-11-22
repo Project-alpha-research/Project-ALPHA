@@ -193,12 +193,12 @@ _QQ: Final[Text] = (
 )
 _EPISODES: Final[Text] = (
     (
-        "The horizontal axis is the date. The vertical axis is the drawdown, the "
-        "percentage below the highest capital reached so far."
+        "The horizontal axis is the date. The vertical axis is capital as a multiple of "
+        "the start (1.0x is where the run began); the table lists each episode's depth."
     ),
     (
         "Each shaded span is one of the worst drawdown episodes, from its peak through "
-        "its trough to its recovery. The line is the drawdown curve itself."
+        "its trough to its recovery, and the line is the strategy's capital."
     ),
     (
         "Look at the depth of each episode, its length from peak to recovery, and whether"

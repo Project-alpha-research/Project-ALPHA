@@ -69,20 +69,24 @@ def monte_carlo_equity_fans(ctx: BuildContext) -> FigureSpec:
                 y_unit="multiple",
                 note=_MONTE_CARLO_ASSUMPTIONS[family],
                 marks=(
+                    # The theme's recessive "substrate" grey nearly vanishes on the dark
+                    # canvas at a third of its strength; the accent hue holds on both.
                     BandMark(
                         x=x,
                         lower=tuple(q05),
                         upper=tuple(q95),
-                        role="substrate",
-                        alpha=0.35,
+                        role="categorical",
+                        palette_index=0,
+                        alpha=0.40,
                         label="5-95%",
                     ),
                     BandMark(
                         x=x,
                         lower=tuple(q25),
                         upper=tuple(q75),
-                        role="neutral",
-                        alpha=0.45,
+                        role="categorical",
+                        palette_index=0,
+                        alpha=0.65,
                         label="25-75%",
                     ),
                     LineMark(x=x, y=tuple(q50), role="subject", label="Median"),
@@ -119,7 +123,8 @@ def monte_carlo_terminal_returns(ctx: BuildContext) -> FigureSpec:
             frame.filter(frame["family"] == family)["terminal_return"].to_list(),
             dtype=np.float64,
         )
-        edges, counts = _hist(values)
+        # One unit on the axis and in the labels: percent.
+        edges, counts = _hist(values * 100.0)
         median = float(np.median(values))
         medians.append(median)
         panels.append(
@@ -134,11 +139,11 @@ def monte_carlo_terminal_returns(ctx: BuildContext) -> FigureSpec:
                         orientation="vertical",
                         position=0.0,
                         role="reference",
-                        annotate=ValueLabel(text="break-even"),
+                        annotate=ValueLabel(text="break-even", ha="right", dx_pt=-6.0),
                     ),
                     RuleMark(
                         orientation="vertical",
-                        position=median,
+                        position=median * 100.0,
                         role="feature",
                         annotate=ValueLabel(text=f"median {pct(median)}"),
                     ),
@@ -147,7 +152,7 @@ def monte_carlo_terminal_returns(ctx: BuildContext) -> FigureSpec:
         )
     return ctx.spec(
         "monte_carlo_terminal_returns",
-        x_label="Terminal account return",
+        x_label="Terminal account return (%)",
         x_kind="numeric",
         artifacts=("path_metrics.parquet",),
         answer="; ".join(
@@ -170,7 +175,7 @@ def monte_carlo_drawdown_ruin(ctx: BuildContext) -> FigureSpec:
         ruined = [bool(value) for value in rows["ruined"].to_list()]
         ruin_rate = sum(ruined) / len(ruined)
         ruin_rates.append(ruin_rate)
-        edges, counts = _hist(values)
+        edges, counts = _hist(values * 100.0)
         panels.append(
             Panel(
                 panel_id=f"drawdown_{family}",
@@ -184,16 +189,16 @@ def monte_carlo_drawdown_ruin(ctx: BuildContext) -> FigureSpec:
                     HistogramMark(edges=edges, counts=counts, role="down", alpha=0.8),
                     RuleMark(
                         orientation="vertical",
-                        position=0.5,
+                        position=50.0,
                         role="feature",
-                        annotate=ValueLabel(text="50% ruin boundary"),
+                        annotate=ValueLabel(text="50% ruin boundary", ha="right", dx_pt=-6.0),
                     ),
                 ),
             )
         )
     return ctx.spec(
         "monte_carlo_drawdown_ruin",
-        x_label="Maximum peak-to-trough account drawdown",
+        x_label="Maximum peak-to-trough account drawdown (%)",
         x_kind="numeric",
         artifacts=("path_metrics.parquet",),
         answer="; ".join(

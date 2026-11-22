@@ -81,11 +81,18 @@ def draw_trades(
                     ],
                 ],
                 loc="upper left",
+                ncol=2,
             )
         ticks = _year_ticks([r["entry_ts"] for r in done])
         if ticks:
             top.set_xticks([i for i, _ in ticks], [label for _, label in ticks])
         top.set_xlim(-1, max(len(done), 1))
+        if done:
+            # Head room for the legend: tall target-exit bars used to run up behind it.
+            returns = [r["net_return"] for r in done]
+            low, high = min(0.0, *returns), max(0.0, *returns)
+            room = (high - low) or 0.01
+            top.set_ylim(low - 0.05 * room, high + 0.55 * room)
         top.set_xlabel("Each bar is one trade, in entry-date order (year of entry below)")
         top.set_ylabel("Trade return after costs")
         _controls_panel(bottom, primary)
@@ -146,6 +153,7 @@ def _controls_panel(axes: Any, primary: dict[str, Any]) -> None:
             high,
             facecolor="0.85",
             edgecolor="0.6",
+            zorder=1,
             label=f"Random dates, middle 90% of their averages: {low:.2%} to {high:.2%}",
         )
     if drift is not None:
@@ -170,6 +178,7 @@ def _controls_panel(axes: Any, primary: dict[str, Any]) -> None:
             "o",
             color="C1",
             markersize=12,
+            zorder=5,
             label=f"Average completed trade after this setup: {mean:.2%}",
         )
         axes.annotate(

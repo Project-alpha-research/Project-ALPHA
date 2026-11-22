@@ -137,6 +137,7 @@ import type {
   CryptoCacheClean,
   EvidencePage,
   EquitySeries,
+  RunSeries,
   ExperimentSpec,
   FirstBar,
   Ticker,
@@ -424,6 +425,8 @@ export const api = {
     variant: 'plain' | 'annotated' = 'plain',
   ): string => `/api/runs/${id}/figures/${figureId}/image?fmt=${fmt}&variant=${variant}&key=${key}`,
   equity: (id: string): Promise<EquitySeries> => getImmutableJSON(`/api/runs/${id}/equity`),
+  // Not cached for good: the price status depends on the stored bars as they are now.
+  runSeries: (id: string, limit = 2000): Promise<RunSeries> => getJSON(`/api/runs/${id}/series?limit=${limit}`),
   trades: (id: string): Promise<TradeRow[]> => getImmutableJSON(`/api/runs/${id}/trades`),
   dailyRuleEvidence: (id: string, role: DailyRuleRole = 'baseline', offset = 0): Promise<DailyRuleEvidence> => {
     if (!Number.isInteger(offset) || offset < 0 || offset > 1_000_000) {

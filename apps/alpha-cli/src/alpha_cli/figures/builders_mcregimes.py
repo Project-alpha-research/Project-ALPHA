@@ -31,13 +31,26 @@ def monte_carlo_regimes(ctx: BuildContext) -> FigureSpec:
             dtype=np.float64,
         )
         counts, _ = np.histogram(values, bins=edges)
+        bin_edges = tuple(float(value) for value in edges)
+        heights = tuple(float(value) for value in counts)
+        # A faint fill plus a stepped outline: the second state no longer hides the first.
         emission_marks.append(
             HistogramMark(
-                edges=tuple(float(value) for value in edges),
-                counts=tuple(float(value) for value in counts),
+                edges=bin_edges,
+                counts=heights,
                 role="categorical",
                 palette_index=state,
-                alpha=0.55,
+                alpha=0.25,
+            )
+        )
+        emission_marks.append(
+            LineMark(
+                x=bin_edges,
+                y=(*heights, heights[-1]),
+                step=True,
+                role="categorical",
+                palette_index=state,
+                width=1.8,
                 label=label,
             )
         )
@@ -76,7 +89,8 @@ def monte_carlo_regimes(ctx: BuildContext) -> FigureSpec:
                         columns=labels,
                         values=tuple(tuple(row) for row in matrix),
                         cell_text=tuple(tuple(f"{value:.2f}" for value in row) for row in matrix),
-                        colorbar_label="Transition probability",
+                        colorbar_label="Transition probability (0-1)",
+                        diverging_center=None,
                     ),
                 ),
             ),

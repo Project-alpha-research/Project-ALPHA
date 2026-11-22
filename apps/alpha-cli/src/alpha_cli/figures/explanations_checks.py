@@ -31,10 +31,13 @@ _FOLDS: Final[Text] = (
         " the Sharpe ratio measured on that fold's out-of-sample window."
     ),
     (
-        "Each bar is one fold's out-of-sample Sharpe ratio, and the dashed line is zero. "
-        "The second panel shows the same folds' sample sizes or dates."
+        "Each bar is one fold's out-of-sample Sharpe ratio, and the dashed line is the "
+        "mean across folds. The second panel shows each fold's out-of-sample return."
     ),
-    "Look at how many folds are above zero and whether one tall bar carries the average.",
+    (
+        "Look at how many folds sit above the dashed line and whether one tall bar "
+        "carries the average."
+    ),
     (
         "The chart cannot tell you whether fold results are independent, and a short fold"
         " gives a noisy Sharpe ratio."

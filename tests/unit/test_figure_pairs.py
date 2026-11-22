@@ -402,3 +402,62 @@ def test_every_available_builder_renders_both_variants(
         drawn += 1
     assert drawn >= 10
     assert figures_for_command("validate")
+
+
+def test_zone_labels_reach_the_legend() -> None:
+    x = _epochs(60)
+    spec = _spec(
+        "forecast_skill",
+        [
+            LineMark(x=x, y=tuple(1.0 + i / 60 for i in range(60)), label="Skill"),
+            ZoneMark(x0=x[5], x1=x[20], role="feature", label="Pre-cutoff (may be in training)"),
+        ],
+    )
+    figure = _draw(spec, "plain")
+    legend = figure.axes[0].get_legend()
+    assert legend is not None
+    assert "Pre-cutoff (may be in training)" in [t.get_text() for t in legend.get_texts()]
+
+
+def test_time_panels_share_one_horizontal_scale() -> None:
+    x = _epochs(80)
+    marks = [LineMark(x=x, y=tuple(float(i) for i in range(80)))]
+    spec = FigureSpec(
+        figure_id="rolling_risk",
+        title="T",
+        subtitle="s",
+        x_label="Date (UTC)",
+        x_kind="time",
+        panels=(
+            Panel(panel_id="a", y_label="A (x)", y_unit="multiple", marks=tuple(marks)),
+            Panel(
+                panel_id="b",
+                y_label="B (x)",
+                y_unit="multiple",
+                marks=(LineMark(x=x[:40], y=tuple(float(i) for i in range(40))),),
+            ),
+        ),
+        question="q",
+        plain_language_answer="a",
+        uncertainty="u",
+        caveat="c",
+        caption="c",
+    )
+    figure = _draw(spec, "plain")
+    assert figure.axes[0].get_xlim() == figure.axes[1].get_xlim()
+
+
+def test_only_drawdown_series_talk_about_a_prior_peak() -> None:
+    x = _epochs(50)
+    y = tuple(-0.01 * (i % 7) for i in range(50))
+    other = _spec(
+        "equity_vs_passive",
+        [LineMark(x=x, y=y, fill_to=0.0, label="Ahead/behind")],
+        y_percent=True,
+        y_unit="percent",
+        y_label="Ahead/behind (%)",
+    )
+    text = " ".join(explanation(other, _fixed(other)))
+    assert "prior peak" not in text and "below zero" in text
+    under = " ".join(explanation(_all_specs()["underwater"], _fixed(_all_specs()["underwater"])))
+    assert "prior peak" in under

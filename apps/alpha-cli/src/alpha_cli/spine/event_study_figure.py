@@ -87,7 +87,8 @@ def draw_event_study(
                     linestyle=":",
                 )
             axes.axhline(0, color="black", linewidth=0.8)
-            axes.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
+            # The zoomed panel spans a few percent: whole-percent labels all read "0%".
+            axes.yaxis.set_major_formatter(PercentFormatter(1, decimals=0 if axes is top else None))
             axes.grid(alpha=0.3)
             axes.set_axisbelow(True)
             axes.legend(loc="upper left")

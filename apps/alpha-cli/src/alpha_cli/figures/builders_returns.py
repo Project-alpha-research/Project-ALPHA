@@ -141,7 +141,7 @@ def qq_normal(ctx: BuildContext) -> FigureSpec:
         panels=(
             Panel(
                 panel_id="qq",
-                y_label="Observed return (ratio)",
+                y_label="Return (ratio)",
                 y_unit="ratio",
                 marks=(
                     LineMark(

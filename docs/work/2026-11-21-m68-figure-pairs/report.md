@@ -46,7 +46,6 @@ None changed. The protected renderer, its catalogue and their pins are untouched
 - The fixed explanation sentences were written from the catalogue and a reading of the builders. They were not checked panel by panel for every figure, so a sentence may name a series a given run does not draw.
 - Only 16 figures could be rendered from the synthetic rule run (the others need validate, optimisation, portfolio, Monte Carlo, forecast or ML runs). The other builders are covered by spec-level tests and the existing synthetic builder tests, which now render both variants only for the figures in `test_figure_pairs`. Their look was not inspected by eye.
 - Held-back band: shown only when the data end within 10% of the span before 2024-01-01. Not seen on a real run.
-- The "upper 5% tail" band is computed from histogram bins, so it is bin-accurate, not exact.
+- The two-sentence tail-region ("upper 5% tail") is computed from histogram bins, so it is bin-accurate, not exact.
 - Side-by-side display of both charts on wide screens was not built; the card uses the toggle.
-- The work-order reference script `reference_make_pairs.py` was removed from the task folder: the task-folder test allows only stage files, and the script fails ruff (87 findings). It stays in git history (commit 8c64207).
-- Six sample pairs from a synthetic run are on the branch `m68-figure-pairs-samples` (the task-folder test does not allow image files in `docs/work`).
+- The reference script and the six sample pairs were removed from the folder when the pull request landed (a task folder holds only plan and stage files). The reference script stays in the branch history (commit `8c64207e`).

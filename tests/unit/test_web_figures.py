@@ -23,8 +23,10 @@ _RUN = "0123456789abcdef"
 _KEY_ENVIRONMENT: dict[str, Any] = {
     "renderer_version": 1,
     "matplotlib_version": "3.11.0",
-    "theme_id": "alpha-dark",
-    "theme_digest": "d" * 64,
+    "theme_id": "alpha-light",
+    "theme_digest": "l" * 64,
+    "dark_theme_id": "alpha-dark",
+    "dark_theme_digest": "d" * 64,
     "figures": [
         {
             "figure_id": "equity_underwater",

@@ -11,7 +11,9 @@ from alpha_research.figures import (
     LineMark,
     Mark,
     Panel,
+    RuleMark,
     TableMark,
+    ValueLabel,
     ZoneMark,
 )
 
@@ -25,7 +27,29 @@ def drawdown_episodes(ctx: BuildContext) -> FigureSpec:
     episodes = compute(equity, top=5)
     if not episodes:
         raise DataError("this run never drew down; there are no episodes to show")
-    zones: list[Mark] = [LineMark(x=ts, y=equity, role="subject", label="Equity")]
+    # The panel is not time-shared (the table beside it forbids that), so it carries no tick
+    # labels of its own; the first and last dates are printed on the strip instead.
+    zones: list[Mark] = [
+        LineMark(x=ts, y=equity, role="subject", label="Equity"),
+        RuleMark(
+            orientation="vertical",
+            position=ts[0],
+            role="reference",
+            dashed=False,
+            width=0.6,
+            z=2,
+            annotate=ValueLabel(text=_day(ts[0]), ha="left", dx_pt=4.0),
+        ),
+        RuleMark(
+            orientation="vertical",
+            position=ts[-1],
+            role="reference",
+            dashed=False,
+            width=0.6,
+            z=2,
+            annotate=ValueLabel(text=_day(ts[-1]), ha="right", dx_pt=-4.0),
+        ),
+    ]
     rows: list[tuple[str, ...]] = []
     for rank, episode in enumerate(episodes, start=1):
         end_index = episode.recovery_index if episode.recovery_index is not None else len(ts) - 1
@@ -36,6 +60,7 @@ def drawdown_episodes(ctx: BuildContext) -> FigureSpec:
                 role="down",
                 alpha=0.16,
                 label="Drawdown window" if rank == 1 else None,
+                corner_label=ValueLabel(text=f"#{rank}", dx_pt=3.0, dy_pt=-20.0),
             )
         )
         rows.append(
@@ -49,7 +74,6 @@ def drawdown_episodes(ctx: BuildContext) -> FigureSpec:
                 "-" if episode.recovery_length is None else f"{episode.recovery_length}",
             )
         )
-    unrecovered = sum(1 for item in episodes if item.recovery_index is None)
     return ctx.spec(
         "drawdown_episodes",
         x_label="Date (UTC)",
@@ -58,7 +82,7 @@ def drawdown_episodes(ctx: BuildContext) -> FigureSpec:
             f"The worst drawdown was {pct(episodes[0].depth)} over {episodes[0].length} sessions"
             + (
                 "; it had not recovered by the end of the window."
-                if unrecovered
+                if episodes[0].recovery_index is None
                 else f", recovering in {episodes[0].recovery_length} sessions."
             )
         ),
@@ -68,6 +92,8 @@ def drawdown_episodes(ctx: BuildContext) -> FigureSpec:
                 y_label="Growth of 1 (x initial)",
                 y_unit="multiple",
                 height_ratio=2.0,
+                # No legend: it sat on the first date. The numbered blocks match the table.
+                legend=False,
                 marks=tuple(zones),
             ),
             Panel(

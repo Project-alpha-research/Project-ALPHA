@@ -110,14 +110,21 @@ def plt_align(axes: Axes) -> None:
         label.set_horizontalalignment("right")
 
 
+def _share_x(spec: FigureSpec) -> bool:
+    """Time panels share one horizontal scale; heatmaps, tables and forests stay independent."""
+    kinds = (HeatmapMark, TableMark, ErrorBarMark)
+    solo = any(isinstance(m, kinds) for panel in spec.panels for m in panel.marks)
+    return spec.x_kind == "time" and not solo and len(spec.panels) > 1
+
+
 def _x_axis(axes_list: list[Axes], spec: FigureSpec) -> None:
     if spec.x_kind == "time":
         import matplotlib.dates as dates
 
         mdates: Any = dates
 
-        locator = mdates.AutoDateLocator(minticks=3, maxticks=8)
         for axes in axes_list:
+            locator = mdates.AutoDateLocator(minticks=3, maxticks=8)
             if not axes.images and axes.get_xlim()[1] > 1000:
                 axes.xaxis.set_major_locator(locator)
                 axes.xaxis.set_major_formatter(mdates.ConciseDateFormatter(locator))
@@ -171,7 +178,15 @@ def _annotate(figure: Figure, spec: FigureSpec, axes_list: list[Axes]) -> None:
             continue
         tables = [m for m in panel.marks if isinstance(m, TableMark)]
         if tables:
-            ps.band(axes, 0.0, 1.0, f"stored evidence table: {len(tables[0].rows)} rows")
+            axes.annotate(
+                f"stored evidence table: {len(tables[0].rows)} rows",
+                xy=(0.99, 0.98),
+                xycoords="axes fraction",
+                ha="right",
+                va="top",
+                fontsize=8,
+                color="0.25",
+            )
             continue
         for call in plan.calls[:3]:
             xy = (float(pm.x_values((call.x,), spec.x_kind)[0]), call.y)
@@ -198,14 +213,20 @@ def draw_spec(spec: FigureSpec, variant: str, sentences: list[str]) -> Figure:
         bottom=(foot + 0.5) / total,
     )
     axes_list: list[Axes] = []
+    shared = _share_x(spec)
     for number, panel in enumerate(spec.panels):
-        axes = figure.add_subplot(grid[number])
+        axes = figure.add_subplot(
+            grid[number], sharex=axes_list[0] if shared and axes_list else None
+        )
         drawn = False
         for index, mark in enumerate(panel.marks):
             _draw_mark(axes, figure, spec, mark, index)
             drawn = drawn or mark.label is not None
         _style_axes(axes, spec, panel, number == len(spec.panels) - 1, drawn)
         axes_list.append(axes)
+    if shared:
+        for axes in axes_list[:-1]:
+            axes.tick_params(labelbottom=False)
     _x_axis(axes_list, spec)
     if spec.x_limits is not None and spec.x_kind != "category":
         low, high = (float(v) for v in pm.x_values(spec.x_limits, spec.x_kind))

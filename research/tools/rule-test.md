@@ -18,7 +18,7 @@ uv run alpha test <spec.toml> --recheck --json   # system check, not a trial; ex
 ```
 A spec file holds `name`, `idea`, `assets`, a `[rule]` table (`kind` plus its numbers) and an optional `[costs]` table
 (`fee_bps`, `slippage_bps`, or `costs = "class-default"`). Kinds: `ma_cross` (`fast`, `slow`), `breakout` (`window`), `tsmom` (`lookback`, `skip`), and `owner`
-(a `[rule.spec]` table, long or flat: [language](../../docs/reference/owner-rule-language.md), `research/examples/owner-rsi-dip.toml`).
+(a `[rule.spec]` table: [language](../../docs/reference/owner-rule-language.md); `examples/owner-rsi-dip.toml`, `examples/owner-breakout-rsi-cross.toml`).
 Asset: symbol or symbol@store. No file with flags. `--quick`: small gauntlet. `idea_card`: [card](idea-card.md). `[context]`, `when`: `--plan` only.
 **How to read it**
 - Each asset carries its own [data health verdict](data-health.md). Use `--check-data` to check missing or changed inputs before testing.

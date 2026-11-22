@@ -94,7 +94,7 @@ Moved to [web-api-reads.md § Reads and writes](web-api-reads.md#reads-and-write
   `benchmark` and `exposure` (or null), `trades` (cap 2,000, cap stated in `bounds.trades`), `bands` (tradable, scored, walk-forward tests from the
   run record), `price` (`status`, `ts`, `close`), `bounds` and `provenance.artifact_sha256`. Points use `_bounded_rows`: both ends kept.
   `price.status` is `available`, `bars_changed_since_run`, `price_not_saved_with_run`, `price_unavailable` or a snapshot status; only
-  `available` carries bars ([rule](web-frontend.md#charts)). `chart-bundle` keeps its older status words.
+  `available` carries bars ([rule](web-frontend-charts.md#charts)). `chart-bundle` keeps its older status words.
 - `GET /api/chart-datasets` (`alpha data chart-datasets`) is discovery only and returns 409 on a CLI failure.
 
 ## API contract
@@ -167,6 +167,6 @@ Moved to [web-api-reads.md § Reads and writes](web-api-reads.md#reads-and-write
 1. Make the CLI own the data: an `alpha ... --json` projection or a public `alpha_cli` read seam.
 2. Add a thin adapter in `_<area>.py` that calls `_run_json`, and a router in `api/` with a strict response model.
 3. Register it in `app.py`. Regenerate `openapi.json` and the operation classification (above).
-4. Regenerate the TypeScript client — see [web-frontend.md § Generated API client](web-frontend.md#generated-api-client).
+4. Regenerate the TypeScript client — see [web-frontend-charts.md § Generated API client](web-frontend-charts.md#generated-api-client).
 5. Add tests in `tests/integration/test_web_api_<area>.py` against an isolated temporary store; cover the CLI-failure
    (4xx) path as well as success.

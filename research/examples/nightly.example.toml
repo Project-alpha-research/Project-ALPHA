@@ -1,9 +1,10 @@
-# Example for `alpha nightly run --config nightly.toml`. Copy it, then set your own file paths.
-# Asset names are placeholders. They must be names your stores hold.
+# Example for `alpha nightly run --config nightly.toml`. It works as it is with the two spec files
+# beside it (nightly-rule.toml, nightly-setup.toml). Copy all three, then change them to your own.
+# SPY is an example: every asset must be a name your stores hold, the same in all three files.
 # The run judges the system on stored data. It never judges whether an idea is good.
 
 # Assets whose data health is checked first. Use the same names as in the two spec files.
-assets = ["AAA", "BBB"]
+assets = ["SPY"]
 
 # Keep this rule spec fixed. An identical spec resolves to the same test every night,
 # so repeats do not look like new ideas. See research/tools/rule-test.md for the format.

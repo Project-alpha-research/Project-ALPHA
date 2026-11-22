@@ -77,10 +77,12 @@ def _rule(n: int, total: int, e: dict[str, Any]) -> list[str]:
         lines.append(f"    Held back: {t['held_back']}")
     lines += _wrap("Reading:", str(e["sentence"]), 4)
     lines.append(f"    Evidence word: {e['word']}")
+    from alpha_cli.spine.reading import relation_text  # lazy: reading pulls in scipy
+
     aim = e["aim"]
     lines.append(
         f"    Aim: out-of-sample Sharpe {aim['observed']:.2f} against buy-and-hold "
-        f"{aim['aim']:.2f}: {aim['relation']}."
+        f"{aim['aim']:.2f}; {relation_text(aim['relation'])}."
         if aim
         else "    Aim: none stored for this run."
     )

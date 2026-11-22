@@ -15,7 +15,7 @@ from typing import Any
 
 from alpha_cli.run_store import read_manifest
 from alpha_cli.spine.facts import read_json
-from alpha_cli.spine.reading import reading_word, stored_reading
+from alpha_cli.spine.reading import no_trades, reading_word, stored_reading
 
 OLD_LEVEL = "the level used by the old grade"
 
@@ -116,7 +116,13 @@ def _walk_forward(manifest: Mapping[str, Any]) -> str:
         return "not checked"
     sharpe = _num(metrics.get("sharpe"))
     if sharpe is None:
-        return "fault, the out-of-sample Sharpe could not be computed"
+        scored = ((manifest.get("spine") or {}).get("periods") or {}).get("scored") or {}
+        idle = no_trades(manifest, (scored.get("strategy") or {}).get("trades"))
+        return (
+            f"not checked. {idle}"
+            if idle
+            else "fault, the out-of-sample Sharpe could not be computed"
+        )
     return f"sound, out-of-sample Sharpe {sharpe:.4f}"
 
 

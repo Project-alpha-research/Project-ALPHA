@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import difflib
 import json
 import tomllib
 from collections import Counter
@@ -110,10 +111,39 @@ def _source(path: Path) -> str:
     return source
 
 
+def _full_name(symbol: str, searched: dict[str, Path], stored: BarTimeframe) -> str:
+    names = _stored_names(searched, stored)
+    if symbol in names or "/" in symbol:
+        return symbol
+    short = [name for name in names if name.split("/")[0] == symbol]
+    return short[0] if len(short) == 1 else symbol
+
+
+def _stored_names(searched: dict[str, Path], stored: BarTimeframe) -> list[str]:
+    names: set[str] = set()
+    for directory in searched.values():
+        root = ParquetStore(store_dir(directory, stored)).root / "provenance"
+        if root.exists():
+            names.update(str(p.relative_to(root).with_suffix("")) for p in root.rglob("*.json"))
+    return sorted(names)
+
+
+def _unknown_asset(symbol: str, searched: dict[str, Path], stored: BarTimeframe) -> DataError:
+    names = _stored_names(searched, stored)
+    close = difflib.get_close_matches(symbol, names, n=5, cutoff=0.4)
+    close += [name for name in names if name.split("/")[0] == symbol and name not in close]
+    listed = f" Closest stored names: {', '.join(close)}." if close else ""
+    return DataError(
+        f"asset {symbol!r} not found; stores searched: {', '.join(searched)}.{listed} "
+        "Run `alpha data symbols` to list every stored name."
+    )
+
+
 def resolve_asset(asset: str, *, data_dir: Path, timeframe: str = "1D") -> ResolvedAsset:
     """Resolve an explicit store or the first provenance match, without reading any bars.
 
     ``timeframe`` picks the stored bar size whose store root is searched (daily: ``store/``).
+    A short name (BTC) resolves when exactly one stored symbol starts with it (BTC/USDT).
     """
     stored = parse_timeframe(timeframe)
     stores = _stores(data_dir)
@@ -121,12 +151,13 @@ def resolve_asset(asset: str, *, data_dir: Path, timeframe: str = "1D") -> Resol
     if separator and requested not in stores:
         raise DataError(f"unknown store {requested!r}; known stores: {', '.join(stores)}")
     searched = {requested: stores[requested]} if separator else stores
+    symbol = _full_name(symbol, searched, stored)
     matches: list[tuple[str, Path, Path]] = []
     for name, directory in searched.items():
         path = ParquetStore(store_dir(directory, stored))._provenance_path(symbol)
         if path.exists():
             matches.append((name, directory, path))
     if not matches:
-        raise DataError(f"asset {symbol!r} not found; stores searched: {', '.join(searched)}")
+        raise _unknown_asset(symbol, searched, stored)
     name, directory, path = matches[0]
     return ResolvedAsset(symbol, name, directory, _source(path), len(matches) > 1)

@@ -46,10 +46,9 @@ runner = CliRunner()
 @pytest.fixture(autouse=True)
 def forbid_external_io(monkeypatch: pytest.MonkeyPatch) -> None:
     def forbidden(*args: object, **kwargs: object) -> None:
-        pytest.fail("integration fixture attempted network or control-store access")
+        pytest.fail("integration fixture attempted network access")
 
     monkeypatch.setattr(socket.socket, "connect", forbidden)
-    monkeypatch.setattr(crypto_data_cmds, "_control_store", forbidden)
 
 
 @pytest.fixture

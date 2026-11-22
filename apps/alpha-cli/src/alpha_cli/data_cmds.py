@@ -387,6 +387,26 @@ def pull(
         typer.echo(line)
 
 
+@data_app.command("coverage")
+def coverage(json_out: bool = typer.Option(False, "--json", help="emit JSON")) -> None:
+    """Per stored symbol: first date, last date, bars and the last health result."""
+    from alpha_cli.data_update_cmds import run_coverage
+
+    run_coverage(json_out)
+
+
+@data_app.command("update")
+def update(
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="print what would be pulled; pull nothing"
+    ),
+) -> None:
+    """Pull every stored symbol up to today, from the source recorded for it."""
+    from alpha_cli.data_update_cmds import run_update
+
+    run_update(dry_run)
+
+
 @data_app.command("source-status")
 def source_status(
     symbol: str,

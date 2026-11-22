@@ -140,7 +140,7 @@ def query(
         raise SpineError(
             "UNKNOWN_QUESTION",
             f"Unknown question {question!r}.",
-            "Choose a named ledger question.",
+            f"Choose one of these questions: {', '.join(sorted(QUESTIONS))}.",
             sorted(QUESTIONS),
         )
     definition = QUESTIONS[question]

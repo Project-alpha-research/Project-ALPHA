@@ -94,3 +94,37 @@ def test_a_single_horizon_is_reported(home: Path) -> None:
         "lookalike", "--asset", "SPY", "--last", "20", "--horizons", "3", "--max-distance", "1e6"
     )
     assert ran["settings"]["horizons"] == [3]
+
+
+def test_the_headline_says_the_comparison_ends_at_the_held_back_boundary(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import math
+    from datetime import UTC, datetime, timedelta
+
+    import polars as pl
+
+    from alpha_core.reserve import RESERVED_START
+
+    data = tmp_path / "data"
+    start = datetime.fromisoformat(RESERVED_START).replace(tzinfo=UTC) - timedelta(days=380)
+    closes = [100 + 5 * math.sin(i / 7) + i * 0.02 for i in range(400)]
+    frame = pl.DataFrame(
+        {
+            "ts": [start + timedelta(days=i) for i in range(400)],
+            "open": closes,
+            "high": [c + 1 for c in closes],
+            "low": [c - 1 for c in closes],
+            "close": closes,
+            "volume": [1000.0] * 400,
+        }
+    )
+    ParquetStore(data / "store").write_bars("SPY", frame)
+    ParquetStore(data / "store").write_provenance(
+        "SPY", source="alpaca", adapter_version="1", parser_version="1"
+    )
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(data))
+    text = CliRunner().invoke(app(), ["lookalike", "--asset", "SPY", "--last", "20"]).stdout
+    first = text.splitlines()[0]
+    assert "ends at the held-back boundary" in first
+    assert "kept for the owner's confirmation" in first

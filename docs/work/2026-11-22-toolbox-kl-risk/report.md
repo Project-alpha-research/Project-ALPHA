@@ -27,7 +27,7 @@ stopped at collection with `ModuleNotFoundError: alpha_cli.toolbox.families.risk
 - Loss figures use the package `value_at_risk` where a historical figure is shown. The Kupiec and Christoffersen backtests use an expanding
   historical figure that sees only earlier bars (default 60 bars of history first).
 - Vol target: a flat trailing window has no volatility, so the leverage cap applies to the next bar.
-- Kelly uses each trade's `realized_return` (return on the amount used); the stake is in equity per trade.
+- Sizing uses each trade's after-cost return: `realized_pnl` over `quantity * entry_price` (`realized_return` leaves commissions out); the stake is in equity per trade.
 - Edited outside my files (needed): `registry.py` (one import, one `*` entry); `tests/unit/test_toolbox_montecarlo_checks.py`
   (`== 16` became `>= 16`, since the registry now grows); the situations block in `research/tools/toolbox-by-situation.md`
   (a test requires it to equal the registry). The other builders touch the same block: expect a merge conflict; regenerate it with

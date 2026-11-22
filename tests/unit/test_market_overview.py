@@ -196,3 +196,10 @@ def test_overview_validates_only_the_window_of_a_long_history(
     result = market_overview_cmds.build_market_overview(tmp_path, store="1D", window=30, limit=5)
     assert result["assets"][0]["asset"] == "LONG"
     assert len(built) <= market_overview_cmds.MAX_BARS_READ
+
+
+def test_the_text_overview_states_the_period_beside_each_percent(data_dir: Path) -> None:
+    result = runner.invoke(app, ["data", "market-overview", "--window", "30", "--limit", "2"])
+    assert result.exit_code == 0, result.output
+    lines = [line for line in result.stdout.splitlines() if "%" in line]
+    assert lines and all("over the last 30 days" in line for line in lines)

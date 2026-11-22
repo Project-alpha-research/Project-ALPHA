@@ -1,0 +1,10 @@
+# Rule spec for the nightly example (research/examples/nightly.example.toml). Keep it fixed:
+# the same spec on the same data is the same test every night, so it adds no new try.
+name = "nightly-ma-cross-50-200"
+idea = "Hold while the 50-day average is above the 200-day average; a fixed pipeline check, not an idea"
+assets = ["SPY"]
+
+[rule]
+kind = "ma_cross"
+fast = 50
+slow = 200

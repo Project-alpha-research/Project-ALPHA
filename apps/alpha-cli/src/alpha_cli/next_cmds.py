@@ -160,7 +160,7 @@ def _paths(smallest: str | None) -> dict[str, dict[str, str]]:
         "rdagent_idea": {
             "say": "Let RD-Agent propose ideas.",
             "command": "alpha rdagent init",
-            "note": "It writes rdagent.toml and lists what is missing. Then run --dry-run.",
+            "note": "It writes rdagent.toml. Then check it: alpha rdagent run --dry-run",
         },
     }
 

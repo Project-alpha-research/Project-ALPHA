@@ -416,3 +416,14 @@ def test_a_negative_reference_t_statistic_is_refused(tmp_path: Path) -> None:
     prepare(tmp_path)
     doc = go(tmp_path, HURDLE, "hurdle=-3")
     assert doc["values"]["hurdle_p_value"] is None and "above zero" in doc["reasons"]["hurdle"]
+
+
+def test_deflated_sharpe_reading_says_which_tries_and_why_the_test_can_differ() -> None:
+    from alpha_cli.toolbox.families.overfit import DEFLATED_SHARPE
+
+    text = DEFLATED_SHARPE.reading
+
+    assert "counts only those recorded tries" in text
+    assert "random price tests" in text
+    assert "number of trades" in text
+    assert "not clear of chance" in text

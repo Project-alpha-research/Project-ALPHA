@@ -76,6 +76,11 @@ class BuildContext:
 
     @property
     def strategy(self) -> str:
+        """The idea's name when the run has one (a rule test), else the engine strategy."""
+        spine = self.manifest.get("spine")
+        name = spine.get("name") if isinstance(spine, dict) else None
+        if isinstance(name, str) and name:
+            return name
         value = self.field("strategy", "strategy_name")
         return value if isinstance(value, str) else self.command
 
@@ -174,7 +179,7 @@ _INDICATOR_UNITS = {
 #: must fit: these are budgeted for a short stacked panel, so every one stays under about
 #: 22 characters rather than eliding into a shrug.
 _UNIT_LABELS = {
-    "account_currency": "Amount (account ccy)",
+    "account_currency": "Amount (account currency)",
     "correlation": "Correlation (-1 to 1)",
     "count": "Count (n)",
     "days": "Duration (days)",

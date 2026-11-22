@@ -309,7 +309,10 @@ def test_price_sized_operands_may_meet_zero_or_each_other() -> None:
 
 def test_existing_rule_hash_and_family_do_not_move_with_lag_support() -> None:
     """Pinned before indicator lag and channels existed: lag 0 serialises as it always did."""
-    spec = load_spec(Path("research/examples/owner-rsi-dip.toml"))
+    # Pin change (M99): a spec without costs takes the class default; the stored runs of this
+    # example state the flat default, so the pinned hash is that of the example with it stated.
+    raw = tomllib.loads(Path("research/examples/owner-rsi-dip.toml").read_text())
+    spec = IdeaSpec.model_validate({**raw, "costs": {"fee_bps": 1.0, "slippage_bps": 2.0}})
     assert spec.spec_sha256 == "a095483e067ac6f93a96d78a3a3cfc7404166638572363884a441808c77de7ea"
     assert spec.rule.family_key == "owner:45096ad611f7"
     zero = json.loads(json.dumps(RSI_DIP))

@@ -38,9 +38,9 @@ from alpha_web._catalog import (
     _cli_environment,
     _run_json,
     _strip_ansi,
+    alpha_executable,
 )
 
-_ALPHA_BIN = "alpha"  # console script on the venv PATH
 _RUN_ID_RE = re.compile(r"->\s+run\s+([0-9a-f]{16})\b")
 _SESSION_ID_RE = re.compile(
     r"->\s+(?:paper\s+)?session\s+"
@@ -58,7 +58,7 @@ _UI_HEAVYWEIGHT_NICE = 10
 
 def _command(args: list[str]) -> list[str]:
     """The argv to spawn (seam: tests monkeypatch this with a fast fake command)."""
-    return [_ALPHA_BIN, *args]
+    return [*alpha_executable(), *args]
 
 
 class Job:

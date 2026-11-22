@@ -21,7 +21,7 @@ test('chart checklist reports backend values and dock layout survives navigation
   expect(evaluations).toBe(1)
   await page.getByRole('tab', { name: 'Indicators', exact: true }).click()
   await expect(page.getByRole('textbox', { name: 'Search indicators' })).toBeVisible()
-  await openTask(page, 'Research', 'Literature')
+  await openTask(page, 'Research', 'Ideas')
   await openTask(page, 'Data & Assets', 'Price')
   await expect(page.getByRole('tab', { name: 'Indicators', exact: true })).toHaveAttribute('aria-selected', 'true')
   await openDeskTool(page, 'Workspace results')

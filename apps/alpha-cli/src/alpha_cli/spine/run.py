@@ -8,6 +8,7 @@ import hashlib
 import io
 import json
 import math
+import os
 from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
@@ -199,7 +200,7 @@ def prepare_bars(
     ppy, basis = ppy_given or annualisation([bar.ts for bar in bars], bar_size=DAILY)
     result["periods_per_year"] = ppy
     result["periods_per_year_basis"] = basis
-    klass = cost_classes.asset_class(resolved)
+    klass = cost_classes.asset_class(resolved, by_symbol=idea.costs_class_default)
     row, assumed = cost_classes.class_row(klass)
     chosen = row if idea.costs_class_default else None
     if chosen is not None:
@@ -366,6 +367,7 @@ def write_run(
         home,
         result,
         snapshot=snapshot,
+        workers=knobs.max_workers or 1,
     )
     stored = report_to_manifest(out.report)
     stored.update(
@@ -431,8 +433,12 @@ def write_run(
 
 
 def gauntlet_knobs(seed: int, quick: bool) -> _gauntlet.GauntletParams:
-    """The engine settings of a rule test: the full gauntlet, or the small labelled one."""
-    knobs = _gauntlet.GauntletParams(seed=seed)
+    """The engine settings of a rule test: the full gauntlet, or the small labelled one.
+
+    The full gauntlet runs its independent engine runs on all cores but one; the results do not
+    depend on the worker count. The small one stays serial.
+    """
+    knobs = _gauntlet.GauntletParams(seed=seed, max_workers=max(1, (os.cpu_count() or 1) - 1))
     if quick:
         knobs = replace(
             knobs, tier1_paths=20, tier2_paths=4, tier3_paths=4, n_resamples=50, max_workers=1

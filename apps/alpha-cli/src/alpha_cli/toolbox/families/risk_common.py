@@ -68,7 +68,9 @@ def closed_trades(inputs: Inputs) -> Trades:
     import numpy as np
 
     run = inputs.stored
-    frame = run.table("run_trades", "entry_ts", "exit_ts", "realized_pnl", "realized_return")
+    frame = run.table(
+        "run_trades", "entry_ts", "exit_ts", "realized_pnl", "quantity", "entry_price"
+    )
     for entry, exit_ts in frame.select("entry_ts", "exit_ts").iter_rows():
         if any(not isinstance(ts, datetime) or ts.utcoffset() is None for ts in (entry, exit_ts)):
             raise ValueError("Closed trades require timezone-aware entry and exit dates")
@@ -78,9 +80,13 @@ def closed_trades(inputs: Inputs) -> Trades:
             )
     ordered = frame.sort("entry_ts", maintain_order=True)
     pnl = ordered["realized_pnl"].to_numpy().astype(np.float64)
-    ret = ordered["realized_return"].to_numpy().astype(np.float64)
-    if not (np.isfinite(pnl).all() and np.isfinite(ret).all()):
-        raise ValueError("trades.parquet requires finite realized_pnl and realized_return")
+    quantity = ordered["quantity"].to_numpy().astype(np.float64)
+    price = ordered["entry_price"].to_numpy().astype(np.float64)
+    cost = quantity * price
+    if not (np.isfinite(pnl).all() and np.isfinite(cost).all() and (cost > 0).all()):
+        raise ValueError("trades.parquet requires finite profit and positive quantity * price")
+    # After-cost return on the amount used: realized_return leaves commissions out.
+    ret = pnl / cost
     return Trades(pnl, ret, ordered["entry_ts"].to_list(), ordered["exit_ts"].to_list())
 
 
@@ -105,6 +111,7 @@ def check(
     params: tuple[Param, ...] = (),
     family: str = "risk",
     cost: Literal["instant", "seconds", "minutes"] = "instant",
+    version: int = 1,
 ) -> ToolSpec:
     """One diagnostic check: its reference is the known-answer test named like the check."""
     return ToolSpec(
@@ -121,6 +128,7 @@ def check(
         reference=f"tests/unit/{tests}.py::test_{tool_id.split('.')[1]}",
         compute=compute,
         cost=cost,
+        version=version,
         time_safety="hindsight",
         poison_test=POISON,
     )

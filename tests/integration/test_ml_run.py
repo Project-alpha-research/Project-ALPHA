@@ -214,3 +214,18 @@ def test_results_list_an_ml_run_without_calling_it_a_fault(home: Path, tmp_path:
     line = next(line for line in listed.output.splitlines() if run_id in line)
     assert "ml_run" in line
     assert "fault" not in line
+
+
+def test_result_readers_say_an_ml_run_has_no_diagnostics(home: Path, tmp_path: Path) -> None:
+    run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
+    runner = CliRunner()
+    report = runner.invoke(app, ["report", run_id])
+    assert report.exit_code == 0, report.output
+    assert "ml_replay" in report.output
+    shown = json.loads(runner.invoke(app, ["results", "show", run_id, "--json"]).output)
+    assert "ML run" in shown["runs"][0]["diagnostics_reason"]
+    assert "re-run alpha test" not in shown["runs"][0]["diagnostics_reason"]
+    diagnosed = runner.invoke(app, ["diagnose", run_id, "--json"])
+    assert diagnosed.exit_code != 0
+    assert "ML replay" in diagnosed.output
+    assert "alpha report" in diagnosed.output

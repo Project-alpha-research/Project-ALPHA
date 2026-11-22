@@ -14,7 +14,7 @@ A complete commented file: `research/examples/setup-spec.example.toml`. An unkno
 |---|---|
 | `[setup]` required | `name = "dip"`, `idea = "text"`, `assets = ["SPY"]`, `timeframe = "1D"`, `event = "crosses_above(close, sma(close, 10))"` |
 | `[filters]` | `uptrend = "close > sma(close, 50)"`. All must be true. Order is kept: the first false one is the rejection reason |
-| `[trigger]` | `when = "close > highest(high, 3)"`, `within = 2` bars after the event (0 = same day) |
+| `[trigger]` | `when = "close > prev(highest(high, 3))"`, `within = 2` bars after the event (0 = same day) |
 | `[reference]` | `swing_low = "lowest(low, 5)"`. A named level read at the trigger close; drawn on the sheets; `[exit]` may use it by name |
 | `[context]` | `es_pos = "cot_nc_net_pct_156w@13874A"`. Use the alias in filters, trigger or reference, never in `[exit]` |
 | `[exit]` | see below; needed only by `alpha setup trade` |

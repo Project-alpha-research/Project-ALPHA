@@ -15,7 +15,7 @@ uptrend = "close > sma(close, 50)"
 dipped = "within_bars(close < sma(close, 10), 5)"
 
 [trigger]                     # optional: wait for a second condition after the event
-when = "close > highest(high, 3)"   # must become true ...
+when = "close > prev(highest(high, 3))"   # must become true ...
 within = 2                          # ... within this many bars after the event (0 = on the event day)
 
 [reference]                   # optional: named price levels, read at the trigger close

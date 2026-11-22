@@ -90,7 +90,7 @@ def problems(path: Path) -> list[str]:
                     continue
                 elif _WORD.match(token) and " ".join([*words, token]) in known:
                     words.append(token)
-                elif not words or " ".join(words) in leaves:
+                elif words and " ".join(words) in leaves:
                     done = True  # an argument value
                 else:
                     found.append(f"{path.name}: no command 'alpha {' '.join([*words, token])}'")
@@ -174,3 +174,11 @@ def test_example_setup_spec_loads_and_has_every_section() -> None:
         "[study]",
     ):
         assert section in card, section
+
+
+def test_unknown_root_command_and_option_are_reported(tmp_path: Path) -> None:
+    card = tmp_path / "x.md"
+    card.write_text("`alpha nosuchcommand --invalid`\n`alpha test --bogus`\n", encoding="utf-8")
+    found = problems(card)
+    assert any("nosuchcommand" in line for line in found)
+    assert any("--bogus" in line for line in found)

@@ -179,6 +179,12 @@ describe('rule-test report model', () => {
     expect(summaryHeadline(run, period(run))).toContain(`${wording} 20.0% for simply holding the market`)
   })
 
+  it('says that both returns cover the same period, and which', () => {
+    const headline = summaryHeadline(test, period(test))
+    expect(headline).toContain('for simply holding the market over the same days (2017-02-01 to 2019-07-01).')
+    expect(headline).toContain('could trade from 2017-02-01 to 2019-07-01')
+  })
+
   it('uses only the available side of a comparison, including a zero', () => {
     const diagnostics = test.diagnostics!
     const ruleOnly = { ...test, diagnostics: { ...diagnostics, benchmark: null,

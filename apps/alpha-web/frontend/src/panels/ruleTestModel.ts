@@ -230,7 +230,7 @@ export function summaryHeadline(test: RuleTest, row?: PeriodResult): string {
   if (isFiniteNum(result)) {
     const wording = comparisonWording(row?.relative_return)
     const comparison = isFiniteNum(hold)
-      ? `${wording} ${pct(hold).text} for simply holding the market`
+      ? `${wording} ${pct(hold).text} for simply holding the market over the same days (${dateRange(row?.first_ts, row?.last_ts)})`
       : 'but the buy-and-hold return is unavailable'
     return `${subject}. It returned ${pct(result).text} after costs, ${comparison}.`
   }

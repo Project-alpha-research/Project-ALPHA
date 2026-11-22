@@ -37,8 +37,8 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | Market beta, calm or turbulent regimes, "when did it change?" | [attribution, regimes and change points](attribution-regimes-changepoints.md) |
 | How wide is the return range, or how deep the drop? | [resampling](resampling-checks.md), [fat tails](montecarlo-checks.md), [path risk](path-risk.md) |
 | Why a judged RD-Agent idea stopped; a picture for the owner | [one idea’s journey](rdagent-journey.md), [charts](charts.md) (`trade_pnl`: profit by trade) |
-| Overfitting controls; more resampling | [overfit](toolbox-overfit-controls.md), [resampling](toolbox-resampling-more.md) |
-| Performance statistics; risk and sizing; time series | [performance](toolbox-performance-stats.md), [risk](toolbox-risk-sizing.md), [time series](toolbox-timeseries.md) |
+| Overfitting controls; more resampling; time series | [overfit](toolbox-overfit-controls.md), [resampling](toolbox-resampling-more.md), [time series](toolbox-timeseries.md) |
+| Performance statistics; risk and sizing | [performance](toolbox-performance-stats.md), [risk](toolbox-risk-sizing.md) |
 | Need the macro picture or option prices | [macro](macro-context.md), [positioning](positioning-short-volume-context.md), [options](options-derived.md) |
 | Crypto funding or open interest as known | `alpha context show-bybit --kind funding --symbol BTCUSDT --as-of 2024-03-12` |
 

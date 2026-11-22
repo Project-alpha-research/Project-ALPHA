@@ -2,9 +2,9 @@
 
 A saved rule is one canonical JSON file at ``data_dir/rules/<name>.json``;
 ``alpha_strategies.rules`` is the single parser and nothing here interprets a rule.
-``alpha backtest run --strategy rules --rules <name>`` and ``alpha validate`` read the file through
-:func:`resolve_rules_spec`, and the run manifest then carries the exact canonical bytes, so
-overwriting a name never rewrites a past run.
+``alpha backtest run --strategy rules --rules <name>`` reads it via :func:`resolve_rules_spec`
+(``alpha validate`` takes a frozen ``--rules-file`` only). The manifest keeps the canonical bytes,
+so overwriting a name never rewrites a past run.
 Read/write of the owner's own files only; no authority of any kind.
 """
 

@@ -8,12 +8,14 @@ from alpha_cli.toolbox.families.market import ATTRIBUTION, CHANGEPOINTS, VOL_REG
 from alpha_cli.toolbox.families.montecarlo import STUDENT_T_PATHS
 from alpha_cli.toolbox.families.overfit import DEFLATED_SHARPE
 from alpha_cli.toolbox.families.performance import CONCENTRATION, DOWNSIDE_RATIOS, SIDE_CONTRIBUTION
+from alpha_cli.toolbox.families.performance_stats import CHECKS as PERFORMANCE_STATS
 from alpha_cli.toolbox.families.resampling import (
     BLOCK_PATHS,
     DRAWDOWN_DISTRIBUTION,
     RETURN_INTERVAL,
     SHARPE_INTERVAL,
 )
+from alpha_cli.toolbox.families.risk_sizing import CHECKS as RISK_SIZING_CHECKS
 from alpha_cli.toolbox.families.robustness import START_END_DATES
 from alpha_cli.toolbox.families.trades import DEPENDENCE
 
@@ -34,6 +36,8 @@ SPECS = (
     BLOCK_PATHS,
     STUDENT_T_PATHS,
     PUBLISHED_FACTORS,
+    *RISK_SIZING_CHECKS,
+    *PERFORMANCE_STATS,
 )
 ALIASES = {
     "attribution": ATTRIBUTION.id,

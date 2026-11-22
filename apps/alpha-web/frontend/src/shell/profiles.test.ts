@@ -47,12 +47,11 @@ describe('PROFILES', () => {
   it('market-neutral windows appear in both', () => {
     for (const id of ['crypto', 'equities'] as const) {
       for (const window of MARKET_NEUTRAL_WINDOWS) expect(showsWindow(id, window)).toBe(true)
-      for (const window of ['forecast', 'ml-lab', 'jobs', 'governance'] as const) {
+      for (const window of ['forecast', 'jobs', 'governance'] as const) {
         expect(showsWindow(id, window)).toBe(true)
       }
     }
-    expect(showsWindow('equities', 'funding')).toBe(false)
-    expect(showsWindow('crypto', 'corporate-actions')).toBe(false)
+    expect(profile('crypto').windows).toEqual(profile('equities').windows)
   })
 
   it('pullDefaults and starterSymbols are derived from the manifest', () => {

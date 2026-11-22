@@ -84,7 +84,9 @@ def test_old_specs_keep_their_hash_and_stored_bytes() -> None:
         "tsmom": {"kind": "tsmom", "lookback": 252, "skip": 21},
     }
     for kind, rule in rules.items():
-        assert IdeaSpec(assets=["SPY"], rule=rule).spec_sha256 == OLD_HASHES[kind]
+        # Pin change (M99): no costs now means the class default; old specs stated the flat one.
+        flat = {"fee_bps": 1.0, "slippage_bps": 2.0}
+        assert IdeaSpec(assets=["SPY"], rule=rule, costs=flat).spec_sha256 == OLD_HASHES[kind]
     full = IdeaSpec(
         name="x",
         idea="y",

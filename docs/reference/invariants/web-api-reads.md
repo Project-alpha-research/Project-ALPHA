@@ -61,6 +61,13 @@ What the Workstation backend reads, writes and relays. The other backend rules a
 - `RunListItem.evidence` is the evidence word (or `fault`) a new run stored in its manifest `reading`; null for an older run.
   The list relays it and works nothing out.
 
+## Recent runs read
+
+- `GET /api/recent-runs?limit=&spark=` (`api/recent_runs.py`, `_recent_runs.py`) lists the newest stored runs for the recent-tests table. It reads the
+  same verified manifests and `equity_curve.parquet` as `/api/runs` and relays, never computes: trades from the stored diagnostics, out-of-sample Sharpe
+  from `oos_metrics`, tries from `reading.counts`, the stored evidence word. The sparkline is the stored equity curve thinned to 60 points, both ends
+  kept. At most 200 runs; an unreadable run is skipped. Enforced by `tests/unit/test_web_recent_runs.py`.
+
 ## Market overview read
 
 - `GET /api/market/overview` relays `alpha data market-overview --json` (`api/market.py`, 120 s timeout). The CLI reads stored bars only through

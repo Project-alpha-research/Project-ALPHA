@@ -37,11 +37,19 @@ def rolling_risk(ctx: BuildContext) -> FigureSpec:
     returns = src.floats(view["return_value"], name="return_value")
     vol = src.floats(view["volatility"], name="volatility")
     sharpe_raw = src.optional_floats(view["sharpe"])
-    defined = [(t, s) for t, s in zip(ts, sharpe_raw, strict=True) if s is not None]
-    if not defined:
+    # One line per stretch of defined Sharpe: the line breaks where it is undefined, as in
+    # the approved sample, instead of drawing a straight line across the gap.
+    stretches: list[list[tuple[float, float]]] = [[]]
+    for t, s in zip(ts, sharpe_raw, strict=True):
+        if s is None:
+            if stretches[-1]:
+                stretches.append([])
+        else:
+            stretches[-1].append((t, float(s)))
+    stretches = [stretch for stretch in stretches if stretch]
+    if not stretches:
         raise DataError("rolling Sharpe is undefined across the whole window")
-    sharpe_ts = tuple(item[0] for item in defined)
-    sharpe = tuple(float(item[1]) for item in defined)
+    sharpe = tuple(value for stretch in stretches for _, value in stretch)
     positive = sum(1 for value in sharpe if value > 0) / len(sharpe)
     return ctx.spec(
         "rolling_risk",
@@ -59,7 +67,16 @@ def rolling_risk(ctx: BuildContext) -> FigureSpec:
                 y_unit="sharpe",
                 y_zero_rule=True,
                 legend=False,
-                marks=(LineMark(x=sharpe_ts, y=sharpe, role="subject"),),
+                marks=tuple(
+                    LineMark(
+                        x=tuple(t for t, _ in stretch),
+                        y=tuple(v for _, v in stretch),
+                        # One colour for every stretch of the one series.
+                        role="categorical",
+                        palette_index=0,
+                    )
+                    for stretch in stretches
+                ),
             ),
             Panel(
                 panel_id="vol",
@@ -104,14 +121,9 @@ def monthly_heatmap(ctx: BuildContext) -> FigureSpec:
         )
     }
     ordered = sorted(grid)
-    # The figure has a fixed height, so a long history must thin its labels instead of
-    # printing 30 rows of text into the same few inches. Every row stays; only the label
-    # is dropped, and only on years that are not a multiple of the step.
-    step = 1 if len(ordered) <= 14 else 2 if len(ordered) <= 24 else 5
-    rows = tuple(
-        str(year) if (year - ordered[0]) % step == 0 or year == ordered[-1] else " "
-        for year in ordered
-    )
+    # Every year keeps its label and every cell its number: the figure grows a row at a time
+    # (``plain_spec``), as in the owner's approved sample.
+    rows = tuple(str(year) for year in ordered)
     # The annual total is deliberately excluded from the colour scale: a +9.7% year on the
     # same ramp as monthly returns saturates it and flattens every month into one shade.
     # It keeps its number and sits on the neutral background, which also reads correctly
@@ -121,19 +133,14 @@ def monthly_heatmap(ctx: BuildContext) -> FigureSpec:
         tuple([*(None if cell is None else cell * 100.0 for cell in grid[year]), None])
         for year in ordered
     )
-    # Cell numbers need about 0.2 inch of height each; below that they collide.
-    cell_text = (
+    cell_text = tuple(
         tuple(
-            tuple(
-                [
-                    *("" if cell is None else f"{cell * 100:.1f}" for cell in grid[year]),
-                    "" if annual.get(year) is None else f"{annual[year] * 100:.1f}",
-                ]
-            )
-            for year in ordered
+            [
+                *("" if cell is None else f"{cell * 100:.1f}" for cell in grid[year]),
+                "" if annual.get(year) is None else f"{annual[year] * 100:.1f}",
+            ]
         )
-        if len(ordered) <= 12
-        else ()
+        for year in ordered
     )
     flat = [cell for year in ordered for cell in grid[year] if cell is not None]
     best, worst = max(flat), min(flat)
@@ -159,7 +166,7 @@ def monthly_heatmap(ctx: BuildContext) -> FigureSpec:
                         columns=(*_MONTHS, "Year"),
                         values=values,
                         cell_text=cell_text,
-                        colorbar_label="Return (%)",
+                        colorbar_label="Monthly return (%), pale yellow is zero",
                         diverging_center=0.0,
                     ),
                 ),

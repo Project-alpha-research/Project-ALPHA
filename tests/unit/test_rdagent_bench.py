@@ -888,3 +888,18 @@ def test_a_stored_output_keeps_the_attempts_it_was_counted_for(tmp_path: Path) -
             gateway_retries=1,
         )
     assert client.calls == 20
+
+
+@pytest.mark.parametrize("count", [-1000, float("nan"), 1.5, "9"])
+def test_a_reported_token_count_that_is_negative_or_not_a_whole_number_is_refused(
+    tmp_path: Path, count: object
+) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 2), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    # A negative or NaN count would book a negative or NaN charge and open the month cap.
+    client = FakeClient({"a": {f"p{i}": [_reply(count, 500)] for i in range(2)}})
+    with pytest.raises(BenchError, match="token count"):
+        run_bench(prompts, ["a"], 1, prices, client, tmp_path / "store", spend=_spend(tmp_path))
+    text = _spend(tmp_path).read_text()
+    assert "NaN" not in text
+    assert all(json.loads(line)["usd"] >= 0 for line in text.splitlines())

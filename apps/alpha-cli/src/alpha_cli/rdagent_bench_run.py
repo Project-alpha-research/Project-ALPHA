@@ -211,6 +211,14 @@ def _run(
                         "must be a finite number of zero or more. The run stopped; its estimate "
                         "was charged."
                     )
+                for count in (reply.prompt_tokens, reply.completion_tokens):
+                    if count is not None and (type(count) is not int or count < 0):
+                        # A negative or NaN count would make a negative or NaN charge.
+                        raise BenchError(
+                            f"{model} reported the token count {count!r} for prompt '{p.id}'. A "
+                            "count must be a whole number of zero or more. The run stopped; its "
+                            "estimate was charged."
+                        )
                 record = _record(
                     model, p, sample, reply, prices[model], single, single * gateway_retries
                 )

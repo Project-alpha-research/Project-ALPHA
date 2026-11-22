@@ -14,9 +14,9 @@ verified: ca6c27cc70fdb13b
 **Reach for it when** a recorded setup find has the intended matches and you want what followed each separate occurrence measured against ordinary dates.
 **Commands**
 ```text
-uv run alpha setup study <find_id> --json
-uv run alpha setup study <find_id> --recheck --json   # no write; exit 4 if it differs
-uv run alpha results cite <study_id> setup_mean_net_return --json
+alpha setup study <find_id> --json
+alpha setup study <find_id> --recheck --json   # no write; exit 4 if it differs
+alpha results cite <study_id> setup_mean_net_return --json
 ```
 **See stored results:** Workstation → Research → Setup Lab.
 **How to read it**

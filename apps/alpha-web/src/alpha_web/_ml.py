@@ -9,6 +9,7 @@ is an allowlisted ``alpha ml`` subprocess and every background action is mirrore
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import importlib.util
 import json
 import logging
@@ -753,38 +754,44 @@ def _aligned_history_count(*, data_dir: Path, snapshot_id: str, universe: Sequen
     return len(aligned or ())
 
 
-def experiment_preflight(
-    *, project_id: str, data_dir: Path, experiment_id: str | None = None
-) -> dict[str, Any]:
+def _store_spec(spec: Mapping[str, Any], *, data_dir: Path) -> Path:
+    """Publish the experiment spec as an immutable file named by its hash; return its path."""
+    encoded = _canonical_json(dict(spec)).encode("utf-8")
+    path = _ml_root(data_dir) / "specs" / f"{hashlib.sha256(encoded).hexdigest()}.json"
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+        temporary.write_bytes(encoded)
+        temporary.replace(path)
+    return path
+
+
+def _spec_complete(spec: Mapping[str, Any]) -> bool:
+    """The objects the CLI input export reads; a spec without them cannot succeed."""
+    if not all(
+        isinstance(spec.get(key), dict) for key in ("split_policy", "stage_config", "seeds")
+    ):
+        return False
+    costs = spec.get("costs")
+    return isinstance(costs, dict) and all(
+        isinstance(costs.get(key), int | float) and not isinstance(costs.get(key), bool)
+        for key in ("fee_bps", "slippage_bps")
+    )
+
+
+def experiment_preflight(*, spec: Mapping[str, Any], data_dir: Path) -> dict[str, Any]:
     """Recompute every local prerequisite before the UI can launch an ML experiment."""
     status = service_status(data_dir=data_dir)
-    project = _object(
-        _run_json(
-            ["project", "show", project_id, "--lineage-limit", "100", "--json"],
-            data_dir=data_dir,
-        ),
-        "project",
-    )
-    selected_experiment_id = experiment_id or project.get("current_experiment_id")
-    experiments = _objects(project.get("experiments"), "project experiments")
-    experiment = next(
-        (
-            candidate
-            for candidate in experiments
-            if isinstance(selected_experiment_id, str)
-            and candidate.get("experiment_id") == selected_experiment_id
-        ),
-        None,
-    )
-    snapshot_id = experiment.get("snapshot_id") if experiment is not None else None
-    universe_value = experiment.get("universe") if experiment is not None else None
+    experiment = spec
+    selected_experiment_id = spec.get("experiment_id")
+    snapshot_id = experiment.get("snapshot_id")
+    universe_value = experiment.get("universe")
     universe = (
         cast(list[str], universe_value)
         if isinstance(universe_value, list)
         and all(isinstance(symbol, str) and symbol for symbol in universe_value)
         else []
     )
-    gate_state = project.get("research_gate_state")
     active_job_id = status.get("active_job_id")
 
     history_count = 0
@@ -801,21 +808,20 @@ def experiment_preflight(
             # The public projection intentionally does not repeat backend paths or raw store errors.
             history_readable = False
 
-    experiment_ready = experiment is not None and isinstance(selected_experiment_id, str)
     snapshot_ready = isinstance(snapshot_id, str) and bool(snapshot_id) and history_readable
-    gate_ready = gate_state in {"passed", "not_required", "overridden"}
     worker_ready = status.get("worker_ready") is True
     universe_ready = len(universe) >= MIN_SYMBOLS
     history_ready = history_readable and history_count >= MIN_ALIGNED_SESSIONS
     capacity_ready = active_job_id is None
+    spec_ready = _spec_complete(experiment)
     checks = [
         _preflight_check(
-            "experiment",
-            experiment_ready,
-            "A current immutable experiment is selected."
-            if experiment_ready
-            else "No current immutable experiment is selected.",
-            "Create or select an experiment in Development Center.",
+            "spec",
+            spec_ready,
+            "The experiment spec has its split, stage, cost and seed objects."
+            if spec_ready
+            else "The experiment spec lacks split_policy, stage_config, costs or seeds objects.",
+            "Add split_policy, stage_config, costs (fee_bps, slippage_bps) and seeds objects.",
         ),
         _preflight_check(
             "snapshot",
@@ -823,15 +829,7 @@ def experiment_preflight(
             "The frozen snapshot is readable for every selected symbol."
             if snapshot_ready
             else "The experiment snapshot is missing or unreadable.",
-            "Bind a verified frozen snapshot to the experiment.",
-        ),
-        _preflight_check(
-            "research_gate",
-            gate_ready,
-            f"Research gate state is {gate_state}."
-            if gate_ready
-            else "The project research gate is still open.",
-            "Complete the Research Case before strategy development.",
+            "Name a verified frozen snapshot in the experiment spec.",
         ),
         _preflight_check(
             "worker",
@@ -864,7 +862,6 @@ def experiment_preflight(
     ]
     return {
         "schema_version": 1,
-        "project_id": project_id,
         "experiment_id": (
             selected_experiment_id if isinstance(selected_experiment_id, str) else None
         ),
@@ -1471,8 +1468,7 @@ def _create_job(
 def launch_input_generation(
     *,
     data_dir: Path,
-    project_id: str,
-    experiment_id: str,
+    spec: Mapping[str, Any],
     input_bundle_id: str,
     timeout_seconds: int,
 ) -> dict[str, Any]:
@@ -1481,18 +1477,18 @@ def launch_input_generation(
     output = _ml_root(data_dir) / "inputs" / input_bundle_id
     if output.exists():
         raise MlError("input_bundle_id is already published")
+    spec_path = _store_spec(spec, data_dir=data_dir)
     safe_request: dict[str, object] = {
         "action": "export-input",
-        "project_id": project_id,
-        "experiment_id": experiment_id,
+        "spec_sha256": spec_path.stem,
         "input_bundle_id": input_bundle_id,
     }
     job_id = _create_job(
         data_dir=data_dir,
         kind=_JOB_KIND["export-input"],
         request=safe_request,
-        project_id=project_id,
-        experiment_id=experiment_id,
+        project_id=None,
+        experiment_id=None,
     )
     _start_job(
         job_id,
@@ -1500,9 +1496,9 @@ def launch_input_generation(
         [
             "ml",
             "export-input",
-            project_id,
-            experiment_id,
             str(output),
+            "--spec",
+            str(spec_path),
             "--json",
         ],
         data_dir=data_dir,
@@ -1512,8 +1508,6 @@ def launch_input_generation(
         "job_id": job_id,
         "status": "queued",
         "action": "export-input",
-        "project_id": project_id,
-        "experiment_id": experiment_id,
         "input_bundle_id": input_bundle_id,
     }
 
@@ -1523,30 +1517,15 @@ def capabilities(*, data_dir: Path) -> dict[str, Any]:
     return _object(_run_json(["ml", "capabilities", "--json"], data_dir=data_dir), "capabilities")
 
 
-def _current_experiment(project_id: str, *, data_dir: Path) -> str:
-    project = _object(
-        _run_json(
-            ["project", "show", project_id, "--lineage-limit", "1", "--json"],
-            data_dir=data_dir,
-        ),
-        "project",
-    )
-    experiment_id = project.get("current_experiment_id")
-    if not isinstance(experiment_id, str):
-        raise MlError("project has no current immutable experiment")
-    return experiment_id
-
-
 def launch_experiment_generation(
     *,
     data_dir: Path,
-    project_id: str,
-    experiment_id: str | None,
+    spec: Mapping[str, Any],
     timeout_seconds: int,
     model: str | None = None,
     parameters: Mapping[str, int | float | str] | None = None,
 ) -> dict[str, Any]:
-    """One-click input export plus immutable exchange preparation for a project experiment.
+    """One-click input export plus immutable exchange preparation for an experiment spec.
 
     Without ``model`` the exchange keeps the experiment's frozen recipe and schema; only an
     explicit model publishes a schema-3 override.
@@ -1558,7 +1537,7 @@ def launch_experiment_generation(
         if model is None
         else ["--model", model, "--parameters-json", _canonical_json(dict(parameters or {}))]
     )
-    resolved_experiment = experiment_id or _current_experiment(project_id, data_dir=data_dir)
+    spec_path = _store_spec(spec, data_dir=data_dir)
     input_bundle_id = new_input_id()
     exchange_id = new_exchange_id()
     input_dir = _ml_root(data_dir) / "inputs" / input_bundle_id
@@ -1571,8 +1550,7 @@ def launch_experiment_generation(
         "action": "generate-experiment",
         "model": model,
         "parameters": dict(parameters or {}),
-        "project_id": project_id,
-        "experiment_id": resolved_experiment,
+        "spec_sha256": spec_path.stem,
         "input_bundle_id": input_bundle_id,
         "exchange_id": exchange_id,
     }
@@ -1580,8 +1558,8 @@ def launch_experiment_generation(
         data_dir=data_dir,
         kind=_JOB_KIND["generate-experiment"],
         request=safe_request,
-        project_id=project_id,
-        experiment_id=resolved_experiment,
+        project_id=None,
+        experiment_id=None,
     )
     export_timeout = min(timeout_seconds, 3600)
     prepare_timeout = min(timeout_seconds, 600)
@@ -1591,9 +1569,9 @@ def launch_experiment_generation(
             [
                 "ml",
                 "export-input",
-                project_id,
-                resolved_experiment,
                 str(input_dir),
+                "--spec",
+                str(spec_path),
                 "--json",
             ],
             export_timeout,
@@ -1619,8 +1597,6 @@ def launch_experiment_generation(
         "job_id": job_id,
         "status": "queued",
         "action": "generate-experiment",
-        "project_id": project_id,
-        "experiment_id": resolved_experiment,
         "input_bundle_id": input_bundle_id,
         "exchange_id": exchange_id,
     }

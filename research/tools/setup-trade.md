@@ -13,9 +13,9 @@ verified: cdf90b3582b6d226
 
 **Reach for it when** the recorded matches are right and the question includes stops or targets.
 ```text
-uv run alpha setup trade <find_id> --json
-uv run alpha setup trade <find_id> --recheck --json   # no write; exit 4 if it differs
-uv run alpha results cite <trade_id> setup_trade_mean_net_return --json
+alpha setup trade <find_id> --json
+alpha setup trade <find_id> --recheck --json   # no write; exit 4 if it differs
+alpha results cite <trade_id> setup_trade_mean_net_return --json
 ```
 **How to read it** in Workstation → Research → Setup Lab
 - In `[exit]`, set `direction` to `"long"` (default) or `"short"`. Stops and targets accept percent,

@@ -1,0 +1,38 @@
+# Complete example of a setup spec for `alpha setup find`, `alpha setup study` and `alpha setup trade`.
+# Copy it, then change every value. The values are placeholders, not results.
+# Expressions read only bars known at the close of each day. Functions: prev, sma, ema, atr, highest,
+# lowest, pct_change, abs, crosses_above, crosses_below, for_bars, within_bars. Sources: open, high, low, close, volume.
+
+[setup]                       # required: what to look for
+name = "pullback-in-uptrend"  # a short name for the setup
+idea = "Close back above the 10-day average after a dip inside a 50-day uptrend"
+assets = ["SPY"]              # one or more stored symbols
+timeframe = "1D"              # daily bars only
+event = "crosses_above(close, sma(close, 10))"   # the day the setup occurs (true or false)
+
+[filters]                     # optional: every filter must be true. Order matters: the first false one is the rejection reason
+uptrend = "close > sma(close, 50)"
+dipped = "within_bars(close < sma(close, 10), 5)"
+
+[trigger]                     # optional: wait for a second condition after the event
+when = "close > prev(highest(high, 3))"   # must become true ...
+within = 2                          # ... within this many bars after the event (0 = on the event day)
+
+[reference]                   # optional: named price levels, read at the trigger close
+swing_low = "lowest(low, 5)"
+
+[context]                     # optional: outside series by alias, "series@key". Use the alias in [filters], [trigger] or [reference]. Not in [exit]
+# es_pos = "cot_nc_net_pct_156w@13874A"
+
+[exit]                        # optional: needed only by `alpha setup trade`. Price data only
+direction = "long"            # "long" (default) or "short"
+stop = "swing_low"            # a distance ("5 %" or "2 atr(14)"), a price expression, or a [reference] name
+target = "10 %"               # same forms as stop
+opposite = "close < sma(close, 50)"   # exit on the next open when this becomes true
+time_bars = 20                # exit at the close of this many held bars (default 250)
+
+[study]                       # optional: needed only by `alpha setup study`
+horizons = [1, 5, 10, 20]     # bars after entry to measure
+primary = 10                  # the one to quote first; it must be one of the horizons
+
+# idea_card = "my-idea"       # optional top-level key: link to an idea card (before any [table])

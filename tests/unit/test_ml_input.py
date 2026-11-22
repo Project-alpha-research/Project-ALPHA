@@ -10,18 +10,16 @@ from typing import Any, cast
 import polars as pl
 import pytest
 
-from alpha_cli.control_store import ControlStore
 from alpha_cli.ml_contract import MIN_ALIGNED_SESSIONS, MIN_SYMBOLS, PANEL_COLUMNS, MLContractError
-from alpha_cli.ml_input import _draft_spec, _folds, export_project_input
+from alpha_cli.ml_input import _draft_spec, _folds, export_input
 from alpha_core import DataError
 from alpha_data.snapshot import create_snapshot, snapshot_manifest_hash
 from alpha_data.store import ParquetStore
-from tests.fixtures.control_store_fixtures import mark_project_as_migrated_legacy
 
 
 def _project_snapshot(
     tmp_path: Path, *, universe_membership: str = "current_membership"
-) -> tuple[str, str, list[str]]:
+) -> tuple[Path, list[str]]:
     symbols = [f"S{index:02d}" for index in range(MIN_SYMBOLS)]
     sessions = [
         datetime(2020, 1, 2, tzinfo=UTC) + timedelta(days=index)
@@ -53,49 +51,37 @@ def _project_snapshot(
         parser_version="1",
         created_at=datetime(2026, 7, 19, tzinfo=UTC),
     )
-    control = ControlStore(tmp_path)
-    project = control.create_project(
-        name="Cross-sectional starter",
-        hypothesis="Relative winners persist one session.",
-        falsification_criterion="Reject if locked OOS excess return is non-positive.",
-        at=datetime(2026, 7, 19, tzinfo=UTC),
-    )
-    mark_project_as_migrated_legacy(control, str(project["project_id"]))
-    version = control.create_strategy_version(
-        str(project["project_id"]),
-        strategy_name="qlib_alpha158_lgbm",
-        source_fingerprint="git:test",
-        definition={"decision": "close_t", "fill": "open_t_plus_1"},
-        parameter_space={},
-    )
-    experiment = control.create_experiment_spec(
-        str(project["project_id"]),
-        strategy_version_id=str(version["version_id"]),
-        snapshot_id="ml-frozen",
-        universe=symbols,
-        split_policy={"train": 504, "test": 63, "purge": 5, "embargo": 5},
-        costs={"fee_bps": 1.0, "slippage_bps": 2.0},
-        seeds={"master": 7},
-        stage_config={
-            "ml": {
-                "validation_sessions": 120,
-                "universe_membership": universe_membership,
+    spec_path = tmp_path / "experiment-spec.json"
+    spec_path.write_text(
+        json.dumps(
+            {
+                "snapshot_id": "ml-frozen",
+                "universe": symbols,
+                "split_policy": {"train": 504, "test": 63, "purge": 5, "embargo": 5},
+                "costs": {"fee_bps": 1.0, "slippage_bps": 2.0},
+                "seeds": {"master": 7},
+                "stage_config": {
+                    "ml": {
+                        "validation_sessions": 120,
+                        "universe_membership": universe_membership,
+                    }
+                },
             }
-        },
+        ),
+        encoding="utf-8",
     )
-    return str(project["project_id"]), str(experiment["experiment_id"]), symbols
+    return spec_path, symbols
 
 
-def test_export_project_input_is_snapshot_bound_aligned_and_worker_validated(
+def test_export_input_is_snapshot_bound_aligned_and_worker_validated(
     tmp_path: Path,
 ) -> None:
-    project_id, experiment_id, symbols = _project_snapshot(tmp_path)
+    spec_path, symbols = _project_snapshot(tmp_path)
     output = tmp_path / "control" / "ml" / "inputs" / ("a" * 32)
 
-    summary = export_project_input(
+    summary = export_input(
         data_dir=tmp_path,
-        project_id=project_id,
-        experiment_id=experiment_id,
+        spec_path=spec_path,
         output_dir=output,
     )
 
@@ -120,17 +106,16 @@ def test_export_project_input_is_snapshot_bound_aligned_and_worker_validated(
     assert summary["worker_contract_validated"] is True
 
 
-def test_export_project_input_rejects_unscheduled_point_in_time_without_publishing(
+def test_export_input_rejects_unscheduled_point_in_time_without_publishing(
     tmp_path: Path,
 ) -> None:
-    project_id, experiment_id, _ = _project_snapshot(tmp_path, universe_membership="point_in_time")
+    spec_path, _ = _project_snapshot(tmp_path, universe_membership="point_in_time")
     output = tmp_path / "control" / "ml" / "inputs" / ("b" * 32)
 
     with pytest.raises(MLContractError, match="point_in_time.*membership schedule"):
-        export_project_input(
+        export_input(
             data_dir=tmp_path,
-            project_id=project_id,
-            experiment_id=experiment_id,
+            spec_path=spec_path,
             output_dir=output,
         )
 

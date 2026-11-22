@@ -26,9 +26,8 @@ def _digest(value: object) -> str:
 
 
 def _data_fingerprint(spec: Mapping[str, Any]) -> str:
-    if spec["options"]["lane"] == "crypto":
-        return _digest(spec["crypto_inputs"])
-    return _digest({"snapshot": spec["snapshot_hash"], "members": spec["membership_hash"]})
+    """The rows before the reserved day, and the frozen membership; never a held-back row."""
+    return _digest({"rows": spec["data_hash"], "members": spec.get("membership_hash")})
 
 
 def screen_trial_rows(spec: Mapping[str, Any], result: Mapping[str, Any]) -> list[dict[str, Any]]:

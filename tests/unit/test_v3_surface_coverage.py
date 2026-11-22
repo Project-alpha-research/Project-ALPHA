@@ -292,7 +292,6 @@ def test_ml_api_wrappers_cover_happy_paths_and_typed_error_mapping(
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
     exchange_id = "a" * 32
     input_id = "b" * 32
-    experiment_id = "ex_" + "c" * 64
     calls: list[tuple[str, tuple[object, ...]]] = []
 
     def record(name: str) -> Callable[..., dict[str, object]]:
@@ -328,16 +327,16 @@ def test_ml_api_wrappers_cover_happy_paths_and_typed_error_mapping(
     assert ml_api.get_inputs(10, 0)["name"] == "list_input_bundles"
     assert ml_api.get_input(input_id)["name"] == "input_bundle"
     assert (
-        ml_api.generate_input(
-            ml_api.MlInputGenerateRequest(project_id="project", experiment_id=experiment_id)
-        )["name"]
+        ml_api.generate_input(ml_api.MlInputGenerateRequest(spec={"snapshot_id": "snapshot"}))[
+            "name"
+        ]
         == "launch_input_generation"
     )
     assert ml_api.get_exchanges(10, 0)["name"] == "list_exchanges"
     assert ml_api.get_experiments("project", 10, 0)["name"] == "list_experiments"
     assert (
         ml_api.generate_experiment(
-            ml_api.MlExperimentGenerateRequest(project_id="project", experiment_id=experiment_id)
+            ml_api.MlExperimentGenerateRequest(spec={"snapshot_id": "snapshot"})
         )["name"]
         == "launch_experiment_generation"
     )

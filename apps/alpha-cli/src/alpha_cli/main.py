@@ -49,6 +49,8 @@ GROUPS: tuple[tuple[str, str, str], ...] = (
     ("follow", "alpha_cli.follow_cmds", "follow_app"),
     ("options", "alpha_cli.options_cmds", "options_app"),
 )
+# Callable, but not listed in `alpha --help`: the Touch ID credential left the product.
+HIDDEN: frozenset[str] = frozenset({"owner-auth"})
 COMMANDS: tuple[tuple[str, str, str], ...] = (
     ("diagnose", "alpha_cli.results_cmds", "diagnose_run"),
     ("validate", "alpha_cli.validate_cmds", "validate"),
@@ -90,7 +92,7 @@ def _root_app(
 ) -> typer.Typer:
     root = typer.Typer(help="Project ALPHA command-line interface.")
     for name, module, attribute in groups:
-        root.add_typer(_group(name, module, attribute), name=name)
+        root.add_typer(_group(name, module, attribute), name=name, hidden=name in HIDDEN)
     for name, module, attribute in COMMANDS if commands is True else (commands or ()):
         root.command(name=name)(getattr(importlib.import_module(module), attribute))
 

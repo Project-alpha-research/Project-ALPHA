@@ -45,12 +45,9 @@ def main() -> None:
         try:
             # App construction and children must not load the owner's .env through cwd.
             os.chdir(data_dir)
-            from playwright_investigation_fixture import install
-
             from alpha_web.app import create_app
 
             application = create_app()
-            install(application, Path(data_dir))
             uvicorn.run(application, host="127.0.0.1", port=port, log_level="warning")
         finally:
             os.chdir(original_cwd)

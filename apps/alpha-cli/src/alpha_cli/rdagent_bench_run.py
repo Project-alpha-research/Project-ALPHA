@@ -34,10 +34,14 @@ def _record(
 ) -> dict[str, Any]:
     usd: float | None = None
     reason = None
-    if reply.prompt_tokens is None or reply.completion_tokens is None:
+    source = None
+    if reply.cost is not None:
+        usd, source = float(reply.cost), "reported by the gateway"
+    elif reply.prompt_tokens is None or reply.completion_tokens is None:
         reason = "the model did not report token counts"
     else:
         usd = (reply.prompt_tokens * price[0] + reply.completion_tokens * price[1]) / 1e6
+        source = "estimated from token counts and your prices"
     return {
         "schema": "AlphaBenchOutputV1",
         "model": model,
@@ -53,6 +57,7 @@ def _record(
         "completion_tokens": reply.completion_tokens,
         "usd": usd,
         "usd_reason": reason,
+        "usd_source": source,
         "latency_ms": reply.latency_ms,
         "latency_reason": None
         if reply.latency_ms is not None
@@ -71,7 +76,7 @@ def _charge(spend: Path, now: datetime, record: dict[str, Any]) -> float:
         row = {
             "ts": now.isoformat(),
             "usd": record["charged_usd"],
-            "estimated": record["usd"] is None,
+            "estimated": record["usd_source"] != "reported by the gateway",
         }
         stream.write(json.dumps(row) + "\n")
     return float(record["charged_usd"])

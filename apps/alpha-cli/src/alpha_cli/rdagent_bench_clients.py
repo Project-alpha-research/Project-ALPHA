@@ -34,6 +34,7 @@ class FakeClient:
             prompt_tokens=raw.get("prompt_tokens"),
             completion_tokens=raw.get("completion_tokens"),
             latency_ms=raw.get("latency_ms"),
+            cost=raw.get("cost"),
         )
 
 
@@ -67,4 +68,5 @@ class GatewayClient:
             prompt_tokens=usage.get("prompt_tokens"),
             completion_tokens=usage.get("completion_tokens"),
             latency_ms=(time.monotonic() - started) * 1000,
+            cost=usage.get("cost"),
         )

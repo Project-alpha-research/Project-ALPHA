@@ -39,6 +39,7 @@ print(json.dumps(out))
 PREFIX_REASON = (
     "not run: it needs the factor runtime and a frozen price panel, and none is budgeted"
 )
+FEEDBACK_KEYS = ("Observations", "Reasoning")
 FENCE = re.compile(r"```(?:python)?\n(.*?)```", re.S)
 
 
@@ -55,6 +56,7 @@ class Reading:
     latency_ms: float | None = None
     latency_reason: str | None = None
     prefix_reason: str = PREFIX_REASON
+    not_checked: int = 0
     by_prompt: dict[str, float] = field(default_factory=dict)
 
 
@@ -126,13 +128,21 @@ def _mean(values: list[float]) -> float | None:
     return statistics.fmean(values) if values else None
 
 
-def _load(store: Path, model: str, prompt: StoredPrompt, samples: int) -> list[dict[str, Any]]:
-    rows = []
-    for sample in range(samples):
-        path = output_path(store, model, prompt.id, sample)
-        if path.exists():
-            rows.append(json.loads(path.read_text(encoding="utf-8")))
-    return rows
+def _load(store: Path, model: str, prompt: StoredPrompt) -> list[dict[str, Any]]:
+    """Every stored sample of one prompt, in sample order."""
+    folder = output_path(store, model, prompt.id, 0).parent
+    paths = folder.glob(f"{prompt.id}.*.json") if folder.is_dir() else []
+    found = [(int(p.stem.rsplit(".", 1)[1]), p) for p in paths]
+    return [json.loads(p.read_text(encoding="utf-8")) for _, p in sorted(found)]
+
+
+def _feedback_ok(text: str) -> bool:
+    """The worker's feedback reply: an object whose Observations and Reasoning are text."""
+    try:
+        raw = json.loads(text)
+    except ValueError:
+        return False
+    return isinstance(raw, dict) and all(isinstance(raw.get(k), str) for k in FEEDBACK_KEYS)
 
 
 def _reading(
@@ -165,8 +175,11 @@ def _reading(
             ok = i in known and all(c["declared"] for c in info[i])
         elif p.stage == "code":
             ok = _code_builds(r["text"])
+        elif p.stage == "feedback":
+            ok = _feedback_ok(r["text"])
         else:
-            ok = _proposals(r["text"]) is not None
+            reading.not_checked += 1
+            continue
         builds.setdefault(p.id, []).append(1.0 if ok else 0.0)
     reading.by_prompt = {k: statistics.fmean(v) for k, v in builds.items()}
     reading.buildable = _mean([v for vs in builds.values() for v in vs])
@@ -187,11 +200,10 @@ def score_store(
     store: Path,
     closed: set[str],
     dropped: set[str],
-    samples: int = 10,
 ) -> Scored:
     readings: dict[str, Reading] = {}
     for model in models:
-        rows = {p.id: _load(store, model, p, samples) for p in prompts}
+        rows = {p.id: _load(store, model, p) for p in prompts}
         readings[model] = _reading(prompts, rows, closed, dropped)
     pairs: dict[tuple[str, str], Pair] = {}
     for i, a in enumerate(models):
@@ -212,7 +224,8 @@ def render(scored: Scored) -> str:
         lines += [
             f"{model}: {r.prompts} prompts, {r.outputs} outputs",
             f"  refusal rate: {_num(r.refusal, r.refusal_reason, '.2f')}",
-            f"  buildable (parse and schema only): {_num(r.buildable, r.buildable_reason, '.2f')}",
+            f"  buildable (parse and schema only): {_num(r.buildable, r.buildable_reason, '.2f')}"
+            + (f" ({r.not_checked} outputs of other stages not checked)" if r.not_checked else ""),
             f"  no-future-data prefix check: {r.prefix_reason}",
             f"  cost per call, USD: {_num(r.cost_per_call, r.cost_reason, '.4f')}",
             f"  median latency, ms: {_num(r.latency_ms, r.latency_reason, '.0f')}",

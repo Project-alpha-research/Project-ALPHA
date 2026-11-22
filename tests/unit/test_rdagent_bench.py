@@ -421,3 +421,61 @@ def test_a_resume_does_not_reset_the_run_budget(tmp_path: Path) -> None:
         with pytest.raises(BenchError, match="10"):
             run_bench(prompts, ["b"], 1, prices, client, store, spend=_spend(tmp_path))
     assert client.calls == 1
+
+
+def test_feedback_outputs_use_the_feedback_check_and_other_stages_are_not_checked(
+    tmp_path: Path,
+) -> None:
+    folder = _prompts(tmp_path / "pr", 1, "feedback")
+    other = _prompts(tmp_path / "pr2", 1, "mystery")
+    (folder / "q0.json").write_text((other / "p0.json").read_text().replace("p0", "q0"))
+    prompts = load_prompts(folder, None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    feedback = json.dumps({"Observations": "o", "Reasoning": "r", "Replace Best Result": False})
+    data = {
+        "a": {
+            "p0": [{**_reply(1, 1), "text": feedback}],
+            "q0": [{**_reply(1, 1), "text": "anything"}],
+        }
+    }
+    store = tmp_path / "store"
+    run_bench(prompts, ["a"], 1, prices, FakeClient(data), store, spend=_spend(tmp_path))
+    reading = score_store(prompts, ["a"], store, closed=set(), dropped=set()).models["a"]
+    # The feedback reply is buildable; the unknown stage is left out, not counted as a failure.
+    assert reading.buildable == pytest.approx(1.0)
+    assert reading.not_checked == 1
+
+
+def test_the_default_report_reads_every_stored_sample(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 1), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    bad = {**_reply(1, 1), "text": "not json"}
+    data = {"a": {"p0": [{**_reply(1, 1)}] * 10 + [bad] * 10}}
+    store = tmp_path / "store"
+    run_bench(prompts, ["a"], 20, prices, FakeClient(data), store, spend=_spend(tmp_path))
+    reading = score_store(prompts, ["a"], store, closed=set(), dropped=set()).models["a"]
+    assert reading.outputs == 20 and reading.buildable == pytest.approx(0.5)
+
+
+def test_the_gateways_reported_charge_is_what_is_booked(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 1), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    data = {"a": {"p0": [{**_reply(1000, 500), "cost": 1.0}]}}
+    spend = _spend(tmp_path)
+    store = tmp_path / "store"
+    run_bench(prompts, ["a"], 1, prices, FakeClient(data), store, spend=spend)
+    row = json.loads(spend.read_text().splitlines()[0])
+    assert row["usd"] == pytest.approx(1.0) and row["estimated"] is False
+    record = json.loads(next((store / "outputs" / "a").glob("*.json")).read_text())
+    assert record["usd"] == pytest.approx(1.0) and record["usd_source"] == "reported by the gateway"
+
+
+def test_duplicate_model_names_are_refused_before_any_call(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 1), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    client = FakeClient({"a": {"p0": [_reply(1000, 500)]}})
+    with pytest.raises(BenchError, match="twice"):
+        run_bench(
+            prompts, ["a", "a"], 1, prices, client, tmp_path / "store", spend=_spend(tmp_path)
+        )
+    assert client.calls == 0

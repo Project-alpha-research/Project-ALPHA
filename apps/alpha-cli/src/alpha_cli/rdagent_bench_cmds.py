@@ -120,7 +120,6 @@ def report(
     dropped: Annotated[
         str, typer.Option("--dropped", help="Dropped idea names, separated by commas.")
     ] = "",
-    samples: SAMPLES = 10,
 ) -> None:
     """Print readings per model and per pair. They are readings, not a ranking."""
     try:
@@ -131,7 +130,6 @@ def report(
             store,
             set(_names(closed)),
             {d.lower() for d in _names(dropped)},
-            samples,
         )
     except BenchError as error:
         raise _fail(error) from error

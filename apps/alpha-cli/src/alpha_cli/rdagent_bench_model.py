@@ -43,6 +43,7 @@ class Reply:
     prompt_tokens: int | None
     completion_tokens: int | None
     latency_ms: float | None
+    cost: float | None = None
 
 
 @dataclass(frozen=True)
@@ -132,6 +133,8 @@ def make_plan(
     spend, so only the calls still missing count against the month cap."""
     if samples < 1 or not models:
         raise BenchError("Give at least one model and one sample.")
+    if len(set(models)) != len(models):
+        raise BenchError("A model name is given twice. Give each model once.")
     per_model: dict[str, tuple[int, float]] = {}
     missing_usd = 0.0
     for model in models:

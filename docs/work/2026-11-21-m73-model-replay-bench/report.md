@@ -58,3 +58,10 @@ Five findings were correct and are fixed, each with a failing test first:
 4. A resume carries the run's spend forward, so the 10 USD run cap holds across reruns.
 5. The proposal parser reads the worker's real format (an object keyed by factor name) as well as a single object.
 The run code moved to `rdagent_bench_run.py` and the clients to `rdagent_bench_clients.py` to keep each module under 300 lines.
+
+## Review round 2 (Codex)
+Four more findings were correct and are fixed, each with a failing test first:
+1. Feedback-stage outputs use the worker's feedback shape (Observations, Reasoning as text). A stage with no check is shown as "not checked", never as a failure.
+2. The report reads every stored sample; the `--samples` option on `report` is gone.
+3. A charge the gateway reports (`usage.cost`) is booked as the cost. A token-price estimate is labelled as an estimate.
+4. A model name given twice is refused before any call.

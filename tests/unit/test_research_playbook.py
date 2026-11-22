@@ -341,8 +341,11 @@ def test_skills_name_only_real_metrics_flags_and_audit_checks() -> None:
     card = _parts(f"{TOOLS_DIR}/diagnose-and-audit.md")[0]
     missing = sorted((checks | flags) - set(card))
     assert not missing, f"the diagnose card must explain every check and flag; missing: {missing}"
-    card = _parts(f"{TOOLS_DIR}/results-and-cite.md")[0]
-    missing = sorted(set(METRICS) - set(card))
+    listed = set(_parts(f"{TOOLS_DIR}/results-and-cite.md")[0])
+    # A toolbox family card (`toolbox-*.md`) lists its own metrics: the results card is full.
+    for family in sorted((ROOT / TOOLS_DIR).glob("toolbox-*.md")):
+        listed |= set(_parts(f"{TOOLS_DIR}/{family.name}")[0])
+    missing = sorted(set(METRICS) - listed)
     assert not missing, f"the results card must list every metric; missing: {missing}"
 
 

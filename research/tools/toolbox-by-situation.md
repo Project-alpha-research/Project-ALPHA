@@ -8,11 +8,9 @@ verified: a1934950ce3233d7
 ---
 
 # Toolbox checks, by situation
-
 Start from your situation, in plain words: `alpha tool find "<words>"` ranks the checks that fit.
 `alpha tool situations` prints the list below, generated from the registry; a test keeps it equal.
 A check gives a reading in context, never a pass or fail. Any check may run at any time, also on one part of an idea.
-
 Choose checks before you see results when you can: `alpha tool declare <run_id> --set <name>`.
 The result is then marked `declared`, otherwise `exploratory`. Nothing is refused. `alpha tool results <run_id>` shows the counts.
 <!-- situations:begin -->
@@ -29,7 +27,9 @@ The result is then marked `declared`, otherwise `exploratory`. Nothing is refuse
 - Profit from a handful of trades: `trades.concentration`
 - Wins and losses cluster or alternate: `trades.dependence`
 - Which side earned the profit: `trades.side_contribution`
-- Fragile to costs: `costs.break_even`
+- Fragile to costs: `costs.break_even`, `cost_realism.cost_sweep`, `cost_realism.churn_budget`, `cost_realism.financing_cost`, `cost_realism.after_tax`,
+  `cost_realism.spread_estimates`, `cost_realism.gap_stress`, `cost_realism.market_impact`, `cost_realism.capacity_curve`, `cost_realism.commission_schedule`,
+  `cost_realism.share_rounding`, `cost_realism.volume_share`, `cost_realism.limit_fill`
 - Is this just the market going up: `market.attribution`, `costs.break_even`, `context.published_factors`
 - Return compared with the risk taken: `performance.downside_ratios`
 - Does it hold up out of sample: No toolbox check yet. `alpha test` reports the out-of-sample numbers.

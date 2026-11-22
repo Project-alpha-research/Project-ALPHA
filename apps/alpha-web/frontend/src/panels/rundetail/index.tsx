@@ -6,7 +6,7 @@
 // provenance keep their views under the same tree. Governance watermarks are one chip in the
 // title bar whose title carries the full sentences.
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { api } from '../../api/client'
 import type { FigureCatalogue, RuleTestChecks, RunDetail as RunDetailData, TradeRow } from '../../api/types'
@@ -19,15 +19,14 @@ import { RecordedPanel } from '../RecordedPanel'
 import { FigureCard } from '../../components/FigureCard'
 import { FigureSection } from '../FigureReport'
 import { reportTree, summaryRows, tradesCsv, watermarkChip } from '../reportModel'
-import { labelChips, RULE_TEST_TITLE, summaryFigures } from '../ruleTestModel'
+import { RULE_TEST_TITLE, summaryFigures } from '../ruleTestModel'
 import { RuleTestReport } from './RuleTestReport'
 import { Icon } from '../../shell/icons'
 import { setSettings, useSettings } from '../../state/settings'
-import { openCompare, openStrategyLab } from '../actions'
+import { openCompare } from '../actions'
 import { asStr } from './commonUtils'
 import { Artifacts } from './Artifacts'
 import { Gates } from './Gates'
-import { rerunCommand } from './rerun'
 import { Risk } from './Risk'
 import { DailyRuleReport } from '../DailyRuleReport'
 import { TradesTab } from './TradesTab'
@@ -129,11 +128,6 @@ export function RunDetail(props: PanelHandleProps) {
 
   const catalogue = typeof figureResult === 'string' ? null : figureResult
 
-  const onLaunch = useMemo(
-    () => (command: string, args: string) => openStrategyLab({ command, args }),
-    [],
-  )
-
   if (!runId)
     return (
       <Placeholder big="Select a run">
@@ -176,10 +170,6 @@ export function RunDetail(props: PanelHandleProps) {
   }
   const leaf = leaves.find((item) => item.id === view) ?? leaves[0]
   const chip = watermarkChip(gateWatermark, ruleTest ? null : detail.run_context_watermark)
-  const rerun = rerunCommand(command, detail.kind, isValidate)
-  // Identity lives at the top level on some manifests and under `metadata` on others.
-  const metadata = (manifest.metadata ?? {}) as Record<string, unknown>
-  const symbol = asStr(manifest.symbol) ?? asStr(metadata.symbol) ?? ''
   // Save PNG hands over the first drawable figure of the current view; nothing is drawn here.
   const firstFigure = ruleTest && leaf.id === 'summary' ? summaryFigures(catalogue?.items ?? [])[0]
     : (catalogue?.items ?? []).find((item) => leaf.figureIds.includes(item.figure_id) && item.available) ?? null
@@ -239,9 +229,6 @@ export function RunDetail(props: PanelHandleProps) {
   return (
     <div className="panel report-document">
       <div className="panel-toolbar report-toolbar" role="toolbar" aria-label="Report toolbar">
-        <button type="button" className="btn glyph" disabled aria-label="Save report" title="The report is its run directory on disk — already saved, immutable">
-          <Icon name="report" />
-        </button>
         <button type="button" className="btn glyph" aria-label="Print" title="Print this report view" onClick={() => window.print()}>
           <Icon name="doc" />
         </button>
@@ -284,15 +271,7 @@ export function RunDetail(props: PanelHandleProps) {
         <button type="button" className="btn" onClick={openCompare} title="Open the Compare document and tick this run there">
           Compare…
         </button>
-        {rerun ? (
-          <button className="btn" onClick={() => onLaunch(rerun, symbol)} title="Prefill Strategy Development with this run's command">
-            Run again
-          </button>
-        ) : null}
         <span className="chip kind" title={ruleTest ? RULE_TEST_TITLE : undefined}>{kindLabel}</span>
-        {ruleTest ? labelChips(ruleTest.labels).map((label) => (
-          <span key={label.text} className="chip kind" title={label.title}>{label.text}</span>
-        )) : null}
         {chip ? (
           <span className="chip warn rg-watermark-chip" title={chip.title}>
             {chip.text}

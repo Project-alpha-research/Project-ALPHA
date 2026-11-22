@@ -85,8 +85,11 @@ def return_distribution(ctx: BuildContext) -> FigureSpec:
         panels=(
             Panel(
                 panel_id="histogram",
-                y_label="Sessions (count)",
+                # Log counts, as in the approved sample: rare tail days stay visible next to
+                # a tall bin of flat days.
+                y_label="Days (count, log scale)",
                 y_unit="count",
+                y_scale="log",
                 marks=(
                     HistogramMark(
                         edges=edges, counts=counts, role="subject", alpha=0.8, label="Observed"
@@ -130,7 +133,7 @@ def qq_normal(ctx: BuildContext) -> FigureSpec:
     tail = max(abs(observed[0] - reference[0]), abs(observed[-1] - reference[-1]))
     return ctx.spec(
         "qq_normal",
-        x_label="Normal quantile (z_score)",
+        x_label="Normal quantile (standard deviations)",
         x_kind="numeric",
         artifacts=("return_distribution.parquet",),
         truncation=_truncation(qq.height, len(picked), "points"),

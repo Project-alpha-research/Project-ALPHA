@@ -74,3 +74,29 @@ def test_fragile_and_robust_noise(values: list[float], expected: bool) -> None:
     assert not noise_summary([{"sharpe": v, "trades": 4, "reasons": {}} for v in values], -1.0)[
         "labels"
     ]
+
+
+def test_price_noise_in_a_worker_pool_equals_the_serial_result() -> None:
+    from alpha_cli.spine.price_noise import price_noise
+
+    idea = load_spec(None, rule="ma_cross", param=["fast=2", "slow=5"], asset=["SPY"])
+    spec = assemble_run_spec(idea, "SPY", 252, 100)
+    assert price_noise(bars(), [], spec, "a" * 16, 1.0, workers=2) == price_noise(
+        bars(), [], spec, "a" * 16, 1.0
+    )
+
+
+def test_the_full_gauntlet_uses_workers_and_quick_stays_serial() -> None:
+    import os
+
+    from alpha_cli.spine.run import gauntlet_knobs
+
+    full, quick = gauntlet_knobs(7, False), gauntlet_knobs(7, True)
+    assert full.max_workers == max(1, (os.cpu_count() or 1) - 1)
+    assert quick.max_workers == 1 and quick.tier2_paths == 4
+    assert (full.tier1_paths, full.tier2_paths, full.tier3_paths, full.n_resamples) == (
+        1000,
+        64,
+        64,
+        2000,
+    )

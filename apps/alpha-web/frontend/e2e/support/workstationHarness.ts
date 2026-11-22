@@ -1,9 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Locator, type Page, type Route } from '@playwright/test'
+import { expect, test, type Page, type Route } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import type { components } from '../../src/api/generated'
 import { studySeries } from './technicalFixture'
-import { acceptNextDialog } from './dialogCompletion'
 
 /** A CLI refusal the API relays as 400 with its message (e.g. a study longer than the window). */
 class Refusal { readonly detail: string; constructor(detail: string) { this.detail = detail } }
@@ -12,14 +11,11 @@ class Refusal { readonly detail: string; constructor(detail: string) { this.deta
 // View menu, the Navigator or the toolbar rather than from a fixed tab strip.
 const DOCUMENTS = [
   { title: 'Chart', id: 'chart' },
-  { title: 'Research', id: 'research' },
-  { title: 'Build', id: 'build' },
   { title: 'Strategy Builder', id: 'builder' },
   { title: 'Scanner', id: 'scanner' },
   { title: 'Strategy Performance Report', id: 'report' },
   { title: 'Compare', id: 'compare' },
   { title: 'Forecast', id: 'forecast' },
-  { title: 'Machine learning', id: 'ml-lab' },
   { title: 'Jobs', id: 'jobs' },
   { title: 'Governance', id: 'governance' },
 ] as const
@@ -2248,6 +2244,9 @@ function responseFor(route: Route, options: MockOptions): unknown {
   }
   if (url.pathname === '/api/strategies' || url.pathname === '/api/commands') return []
   if (url.pathname === '/api/providers') return []
+  if (url.pathname === '/api/recent-runs') return { total: 0, items: [] }
+  if (url.pathname === '/api/ideas') return { cards: [], total: 0, truncated: false }
+  if (url.pathname === '/api/market/overview') return { store: '1D', available_stores: ['1D'], bar_unit: 'day', window: 90, limit: 15, assets_in_store: 0, assets_scanned: 0, scan_cap: 200, bars_cap: 400, eligible_assets: 0, data_to: null, assets: [], too_few_bars: [], unreadable: [], generated_at: '2026-11-19T10:00:00+00:00' }
   if (url.pathname === '/api/follow/today') return { as_of: '2026-11-20T01:00:00+00:00', paper: true, followed: 0, behind: 0, markets: [], groups: [], rows: [], notice: 'Paper only. Forward use; not research. Not advice.' }
   if (url.pathname === '/api/system') return SYSTEM_STATUS
   if (url.pathname === '/api/jobs') return options.jobs ?? []
@@ -2350,7 +2349,8 @@ export async function preparePage(page: Page, options: MockOptions = {}): Promis
   await page.addInitScript(([initialSymbol, settings]: [string | null, Record<string, unknown> | null]) => {
     localStorage.clear()
     localStorage.setItem('alpha.workflow.context', JSON.stringify({ symbol: initialSymbol }))
-    if (settings) localStorage.setItem('alpha.settings', JSON.stringify(settings))
+    // The fixtures are crypto pairs: start on the Crypto market unless a test chooses another.
+    localStorage.setItem('alpha.settings', JSON.stringify({ profile: 'crypto', ...(settings ?? {}), profileChosen: true }))
 
     class DeterministicEventSource extends EventTarget {
       static readonly CONNECTING = 0
@@ -2485,8 +2485,8 @@ export async function preparePage(page: Page, options: MockOptions = {}): Promis
     })
   })
 
-  await page.goto('/#page=research&pane=ResearchCockpit')
-  await expect(page.getByRole('region', { name: 'Research Case', exact: true })).toBeVisible()
+  await page.goto('/#page=overview')
+  await expect(page.getByRole('region', { name: 'Recent tests', exact: true })).toBeVisible()
 }
 
 async function expectReleaseAccessibility(page: Page): Promise<void> {
@@ -2610,27 +2610,24 @@ test('both profiles filter market tasks without sending a profile', async ({ pag
   await page.getByRole('menuitem', { name: 'View', exact: true }).click()
   await expect(page.getByRole('menuitem', { name: 'Data & Assets › Funding', exact: true })).toHaveCount(0)
   await page.keyboard.press('Escape')
-  await expect(page.getByRole('combobox', { name: 'Download asset' })).toHaveValue('AAPL')
+  await expect(page.getByRole('combobox', { name: 'Download asset' })).toHaveValue('SPY')
   await switchProfile(page, 'crypto')
   await page.getByRole('menuitem', { name: 'View', exact: true }).click()
-  await expect(page.getByRole('menuitem', { name: 'Data & Assets › Funding', exact: true })).toBeVisible()
+  await expect(page.getByRole('menuitem', { name: 'Data & Assets › Funding', exact: true })).toHaveCount(0)
   await page.keyboard.press('Escape')
-  await expect(page.getByRole('combobox', { name: 'Download asset' })).toHaveValue('XRP/USDT')
+  await expect(page.getByRole('combobox', { name: 'Download asset' })).toHaveValue('BTC/USDT')
   expect(requests.filter(entry => /profile/i.test(entry))).toEqual([])
 })
 
-test('the status bar tells the truth about storage and paper routing', async ({ page }) => {
-  await preparePage(page, { storageUnmounted: true })
+test('the status bar shows the market, the clock and the hovered bar only', async ({ page }) => {
+  await preparePage(page)
   const bar = page.getByRole('contentinfo', { name: 'Status bar' })
-  const ssd = bar.locator('.status-segment--ssd')
-  await expect(ssd).toHaveText('Storage: not configured')
-  await expect(ssd).toHaveClass(/tone-warn/)
-  await expect(bar.locator('.status-segment--paper')).toHaveText('Paper only · no live routing')
   await expect(bar.locator('.status-segment--help')).toHaveText('For Help, press F1')
-  await expect(bar.locator('.status-segment--profile')).toHaveText('Profile: Crypto')
+  await expect(bar.locator('.status-segment--profile')).toHaveText('Market: Crypto')
   await expect(bar.locator('.status-segment--clock')).toHaveText(/\d{1,2} [A-Z][a-z]{2} \d{4}, \d{2}:\d{2} UTC/)
   await expect(bar.locator('.status-segment--ohlc')).toHaveText('O: — H: — L: — C: — V: —')
   await expect(bar.locator('.status-segment--bars')).toHaveText(/\d+ \/ \d+ bars/)
+  await expect(bar.locator('.status-segment--ssd, .status-segment--paper, .status-segment--providers')).toHaveCount(0)
 })
 
 test('Strategy Builder validates through the CLI, saves, and tests in the sandbox', async ({ page }) => {
@@ -2660,7 +2657,7 @@ test('Strategy Builder validates through the CLI, saves, and tests in the sandbo
   await expect(save).toBeDisabled()
   await editor.getByLabel('File name').fill('trend')
   await save.click()
-  await expect(editor.getByRole('button', { name: 'Test in sandbox' })).toBeEnabled()
+  await expect(editor.getByRole('button', { name: 'Run a backtest' })).toBeEnabled()
   expect(posts.filter((entry) => entry.path === '/api/rules')).toEqual([
     {
       path: '/api/rules',
@@ -2676,14 +2673,13 @@ test('Strategy Builder validates through the CLI, saves, and tests in the sandbo
   ])
   await editor.getByRole('combobox', { name: 'Test asset' }).fill('XRP/USDT')
   await editor.getByRole('combobox', { name: 'Test asset' }).press('Enter')
-  await editor.getByRole('button', { name: 'Test in sandbox' }).click()
+  await editor.getByRole('button', { name: 'Run a backtest' }).click()
   await expect.poll(() => posts.some(entry => entry.path === '/api/jobs')).toBe(true)
   const job = posts.find((entry) => entry.path === '/api/jobs')
   expect(job?.body).toMatchObject({ command: 'backtest run', args: 'XRP/USDT --strategy rules --rules trend --account-type MARGIN' })
   expect((job?.body.run_context as { kind?: string } | undefined)?.kind ?? 'standalone_sandbox').toBeTruthy()
   await editor.getByLabel('long condition 1 left').fill('sma:10')
-  await expect(editor.getByRole('button', { name: 'Test in sandbox' })).toBeDisabled()
-  await expect(editor.getByRole('button', { name: 'Open in Strategy Lab' })).toBeDisabled()
+  await expect(editor.getByRole('button', { name: 'Run a backtest' })).toBeDisabled()
 })
 
 test('Insert › Indicators draws CLI-computed overlays and chart windows tile', async ({ page }) => {
@@ -2785,178 +2781,6 @@ test('Market Watch Live is opt-in, quotes each pair from its own venue, and fall
   await expect(btc.getByRole('cell').nth(4)).toHaveAttribute('title', 'last stored bar 2023-11-15')
 })
 
-test('Research Cockpit captures an idea through the bounded REST surface', async ({ page }) => {
-  await preparePage(page)
-
-  await openTask(page, 'Research', 'Research Case')
-
-  await expect(page.locator('.panel-toolbar .title').filter({ hasText: 'Research Case' })).toBeVisible()
-  await page.getByLabel('Raw research idea').fill(RESEARCH_RAW_IDEA)
-  await page.getByRole('button', { name: 'capture · no compute' }).click()
-
-  await expect(page.getByText('TRIAGE', { exact: true }).first()).toBeVisible()
-  await expect(page.getByText('APPROVAL UNAVAILABLE', { exact: true })).toBeVisible()
-  await expect(page.getByText(RESEARCH_QUESTIONS[0].prompt, { exact: true })).toBeVisible()
-  await expect(page.getByText(RESEARCH_QUESTIONS[1].prompt, { exact: true })).toBeVisible()
-  await expect(page.getByText(RESEARCH_QUESTIONS[2].prompt, { exact: true })).toBeVisible()
-  await expect(page.getByText(/Uses equal 60-minute bars and a four-trading-hour pattern window/)).toBeVisible()
-  await expect(page.getByText(/D2 SEALED: research confirmation remains governed/)).toBeVisible()
-  // The research-sandbox sentence moved off the working screen into Governance.
-  await expect(page.locator('.sandbox-banner')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Governance' }).click()
-  await expect(
-    page.getByRole('region', { name: 'Governance', exact: true }).getByText(/SYNTHETIC D0 IS NOT REAL-MARKET EVIDENCE/),
-  ).toBeVisible()
-  await page.goBack()
-  await expectReleaseAccessibility(page)
-})
-
-test('all material questions and consequences remain readable by scrolling the workflow page', async ({ page }) => {
-  await preparePage(page)
-  await page.getByLabel('Raw research idea').fill(RESEARCH_RAW_IDEA)
-  await page.getByRole('button', { name: 'capture · no compute' }).click()
-
-  const questions = page.getByLabel('Material research questions')
-  await expect(questions).toBeVisible()
-  // Full-width workflow pages scroll vertically; each question and consequence must remain
-  // reachable at 1280x720 without the clipping caused by the former permanent docks.
-  for (const text of [...RESEARCH_QUESTIONS.map(question => question.prompt), RESEARCH_QUESTIONS[2].choices[0].consequence]) {
-    const content = page.getByText(text, { exact: true })
-    await content.scrollIntoViewIfNeeded()
-    await expect(content).toBeInViewport()
-  }
-})
-
-test('a research decision requires explicit local confirmation and sends no caller actor', async ({ page }) => {
-  let challenge: Record<string, unknown> | null = null
-  await preparePage(page, { capturedOwnerAction: (body) => { challenge = body } })
-  await page.getByLabel('Raw research idea').fill(RESEARCH_RAW_IDEA)
-  await page.getByRole('button', { name: 'capture · no compute' }).click()
-
-  await page.getByLabel('Decision reason').fill('The proposed operator is unavailable.')
-  await confirmOwnerAction(page, page.getByRole('button', { name: 'Confirm · reject exploration' }))
-
-  await expect.poll(() => challenge).not.toBeNull()
-  expect(challenge).toMatchObject({
-    action_type: 'reject_exploration',
-    project_id: RESEARCH_CASE.project_id,
-    artifact_hash: 'a'.repeat(64),
-    reason: 'The proposed operator is unavailable.',
-    payload: { contract_id: RESEARCH_CONTRACT_ID },
-  })
-  expect(challenge).not.toHaveProperty('actor')
-})
-
-test('guided mode defaults and advanced detail is remembered only for its project', async ({ page }) => {
-  await preparePage(page)
-  await openTask(page, 'Research', 'Backlog')
-  await page.getByRole('button', { name: new RegExp(RESEARCH_CASE.project_name) }).click()
-  await openDocument(page, 'Governance')
-  await expect(page.getByLabel('Project detail')).toHaveValue('guided')
-  await page.getByLabel('Project detail').selectOption('advanced')
-  await expect(page.locator('html')).toHaveAttribute('data-workspace-mode', 'advanced')
-  await page.getByLabel('Project context', { exact: true }).selectOption('')
-  await expect(page.getByLabel('Project detail')).toHaveValue('guided')
-  await expect(page.getByLabel('Project detail')).toBeDisabled()
-  await openDocument(page, 'Research')
-  await openTask(page, 'Research', 'Backlog')
-  await page.getByRole('button', { name: new RegExp(RESEARCH_CASE.project_name) }).click()
-  await openDocument(page, 'Governance')
-  await expect(page.getByLabel('Project detail')).toHaveValue('advanced')
-})
-
-test('Research Cockpit teaches the bounded terminal Gate Packet without upgrading evidence', async ({ page }) => {
-  await preparePage(page)
-
-  await openTask(page, 'Research', 'Research Case')
-  await page.getByLabel('Research Case project ID').fill(RESEARCH_CASE.project_id)
-  await page.getByRole('button', { name: 'open case' }).click()
-  await expect(page.getByText('CLOSED', { exact: true }).first()).toBeVisible()
-  await page.getByRole('button', { name: 'progress report' }).click()
-
-  await expect(page.getByText('90-second Research Gate conclusion', { exact: true })).toBeVisible()
-  await expect(page.getByText('NO TYPED NON SYNTHETIC EVIDENCE', { exact: true })).toBeVisible()
-  await expect(page.getByText('NOT TESTED', { exact: true }).first()).toBeVisible()
-  await expect(page.getByText(/strategy validated false · paper ready false · places orders false/)).toBeVisible()
-  await expectReleaseAccessibility(page)
-})
-
-test('Research Cockpit Decision tab assembles checklist, scorecard, packet, and history', async ({ page }) => {
-  await preparePage(page)
-
-  await openTask(page, 'Research', 'Research Case')
-  await page.getByLabel('Research Case project ID').fill(RESEARCH_CASE.project_id)
-  await page.getByRole('button', { name: 'open case' }).click()
-  await expect(page.getByText('CLOSED', { exact: true }).first()).toBeVisible()
-
-  await page.getByRole('tab', { name: 'Decision', exact: true }).click()
-  // The fourteen spec-§10.1 questions render as typed statuses, never a numeric aggregate.
-  await expect(page.getByText(/Edge-validation checklist · fourteen questions/)).toBeVisible()
-  await expect(page.getByText('1. Does the effect exist?')).toBeVisible()
-  await expect(page.getByText('14. How much uncertainty remains?')).toBeVisible()
-  // The full scorecard, terminal gate packet, and append-only history ride the same view.
-  await expect(page.getByText('Full readiness scorecard', { exact: true })).toBeVisible()
-  await expect(page.getByText('MORE RESEARCH REQUIRED').first()).toBeVisible()
-  await expect(page.getByText('90-second Research Gate conclusion', { exact: true })).toBeVisible()
-  await expect(page.getByText(/INCONCLUSIVE · PARK · owner \(human\)/)).toBeVisible()
-  await expectReleaseAccessibility(page)
-})
-
-test('Research Cockpit Study tab preserves masking and owner-only D1 authority', async ({ page }) => {
-  await preparePage(page)
-
-  await openTask(page, 'Research', 'Research Case')
-  await page.getByLabel('Research Case project ID').fill(RESEARCH_CASE.project_id)
-  await page.getByRole('button', { name: 'open case' }).click()
-  await page.getByRole('tab', { name: 'Study', exact: true }).click()
-
-  await expect(page.getByLabel('Verified semantic study status')).toBeVisible()
-  await expect(page.getByText('visible-1', { exact: true })).toBeVisible()
-  await expect(page.getByText('8', { exact: true })).toBeVisible()
-  await expect(page.getByText('bounded reversal', { exact: true })).toBeVisible()
-  // A triage case offers no launch: the D1 row says owner-only and no confirmation button exists.
-  await expect(page.getByText('OWNER ONLY', { exact: true })).toBeVisible()
-  await expect(page.getByText(/Freeze the approved semantic definition with fresh owner confirmation/)).toBeVisible()
-  await expect(page.getByRole('button', { name: /launch.*D1/i })).toHaveCount(0)
-  await expectReleaseAccessibility(page)
-})
-
-test('research workflow links the backlog, cockpit and evidence panels', async ({ page }) => {
-  await preparePage(page)
-
-  await openTask(page, 'Research', 'Backlog')
-  await expect(page.getByText('Needs you (1)')).toBeVisible()
-
-  await page.getByRole('button', { name: new RegExp(RESEARCH_CASE.project_name) }).click()
-  await openTask(page, 'Research', 'Research Case')
-  await expect(page.getByText('CLOSED', { exact: true }).first()).toBeVisible()
-
-  await openTask(page, 'Research', 'Evidence')
-  await expect(page.getByRole('tab', { name: 'Evidence for', exact: true })).toBeVisible()
-  // Literature claims render screened vs draft distinctly, claims map before bibliography.
-  await page.getByLabel('Evidence sections').getByRole('tab', { name: 'Literature' }).click()
-  await expect(page.getByText('SCREENED', { exact: true })).toBeVisible()
-  await expect(page.getByText('DRAFT — UNSCREENED', { exact: true })).toBeVisible()
-  await expect(page.getByText('Search concepts', { exact: true })).toBeVisible()
-  await expect(page.getByText('Budget: 20 candidates · 5 full texts · explicit click only')).toBeVisible()
-  await expect(page.getByText(/Decision support only/)).toBeVisible()
-  await expect(page.getByText(/LEGACY — NO TEXT ANCHOR/).first()).toBeVisible()
-  await page.getByRole('tab', { name: 'Falsification', exact: true }).click()
-  await expect(page.getByText('Shuffled-label control shows no effect')).toBeVisible()
-  await expect(page.getByText('NOT_TESTED', { exact: true }).first()).toBeVisible()
-  // Evidence against renders with the same component and prominence as evidence for.
-  await page.getByRole('tab', { name: 'Evidence against', exact: true }).click()
-  await expect(page.getByText(/No typed findings of this direction exist yet/)).toBeVisible()
-
-  // The Quality tab of the Data Manager dock serves registered refs with audit badges.
-  await openTask(page, 'Data & Assets', 'Data downloads')
-  await page.getByRole('tab', { name: 'Quality', exact: true }).click()
-  await expect(page.getByText('1 LIMITING', { exact: true })).toBeVisible()
-  await expect(page.getByText('RESEARCH ONLY', { exact: true })).toBeVisible()
-  await expect(page.getByText(/snapshot snap1 · manifest/)).toBeVisible()
-  await expectReleaseAccessibility(page)
-})
-
 }
 
 export async function cryptoDataCenterJourney(page: Page): Promise<void> {
@@ -3050,43 +2874,6 @@ export async function cryptoDataCenterJourney(page: Page): Promise<void> {
 }
 
 export function registerWorkstationFeatureTests(): void {
-test('New Idea opens natural-language capture with zero trading-rule inputs', async ({ page }) => {
-  await preparePage(page)
-
-  // New Idea lives at the top of the Research menu (artboard: no titlebar button).
-  await page.getByRole('menuitem', { name: 'Research', exact: true }).click()
-  await page.getByRole('menuitem', { name: 'New Idea…', exact: true }).click()
-  await expect(documentTab(page, 'Research')).toHaveAttribute(
-    'aria-selected',
-    'true',
-  )
-  await expect(page.getByRole('tab', { name: 'Research Case', exact: true })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  )
-  const capture = page.getByLabel('Raw research idea')
-  await expect(capture).toBeVisible()
-  await expect(capture).toBeFocused()
-
-  // Spec §2.4: the capture flow is one natural-language textarea plus an optional name
-  // (and the explicit case-ID lookup) — no entry-rule, stop, target, indicator,
-  // parameter, or optimisation input of any kind.
-  const controls = page.locator(
-    '.research-intake-grid input, .research-intake-grid textarea, .research-intake-grid select',
-  )
-  await expect(controls).toHaveCount(3)
-  const descriptors = await controls.evaluateAll((nodes) =>
-    nodes.map(
-      (node) =>
-        `${node.getAttribute('aria-label') ?? ''} ${node.getAttribute('placeholder') ?? ''}`,
-    ),
-  )
-  for (const descriptor of descriptors) {
-    expect(descriptor).not.toMatch(/entry|stop|target|indicator|param|optimi|rule|size|leverage/i)
-  }
-  await expectReleaseAccessibility(page)
-})
-
 test('running jobs expose exact runtime, bounded ETA, progress, and live output', async ({ page }) => {
   await preparePage(page, {
     jobs: [
@@ -3160,20 +2947,6 @@ test('a failed job row shows the CLI error message, never a box border', async (
   await expectReleaseAccessibility(page)
 })
 
-test('ML diagnostics render bounded Qlib evidence and the permanent authority warning', async ({ page }) => {
-  await preparePage(page, { mlDiagnostics: true })
-  await openDocument(page, 'Machine learning')
-  await openTask(page, 'Results', 'ML diagnostics')
-
-  await expect(page.locator('.rd-head').filter({ hasText: 'Score distribution' })).toBeVisible()
-  await expect(page.locator('.rd-head').filter({ hasText: 'IC / RankIC timeline' })).toBeVisible()
-  await expect(page.locator('.rd-head').filter({ hasText: 'Feature importance' })).toBeVisible()
-  await expect(page.getByText(/MODEL NOT RECOMPUTED UNDER COUNTERFACTUAL/i).first()).toBeVisible()
-  await expect(page.getByText('0.9.7', { exact: true })).toBeVisible()
-  await expect(page.getByText(/panel crashed/i)).toHaveCount(0)
-  await expectReleaseAccessibility(page)
-})
-
 test('causal chart paginates evidence, selects an event, and exports exact OHLCV', async ({ page }) => {
   await preparePage(page, {
     chartBundle: causalChartBundle(),
@@ -3235,21 +3008,6 @@ test('dense causal chart layers cap visuals without hiding returned evidence', a
   await expect(all).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByText('140/180 markers shown', { exact: true })).toBeVisible()
   await expect(page.getByText(/1–80 \/ 180 RETURNED EVENTS/)).toBeVisible()
-})
-
-test('legacy trace rerun opens the governed Development Center', async ({ page }) => {
-  await preparePage(page, { chartBundle: causalChartBundle(false), runs: [HEAVY_LIBRARY_RUN] })
-  await openHeavyPrice(page)
-
-  await expect(page.getByText('TRACE UNAVAILABLE', { exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Rerun for causal trace' }).click()
-  // The intent has to reach the shell: switch screens *and* surface the governed panel.
-  await expect(page.getByRole('tab', { name: 'Development Center', exact: true })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  )
-  await expect(page.getByText('Development Center', { exact: true }).first()).toBeVisible()
-  await expect(page.getByText(/panel crashed/i)).toHaveCount(0)
 })
 
 test('a figure maximises into a dialog with Save PNG, Save SVG, Copy and Esc', async ({ page }) => {
@@ -3340,7 +3098,6 @@ test('Phase 3 acceptance: terminal chrome on every document, no hazard stripe, f
     await openDocument(page, item.title)
     await expect(page.getByRole('menubar', { name: 'Terminal menu' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Symbol, venue and timeframe' })).toBeVisible()
-    await expect(page.locator('.status-chip')).toHaveText('Paper only')
     await expect(item.id === 'chart' ? page.locator('.analytical-workspace') : page.locator('.workflow-panel')).toHaveCount(1)
     await expect(page.locator('.menubar')).toHaveCount(1)
   }
@@ -3393,27 +3150,23 @@ test('research-gate override watermark reaches governance and run results', asyn
   await openTask(page, 'Results', 'Run library')
   await backtestLeaf(page, WATERMARKED_RUN_ITEM.display_name).click()
   await expect(documentTab(page, WATERMARKED_RUN_ITEM.display_name)).toHaveAttribute('aria-selected', 'true')
-  // Three surfaces: the report title-bar chip, the toolbar status chip, the Governance document.
+  // Two surfaces: the report title-bar chip and the Governance document.
   await expect(page.locator('.rg-watermark-chip')).toHaveText(RESEARCH_GATE_WATERMARK)
-  await expect(page.locator('.status-chip')).toHaveText(RESEARCH_GATE_WATERMARK)
-  await expect(page.getByText(RESEARCH_GATE_WATERMARK, { exact: true })).toHaveCount(2)
-  await page.locator('.status-chip').click()
-  // Governance is a document, so the report unmounts behind it: the chip and the Governance row
-  // carry the watermark now; closing Governance brings the report chip back.
+  await expect(page.getByText(RESEARCH_GATE_WATERMARK, { exact: true })).toHaveCount(1)
+  await page.getByRole('button', { name: 'Governance' }).click()
+  // Governance is a document, so the report unmounts behind it; closing Governance brings the chip back.
   const governance = page.getByRole('region', { name: 'Governance', exact: true })
   await expect(governance.getByText(RESEARCH_GATE_WATERMARK, { exact: true })).toBeVisible()
-  await expect(page.locator('.status-chip')).toHaveText(RESEARCH_GATE_WATERMARK)
-  await expect(page.getByText(RESEARCH_GATE_WATERMARK, { exact: true })).toHaveCount(2)
   await expectReleaseAccessibility(page)
   await page.goBack()
   await expect(page.locator('.rg-watermark-chip')).toHaveText(RESEARCH_GATE_WATERMARK)
-  await expect(page.getByText(RESEARCH_GATE_WATERMARK, { exact: true })).toHaveCount(2)
+  await expect(page.getByText(RESEARCH_GATE_WATERMARK, { exact: true })).toHaveCount(1)
   await expectReleaseAccessibility(page)
 })
 
 test('the Governance document holds the hazard sentences the working documents no longer shout', async ({ page }) => {
   await preparePage(page)
-  for (const title of ['Research', 'Build', 'Jobs']) {
+  for (const title of ['Jobs']) {
     await openDocument(page, title)
     await expect(page.locator('.sandbox-banner')).toHaveCount(0)
   }
@@ -3444,63 +3197,6 @@ test('the Governance document holds the hazard sentences the working documents n
   await page.goBack()
   await expect(page.getByRole('region', { name: 'Governance', exact: true })).toHaveCount(0)
   await expect(documentTab(page, 'Jobs')).toHaveAttribute('aria-selected', 'true')
-})
-
-test('open research gates lock strategy affordances on Develop and link to the case', async ({ page }) => {
-  await preparePage(page, { researchGateLock: true })
-  await openDocument(page, 'Build')
-  await openTask(page, 'Strategies & Tests', 'Development Center')
-
-  // Development Center auto-selects the research-required project and blocks versioning; the
-  // explanation lives in Governance, which deep-links to the holding case.
-  await expect(page.getByText('RESEARCH GATE OPEN', { exact: true })).toHaveCount(0)
-  await page.getByLabel('Clean source fingerprint').fill('git:0000000')
-  await expect(page.getByRole('button', { name: 'Create immutable version' })).toBeDisabled()
-  // The topbar status chip names the open gate and is the deep link into Governance.
-  const chip = page.locator('.status-chip')
-  await expect(chip).toHaveText('Research gate open')
-  await chip.click()
-  const governance = page.getByRole('region', { name: 'Governance', exact: true })
-  await governance.getByRole('button', { name: 'Research gates' }).click()
-  await expect(governance.getByText(/RESEARCH GATE OPEN/)).toBeVisible()
-  await governance.getByRole('button', { name: /Open research case/ }).click()
-  await expect(documentTab(page, 'Research')).toHaveAttribute('aria-selected', 'true')
-
-  // Strategy Lab and Pipeline share the same backend gate and block strategy execution.
-  await openDocument(page, 'Build')
-  await openTask(page, 'Strategies & Tests', 'Strategy Development')
-  await expect(page.getByText('RESEARCH GATE OPEN', { exact: true })).toHaveCount(1)
-  await expect(page.getByRole('button', { name: /Launch backtest run/ })).toBeDisabled()
-  await openTask(page, 'Strategies & Tests', 'Development Next Step')
-  const preps = page.getByRole('button', { name: '▶ prep' })
-  await expect(preps.first()).toBeEnabled() // 1 · Data — pulling history is not strategy work
-  await expect(preps.nth(1)).toBeDisabled() // 2 · Backtest
-  await expect(preps.nth(3)).toBeDisabled() // 4 · Optimize
-  await expectReleaseAccessibility(page)
-
-  // The case link lands on the Research desk with the holding case in focus.
-  await page.getByRole('button', { name: /Open research case/ }).first().click()
-  await expect(documentTab(page, 'Research')).toHaveAttribute(
-    'aria-selected',
-    'true',
-  )
-  await expect(page.getByRole('tab', { name: 'Research Case', exact: true })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  )
-  await expect(page.getByText('Research Case', { exact: true }).first()).toBeVisible()
-
-  // Non-research context — the grandfathered project re-enables every affordance.
-  await openDocument(page, 'Build')
-  await openTask(page, 'Strategies & Tests', 'Development Center')
-  await page.getByLabel('Strategy project').selectOption(UNGATED_PROJECT.project_id)
-  await page.getByLabel('Clean source fingerprint').fill('git:0000000')
-  await expect(page.getByRole('button', { name: 'Create immutable version' })).toBeEnabled()
-  await openTask(page, 'Strategies & Tests', 'Strategy Development')
-  await expect(page.getByText('RESEARCH GATE OPEN', { exact: true })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: /Launch backtest run/ })).toBeEnabled()
-  await openTask(page, 'Strategies & Tests', 'Development Next Step')
-  await expect(preps.nth(1)).toBeEnabled()
 })
 
 }
@@ -3629,111 +3325,7 @@ test('@reference-only @perf-budget 25k bars and 200 annotations remain interacti
 })
 }
 
-// ---- Phase 4 P4: every owner step has explicit confirmation ------------------------------------------
-
-const APPROVED = { state: 'approved', event: null } as components['schemas']['ResearchReviewSummary']
-
-async function confirmOwnerAction(page: Page, button: Locator): Promise<void> {
-  const performed = page.waitForResponse(response =>
-    new URL(response.url()).pathname === '/api/owner-auth/actions/perform'
-    && response.request().method() === 'POST')
-  const [, , response] = await Promise.all([acceptNextDialog(page), button.click(), performed])
-  expect(response.ok()).toBe(true)
-}
-
-async function captureCase(page: Page) {
-  await page.getByLabel('Raw research idea').fill(RESEARCH_RAW_IDEA)
-  await page.getByRole('button', { name: 'capture · no compute' }).click()
-}
-
 export function registerLifecycleTests(): void {
-test('a case waiting for D1 offers Confirm · launch D1 where the next action is printed', async ({ page }) => {
-  let challenge: Record<string, unknown> | null = null
-  await preparePage(page, {
-    capturedOwnerAction: (body) => { challenge = body },
-    researchCaseOverride: {
-      phase: 'pilot',
-      execution_state: 'idle',
-      responsibility: 'owner',
-      exploration_review: APPROVED,
-      next_action: 'Owner launches the frozen D1 analysis plan.',
-    },
-  })
-  await captureCase(page)
-  const next = page.getByRole('region', { name: 'Canonical next action' })
-  await expect(next).toContainText('Owner launches the frozen D1 analysis plan.')
-  const button = next.getByRole('button', { name: 'Confirm · launch D1' })
-  await expect(button).toBeDisabled() // a reason is part of the receipt
-  await next.getByLabel('Reason for launch D1').fill('Exploration approved; run the frozen plan.')
-  await confirmOwnerAction(page, button)
-  await expect.poll(() => challenge).not.toBeNull()
-  expect(challenge).toMatchObject({
-    action_type: 'launch_d1',
-    project_id: RESEARCH_CASE.project_id,
-    reason: 'Exploration approved; run the frozen plan.',
-    payload: {},
-  })
-  expect(challenge).not.toHaveProperty('actor')
-  await expectReleaseAccessibility(page)
-})
-
-test('material questions are answered in place and revised with local confirmation', async ({ page }) => {
-  let challenge: Record<string, unknown> | null = null
-  await preparePage(page, {
-    capturedOwnerAction: (body) => { challenge = body },
-    researchCaseOverride: { source_pack_id: 'sp_frozen_1' },
-  })
-  await captureCase(page)
-  const questions = page.getByLabel('Material research questions')
-  const revise = questions.getByRole('button', { name: 'Confirm · revise with these answers' })
-  await expect(revise).toBeDisabled()
-  for (const question of RESEARCH_QUESTIONS) {
-    const group = questions.getByRole('radiogroup', { name: question.prompt })
-    await expect(group.getByRole('radio', { disabled: true })).toHaveCount(
-      question.choices.filter((choice) => choice.availability === 'unavailable').length,
-    )
-    await group.getByRole('radio', { disabled: false }).first().check()
-  }
-  await questions.getByLabel('Reason for revise with these answers').fill('Answers chosen from the available operators.')
-  await expect(revise).toBeEnabled()
-  await confirmOwnerAction(page, revise)
-  await expect.poll(() => challenge).not.toBeNull()
-  expect(challenge).toMatchObject({ action_type: 'revise_exploration', payload: { source_pack_id: 'sp_frozen_1' } })
-  const answers = (challenge as unknown as { payload: { answers: Record<string, string> } }).payload.answers
-  expect(Object.keys(answers).sort()).toEqual(RESEARCH_QUESTIONS.map((question) => question.id).sort())
-})
-
-test('the Decision tab records the final disposition with local confirmation once the case reaches research_decision', async ({ page }) => {
-  let challenge: Record<string, unknown> | null = null
-  await preparePage(page, {
-    capturedOwnerAction: (body) => { challenge = body },
-    researchCaseOverride: {
-      phase: 'research_decision',
-      execution_state: 'idle',
-      responsibility: 'owner',
-      exploration_review: APPROVED,
-      confirmation_review: APPROVED,
-      next_action: 'Owner records the final disposition.',
-    },
-  })
-  await captureCase(page)
-  await page.getByRole('tab', { name: 'Decision', exact: true }).click()
-  const form = page.getByRole('region', { name: 'Owner final disposition' })
-  const record = form.getByRole('button', { name: 'Confirm · record decision' })
-  await expect(record).toBeDisabled()
-  await expect(form).toContainText('choose an outcome and a disposition first')
-  await form.locator('select').nth(0).selectOption('SUPPORTED')
-  await form.locator('select').nth(1).selectOption('park')
-  await form.getByLabel('Reason for record decision').fill('Supported but parked pending capacity.')
-  await confirmOwnerAction(page, record)
-  await expect.poll(() => challenge).not.toBeNull()
-  expect(challenge).toMatchObject({
-    action_type: 'record_final_disposition',
-    payload: { outcome: 'SUPPORTED', disposition: 'park' },
-  })
-  await expectReleaseAccessibility(page)
-})
-
 test('Governance explains local confirmation without enrollment', async ({ page }) => {
   await preparePage(page)
   // Governance explains local confirmation without requiring enrollment.
@@ -3794,30 +3386,6 @@ test('a store change outside the browser refreshes the panel watching its area',
   await expect(page.getByRole('row').filter({ hasText: 'backtest run SPY' })).toHaveCount(0)
 })
 
-test('a running case offers confirmed pause and cancel where the next action is printed', async ({ page }) => {
-  let challenge: Record<string, unknown> | null = null
-  await preparePage(page, {
-    capturedOwnerAction: (body) => { challenge = body },
-    researchCaseOverride: {
-      phase: 'deep_research',
-      execution_state: 'running',
-      responsibility: 'codex',
-      exploration_review: APPROVED,
-      next_action: 'Codex runs the frozen D1 plan.',
-    },
-  })
-  await captureCase(page)
-  const next = page.getByRole('region', { name: 'Canonical next action' })
-  await expect(next.getByRole('button', { name: 'Confirm · cancel active work' })).toBeVisible()
-  const pause = next.getByRole('button', { name: 'Confirm · pause' })
-  await expect(pause).toBeDisabled()
-  await next.getByLabel('Reason for pause').fill('Owner wants to review the checkpoint first.')
-  await confirmOwnerAction(page, pause)
-  await expect.poll(() => challenge).not.toBeNull()
-  expect(challenge).toMatchObject({ action_type: 'pause_research', project_id: RESEARCH_CASE.project_id })
-  expect(challenge).not.toHaveProperty('actor')
-})
-
 test('Data Manager Snapshots tab lists snapshots and Verify runs a data job', async ({ page }) => {
   const posts: Array<{ path: string; body: Record<string, unknown> }> = []
   await preparePage(page, {
@@ -3850,46 +3418,6 @@ test('Data Manager Snapshots tab lists snapshots and Verify runs a data job', as
   await row.getByRole('button', { name: 'Verify' }).click()
   await expect(page.getByText(/verify snap1 started as job job-verify-1/)).toBeVisible()
   expect(posts).toEqual([{ path: '/api/jobs', body: { command: 'data', args: 'verify snap1' } }])
-})
-
-test('the Development Center links a run to a stage and keeps seal/decide as CLI copy commands', async ({ page }) => {
-  const posts: Array<{ path: string; body: Record<string, unknown> }> = []
-  await preparePage(page, {
-    candidateProject: true,
-    capturedPost: (path, body) => {
-      posts.push({ path, body })
-      if (path.endsWith('/stage-links')) {
-        return {
-          link_id: 'link-1',
-          project_id: CANDIDATE_PROJECT.project_id,
-          experiment_id: CANDIDATE_EXPERIMENT_ID,
-          stage: body['stage'],
-          run_id: body['run_id'],
-          state: 'ready',
-          created_at: '2026-09-04T00:00:00+00:00',
-          updated_at: '2026-09-04T00:00:00+00:00',
-          history: [],
-        }
-      }
-      return undefined
-    },
-  })
-  await openDocument(page, 'Build')
-  await openTask(page, 'Strategies & Tests', 'Development Center')
-  await page.getByLabel('Strategy project').selectOption(CANDIDATE_PROJECT.project_id)
-  const rail = page.getByRole('region', { name: 'Development ledger actions' })
-  await rail.getByRole('button', { name: 'Link a run to a stage' }).click()
-  await rail.getByLabel('Run id (16 hex)').fill('abcdefabcdefabcd')
-  await rail.getByRole('button', { name: 'Link run' }).click()
-  await expect.poll(() => posts.length).toBeGreaterThanOrEqual(1)
-  expect(posts[0]).toEqual({
-    path: `/api/projects/${CANDIDATE_PROJECT.project_id}/stage-links`,
-    body: { experiment_id: CANDIDATE_EXPERIMENT_ID, run_id: 'abcdefabcdefabcd', stage: 'baseline', state: 'ready' },
-  })
-  // Advanced-only detail: present in the DOM (hidden in Guided mode) and CLI-shaped, never a button.
-  await expect(rail.locator('details.advanced-only')).toContainText('alpha project seal-holdout')
-  await expect(rail.locator('details.advanced-only')).toContainText('alpha project decide')
-  await expect(page.getByRole('button', { name: /Confirm · seal/ })).toHaveCount(0)
 })
 
 test('Scanner saves a scan, runs it through the CLI, and Alerts relays checked signal changes', async ({ page }) => {

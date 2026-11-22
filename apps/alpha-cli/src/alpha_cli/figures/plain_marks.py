@@ -137,6 +137,11 @@ def draw_bar(axes: Axes, mark: BarMark, kind: str, cycle_index: int) -> None:
     colour: Any = options.pop("color")
     if mark.signed_colour:
         colour = ["C2" if value >= 0 else "C3" for value in mark.y]
+    if len(x) > 400 and not mark.horizontal and not mark.hatched:
+        # Thousands of daily bars are narrower than a pixel: draw each as a thin line, so a
+        # single spike stays visible.
+        axes.vlines(x, 0.0, mark.y, colors=colour, linewidth=1.0, **options)
+        return
     spacing = float(np.min(np.diff(np.sort(x)))) if len(x) > 1 else 1.0
     width = mark.width if mark.width is not None else spacing * 0.8
     draw = axes.barh if mark.horizontal else axes.bar
@@ -146,13 +151,14 @@ def draw_bar(axes: Axes, mark: BarMark, kind: str, cycle_index: int) -> None:
             patch.set_hatch("///")
 
 
-def draw_histogram(axes: Axes, mark: HistogramMark, cycle_index: int) -> None:
+def draw_histogram(axes: Axes, mark: HistogramMark, cycle_index: int, bottom: Any = 0.0) -> None:
     options = _kwargs(mark, cycle_index)
     widths = np.diff(np.asarray(mark.edges))
     axes.bar(
         mark.edges[:-1],
         mark.counts,
         width=widths,
+        bottom=bottom,
         align="edge",
         edgecolor="white",
         linewidth=0.5,
@@ -169,25 +175,51 @@ def draw_heatmap(axes: Axes, figure: Figure, mark: HeatmapMark) -> None:
     norm = None
     cmap = "viridis"
     if centre is not None and finite.size and finite.min() < centre < finite.max():
-        cmap, norm = "RdYlGn", TwoSlopeNorm(vmin=finite.min(), vcenter=centre, vmax=finite.max())
+        cmap = "RdYlGn"
+        # Centred and symmetric, as in the approved sample: pale yellow is the centre.
+        reach = float(np.max(np.abs(finite - centre))) or 1.0
+        norm = TwoSlopeNorm(vmin=centre - reach, vcenter=centre, vmax=centre + reach)
     image = axes.imshow(np.ma.masked_invalid(data), aspect="auto", cmap=cmap, norm=norm)
-    figure.colorbar(image, ax=axes, label=mark.colorbar_label)
+    figure.colorbar(
+        image,
+        ax=axes,
+        label=mark.colorbar_label,
+        orientation="horizontal",
+        location="bottom",
+        pad=0.08,
+        fraction=0.04,
+        aspect=50,
+    )
     axes.set_xticks(range(len(mark.columns)), labels=list(mark.columns))
     axes.set_yticks(range(len(mark.rows)), labels=list(mark.rows))
-    if mark.cell_text and len(mark.rows) * len(mark.columns) <= 150:
-        for r, row in enumerate(mark.cell_text):
-            for c, text in enumerate(row):
-                axes.text(c, r, text, ha="center", va="center", fontsize=6.5)
+    size = 8.0 if len(mark.columns) <= 13 else 6.5
+    for r, row in enumerate(mark.cell_text):
+        for c, text in enumerate(row):
+            axes.text(c, r, text, ha="center", va="center", fontsize=size)
 
 
 def draw_zone(axes: Axes, mark: ZoneMark, kind: str, cycle_index: int) -> None:
     low, high = (float(v) for v in x_values((mark.x0, mark.x1), kind))
     colour = _kwargs(mark, cycle_index)["color"]
+    # A zone that states its own shade keeps it; otherwise the standard light shade.
+    alpha = mark.alpha if mark.alpha < 1.0 else 0.15
     if mark.y0 is None or mark.y1 is None:
-        axes.axvspan(low, high, facecolor=colour, alpha=0.15 * mark.alpha, lw=0, label=mark.label)
+        axes.axvspan(low, high, facecolor=colour, alpha=alpha, lw=0, label=mark.label)
     else:
         axes.fill_between(
-            [low, high], mark.y0, mark.y1, color=colour, alpha=0.15, lw=0, label=mark.label
+            [low, high], mark.y0, mark.y1, color=colour, alpha=alpha, lw=0, label=mark.label
+        )
+    if mark.corner_label is not None:
+        # The zone's name ("#1") sits at its lower left corner, inside the axes.
+        axes.text(
+            low,
+            0.02,
+            " " + mark.corner_label.text,
+            transform=axes.get_xaxis_transform(),
+            fontsize=8,
+            color="0.2",
+            va="bottom",
+            clip_on=True,
         )
 
 
@@ -202,6 +234,19 @@ def draw_rule(axes: Axes, mark: RuleMark, kind: str) -> None:
         axes.axhline(
             mark.position, color=colour, linestyle=style, linewidth=width, label=mark.label
         )
+        if mark.annotate is not None:
+            # The line's own number ("mean 0.34", "runs z = -1.62") sits on it, at the left.
+            axes.annotate(
+                mark.annotate.text,
+                xy=(0.01, mark.position),
+                xycoords=("axes fraction", "data"),
+                xytext=(0, 3),
+                textcoords="offset points",
+                fontsize=8.5,
+                color=colour,
+                va="bottom",
+                bbox={"fc": "white", "ec": "none", "alpha": 0.8, "pad": 1.0},
+            )
 
 
 def draw_errorbar(axes: Axes, mark: ErrorBarMark) -> None:
@@ -210,7 +255,8 @@ def draw_errorbar(axes: Axes, mark: ErrorBarMark) -> None:
     err = np.vstack([point - np.asarray(mark.lower), np.asarray(mark.upper) - point])
     axes.errorbar(point, y, xerr=err, fmt="o", capsize=3, label=mark.label)
     axes.set_yticks(y, labels=list(mark.categories))
-    axes.invert_yaxis()
+    # Half a row of margin, top and bottom: two intervals do not sit at the far edges.
+    axes.set_ylim(len(y) - 0.4, -0.6)
 
 
 def draw_table(axes: Axes, mark: TableMark) -> None:

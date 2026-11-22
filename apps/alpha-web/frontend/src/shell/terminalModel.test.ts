@@ -10,8 +10,9 @@ it('maps every profile-visible task and rejects unavailable or executable comman
     for (const entry of entries) expect(resolveFunction(entry.code.toLowerCase(), profile)).toEqual(entry)
   }
   expect(resolveFunction(' chart ', 'crypto')?.pane).toBe('PriceChart')
-  expect(resolveFunction('Literature', 'crypto')?.pane).toBe('Literature')
-  expect(resolveFunction('FUNDING', 'equities')).toBeNull()
+  expect(resolveFunction('All tests', 'crypto')?.pane).toBe('AllTests')
+  expect(resolveFunction('FUNDING', 'crypto')).toBeNull()
+  expect(resolveFunction('Literature', 'crypto')).toBeNull()
   expect(resolveFunction('alpha research approve', 'crypto')).toBeNull()
 })
 

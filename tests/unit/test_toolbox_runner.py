@@ -368,7 +368,14 @@ def test_attribution_uses_full_history_dividend_cash(
     )
     (target.directory / "manifest.json").write_text(json.dumps(target.manifest))
     (target.directory / "spec.json").write_text(
-        json.dumps({"assets": ["SPY"], "rule": {"kind": "ma_cross", "fast": 2, "slow": 5}})
+        # A stored spec states its costs (M99: no costs would mean class costs).
+        json.dumps(
+            {
+                "assets": ["SPY"],
+                "rule": {"kind": "ma_cross", "fast": 2, "slow": 5},
+                "costs": {"fee_bps": 1.0, "slippage_bps": 2.0},
+            }
+        )
     )
     (target.directory / "diagnostics.json").write_text("{}")
     monkeypatch.setattr(

@@ -54,6 +54,18 @@ def test_class_lookup(
     assert _key(tmp_path, symbol) == expected
 
 
+@pytest.mark.parametrize(
+    ("symbol", "expected"), [("SPY", "us_large_etf"), ("QQQ", "us_large_etf"), ("XYZ", None)]
+)
+def test_class_costs_know_a_broad_us_fund_by_its_symbol(
+    tmp_path: Path, symbol: str, expected: str | None
+) -> None:
+    _asset(tmp_path, symbol, "yfinance", None)
+    resolved = resolve_asset(symbol, data_dir=tmp_path)
+    assert cc.asset_class(resolved, by_symbol=True) == expected
+    assert cc.asset_class(resolved) is None  # a stated-cost run records only what the store says
+
+
 def test_table_rows_and_unknown_class_is_the_most_cautious() -> None:
     assert set(cc.ROWS) == {"us_large_etf", "us_stock", "crypto_spot", "crypto_perpetual"}
     assert all(row.source for row in cc.ROWS.values())
@@ -179,7 +191,7 @@ def test_borrow_fact_is_absent_for_a_long_only_run(tmp_path: Path) -> None:
     assert "no short" in result["reasons"]["result_after_borrow"].lower()
 
 
-def test_follow_refuses_class_default_costs(tmp_path: Path) -> None:
+def test_follow_refuses_class_default_costs_not_stored(tmp_path: Path) -> None:
     from alpha_cli.follow_source import frozen_idea
     from alpha_cli.spine.errors import SpineError
 
@@ -193,6 +205,22 @@ def test_follow_refuses_class_default_costs(tmp_path: Path) -> None:
     with pytest.raises(SpineError) as raised:
         frozen_idea(tmp_path, "abcdef0123456789", idea.spec_sha256)
     assert raised.value.payload["code"] == "FOLLOW_COSTS_BY_CLASS"
+
+
+def test_follow_takes_the_costs_a_class_default_run_stored(tmp_path: Path) -> None:
+    from alpha_cli.follow_source import frozen_idea
+
+    idea = _idea("class-default")
+    folder = tmp_path / "runs" / "abcdef0123456789"
+    folder.mkdir(parents=True)
+    used = {"fee_bps": 1.0, "slippage_bps": 1.0}
+    (folder / "manifest.json").write_text(json.dumps({"spine": {"costs": used}}))
+    (folder / "spec.json").write_text(
+        json.dumps({**idea.model_dump(mode="json"), "spec_sha256": idea.spec_sha256})
+    )
+    followed = frozen_idea(tmp_path, "abcdef0123456789", idea.spec_sha256)
+    assert (followed.costs.fee_bps, followed.costs.slippage_bps) == (1.0, 1.0)
+    assert not followed.costs_class_default
 
 
 def test_borrow_charge_is_set_against_equity_in_starting_cash_units(tmp_path: Path) -> None:

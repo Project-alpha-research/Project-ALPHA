@@ -93,16 +93,23 @@ describe('ideaModel', () => {
     const rows = toolRows(file({ readings: [run('a'.repeat(16), '2026-11-19', { checks: [check] })] } as Partial<IdeaFile>))
     expect(rows).toEqual([{ ...check, run: 'a'.repeat(16) }])
   })
-  it('counts every step and marks RD-Agent as not built', () => {
+  it('counts every step; RD-Agent is empty until a journey is linked', () => {
     const steps = ideaSteps(file(), defaultRun(file()))
     expect(steps.map(s => s.number)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
     const by = Object.fromEntries(steps.map(s => [s.id, s]))
     expect(by.idea.state).toBe('some')
     expect(by.tests.count).toBe('3')
     expect(by.charts.count).toBe('1')
-    expect(by.rdagent.state).toBe('not-built')
+    expect(by.rdagent.state).toBe('empty')
+    expect(by.rdagent.count).toBe('0')
     expect(by.follow.state).toBe('empty')
     expect(by.open.count).toBe('2')
+  })
+  it('counts the linked RD-Agent journeys', () => {
+    const journey = { ref: 'run/1-abc-name', iteration: 1, name: 'name', exploratory: false, problem: null, steps: [] }
+    const by = Object.fromEntries(ideaSteps(file({ rdagent: [journey] } as unknown as Partial<IdeaFile>), defaultRun(file())).map(s => [s.id, s]))
+    expect(by.rdagent.state).toBe('done')
+    expect(by.rdagent.count).toBe('1')
   })
   it('shows every step empty for a card with no tests', () => {
     const empty = file({ readings: [] })

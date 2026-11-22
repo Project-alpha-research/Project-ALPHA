@@ -7965,6 +7965,11 @@ export interface components {
             /** Map */
             map: components["schemas"]["IdeaMapStep"][];
             open_points: components["schemas"]["IdeaOpenPoints"];
+            /**
+             * Rdagent
+             * @default []
+             */
+            rdagent: components["schemas"]["IdeaRdAgent"][];
             /** Readings */
             readings: components["schemas"]["IdeaTest"][];
             /**
@@ -8120,6 +8125,39 @@ export interface components {
              * @default []
              */
             too_little_to_read: string[];
+        };
+        /**
+         * IdeaRdAgent
+         * @description One stored RD-Agent journey linked to the card (`alpha idea link --rdagent`).
+         */
+        IdeaRdAgent: {
+            /**
+             * Exploratory
+             * @default false
+             */
+            exploratory: boolean;
+            /** Iteration */
+            iteration?: number | null;
+            /** Name */
+            name?: string | null;
+            /** Problem */
+            problem?: string | null;
+            /** Ref */
+            ref: string;
+            /**
+             * Steps
+             * @default []
+             */
+            steps: components["schemas"]["IdeaRdAgentStep"][];
+        };
+        /** IdeaRdAgentStep */
+        IdeaRdAgentStep: {
+            /** Text */
+            text?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Who */
+            who?: string | null;
         };
         /** IdeaReading */
         IdeaReading: {

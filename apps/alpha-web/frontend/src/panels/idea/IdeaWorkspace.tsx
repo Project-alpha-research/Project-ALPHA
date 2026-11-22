@@ -95,7 +95,7 @@ export function IdeaPageView({ file, error, selectedRun, onSelectRun, onBack }: 
               {run ? <RunChecks key={run.id} run={run} /> : <p className="idea-empty">No rule test is selected, so there are no checks to show.</p>}
             </Step>
             <ToolsStep file={file} />
-            <RdAgentStep />
+            <RdAgentStep file={file} />
             <FollowStep file={file} />
             <OpenStep file={file} />
             <p className="muted idea-foot">{FOOTER}</p>

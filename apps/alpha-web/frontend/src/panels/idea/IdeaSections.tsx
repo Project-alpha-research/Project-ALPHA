@@ -128,7 +128,27 @@ export function ToolsStep({ file }: { file: IdeaFile }) {
   )
 }
 
-export const RdAgentStep = () => <Step id="rdagent" number={9} title="RD-Agent steps"><p className="idea-empty">{NO_RDAGENT}</p></Step>
+export function RdAgentStep({ file }: { file: IdeaFile }) {
+  const journeys = file.rdagent ?? []
+  return (
+    <Step id="rdagent" number={9} title="RD-Agent steps">
+      {!journeys.length ? <p className="idea-empty">{NO_RDAGENT}</p> : (
+        <ul className="idea-rdagent">
+          {journeys.map(journey => (
+            <li key={journey.ref}>
+              <strong>{journey.name ?? journey.ref}</strong>
+              {journey.iteration !== null && journey.iteration !== undefined ? <span className="muted"> round {journey.iteration}</span> : null}
+              {journey.exploratory ? <span className="chip"> exploratory</span> : null}
+              {journey.problem ? <p role="alert">{journey.problem}</p> : (
+                <ol>{journey.steps.map((step, at) => <li key={at}>{step.title ? <b>{step.title}: </b> : null}{step.text}</li>)}</ol>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Step>
+  )
+}
 
 export function FollowStep({ file }: { file: IdeaFile }) {
   return (

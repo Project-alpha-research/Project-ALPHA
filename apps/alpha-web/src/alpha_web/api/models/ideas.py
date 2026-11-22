@@ -214,10 +214,28 @@ class IdeaOpenPoints(_Relayed):
     next_steps: list[IdeaNextStep] = []
 
 
+class IdeaRdAgentStep(_Relayed):
+    title: str | None = None
+    who: str | None = None
+    text: str | None = None
+
+
+class IdeaRdAgent(_Relayed):
+    """One stored RD-Agent journey linked to the card (`alpha idea link --rdagent`)."""
+
+    ref: str
+    iteration: int | None = None
+    name: str | None = None
+    exploratory: bool = False
+    problem: str | None = None
+    steps: list[IdeaRdAgentStep] = []
+
+
 class IdeaFile(_Relayed):
     card: IdeaCardFacts
     map: list[IdeaMapStep]
     follows: list[IdeaFollow] = []
+    rdagent: list[IdeaRdAgent] = []
     readings: list[IdeaTest]
     counts: IdeaCounts
     open_points: IdeaOpenPoints

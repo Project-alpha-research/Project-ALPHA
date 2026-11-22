@@ -129,3 +129,31 @@ def test_the_readings_cost_line_and_annualisation_reach_the_page(
     body = _client(tmp_path, monkeypatch, Relay(answer)).get(f"/api/ideas/{CARD}").json()
     assert body["readings"][0]["reading"]["costs"]["line"] == "Costs: 1 bp a side."
     assert body["readings"][0]["reading"]["costs"]["periods"] == "252 days a year."
+
+
+def test_linked_rdagent_journeys_reach_the_page(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    answer = _file(0)
+    step = {"title": "The idea", "who": "agent", "text": "Quiet weeks.", "numbers": [], "x": 1}
+    answer["rdagent"] = [
+        {
+            "ref": "run/1-abc-name",
+            "iteration": 1,
+            "name": "name",
+            "steps": [step],
+            "figures": [],
+            "exploratory": True,
+            "problem": None,
+        },
+        {"ref": "run/2-def-other", "iteration": None, "name": None, "steps": [], "problem": "x"},
+    ]
+    body = _client(tmp_path, monkeypatch, Relay(answer)).get(f"/api/ideas/{CARD}").json()
+    first, second = body["rdagent"]
+    assert first["ref"] == "run/1-abc-name" and first["exploratory"] is True
+    assert first["steps"] == [{"title": "The idea", "who": "agent", "text": "Quiet weeks."}]
+    assert second["problem"] == "x"
+    assert (
+        _client(tmp_path, monkeypatch, Relay(_file(0))).get(f"/api/ideas/{CARD}").json()["rdagent"]
+        == []
+    )

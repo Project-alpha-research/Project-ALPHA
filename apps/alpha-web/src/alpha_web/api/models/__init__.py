@@ -180,6 +180,8 @@ from .ideas import IdeaMapStep as IdeaMapStep
 from .ideas import IdeaMeasure as IdeaMeasure
 from .ideas import IdeaNextStep as IdeaNextStep
 from .ideas import IdeaOpenPoints as IdeaOpenPoints
+from .ideas import IdeaRdAgent as IdeaRdAgent
+from .ideas import IdeaRdAgentStep as IdeaRdAgentStep
 from .ideas import IdeaReading as IdeaReading
 from .ideas import IdeaReadingAim as IdeaReadingAim
 from .ideas import IdeaReadingCheck as IdeaReadingCheck

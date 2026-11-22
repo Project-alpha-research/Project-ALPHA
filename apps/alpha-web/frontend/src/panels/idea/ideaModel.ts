@@ -146,7 +146,7 @@ export function ideaSteps(file: IdeaFile, selected: IdeaTest | null): StepSummar
     { id: 'charts', number: 6, title: 'Charts', state: figures ? 'done' : 'empty', count: String(figures) },
     { id: 'checks', number: 7, title: 'Checks', state: checkRows ? 'done' : 'empty', count: String(checkRows) },
     { id: 'tools', number: 8, title: 'Tools run', state: tools.length ? 'done' : 'empty', count: String(tools.length) },
-    { id: 'rdagent', number: 9, title: 'RD-Agent steps', state: 'not-built', count: '0' },
+    { id: 'rdagent', number: 9, title: 'RD-Agent steps', state: (file.rdagent ?? []).length ? 'done' : 'empty', count: String((file.rdagent ?? []).length) },
     { id: 'follow', number: 10, title: 'Forward follow', state: file.follows.length ? 'done' : 'empty', count: String(file.follows.length) },
     { id: 'open', number: 11, title: 'Open points', state: open.map_not_yet.length || open.not_stated.length ? 'some' : 'done',
       count: String(open.map_not_yet.length + open.not_stated.length) },

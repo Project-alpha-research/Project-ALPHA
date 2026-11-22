@@ -60,6 +60,19 @@ describe('IdeaPageView', () => {
     expect(html).toContain('No paper follow names this idea yet.')
     expect(html).toContain('not stated')
   })
+  it('shows a linked RD-Agent journey with its steps and says when it was exploratory', () => {
+    const journey = { ref: 'run/1-abc-name', iteration: 1, name: 'quiet_weeks', exploratory: true, problem: null,
+      steps: [{ title: 'The idea', who: 'agent', text: 'Quiet weeks lead to a move.' }] }
+    const html = page(file({ rdagent: [journey] } as unknown as Partial<IdeaFile>))
+    expect(html).not.toContain('No RD-Agent work is linked to this idea yet.')
+    expect(html).toContain('quiet_weeks')
+    expect(html).toContain('Quiet weeks lead to a move.')
+    expect(html).toContain('exploratory')
+  })
+  it('names a linked journey that cannot be read instead of hiding it', () => {
+    const journey = { ref: 'run/2-def-other', iteration: null, name: null, exploratory: false, problem: 'the stored journey could not be read', steps: [] }
+    expect(page(file({ rdagent: [journey] } as unknown as Partial<IdeaFile>))).toContain('the stored journey could not be read')
+  })
   it('shows a paper follow with the paper-only words', () => {
     const follow = { follow_id: 'f1f1f1f1f1f1', kind: 'rule_test', source_id: 'x', assets: ['SPY'], version: 2, started_at: '2026-11-17T08:00:00+00:00', state: 'active', sessions: 4, stop_reason: '' }
     expect(page(file({ follows: [follow] } as unknown as Partial<IdeaFile>))).toContain('active; 4 sessions recorded on SPY. Paper only.')

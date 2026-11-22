@@ -10130,6 +10130,14 @@
           "open_points": {
             "$ref": "#/components/schemas/IdeaOpenPoints"
           },
+          "rdagent": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/IdeaRdAgent"
+            },
+            "title": "Rdagent",
+            "type": "array"
+          },
           "readings": {
             "items": {
               "$ref": "#/components/schemas/IdeaTest"
@@ -10476,6 +10484,105 @@
           }
         },
         "title": "IdeaOpenPoints",
+        "type": "object"
+      },
+      "IdeaRdAgent": {
+        "description": "One stored RD-Agent journey linked to the card (`alpha idea link --rdagent`).",
+        "properties": {
+          "exploratory": {
+            "default": false,
+            "title": "Exploratory",
+            "type": "boolean"
+          },
+          "iteration": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iteration"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "steps": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/IdeaRdAgentStep"
+            },
+            "title": "Steps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ref"
+        ],
+        "title": "IdeaRdAgent",
+        "type": "object"
+      },
+      "IdeaRdAgentStep": {
+        "properties": {
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "who": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Who"
+          }
+        },
+        "title": "IdeaRdAgentStep",
         "type": "object"
       },
       "IdeaReading": {

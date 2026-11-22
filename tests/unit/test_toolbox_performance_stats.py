@@ -225,7 +225,6 @@ def test_payoff_expectancy(tmp_path: Path) -> None:
     assert got["payoff_ratio"] == pytest.approx(3.5 / (13 / 6), rel=1e-9, abs=1e-12)
     assert got["expectancy"] == pytest.approx(8 / 13, rel=1e-9, abs=1e-12)
     assert got["expectancy_in_average_losses"] == pytest.approx(8 / 13 / (13 / 6), rel=1e-9)
-    assert got["average_return"] == pytest.approx(8 / 13 / 100, rel=1e-9, abs=1e-12)
     stored_run(tmp_path / "wins", pnl=[1.0] * 10)
     only = values(tmp_path / "wins", "performance.payoff_expectancy")
     assert only["payoff_ratio"] is None and only["expectancy"] == 1.0

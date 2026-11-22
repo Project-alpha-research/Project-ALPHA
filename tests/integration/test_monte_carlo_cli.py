@@ -151,8 +151,38 @@ def test_default_options_work_on_a_test_run(kind: str, stored: dict[str, str], h
     manifest = json.loads((_new_run(home, stored[kind]) / "manifest.json").read_text())
     source = json.loads((home / "runs" / stored[kind] / "manifest.json").read_text())
     diagnostics = manifest["regime_diagnostics"]
+    train = source["metadata"]["train_size"]
+    window = min(63, (train - 1) // 2)
     assert diagnostics["requested_window"] == 63
-    assert diagnostics["causal_window"] == min(63, source["metadata"]["train_size"] - 3)
+    assert diagnostics["causal_window"] == window
+    # The boundary rests on about half the warm-up, never on one or two readings.
+    assert diagnostics["threshold_observations"] == train - window - 1 >= (train - 1) // 2
+    note = (
+        f"Regime window cut from 63 to {window} sessions: the run trains on {train} bars, "
+        f"so the volatility boundary is the median of {train - window - 1} readings."
+    )
+    assert note in " ".join(result.output.split())
+    assert note in " ".join((_new_run(home, stored[kind]) / "report.md").read_text().split())
+
+
+@pytest.mark.parametrize("kind", ["rule", "owner"])
+def test_the_output_states_the_resampling_unit(
+    kind: str, stored: dict[str, str], home: Path
+) -> None:
+    """The classical families resample single daily account returns, not whole trades."""
+    result = runner.invoke(
+        app, ["monte-carlo", "classical", "--from-run", stored[kind], "--paths", "16", *_REGIME]
+    )
+    assert result.exit_code == 0, result.output
+    rdir = _new_run(home, stored[kind])
+    manifest = json.loads((rdir / "manifest.json").read_text())
+    units = manifest["built_from"]["resampling_unit"]
+    assert set(units) == {"iid_empirical", "regime_switching", "student_t"}
+    assert all("daily account return" in text for text in units.values())
+    flat = " ".join(result.output.split())
+    assert "Resampling unit: one daily account return, flat days included;" in flat
+    assert "a trade is not kept whole" in flat
+    assert "a trade is not kept whole" in " ".join((rdir / "report.md").read_text().split())
 
 
 @pytest.mark.parametrize("kind", ["rule", "owner"])
@@ -376,6 +406,8 @@ def test_kronos_monte_carlo_replays_fake_ohlcv_paths_through_engine(
     assert f"Built from run {source}, out-of-sample days only" in (rdir / "report.md").read_text()
     for text in (result.output, (rdir / "report.md").read_text()):
         assert not {w.strip(".,;:()|`*-").lower() for w in text.split()} & set(_BANNED)
+        assert "trades are recomputed on each path" in " ".join(text.split())
+    assert "kronos_synthetic" in built["resampling_unit"]
     before = {path.name: path.read_bytes() for path in rdir.iterdir()}
     repeated = runner.invoke(app, kronos_args)
     assert repeated.exit_code == 0, repeated.output

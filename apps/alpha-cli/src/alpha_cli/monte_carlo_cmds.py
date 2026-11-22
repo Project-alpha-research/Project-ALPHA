@@ -390,7 +390,7 @@ def classical(
                 f"Monte Carlo requires at least 20 OOS account returns; run {from_run} has "
                 f"{account_returns.size}"
             )
-        source = _mc_reading.built_from(from_run, source_dir, equity)
+        source = _mc_reading.built_from(from_run, source_dir, equity, "classical")
         symbol = str(metadata["symbol"])
         snapshot_id = metadata.get("snapshot_id")
         cutoff = source_manifest.get("research_cutoff")
@@ -401,12 +401,12 @@ def classical(
             as_of=_source_as_of(cutoff),
         )
         train_size = int(metadata["train_size"])
-        causal_window = min(regime_window, max(2, train_size - 3))  # a short warm-up fits less
+        fit = _mc_reading.fit_regime_window(regime_window, train_size)
         states, state_threshold, oos_volatility = _causal_regime_states(
             bars,
             [timestamp for timestamp, _ in equity][1:],
             train_size=train_size,
-            window=causal_window,
+            window=int(fit["causal_window"]),
         )
         seeds = semantic_seeds(
             resolved_seed,
@@ -559,7 +559,9 @@ def classical(
         _artifacts.publish_artifact(rdir / "path_metrics.parquet", metric_frame.write_parquet)
         _artifacts.publish_artifact(rdir / "regime_diagnostics.parquet", diagnostics.write_parquet)
         _artifacts.publish_artifact(rdir / "regime_emissions.parquet", emissions.write_parquet)
-        report = _mc_reading.classical_report(source=source, summaries=summaries, n_paths=paths)
+        report = _mc_reading.classical_report(
+            source=source, summaries=summaries, n_paths=paths, window_note=fit["window_note"]
+        )
         _artifacts.publish_artifact(
             rdir / "report.md", lambda path: path.write_text(report, encoding="utf-8")
         )
@@ -590,8 +592,7 @@ def classical(
                 "state_shares": [count / int(account_returns.size) for count in state_observations],
                 "state_outbound_transitions": state_outbound,
                 "transition_matrix": None if regime is None else regime.transition_matrix.tolist(),
-                "requested_window": regime_window,
-                "causal_window": causal_window,
+                **fit,
             },
             "explanation": (
                 "Scenario and path-risk evidence only; this run neither proves edge nor replaces "
@@ -606,7 +607,7 @@ def classical(
     typer.echo(
         f"monte-carlo classical -> run {identity.run_id}: manifest at {rdir / 'manifest.json'}"
     )
-    _mc_reading.echo_family_lines(source, summaries, regime_caveats)
+    _mc_reading.echo_family_lines(source, summaries, regime_caveats, fit["window_note"])
 
 
 @monte_carlo_app.command("kronos")
@@ -749,7 +750,7 @@ def kronos(
             engine_paths.append(oos.oos_returns)
         path_matrix = np.asarray(engine_paths, dtype=np.float64)
         source_equity = _artifacts.read_equity(source_dir)
-        source_info = _mc_reading.built_from(from_run, source_dir, source_equity)
+        source_info = _mc_reading.built_from(from_run, source_dir, source_equity, "kronos")
         source_horizon = source_info["n_returns"]
         if path_matrix.shape != (paths, source_horizon):
             raise DataError(

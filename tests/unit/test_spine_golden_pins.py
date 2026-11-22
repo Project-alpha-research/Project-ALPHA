@@ -23,24 +23,25 @@ from alpha_core import Bar, DataError
 from alpha_data.store import ParquetStore
 from tests.fixtures.cli_fixtures import seed_store
 
+# Pin change (M99): a spec without costs takes the class default, so these bytes and hashes moved.
 KINDS: dict[str, tuple[list[str], str, str]] = {
     "ma_cross": (
         ["fast=5", "slow=20"],
-        '{"assets":["SPY"],"costs":{"fee_bps":1.0,"slippage_bps":2.0},"idea":"",'
+        '{"assets":["SPY"],"costs":{"fee_bps":1.0,"mode":"class-default","slippage_bps":2.0},"idea":"",'
         '"name":"ma_cross-5-20","rule":{"fast":5,"kind":"ma_cross","slow":20}}',
-        "2668857e7aa7c8b17bcb3ece3f17cdfbc2f6e80fc361721a689a5b4bdf9fbb8b",
+        "094c6ba5af7d8b21e782d010e848eb31bb731435a4236d3054e1c4a237de05b3",
     ),
     "breakout": (
         ["window=20"],
-        '{"assets":["SPY"],"costs":{"fee_bps":1.0,"slippage_bps":2.0},"idea":"",'
+        '{"assets":["SPY"],"costs":{"fee_bps":1.0,"mode":"class-default","slippage_bps":2.0},"idea":"",'
         '"name":"breakout-20","rule":{"kind":"breakout","window":20}}',
-        "cf609eb87036468a0aa9d16e732f54c84c880b72f3cc500df13153f3417b8d1e",
+        "b3c5b97ab5ea3ef281912ff3e4aeceda21098cd648190ac82f2f34ed8b22ca77",
     ),
     "tsmom": (
         ["lookback=20", "skip=5"],
-        '{"assets":["SPY"],"costs":{"fee_bps":1.0,"slippage_bps":2.0},"idea":"",'
+        '{"assets":["SPY"],"costs":{"fee_bps":1.0,"mode":"class-default","slippage_bps":2.0},"idea":"",'
         '"name":"tsmom-20-5","rule":{"kind":"tsmom","lookback":20,"skip":5}}',
-        "8e8a4a02d0840279a62f2856f50ceaee1d22e56c0e3887dffcff199c87cf16b9",
+        "7e50cb637a5b26de0ebffb0e0d2be14a9cd778c12d320341be640dfc8d6662cd",
     ),
 }
 FIXED = "f" * 64
@@ -165,7 +166,8 @@ COMMON = {
     "forecast_cache": None,
     "halt_drawdown": None,
     # Pin change: no health label in an identity (the report describes the whole stored file).
-    "labels": ["all-in", "short-history"],
+    # Pin change (M99): the class-default cost label, since a spec without costs now takes the row.
+    "labels": ["all-in", "short-history", "class-default-costs"],
     "max_leverage": 1.0,
     "mean_block": 5.0,
     "n_resamples": 2000,
@@ -178,7 +180,8 @@ COMMON = {
     "seed": 7,
     "size_on_equity": False,
     "sizing": "all_in",
-    "slippage_bps": 2.0,
+    # Pin change (M99): SPY takes the US large ETF row of the cost table (1 bp slippage).
+    "slippage_bps": 1.0,
     "snapshot_id": None,
     "source": "alpaca",
     "starting_cash": 1000000.0,

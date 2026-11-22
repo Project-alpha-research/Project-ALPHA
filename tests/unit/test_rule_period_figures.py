@@ -342,3 +342,56 @@ def test_runs_without_period_records_use_the_same_ratio(tmp_path: Path) -> None:
     assert f"{worst:.1%}" in under.plain_language_answer
     rule = next(m for m in under.panels[1].marks if isinstance(m, RuleMark))
     assert rule.position == pytest.approx(worst)
+
+
+def _build(stored_run: tuple[Path, dict[str, Any]], figure: str) -> Any:
+    rdir, manifest = stored_run
+    return build_figure_spec(
+        figure, run_id=rdir.name, rdir=rdir, data_dir=rdir.parent.parent, manifest=manifest
+    )
+
+
+def test_subtitles_name_the_idea_not_the_engine_strategy(
+    stored_run: tuple[Path, dict[str, Any]],
+) -> None:
+    for figure in ("equity_vs_passive", "equity_underwater", "trade_pnl"):
+        subtitle = _build(stored_run, figure).subtitle
+        assert "ma_cross-5-20" in subtitle
+        assert "ma_crossover" not in subtitle
+
+
+def test_the_trade_chart_names_money_in_plain_words(
+    stored_run: tuple[Path, dict[str, Any]],
+) -> None:
+    labels = [panel.y_label for panel in _build(stored_run, "trade_pnl").panels]
+    assert labels[0].startswith("Profit or loss (") and "account currency)" in labels[0]
+    assert all("ccy" not in label and "P&L" not in label for label in labels)
+
+
+def test_the_price_chart_draws_from_stored_bars_of_a_rule_test(
+    stored_run: tuple[Path, dict[str, Any]],
+) -> None:
+    from alpha_cli.figures import available_figures
+
+    rdir, manifest = stored_run
+    assert manifest.get("snapshot_id") is None
+    entry = next(
+        e for e in available_figures(rdir, manifest) if e.definition.figure_id == "price_signal"
+    )
+    assert entry.available, entry.unavailable_reason
+    spec = _build(stored_run, "price_signal")
+    last_ts = manifest["spine"]["data_period"]["last_ts"]
+    assert spec.panels[0].marks
+    last_drawn = max(max(getattr(mark, "x", ()) or (0.0,)) for mark in spec.panels[0].marks)
+    assert last_drawn <= datetime.fromisoformat(last_ts).timestamp() + 1.0
+
+
+def test_the_price_chart_refuses_in_plain_words_when_bars_changed(
+    stored_run: tuple[Path, dict[str, Any]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli import _runner
+    from alpha_core import DataError
+
+    monkeypatch.setattr(_runner, "source_fingerprint", lambda *a, **k: "0" * 64)
+    with pytest.raises(DataError, match="no longer match the bars this run used"):
+        _build(stored_run, "price_signal")

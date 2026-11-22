@@ -461,3 +461,82 @@ def test_only_drawdown_series_talk_about_a_prior_peak() -> None:
     assert "prior peak" not in text and "below zero" in text
     under = " ".join(explanation(_all_specs()["underwater"], _fixed(_all_specs()["underwater"])))
     assert "prior peak" in under
+
+
+def _corner_specs() -> list[FigureSpec]:
+    """Extremes in the corners, a legend, a long time below zero and a short held-back panel."""
+    x = _epochs(400, datetime(2022, 11, 25, tzinfo=UTC))
+    rising = tuple(1.0 + 0.01 * i for i in range(400))
+    under = tuple(-0.001 * i for i in range(400))
+    two = FigureSpec(
+        figure_id="equity_vs_passive",
+        title="Synthetic chart",
+        subtitle="TEST · synthetic",
+        x_label="Date (UTC)",
+        x_kind="time",
+        panels=(
+            Panel(
+                panel_id="main",
+                y_label="Growth of 1 (x initial)",
+                y_unit="multiple",
+                height_ratio=2.0,
+                marks=(
+                    LineMark(x=x, y=rising, role="substrate", label="Buy and hold"),
+                    LineMark(x=x, y=tuple(1.0 for _ in x), label="Strategy"),
+                ),
+            ),
+            Panel(
+                panel_id="gap",
+                y_label="Ahead (%)",
+                y_unit="percent",
+                y_percent=True,
+                height_ratio=0.6,
+                marks=(LineMark(x=x, y=under, fill_to=0.0, role="down", label="Ahead"),),
+            ),
+        ),
+        question="q",
+        plain_language_answer="a",
+        uncertainty="u",
+        caveat="c",
+        caption="synthetic",
+    )
+    return [two, *_all_specs().values()]
+
+
+def test_callouts_sit_near_their_point_inside_the_axes() -> None:
+    from matplotlib.text import Annotation
+
+    for spec in _corner_specs():
+        figure = _draw(spec, "annotated")
+        renderer = figure.canvas.get_renderer()
+        boxes: list[Any] = []
+        for note in figure.findobj(Annotation):
+            if note.arrow_patch is None or note.axes is None:
+                continue
+            frame, box = note.axes.bbox, note.get_bbox_patch().get_window_extent(renderer)
+            assert frame.x0 - 1 <= box.x0 and box.x1 <= frame.x1 + 1, note.get_text()
+            assert frame.y0 - 1 <= box.y0 and box.y1 <= frame.y1 + 1, note.get_text()
+            px, py = note.axes.transData.transform(note.xy)
+            gap = np.hypot(max(box.x0 - px, 0, px - box.x1), max(box.y0 - py, 0, py - box.y1))
+            assert gap < 0.2 * np.hypot(frame.width, frame.height), note.get_text()
+            legend = note.axes.get_legend()
+            taken = [*boxes, *([legend.get_window_extent(renderer)] if legend else [])]
+            assert not any(box.overlaps(other) for other in taken), note.get_text()
+            boxes.append(box)
+
+
+def test_band_and_held_back_labels_stay_inside_their_axes() -> None:
+    renderer_texts = ("held back", "longest time below")
+    for spec in _corner_specs()[:1]:
+        figure = _draw(spec, "annotated")
+        renderer = figure.canvas.get_renderer()
+        found = 0
+        for axes in figure.axes:
+            for text in axes.texts:
+                if not text.get_text().strip().startswith(renderer_texts):
+                    continue
+                found += 1
+                box, frame = text.get_window_extent(renderer), axes.bbox
+                assert frame.x0 <= box.x0 and box.x1 <= frame.x1 + 1, text.get_text()
+                assert frame.y0 <= box.y0 and box.y1 <= frame.y1, text.get_text()
+        assert found >= 3

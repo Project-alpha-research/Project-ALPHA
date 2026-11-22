@@ -1858,6 +1858,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/recent-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recent Runs
+         * @description The newest stored runs with idea, asset, trades, out-of-sample Sharpe and evidence word.
+         */
+        get: operations["recent_runs_api_recent_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/research-gate-overrides": {
         parameters: {
             query?: never;
@@ -10098,6 +10118,44 @@ export interface components {
             /** Missing Links */
             missing_links: string[];
         };
+        /** RecentRun */
+        RecentRun: {
+            /** Display Name */
+            display_name: string;
+            /** Evidence */
+            evidence: string | null;
+            /** First Ts */
+            first_ts: string | null;
+            /** Idea */
+            idea: string | null;
+            /** Kind */
+            kind: string;
+            /** Last Ts */
+            last_ts: string | null;
+            /** Mtime */
+            mtime: number;
+            /** Oos Sharpe */
+            oos_sharpe: number | null;
+            /** Rule Name */
+            rule_name: string | null;
+            /** Run Id */
+            run_id: string;
+            /** Spark */
+            spark: number[];
+            /** Symbol */
+            symbol: string | null;
+            /** Trades */
+            trades: number | null;
+            /** Tries */
+            tries: number | null;
+        };
+        /** RecentRunList */
+        RecentRunList: {
+            /** Items */
+            items: components["schemas"]["RecentRun"][];
+            /** Total */
+            total: number;
+        };
         /** RecordedFact */
         RecordedFact: {
             /** Basis */
@@ -16612,6 +16670,38 @@ export interface operations {
                 };
                 content: {
                     "image/png": string;
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    recent_runs_api_recent_runs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                spark?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecentRunList"];
                 };
             };
             /** @description Stable, redacted Workstation error */

@@ -12,13 +12,13 @@ verified: 0000000000000000
 **Reach for it when** the owner wants the final check: one tested idea, once, on the data from 2024-01-01 on, which no test has used.
 **Command**
 ```text
-uv run alpha confirm plan <run id>       # what would be tested and what it spends; writes nothing
-uv run alpha confirm run <run id>        # prints the plan, then spends 1 slot and tests once
-uv run alpha confirm list                # slots used and left
-uv run alpha confirm show <run id>       # one finished confirmation
+alpha confirm plan <run id>       # what would be tested and what it spends; writes nothing
+alpha confirm run <run id>        # prints the plan, then spends 1 slot and tests once
+alpha confirm list                # slots used and left
+alpha confirm show <run id>       # one finished confirmation
 ```
 Run `run` only when the owner asks for the final check, by idea name, in chat. Show `plan` first. There is no
-confirmation step and no Touch ID ([owner decision](../../docs/reference/project/owner-decisions-6.md)). A spent
+confirmation step ([owner decision](../../docs/reference/project/owner-decisions-6.md)). A spent
 slot cannot be given back. No nightly run, RD-Agent loop, MCP tool, web page or follow can start it.
 Only a stored `alpha test` run made with the period held back can be confirmed, exactly as it ran: the same spec, costs,
 asset, data and engine settings. The earlier period is computed again first; if it does not match the stored run, nothing

@@ -31,6 +31,12 @@ Kronos forecast composition (`alpha forecast ...`, `_forecast*` modules). Projec
   (`validate_result_bundle`). A worker that rewrites its inputs, or a result whose claims do not match the control
   record, fails validation. Enforced by `tests/unit/test_ml_boundary_guards.py`.
 - Workstation-managed exchanges live below `data_dir/control/ml/`.
+- `alpha ml export-input OUTPUT --spec FILE` reads the experiment spec from a file (snapshot, universe, splits, costs, seeds); it reads no project.
+  The Workstation stores the spec it receives as `control/ml/specs/<sha256>.json` and passes that path.
+- `alpha ml run SPEC.toml` (`ml_run.py`) is the plain path: no project or experiment. It freezes the stored bars of the assets
+  into snapshot `ml-<hash>`, then runs export-input, prepare, the same `ml_cmds.train_exchange` worker call and the replay.
+  The label horizon is 1 day (the worker's only value); costs are fixed. Each new run is one `ml_run` ledger row in family `qlib`.
+  A missing worker `.venv` fails with the one step to run: `bash scripts/setup.sh`.
 
 ## Exchange contract
 

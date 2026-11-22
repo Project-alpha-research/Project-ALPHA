@@ -9,7 +9,6 @@ import pytest
 from typer.testing import CliRunner
 
 from alpha_cli import crypto_data_cmds
-from alpha_cli.control_store import research_case_revision
 from alpha_cli.main import app
 from alpha_core import DataError
 from alpha_data.crypto.contracts import FAMILY_AUTHORITIES
@@ -695,20 +694,6 @@ def test_bybit_missing_stage_three_families_acquire_and_qualify_offline(
         "_now",
         lambda: datetime.fromisoformat("2026-08-15T00:00:00+00:00"),
     )
-    case_id = "f03802b8-df35-4f19-a90c-0b3437aa587d"
-    case = {
-        "project_id": case_id,
-        "active_contract_id": "contract-1",
-        "phase": "exploration",
-        "execution_state": "approved",
-        "source_pack_id": "pack-1",
-    }
-    revision = research_case_revision(case)
-    monkeypatch.setattr(
-        crypto_data_cmds,
-        "_control_store",
-        lambda: type("CaseStore", (), {"research_case_summary": lambda _self, _id: case})(),
-    )
 
     families = (
         ("instrument_catalog", "linear"),
@@ -733,17 +718,6 @@ def test_bybit_missing_stage_three_families_acquire_and_qualify_offline(
             "--frequency",
             "1h",
         ]
-        if family in {"derivative_trades", "derivative_book_snapshots"}:
-            args.extend(
-                (
-                    "--case-id",
-                    case_id,
-                    "--expected-case-revision",
-                    revision,
-                    "--reason",
-                    "Capture the bounded BTC event cross-section.",
-                )
-            )
         args.append("--json")
         result = runner.invoke(
             app,
@@ -822,20 +796,6 @@ def test_point_in_time_acquisition_uses_network_completion_as_knowledge_time(
     monkeypatch.setattr(crypto_data_cmds, "_bulk_store", lambda: store)
     monkeypatch.setattr(crypto_data_cmds, "fetch_bybit_public", lambda *_args, **_kwargs: payload)
     monkeypatch.setattr(crypto_data_cmds, "_now", lambda: next(clocks))
-    case_id = "f03802b8-df35-4f19-a90c-0b3437aa587d"
-    case = {
-        "project_id": case_id,
-        "active_contract_id": "contract-1",
-        "phase": "exploration",
-        "execution_state": "approved",
-        "source_pack_id": "pack-1",
-    }
-    revision = research_case_revision(case)
-    monkeypatch.setattr(
-        crypto_data_cmds,
-        "_control_store",
-        lambda: type("CaseStore", (), {"research_case_summary": lambda _self, _id: case})(),
-    )
 
     result = runner.invoke(
         app,
@@ -851,52 +811,12 @@ def test_point_in_time_acquisition_uses_network_completion_as_knowledge_time(
             "USDT",
             "--category",
             "linear",
-            "--case-id",
-            case_id,
-            "--expected-case-revision",
-            revision,
-            "--reason",
-            "Capture the bounded BTC event book.",
             "--json",
         ],
     )
 
     assert result.exit_code == 0, result.output
     assert json.loads(result.stdout)["state"] == "qualified"
-
-
-def test_derivative_event_capture_fails_before_network_without_case_scope(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    called = False
-
-    def fetch(*_args: object, **_kwargs: object) -> bytes:
-        nonlocal called
-        called = True
-        return b"{}"
-
-    monkeypatch.setattr(crypto_data_cmds, "fetch_bybit_public", fetch)
-    result = runner.invoke(
-        app,
-        [
-            "crypto-data",
-            "acquire",
-            "bybit",
-            "derivative_trades",
-            "BTCUSDT",
-            "--base",
-            "BTC",
-            "--quote",
-            "USDT",
-            "--category",
-            "linear",
-            "--json",
-        ],
-    )
-
-    assert result.exit_code != 0
-    assert "--case-id" in result.output
-    assert called is False
 
 
 def test_bybit_spot_bars_are_diagnostic_only_and_cannot_enter_a_snapshot(

@@ -125,11 +125,11 @@ jobs:
           retention-days: 14
 
   quant:
-    # Slow oracles and the mutation gate on the touched quant-tier modules, as before.
+    # Slow oracles when a quant-tier module changed. The mutation gate runs in the weekly sweep.
     needs: changes
     if: needs.changes.outputs.quant == 'true' && github.event.pull_request.draft != true
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6.0.3
         with:

@@ -4,7 +4,7 @@ import { EMPTY_STATE_TEXT, FIRST_RUN_COMMAND, foldRows, fraction, readingWords }
 
 function run(extra: Partial<MlStoredRun['metrics']> = {}): MlStoredRun {
   return {
-    run_id: 'a'.repeat(16), mtime: 1, assets: ['SPY', 'QQQ', 'IWM', 'TLT', 'GLD'], model: 'LightGBM on the Alpha158 features (Qlib worker)',
+    run_id: 'a'.repeat(16), mtime: 1, assets: ['SPY', 'QQQ', 'IWM', 'TLT', 'GLD'], model: 'Qlib worker; the model type is not recorded in the run',
     costs: '1 bp fee and 2 bp slippage per trade', split_sentence: 'The model was refit 3 times.', n_oos_periods: 126,
     label: 'OOS replay validated — model not recomputed under counterfactual',
     metrics: {

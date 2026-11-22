@@ -63,7 +63,8 @@ def _model(manifest: Mapping[str, Any], rdir: Path) -> str:
         return "not recorded"
     if (rdir / "ensemble_diagnostics.parquet").is_file():
         return "LightGBM and ridge, ranks averaged (Qlib worker)"
-    return "LightGBM on the Alpha158 features (Qlib worker)"
+    # The run stores the worker kind but not the recipe, and the worker accepts several models.
+    return "Qlib worker; the model type is not recorded in the run"
 
 
 def _costs(manifest: Mapping[str, Any]) -> str:

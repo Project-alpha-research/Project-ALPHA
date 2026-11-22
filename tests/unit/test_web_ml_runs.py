@@ -81,7 +81,7 @@ def test_lists_only_ml_runs_with_split_assets_model_costs_and_folds(
     assert body["total"] == 1
     run = body["items"][0]
     assert run["assets"] == ["SPY", "QQQ", "IWM", "TLT", "GLD"]
-    assert run["model"] == "LightGBM on the Alpha158 features (Qlib worker)"
+    assert run["model"] == "Qlib worker; the model type is not recorded in the run"
     assert run["costs"] == "1 bp fee and 2 bp slippage per trade"
     assert run["split_sentence"].startswith("The model was refit 3 times")
     assert run["split_sentence"].endswith("No model saw its own test days.")

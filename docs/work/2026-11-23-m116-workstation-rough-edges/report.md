@@ -19,8 +19,7 @@ Branch `fix/m116-workstation-rough-edges`. Synthetic fixtures only. Each item: c
 5. **Machine learning screen.** Change: `GET /api/ml-runs` (new, typed, read-only) lists stored `ml_replay` runs with the split sentence, assets, model,
    costs, numbers and folds; the screen adds the reading words, equity and drawdown charts (existing `/api/runs/{id}/equity`) and the fold table; the empty
    state names `alpha ml run`. OpenAPI, `generated.ts` and the authority matrix are regenerated. Tests: `tests/unit/test_web_ml_runs.py`,
-   `mlRunsModel.test.ts`, `MachineLearning.test.tsx`. Decision: the model name is derived (LightGBM; "and ridge" when an ensemble file exists) because the
-   manifest stores only `worker.kind`. `split_sentence` in `ml_run.py` lost its underscore so the web can import it.
+   `mlRunsModel.test.ts`, `MachineLearning.test.tsx`. Decision: the manifest stores only `worker.kind`, so the window names the model only for a rank ensemble (LightGBM and ridge) and otherwise says the type is not recorded. `split_sentence` in `ml_run.py` lost its underscore so the web can import it.
 6. **Headline periods.** Cause: the sentence did not say the period. Both returns already come from the same stored period row. Change: the sentence now
    ends "…for simply holding the market over the same days (A to B)". Test: `ruleTestModel.test.ts`.
 

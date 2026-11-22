@@ -151,9 +151,25 @@ def test_linked_rdagent_journeys_reach_the_page(
     body = _client(tmp_path, monkeypatch, Relay(answer)).get(f"/api/ideas/{CARD}").json()
     first, second = body["rdagent"]
     assert first["ref"] == "run/1-abc-name" and first["exploratory"] is True
-    assert first["steps"] == [{"title": "The idea", "who": "agent", "text": "Quiet weeks."}]
+    assert first["steps"] == [
+        {"title": "The idea", "who": "agent", "text": "Quiet weeks.", "what_this_means": None}
+    ]
     assert second["problem"] == "x"
     assert (
         _client(tmp_path, monkeypatch, Relay(_file(0))).get(f"/api/ideas/{CARD}").json()["rdagent"]
         == []
     )
+
+
+def test_the_stored_outcome_of_an_rdagent_step_reaches_the_page(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    answer = _file(1)
+    step = {
+        "title": "Trade",
+        "text": "A replay ran.",
+        "what_this_means": "The trading test failed.",
+    }
+    answer["rdagent"] = [{"ref": "run/1-x", "steps": [step]}]
+    body = _client(tmp_path, monkeypatch, Relay(answer)).get(f"/api/ideas/{CARD}").json()
+    assert body["rdagent"][0]["steps"][0]["what_this_means"] == "The trading test failed."

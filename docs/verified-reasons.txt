@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 859eaf8b4ca24830 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
+  verified 6e52e7eefce46263 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 apps/alpha-cli/README.md
-  verified 859eaf8b4ca24830 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
+  verified 6e52e7eefce46263 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified 1ccb48d061749a85 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified 11ecea13d48adaf9 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 apps/alpha-web/README.md
-  verified 1ccb48d061749a85 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified 11ecea13d48adaf9 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -32,10 +32,10 @@ docs/reference/invariants/cli-crypto-data.md
   verified 6c209c3dd25568b8 on 2026-11-21: merge of main; this branch only adds the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/cli-follow.md
-  verified e8f80ddf444cf352 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified 6bbdfb18ed4d09c2 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 docs/reference/invariants/cli-idea-file.md
-  verified f74f8f26a9d2a859 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
+  verified 70817702c141b473 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 docs/reference/invariants/cli-investigation-tools.md
   verified fd5f1de814c19725 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -47,16 +47,16 @@ docs/reference/invariants/cli-nightly.md
   verified 5f1772a6b5e61c32 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-research.md
-  verified 1d320c10cd57b49f on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
+  verified 632781ed90e24c77 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 docs/reference/invariants/cli-results-check.md
   verified 31a9f5fdd9f3f626 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-rule-readings.md
-  verified e2d9558c73482a3b on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified d29632ece47cdc73 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 docs/reference/invariants/cli-runs.md
-  verified 9c995979923cb8f9 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
+  verified 2de0fddd9bd59b21 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 docs/reference/invariants/cli-setups.md
   verified 0375e4ab3fe2b99a on 2026-11-21: Test narrowed for mypy; rules unchanged
@@ -95,7 +95,7 @@ docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
 docs/reference/invariants/research.md
-  verified 8f8e9618bc0343ee on 2026-11-21: re-read after merging main and removing the three open guard entries: the reads they named are now cut; this page's statements still hold
+  verified 61a95ddc5d74e787 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 docs/reference/invariants/testing.md
   verified 64a42f2eb7d3858e on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
@@ -107,16 +107,16 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified 710f6a9dc3599220 on 2026-11-22: the Ideas read now relays the reading's costs block and the timeline lists every linked study; this page is still correct
+  verified e1743d03666d696a on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 docs/reference/invariants/web-api.md
-  verified dfa61a5271106013 on 2026-11-22: the Ideas read now relays the reading's costs block and the timeline lists every linked study; this page is still correct
+  verified 3d520ea11ec65f6b on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 docs/reference/invariants/web-frontend-ideas.md
-  verified 3def381fc9c490c7 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified 319638e83a814588 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 docs/reference/invariants/web-frontend.md
-  verified 9abed5b02084045a on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified 8e795673eec881b2 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 docs/reference/invariants/web-ideas.md
   verified e24cae1f03437816 on 2026-11-21: new page: the section moved here unchanged except the follow line, which is now true
@@ -127,7 +127,7 @@ docs/reference/invariants/web-research.md
   verified 8cfe152731a9e4fb on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/web-run-detail.md
-  verified 4944725ab96096db on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified a2a55f45a6153bde on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 docs/reference/invariants/workers.md
   verified 9c856742539b975c on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
@@ -187,7 +187,7 @@ docs/reference/project/components/toolbox.md
   verified a9b38e6041cf26ee on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 59be35d8f5ab7a7a on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
+  verified 79eed8b9ec068f78 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -244,10 +244,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 3256f468eb42b745 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
+  verified 8ebb28d548071f0f on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 research/PLAYBOOK.md
-  verified 296d6bc719de3ae2 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
+  verified 82ff48da76dff990 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 research/README.md
   verified 3e955276bb8eea08 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -259,13 +259,13 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 13f166d391e654f2 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
+  verified 8623dd2e6b90970f on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 8bccc2eff7f63544 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
+  verified 725bf8b5f185c2a2 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 research/tools/charts.md
   verified 874701b73cdea3df on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -274,19 +274,19 @@ research/tools/data-health.md
   verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 412675c706395a91 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
+  verified 6b7eeee0de80c296 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 research/tools/diagnose-and-audit.md
-  verified 573d9dbb85e99bfa on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
+  verified ff65f25f9dc3db1f on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 research/tools/follow.md
-  verified dc6f99f581b1ef4c on 2026-11-21: Merged main (calendar range) into the portfolio book branch; both sides' source changes re-read; text still correct
+  verified 03f12254bb58b8f0 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 research/tools/home-backup.md
   verified a3faa58f0d76f0d5 on 2026-11-21: home_restore now keeps the restored folder at mode 0700 after a good restore too; this page states nothing that this changes, so its text holds
 
 research/tools/idea-card.md
-  verified f4f4e893262fe1be on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
+  verified 31a1d4b1239c41ea on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 research/tools/inverted-signal-control.md
   verified 1d2269669bfaf71a on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -301,7 +301,7 @@ research/tools/nightly-run.md
   verified f4762e62775591a8 on 2026-11-21: Merged main and fixed the backup (hard links stored in full, disk-room check, unreadable folders refused, modes kept on restore, written files re-read) and the marker (Ctrl-C, unwritable marker); this page's claims were re-read against the code and hold
 
 research/tools/portfolio-book.md
-  verified 3e28fafbe22c1d75 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified 43519cc7a5a9beb8 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 research/tools/positioning-short-volume-context.md
   verified 74383e1154d820da on 2026-11-21: calendar range sweep; text still correct
@@ -325,13 +325,13 @@ research/tools/results-and-cite.md
   verified dcf452de93fa0890 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/rule-test.md
-  verified ce032b4952d9b107 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
+  verified 70dc55317c626603 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 research/tools/run-level-checks.md
   verified 67c21050f541ec73 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/sensitivity.md
-  verified 412675c706395a91 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
+  verified 6b7eeee0de80c296 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 research/tools/setup-context.md
   verified ac071062a7a24370 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct

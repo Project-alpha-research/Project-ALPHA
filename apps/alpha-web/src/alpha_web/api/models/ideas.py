@@ -218,6 +218,7 @@ class IdeaRdAgentStep(_Relayed):
     title: str | None = None
     who: str | None = None
     text: str | None = None
+    what_this_means: str | None = None
 
 
 class IdeaRdAgent(_Relayed):

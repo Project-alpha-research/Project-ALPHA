@@ -10570,6 +10570,17 @@
             ],
             "title": "Title"
           },
+          "what_this_means": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "What This Means"
+          },
           "who": {
             "anyOf": [
               {

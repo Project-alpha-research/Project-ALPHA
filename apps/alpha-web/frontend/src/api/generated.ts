@@ -8156,6 +8156,8 @@ export interface components {
             text?: string | null;
             /** Title */
             title?: string | null;
+            /** What This Means */
+            what_this_means?: string | null;
             /** Who */
             who?: string | null;
         };

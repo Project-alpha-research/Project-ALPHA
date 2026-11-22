@@ -140,7 +140,7 @@ export function RdAgentStep({ file }: { file: IdeaFile }) {
               {journey.iteration !== null && journey.iteration !== undefined ? <span className="muted"> round {journey.iteration}</span> : null}
               {journey.exploratory ? <span className="chip"> exploratory</span> : null}
               {journey.problem ? <p role="alert">{journey.problem}</p> : (
-                <ol>{journey.steps.map((step, at) => <li key={at}>{step.title ? <b>{step.title}: </b> : null}{step.text}</li>)}</ol>
+                <ol>{journey.steps.map((step, at) => <li key={at}>{step.title ? <b>{step.title}: </b> : null}{step.text}{step.what_this_means ? <span className="muted"> {step.what_this_means}</span> : null}</li>)}</ol>
               )}
             </li>
           ))}

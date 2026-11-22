@@ -62,11 +62,12 @@ describe('IdeaPageView', () => {
   })
   it('shows a linked RD-Agent journey with its steps and says when it was exploratory', () => {
     const journey = { ref: 'run/1-abc-name', iteration: 1, name: 'quiet_weeks', exploratory: true, problem: null,
-      steps: [{ title: 'The idea', who: 'agent', text: 'Quiet weeks lead to a move.' }] }
+      steps: [{ title: 'The idea', who: 'agent', text: 'Quiet weeks lead to a move.', what_this_means: 'The trading test failed.' }] }
     const html = page(file({ rdagent: [journey] } as unknown as Partial<IdeaFile>))
     expect(html).not.toContain('No RD-Agent work is linked to this idea yet.')
     expect(html).toContain('quiet_weeks')
     expect(html).toContain('Quiet weeks lead to a move.')
+    expect(html).toContain('The trading test failed.')
     expect(html).toContain('exploratory')
   })
   it('names a linked journey that cannot be read instead of hiding it', () => {

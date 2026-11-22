@@ -36,6 +36,5 @@ buy-and-hold line.
 - Each return is dated at the open that starts its bar. A group with too few bars gives "too little to read" with the count.
 - A two-group gap comes with a Welch p-value; weekday and month use a rank test. Many splits make a small p-value cheap.
 - `regimes.sup_f` draws seeded random histories for its p-value. The other checks are exact.
-
 **What these checks cannot tell you** They describe the past, not why. Neighbouring bars are not independent, so p-values are rough.
 For volatility regimes and change points see `market.vol_regimes` and `market.changepoints`.

@@ -61,3 +61,16 @@ Fixed from my own changes: `scan`/`data` lazy imports, the structural-digest rea
 - After merging main, `test_cli_entry_lazy_groups` (partner selftest, next command) fails: `next` -> `spine.reading_read` -> `spine.facts` -> `toolbox.registry` imports scipy. That chain is in main; none of those files is mine. Not touched.
 - `results show` of a setup find names each failed asset and its stored reason (review finding). Test added.
 - Owning page `data-freeze-before-replace.md` got one line on `data update` and `data coverage`.
+
+## Landing review (after #409)
+- HIGH, fixed: the plain relation words were written into the stored reading sentence. A recheck compares that sentence,
+  so every run stored before would read "a different result" and the final check would be refused. The stored words are
+  kept; `reading.plain` puts the plain words on screen (`reading_text`, `confirm plan`, `confirm run`). Test:
+  `test_below_buy_and_hold_reads_below_the_aim_with_no_positive_word`. On a copy of the real home, a recheck of a run
+  stored before matched "bit for bit".
+- `ledger summary` again needs no statistics library: the try count moved from `deflation.py` to `tries.py`
+  (`test_ledger_summary_keeps_query_engine_lazy`, broken by #409). The rows-and-trials summary line is dropped: #409's one
+  headline count replaces it.
+- `data coverage` says its dates stop at the held-back boundary; `options derived` with nothing stored gives one clean
+  sentence; `results show` prints a stored period as two dates.
+- Not done, as reported above: health on first use (needs the owner's choice).

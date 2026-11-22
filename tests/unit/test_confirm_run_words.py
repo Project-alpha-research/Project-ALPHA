@@ -67,3 +67,23 @@ def test_the_slot_line_is_printed_when_the_receipt_is_written(
     assert ran.output.count(SPENDING) == 1
     assert ran.output.index("It cannot be undone.") < ran.output.index(SPENDING)
     assert ran.output.index(SPENDING) < ran.output.index("Slot 1 of 10")
+
+
+def test_an_older_run_of_the_test_names_the_newest_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli import _runner
+
+    run_id = _home(tmp_path, monkeypatch)
+    spec = load_spec(None, rule="ma_cross", param=["fast=5", "slow=20"], asset=["SPY"])
+    with pytest.MonkeyPatch.context() as patch:  # the same test after a code change: a new run
+        patch.setattr(_runner, "execution_fingerprint", lambda: "f" * 64)
+        newer = str(
+            run_idea(spec, home=tmp_path, quick=True, no_diagnose=True)["results"][0]["run_id"]
+        )
+    assert newer != run_id
+    ran = CliRunner().invoke(confirm_cmds.confirm_app, ["run", run_id])
+    assert ran.exit_code == 1
+    assert f"alpha confirm run {newer}" in ran.output and "No slot was used." in ran.output
+    assert "0 differences" not in ran.output and SPENDING not in ran.output
+    assert reserved_slots.receipts(tmp_path) == []

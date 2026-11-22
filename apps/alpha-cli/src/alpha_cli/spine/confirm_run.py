@@ -86,7 +86,16 @@ def _take(home: Path, run_id: str, now: datetime, on_spent: Callable[[], None]) 
         quick=frozen.quick,
         no_diagnose=frozen.no_diagnose,
     )["recheck"]
-    if not _matches(found) or found.get("compared_with") != run_id:
+    newest = found.get("compared_with")
+    if newest and newest != run_id:
+        # The same test has a newer run (a repeat after a code change): only that one is confirmed.
+        raise SpineError(
+            "RECHECK_MISMATCH",
+            f"Run {run_id} is not the newest run of this test; the newest is {newest}. "
+            "No slot was used.",
+            f"Run alpha confirm plan {newest}, then alpha confirm run {newest}.",
+        )
+    if not _matches(found):
         fields = ", ".join(str(d["field"]) for d in found.get("differences") or [])
         why = found.get("reason") or f"{found.get('differences_total')} differences: {fields}"
         raise SpineError(

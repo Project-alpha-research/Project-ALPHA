@@ -46,7 +46,8 @@ VARIANTS_NOTE = (
     "Parameter variants are not built for owner rules yet; only the doubled-cost variant ran."
 )
 
-_PRICE_SCALED = frozenset({"sma", "ema", "atr", "bbands", "macd"})
+_PRICE_SCALED = frozenset({"sma", "ema", "atr", "bbands", "macd", "highest", "lowest"})
+_EXTREMES = frozenset({"highest", "lowest"})
 _READS_RANGE = frozenset({"atr", "hawkes", "cmma"})
 _NAMES = {
     "sma": "SMA",
@@ -61,6 +62,8 @@ _NAMES = {
     "perm_entropy": "permutation entropy",
     "vg_path": "visibility-graph path",
     "reversibility": "reversibility",
+    "highest": "highest",
+    "lowest": "lowest",
 }
 
 
@@ -114,7 +117,9 @@ def _operand_shape(operand: Operand) -> str:
     if operand.kind == "source":
         return f"{operand.source}:lag:#" if operand.lag else str(operand.source)
     parts = [str(operand.indicator), *("#" for _ in operand.params)]
-    return ":".join([*parts, operand.field] if operand.field else parts)
+    if operand.field:
+        parts.append(operand.field)
+    return ":".join([*parts, "lag", "#"] if operand.lag else parts)
 
 
 def _condition_shape(condition: Condition) -> str:
@@ -146,7 +151,8 @@ def _operand_words(operand: Operand) -> str:
         return f"{operand.source} {operand.lag} bars ago" if operand.lag else str(operand.source)
     name = _NAMES[str(operand.indicator)]
     text = f"{name}({', '.join(_number(p) for p in operand.params)})"
-    return f"{text} {operand.field}" if operand.field else text
+    text = f"{text} {operand.field}" if operand.field else text
+    return f"{text} {operand.lag} bars ago" if operand.lag else text
 
 
 def rule_words(spec: Mapping[str, Any]) -> str:
@@ -209,6 +215,8 @@ class OwnerRule(BaseModel):
             operand.kind == "source"
             and operand.source in {"high", "low"}
             or operand.indicator in _READS_RANGE
+            or operand.indicator in _EXTREMES
+            and operand.field in {"high", "low"}
             for operand in _parsed(self.spec).operands
         )
         return (NULL_CLOSES,) if reads_range else ()

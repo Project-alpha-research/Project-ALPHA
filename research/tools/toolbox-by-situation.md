@@ -26,22 +26,24 @@ The result is then marked `declared`, otherwise `exploratory`. Nothing is refuse
 - Big drawdown, or how deep the drop could get: `risk.parametric_var`, `risk.cornish_fisher_var`, `risk.fractional_kelly`, `attribution.drawdown_causes`,
   `performance.ulcer`, `performance.pain`, `performance.sterling_burke`, `performance.worst_windows`, `performance.recovery_factor`,
   `performance.downside_ratios`, `risk.tail_fit`, `risk.var_coverage`, `risk.var_independence`, `resampling.drawdown_distribution`,
-  `resampling.block_bootstrap_paths`, `resampling.student_t_paths`, `resampling.moving_block_paths`, `resampling.risk_of_ruin`, `resampling.phase_surrogates`,
-  `resampling.trade_order_drawdown`, `resampling.calendar_year_shuffle`, `resampling.stress_shocks`
+  `resampling.block_bootstrap_paths`, `resampling.student_t_paths`, `timeseries.normality`, `resampling.moving_block_paths`, `resampling.risk_of_ruin`,
+  `resampling.phase_surrogates`, `resampling.trade_order_drawdown`, `resampling.calendar_year_shuffle`, `resampling.stress_shocks`
 - How wide is the return range: `risk.parametric_var`, `risk.cornish_fisher_var`, `performance.worst_windows`, `risk.tail_fit`, `risk.var_coverage`,
-  `resampling.sharpe_interval`, `resampling.return_interval`, `resampling.block_bootstrap_paths`, `resampling.student_t_paths`,
+  `resampling.sharpe_interval`, `resampling.return_interval`, `resampling.block_bootstrap_paths`, `resampling.student_t_paths`, `timeseries.normality`,
   `resampling.moving_block_paths`, `resampling.wild_bootstrap`
 - Works in some years or windows only: `attribution.weekday`, `market.vol_regimes`, `market.changepoints`, `robustness.start_end_dates`,
   `regimes.annual_returns`, `regimes.day_of_week`, `regimes.calendar_month`, `regimes.bull_bear`, `regimes.trend_range`, `regimes.sub_period_stability`,
   `regimes.turn_of_month`, `regimes.halloween`, `resampling.calendar_year_shuffle`, `resampling.interleaved_halves`, `resampling.year_jackknife`
-- Does it earn in calm or turbulent markets: `risk.vol_target`, `market.vol_regimes`
-- When did the behaviour change: `market.changepoints`, `regimes.chow_test`, `regimes.cusum_mean`, `regimes.cusum_variance`, `regimes.sup_f`,
+- Does it earn in calm or turbulent markets: `risk.vol_target`, `market.vol_regimes`, `timeseries.arch_lm`
+- When did the behaviour change: `market.changepoints`, `timeseries.dfa`, `timeseries.long_memory`, `timeseries.sample_entropy`,
+  `timeseries.permutation_entropy`, `timeseries.hurst`, `regimes.chow_test`, `regimes.cusum_mean`, `regimes.cusum_variance`, `regimes.sup_f`,
   `regimes.break_count`
 - Few trades: `risk.kelly`, `risk.optimal_f`, `risk.loss_streaks`, `attribution.hold_period`, `attribution.weekday`, `overfit_controls.trade_count`,
   `overfit_controls.sequential_test`, `trades.concentration`, `resampling.sharpe_interval`, `resampling.return_interval`, `trades.dependence`,
   `resampling.wild_bootstrap`, `resampling.trade_order_drawdown`, `resampling.trade_jackknife`
 - Profit from a handful of trades: `attribution.hold_period`, `trades.concentration`, `resampling.trade_jackknife`, `resampling.year_jackknife`
-- Wins and losses cluster or alternate: `risk.loss_streaks`, `performance.streaks`, `risk.var_independence`, `trades.dependence`, `resampling.return_shuffle`
+- Wins and losses cluster or alternate: `risk.loss_streaks`, `performance.streaks`, `timeseries.autocorrelation`, `timeseries.compressibility`,
+  `risk.var_independence`, `trades.dependence`, `timeseries.ljung_box`, `timeseries.variance_ratio`, `timeseries.up_down_runs`, `resampling.return_shuffle`
 - Which side earned the profit: `trades.side_contribution`
 - Fragile to costs: `performance.holding_period`, `costs.break_even`
 - Is this just the market going up: `market.attribution`, `costs.break_even`, `context.published_factors`, `regimes.bull_bear`, `regimes.asymmetric_beta`

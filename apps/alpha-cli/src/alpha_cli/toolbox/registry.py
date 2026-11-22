@@ -20,6 +20,7 @@ from alpha_cli.toolbox.families.resampling import (
 from alpha_cli.toolbox.families.resampling_more import CHECKS as RESAMPLING_MORE
 from alpha_cli.toolbox.families.risk_sizing import CHECKS as RISK_SIZING_CHECKS
 from alpha_cli.toolbox.families.robustness import START_END_DATES
+from alpha_cli.toolbox.families.timeseries import CHECKS as TIMESERIES_CHECKS
 from alpha_cli.toolbox.families.trades import DEPENDENCE
 
 SPECS = (
@@ -40,6 +41,7 @@ SPECS = (
     STUDENT_T_PATHS,
     PUBLISHED_FACTORS,
     *REGIME_CHECKS,
+    *TIMESERIES_CHECKS,
     *OVERFIT_CONTROLS,
     *RESAMPLING_MORE,
     *RISK_SIZING_CHECKS,

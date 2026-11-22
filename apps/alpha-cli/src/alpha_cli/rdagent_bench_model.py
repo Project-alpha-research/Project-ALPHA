@@ -130,9 +130,11 @@ def make_plan(
     month_spent: float,
     done: Collection[tuple[str, str, int]] = (),
     failed_attempts: int = 0,
+    attempts: int = 1,
 ) -> Plan:
     """The calls and cost of a plan. Outputs in `done` are already paid for and in the month's
-    spend, so only the calls still missing count against the month cap."""
+    spend, so only the calls still missing count against the month cap. A gateway may retry a
+    failed provider request, and the reply does not show it: every call is counted as `attempts`."""
     if samples < 1 or not models:
         raise BenchError("Give at least one model and one sample.")
     if len(set(models)) != len(models):
@@ -150,7 +152,7 @@ def make_plan(
             each = (p.prompt_tokens * price_in + p.completion_tokens * price_out) / 1e6
             usd += samples * each
             missing_usd += each * sum((model, p.id, n) not in done for n in range(samples))
-        per_model[model] = (samples * len(prompts), usd)
+        per_model[model] = (samples * len(prompts) * attempts, usd * attempts)
     calls = sum(c for c, _ in per_model.values())
     usd = sum(u for _, u in per_model.values())
     if calls + failed_attempts > RUN_MAX_CALLS:
@@ -160,6 +162,7 @@ def make_plan(
         )
     if usd > RUN_MAX_USD:
         raise BenchError(f"The plan costs about {usd:.2f} USD. The cap is {RUN_MAX_USD:g} per run.")
+    missing_usd *= attempts
     if month_spent + missing_usd > MONTH_MAX_USD:
         raise BenchError(
             f"The calls still to make plus {month_spent:.2f} USD already spent this month pass "

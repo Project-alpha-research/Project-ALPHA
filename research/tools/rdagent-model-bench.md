@@ -15,6 +15,7 @@ verified: 0000000000000000
 prints the call count and the cost estimate. It refuses a plan over 60 calls or 10 USD per run, or 50 USD per month. It writes and calls nothing.
 Month spend is one ledger in the data home; a run stops before a call that would pass a cap.
 `alpha rdagent bench run` (same options, plus `--store DIR` under the data home, and `--fixture` or `--gateway model=URL`) sends each prompt to each model.
+Pass `--gateway-retries N` with the `--provider-retries` each gateway was started with (default 1): the bench counts every call as N+1 attempts.
 Each gateway has its own token, read from `ALPHA_BENCH_TOKEN_<MODEL>` (capitals, other characters as `_`).
 A stored output is kept, so a second run resumes. `alpha rdagent bench report --prompts DIR --models a,b --store DIR` prints the readings.
 

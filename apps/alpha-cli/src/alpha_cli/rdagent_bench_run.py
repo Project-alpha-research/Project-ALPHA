@@ -35,6 +35,7 @@ def _record(
     reply: Reply,
     price: tuple[float, float],
     estimate: float,
+    hidden: float = 0.0,
 ) -> dict[str, Any]:
     usd: float | None = None
     reason = None
@@ -52,7 +53,8 @@ def _record(
         "prompt_id": p.id,
         "stage": p.stage,
         "prompt_sha256": prompt_sha(p),
-        "charged_usd": usd if usd is not None else estimate,
+        "charged_usd": (usd if usd is not None else estimate) + hidden,
+        "hidden_retry_allowance_usd": hidden,
         "sample": sample,
         "text": reply.text,
         "provider": reply.provider,
@@ -163,11 +165,12 @@ def _run(
     spend: Path,
     max_new_calls: int | None = None,
     clock: Callable[[], datetime] = lambda: datetime.now(UTC),
+    gateway_retries: int = 0,
 ) -> RunResult:
     """The run itself, with the store's lock already held by `run_bench`."""
     month = month_spent(spend, clock())
     done, run_usd, failed = _stored(prompts, models, samples, store)
-    make_plan(prompts, models, samples, prices, month, done, failed)
+    make_plan(prompts, models, samples, prices, month, done, failed, gateway_retries + 1)
     new = 0
     for model in models:
         for p in prompts:
@@ -177,7 +180,9 @@ def _run(
                     continue
                 if max_new_calls is not None and new >= max_new_calls:
                     return RunResult(new_calls=new, finished=False)
-                estimate = _estimate(p, prices[model])
+                single = _estimate(p, prices[model])
+                attempts = gateway_retries + 1
+                estimate = single * attempts  # the worst case: every attempt billed
                 if run_usd + estimate > RUN_MAX_USD:
                     raise BenchError(
                         f"Stopped after {new} new calls: {run_usd:.2f} USD spent in this run. "
@@ -186,13 +191,13 @@ def _run(
                     )
                 now = clock()  # each call reserves against the month it is made in
                 _reserve(spend, now, estimate)
-                _note(store, now, estimate, 1)
+                _note(store, now, estimate, attempts)
                 try:
                     reply = client.complete(model, p, sample)
                 except BenchError:
                     # Refused before dispatch: nothing was sent, so the reservation is released.
                     _settle(spend, now, estimate, {"charged_usd": 0.0, "usd_source": None})
-                    _note(store, now, -estimate, -1)
+                    _note(store, now, -estimate, -attempts)
                     raise
                 if reply.cost is not None and not (
                     isinstance(reply.cost, int | float)
@@ -206,7 +211,9 @@ def _run(
                         "must be a finite number of zero or more. The run stopped; its estimate "
                         "was charged."
                     )
-                record = _record(model, p, sample, reply, prices[model], estimate)
+                record = _record(
+                    model, p, sample, reply, prices[model], single, single * gateway_retries
+                )
                 _settle(spend, now, estimate, record)  # a billed reply is booked before it is saved
                 charged = float(record["charged_usd"])
                 _note(store, now, charged - estimate, 0)  # the in-flight entry now holds the charge
@@ -214,7 +221,9 @@ def _run(
                 path.parent.mkdir(parents=True, exist_ok=True)
                 with path.open("x", encoding="utf-8") as stream:
                     stream.write(body)
-                _note(store, now, -charged, -1)  # stored: the output now carries the accounting
+                _note(
+                    store, now, -charged, -attempts
+                )  # stored: the output now carries the accounting
                 run_usd += float(record["charged_usd"])
                 new += 1
     return RunResult(new_calls=new, finished=True)
@@ -231,6 +240,7 @@ def run_bench(
     spend: Path,
     max_new_calls: int | None = None,
     clock: Callable[[], datetime] = lambda: datetime.now(UTC),
+    gateway_retries: int = 0,
 ) -> RunResult:
     """Send each stored prompt to each model `samples` times. An output already stored is kept.
 
@@ -258,4 +268,5 @@ def run_bench(
             spend=spend,
             max_new_calls=max_new_calls,
             clock=clock,
+            gateway_retries=gateway_retries,
         )

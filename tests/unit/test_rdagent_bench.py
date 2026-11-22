@@ -811,3 +811,35 @@ def test_a_billed_reply_that_cannot_be_saved_stays_in_the_run_accounting(
     with pytest.raises(BenchError, match="10"):
         run_bench(prompts, ["a"], 1, prices, client, store, spend=_spend(tmp_path))
     assert client.calls == 1
+
+
+def test_gateway_retries_are_counted_as_possible_extra_attempts(tmp_path: Path) -> None:
+    folder = _prompts(tmp_path / "pr", 1)
+    row = json.loads((folder / "p0.json").read_text())
+    row["prompt_tokens"], row["completion_tokens"] = 2_000_000, 0  # a 2 USD estimate
+    (folder / "p0.json").write_text(json.dumps(row))
+    prompts = load_prompts(folder, None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    client = FakeClient({"a": {"p0": [_reply(2_000_000, 0)]}})
+    spend = _spend(tmp_path)
+    run_bench(prompts, ["a"], 1, prices, client, tmp_path / "store", spend=spend, gateway_retries=1)
+    # One retry may have been billed that the reply does not show: 2 USD reported, 2 USD allowed.
+    assert sum(json.loads(x)["usd"] for x in spend.read_text().splitlines()) == pytest.approx(4.0)
+
+
+def test_the_call_cap_counts_every_possible_attempt(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 31), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    client = FakeClient({})
+    with pytest.raises(BenchError, match="60"):
+        run_bench(
+            prompts,
+            ["a"],
+            1,
+            prices,
+            client,
+            tmp_path / "store",
+            spend=_spend(tmp_path),
+            gateway_retries=1,
+        )
+    assert client.calls == 0

@@ -43,6 +43,7 @@ project-wide rule is [research integrity § Models and isolated workers](researc
   without token counts is charged its estimate. A gateway address must be `http` on `127.0.0.1`, `localhost` or `::1`.
   Tests use the fake client (`--fixture`); no test calls a model. Real calls go through one local gateway per model,
   each with its own token in `ALPHA_BENCH_TOKEN_<MODEL>`.
+- A gateway may retry a failed provider request without showing it. The bench counts each call as `--gateway-retries` + 1 attempts, in cost and in calls.
 - A store keeps one run budget, whatever a rerun selects, and one run at a time may use it (a lock); a second is refused.
 - `report` shows readings, never a winner. A missing cost, latency or provider is shown with its reason. The family check runs
   the worker's `idea_families.py` in a child process. The prefix check is named as not run.

@@ -104,3 +104,9 @@ Each call now reads the clock itself, so a run that crosses a UTC month boundary
 ## Review round 11 (Codex)
 A billed reply is now held in the store's accounting (its actual charge and the attempt) until its output file is written. The record is built
 before the file is opened, so a failed save leaves nothing half-written, and a resume still counts the paid call against the run's caps.
+
+## Review round 12 (Codex)
+A gateway can retry a failed provider request and bill every attempt, while the reply shows only the last one. The bench cannot see this, and no
+gateway endpoint reports its retry setting, so it counts worst case: `--gateway-retries N` (default 1, the gateway's own default) makes each call
+count as N+1 attempts in the plan, the reservation, the call cap and the settled charge. Start each gateway with `--provider-retries 0` and pass
+`--gateway-retries 0` to count one attempt per call. UNVERIFIED: the bench cannot check how a running gateway was started.

@@ -30,6 +30,14 @@ PROMPTS = Annotated[Path, typer.Option("--prompts", help="Folder of stored promp
 MODELS = Annotated[str, typer.Option("--models", help="Model names, separated by commas.")]
 SAMPLES = Annotated[int, typer.Option("--samples", help="Replies asked for each prompt and model.")]
 STAGES = Annotated[str | None, typer.Option("--stages", help="For example proposal,feedback.")]
+RETRIES = Annotated[
+    int,
+    typer.Option(
+        "--gateway-retries",
+        help="The --provider-retries each gateway was started with (its default is 1). "
+        "Every call is counted as that many extra attempts.",
+    ),
+]
 STORE = Annotated[
     Path, typer.Option("--store", help="Output folder under the data home, outside git.")
 ]
@@ -53,17 +61,27 @@ def plan(
     ],
     samples: SAMPLES = 1,
     stages: STAGES = None,
+    gateway_retries: RETRIES = 1,
 ) -> None:
     """Print the number of calls and the cost estimate. Writes nothing and calls no model."""
     try:
         names = _names(models)
         found = load_prompts(prompts, _names(stages) if stages else None)
         spent = month_spent(spend_ledger(AlphaSettings().data_dir), datetime.now(UTC))
-        result = make_plan(found, names, samples, load_prices(prices, names), spent)
+        result = make_plan(
+            found,
+            names,
+            samples,
+            load_prices(prices, names),
+            spent,
+            attempts=gateway_retries + 1,
+        )
     except BenchError as error:
         raise _fail(error) from error
+    attempts = gateway_retries + 1
     typer.echo(
-        f"{result.calls} calls ({len(found)} prompts, {len(names)} models, {samples} samples)."
+        f"{result.calls // attempts} calls ({len(found)} prompts, {len(names)} models, "
+        f"{samples} samples), counted as up to {result.calls} attempts."
     )
     typer.echo(f"Estimated cost: {result.usd:.4f} USD, from recorded token counts and your prices.")
     for model, (calls, usd) in result.per_model.items():
@@ -87,6 +105,7 @@ def run(
     gateway: Annotated[
         list[str] | None, typer.Option("--gateway", help="model=http://127.0.0.1:PORT")
     ] = None,
+    gateway_retries: RETRIES = 1,
 ) -> None:
     """Send each stored prompt to each model. A stored output is kept, so a rerun resumes."""
     try:
@@ -101,7 +120,17 @@ def run(
         if not store.resolve().is_relative_to(home.resolve()):
             raise BenchError(f"The bench store must be under the data home ({home}).")
         priced = load_prices(prices, names)
-        done = run_bench(found, names, samples, priced, client, store, spend=spend_ledger(home))
+        retries = 0 if fixture is not None else gateway_retries  # a fake client never retries
+        done = run_bench(
+            found,
+            names,
+            samples,
+            priced,
+            client,
+            store,
+            spend=spend_ledger(home),
+            gateway_retries=retries,
+        )
     except (BenchError, ValueError) as error:
         raise _fail(BenchError(str(error))) from error
     typer.echo(f"Sent {done.new_calls} new calls. Outputs are in {store}/outputs.")

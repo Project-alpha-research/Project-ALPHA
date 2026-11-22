@@ -1,4 +1,4 @@
-"""An exact repeat of an earlier test is served from the stored run and adds nothing to any count."""
+"""An exact repeat is served from the stored run and adds nothing to any count."""
 
 from __future__ import annotations
 

@@ -96,18 +96,24 @@ def _pdf(tmp_path: Path) -> Path:
 def test_search_keeps_papers_needs_no_project_and_lists_them(
     tmp_path: Path, offline_worker: list[list[str]]
 ) -> None:
-    first = _facts(tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@example.org")
+    first = _facts(
+        tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@example.org"
+    )
     assert offline_worker[0][:3] == ["discover", "--query", "momentum"]
     assert [p["state"] for p in first["papers"]] == ["candidate", "candidate"]
     listed = _facts(tmp_path, "library", "papers")["papers"]
     assert len(listed) == 2
-    again = _facts(tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@example.org")
+    again = _facts(
+        tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@example.org"
+    )
     assert len(_facts(tmp_path, "library", "papers")["papers"]) == 2
     assert again["papers"] == first["papers"]
 
 
 def test_a_missing_value_is_null_with_a_reason_never_zero(tmp_path: Path) -> None:
-    _facts(tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@example.org")
+    _facts(
+        tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@example.org"
+    )
     by_title = {p["title"]: p for p in _facts(tmp_path, "library", "papers")["papers"]}
     bare = by_title["No year here"]
     assert bare["year"] is None and bare["authors"] is None
@@ -160,7 +166,9 @@ def test_a_paper_links_to_an_idea_card_and_shows_in_the_idea_file(tmp_path: Path
     code, text = _cli(tmp_path, "idea", "file", card["id"])
     assert code == 0 and "not evidence" in text and paper["paper_id"] in text
     # the same card with a second paper later: the card id does not change
-    other = _facts(tmp_path, "library", "search", "x", "--online", "--unpaywall-email", "x@example.org")
+    other = _facts(
+        tmp_path, "library", "search", "x", "--online", "--unpaywall-email", "x@example.org"
+    )
     extra = other["papers"][0]["paper_id"]
     again = _facts(tmp_path, "idea", "new", "--claim", "momentum persists", "--paper", extra)
     assert again["id"] == card["id"] and again["created"] is False
@@ -184,7 +192,9 @@ def test_old_commands_name_the_new_ones(tmp_path: Path) -> None:
 def test_a_repeat_hit_shows_this_searchs_relevance_not_the_first(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    _facts(tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@example.org")
+    _facts(
+        tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@example.org"
+    )
     changed = {
         **RECORDED_SEARCH,
         "candidates": [
@@ -192,7 +202,9 @@ def test_a_repeat_hit_shows_this_searchs_relevance_not_the_first(
         ],
     }
     monkeypatch.setattr(library_papers_cmds, "_run_literature_worker", lambda argv, **kw: changed)
-    second = _facts(tmp_path, "library", "search", "reversal", "--online", "--unpaywall-email", "x@example.org")
+    second = _facts(
+        tmp_path, "library", "search", "reversal", "--online", "--unpaywall-email", "x@example.org"
+    )
     assert second["papers"][0]["relevance_explanation"] == "title shares: reversal"
     assert len(_facts(tmp_path, "library", "papers")["papers"]) == 2
 
@@ -210,7 +222,9 @@ def test_a_hostile_file_name_and_title_cannot_leave_the_library_folder(tmp_path:
 
 
 def test_retraction_is_kept_and_unknown_is_not_read_as_not_retracted(tmp_path: Path) -> None:
-    _facts(tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@example.org")
+    _facts(
+        tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@example.org"
+    )
     by_title = {p["title"]: p for p in _facts(tmp_path, "library", "papers")["papers"]}
     assert by_title["Momentum in a synthetic market"]["retracted"] is True
     assert "retracted" not in by_title["Momentum in a synthetic market"]["not_stated"]
@@ -237,15 +251,21 @@ def test_a_later_search_that_learns_a_retraction_updates_the_stored_paper(
     }
     first = {**RECORDED_SEARCH, "candidates": [first_candidate]}
     monkeypatch.setattr(library_papers_cmds, "_run_literature_worker", lambda argv, **kw: first)
-    before = _facts(tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@y.org")
+    before = _facts(
+        tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@y.org"
+    )
     assert before["papers"][0]["retracted"] is None
     later = {**RECORDED_SEARCH, "candidates": [RECORDED_SEARCH["candidates"][0]]}
     monkeypatch.setattr(library_papers_cmds, "_run_literature_worker", lambda argv, **kw: later)
-    after = _facts(tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@y.org")
+    after = _facts(
+        tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@y.org"
+    )
     assert after["papers"][0]["retracted"] is True
     assert "retracted" not in after["papers"][0]["not_stated"]
     assert _facts(tmp_path, "library", "papers")["papers"][0]["retracted"] is True
     # a later answer of "not retracted" or "not stated" never undoes a known retraction
     monkeypatch.setattr(library_papers_cmds, "_run_literature_worker", lambda argv, **kw: first)
-    again = _facts(tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@y.org")
+    again = _facts(
+        tmp_path, "library", "search", "momentum", "--online", "--unpaywall-email", "x@y.org"
+    )
     assert again["papers"][0]["retracted"] is True

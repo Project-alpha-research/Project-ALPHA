@@ -408,9 +408,14 @@ def write_diagnostics(
     variants = []
     confirmation = CONFIRMATION in result.get("labels", [])
     named = variant_specs(idea, spec, costs_only=confirmation)
-    reruns = engine_runs([(bars, changed, dividends) for _, _, changed in named], workers)
+    tasks = [(bars, changed, dividends) for _, _, changed in named]
+    # Every attempt counts, a failed one too: a pool starts all of them, one worker one at a time.
+    batches = [tasks] if workers > 1 else [[task] for task in tasks]
+    reruns = []
+    for batch in batches:
+        result["variants_evaluated"] += len(batch)
+        reruns.extend(engine_runs(batch, workers))
     for (name, kind, _), (rerun_equity, _) in zip(named, reruns, strict=True):
-        result["variants_evaluated"] += 1
         variants.append(
             {
                 "name": name,

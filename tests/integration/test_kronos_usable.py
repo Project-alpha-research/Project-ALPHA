@@ -5,9 +5,11 @@ from __future__ import annotations
 import json
 import shutil
 from collections.abc import Sequence
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import polars as pl
 import pytest
 from typer.testing import CliRunner
 
@@ -191,7 +193,7 @@ def test_kronos_monte_carlo_explicit_context_too_long_names_the_largest(
 
 
 def test_a_negative_model_volume_becomes_zero_and_is_counted() -> None:
-    from datetime import UTC, datetime
+    from datetime import UTC
 
     from alpha_forecast import SampledPath
 
@@ -205,3 +207,23 @@ def test_a_negative_model_volume_becomes_zero_and_is_counted() -> None:
     assert bars[1].volume == 0.0
     assert rows[1]["raw_volume"] == -2.0 and rows[1]["volume_adjusted"] is True
     assert adjusted == 1
+
+
+def test_kronos_monte_carlo_counts_only_the_window_trades(
+    stored: dict[str, str], home: Path
+) -> None:
+    eval_run = _eval_run(home)
+    result = runner.invoke(
+        app,
+        ["monte-carlo", "kronos", "--from-run", stored["run"], "--forecast-eval-run", eval_run,
+         *_FAKE, "--paths", "2"],
+    )  # fmt: skip
+    assert result.exit_code == 0, result.output
+    run_id = result.output.split("-> run ")[1].split(":")[0]
+    built = json.loads((home / "runs" / run_id / "manifest.json").read_text())["built_from"]
+    trades = pl.read_parquet(home / "runs" / stored["run"] / "trades.parquet")
+    assert (
+        built["n_trades"]
+        == trades.filter(pl.col("entry_ts") <= datetime.fromisoformat(built["last_ts"])).height
+    )
+    assert built["n_trades"] < trades.height

@@ -782,6 +782,12 @@ def kronos(
         if [ts for ts, _ in source_equity] != scored_ts:
             raise DataError("Kronos paths do not cover the source run's first out-of-sample days")
         source_info = _mc_reading.built_from(from_run, source_dir, source_equity, "kronos")
+        if source_info["n_trades"] is not None:  # count the observed trades of this window only
+            source_info["n_trades"] = (
+                pl.read_parquet(source_dir / "trades.parquet")
+                .filter(pl.col("entry_ts") <= scored_ts[-1])
+                .height
+            )
         source_horizon = source_info["n_returns"]
         if path_matrix.shape != (paths, source_horizon):
             raise DataError(
@@ -960,6 +966,11 @@ def kronos(
         f"monte-carlo kronos -> run {identity.run_id}: {paths} full-engine paths over the first "
         f"{source_horizon} out-of-sample days"
     )
+    if not np.any(path_matrix):
+        typer.echo(
+            f"No path made a trade in these {source_horizon} days: the rule did not act on "
+            f"them. A longer window shows more: --horizon {_forecast.MAX_WINDOW} is the most."
+        )
     typer.echo(
         f"More paths give a fuller fan: --paths {4 * paths} takes "
         f"{_forecast.say_time(4 * expected)} on a desktop CPU."

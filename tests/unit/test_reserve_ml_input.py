@@ -15,15 +15,13 @@ import pytest
 from typer.testing import CliRunner
 
 from alpha_cli import _runner
-from alpha_cli.control_store import ControlStore
 from alpha_cli.main import app
 from alpha_cli.ml_contract import MIN_SYMBOLS, sha256_file
-from alpha_cli.ml_input import _aligned_panel, export_project_input
+from alpha_cli.ml_input import _aligned_panel, export_input
 from alpha_core import Bar
 from alpha_core.reserve import RESERVED_DAY, RESERVED_INSTANT, RESERVED_START
 from alpha_data.snapshot import create_snapshot
 from alpha_data.store import ParquetStore
-from tests.fixtures.control_store_fixtures import mark_project_as_migrated_legacy
 
 START = date(2020, 1, 1)
 CUT_N = (RESERVED_DAY - START).days  # sessions stamped before the reserved day
@@ -34,7 +32,7 @@ SENTENCE = f"Held back {HELD_PER_SYMBOL * MIN_SYMBOLS} bars from {RESERVED_START
 PINNED_SPEC_SHA256 = "1d2396a61d692cfbb45c1cf451daa492024f648091017474f8226b334c14fb9c"
 
 runner = CliRunner()
-World = tuple[Path, str, str]  # data dir, project id, experiment id
+World = tuple[Path, Path]  # data dir, experiment spec file
 
 
 class Spy:
@@ -95,33 +93,21 @@ def _world(root: Path, sessions_total: int, *, poison_from: int | None) -> World
         parser_version="1",
         created_at=datetime(2026, 7, 19, tzinfo=UTC),
     )
-    control = ControlStore(root)
-    project = control.create_project(
-        name="Reserve starter",
-        hypothesis="Relative winners persist one session.",
-        falsification_criterion="Reject if locked OOS excess return is non-positive.",
-        at=datetime(2026, 7, 19, tzinfo=UTC),
+    spec_path = root / "experiment-spec.json"
+    spec_path.write_text(
+        json.dumps(
+            {
+                "snapshot_id": "ml-frozen",
+                "universe": symbols,
+                "split_policy": {"train": 504, "test": 63, "purge": 5, "embargo": 5},
+                "costs": {"fee_bps": 1.0, "slippage_bps": 2.0},
+                "seeds": {"master": 7},
+                "stage_config": {"ml": {"validation_sessions": 120}},
+            }
+        ),
+        encoding="utf-8",
     )
-    project_id = str(project["project_id"])
-    mark_project_as_migrated_legacy(control, project_id)
-    version = control.create_strategy_version(
-        project_id,
-        strategy_name="qlib_alpha158_lgbm",
-        source_fingerprint="git:test",
-        definition={"decision": "close_t", "fill": "open_t_plus_1"},
-        parameter_space={},
-    )
-    experiment = control.create_experiment_spec(
-        project_id,
-        strategy_version_id=str(version["version_id"]),
-        snapshot_id="ml-frozen",
-        universe=symbols,
-        split_policy={"train": 504, "test": 63, "purge": 5, "embargo": 5},
-        costs={"fee_bps": 1.0, "slippage_bps": 2.0},
-        seeds={"master": 7},
-        stage_config={"ml": {"validation_sessions": 120}},
-    )
-    return root, project_id, str(experiment["experiment_id"])
+    return root, spec_path
 
 
 @pytest.fixture(scope="module")
@@ -135,12 +121,11 @@ def cut(tmp_path_factory: pytest.TempPathFactory) -> World:
 
 
 def _export(world: World, name: str, as_of: str | None = None) -> tuple[dict[str, object], Path]:
-    data_dir, project_id, experiment_id = world
+    data_dir, spec_path = world
     out = data_dir / "bundles" / name
-    summary = export_project_input(
+    summary = export_input(
         data_dir=data_dir,
-        project_id=project_id,
-        experiment_id=experiment_id,
+        spec_path=spec_path,
         output_dir=out,
         as_of=as_of,
     )
@@ -192,10 +177,11 @@ def test_the_held_back_record_is_in_the_summary_and_the_bundle(poisoned: World) 
 def test_the_command_prints_the_held_back_sentence(
     poisoned: World, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    data_dir, project_id, experiment_id = poisoned
+    data_dir, spec_path = poisoned
     monkeypatch.setenv("ALPHA_DATA_DIR", str(data_dir))
     result = runner.invoke(
-        app, ["ml", "export-input", project_id, experiment_id, str(data_dir / "bundles" / "cli")]
+        app,
+        ["ml", "export-input", str(data_dir / "bundles" / "cli"), "--spec", str(spec_path)],
     )
     assert result.exit_code == 0, result.output
     assert SENTENCE in result.output
@@ -204,9 +190,9 @@ def test_the_command_prints_the_held_back_sentence(
         [
             "ml",
             "export-input",
-            project_id,
-            experiment_id,
             str(data_dir / "bundles" / "cli2"),
+            "--spec",
+            str(spec_path),
             "--json",
         ],
     )
@@ -222,8 +208,7 @@ def test_a_store_with_no_held_back_bar_gives_the_same_bundle_as_before(
     assert set(summary) == {
         "status",
         "input_bundle_id",
-        "project_id",
-        "experiment_id",
+        # The summary no longer carries a project or experiment id: the command reads a spec file.
         "snapshot_id",
         "snapshot_hash",
         "symbols",

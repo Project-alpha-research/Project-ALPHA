@@ -11,7 +11,6 @@ import polars as pl
 from alpha_core import DataError
 from alpha_data.crypto.contracts import (
     FAMILY_AUTHORITIES,
-    CryptoAcquisitionScopeV1,
     CryptoDatasetIdentityV1,
     CryptoQualityReportV1,
     CryptoRawReceiptV1,
@@ -49,26 +48,6 @@ def feature_input_names(feature_name: str) -> tuple[str, ...] | None:
     return _FEATURE_INPUT_NAMES.get(feature_name)
 
 
-class LegacyUnscopedEventError(DataError):
-    """Historical bytes are valid but cannot qualify as governed research evidence."""
-
-
-def manifest_acquisition_scope(
-    manifest: dict[str, object], dataset: CryptoDatasetIdentityV1
-) -> CryptoAcquisitionScopeV1 | None:
-    raw_scope = manifest.get("acquisition_scope")
-    if dataset.family in _CASE_BOUND_EVENT_FAMILIES:
-        try:
-            return CryptoAcquisitionScopeV1.from_dict(raw_scope)
-        except DataError as exc:
-            raise LegacyUnscopedEventError(
-                "legacy unscoped derivative event data cannot enter governed research evidence"
-            ) from exc
-    if raw_scope is not None:
-        raise DataError("crypto acquisition scope is attached to an unsupported dataset family")
-    return None
-
-
 def normalized_member(
     store: CryptoBulkStore, manifest_id: str
 ) -> tuple[CryptoSnapshotMemberV1, CryptoQualityReportV1]:
@@ -85,7 +64,6 @@ def normalized_member(
         raise DataError("crypto snapshot creation requires exact qualified artifacts")
     if dataset.provider != FAMILY_AUTHORITIES[dataset.family]:
         raise DataError("crypto normalized manifest has the wrong family authority")
-    manifest_acquisition_scope(manifest, dataset)
     return (
         CryptoSnapshotMemberV1(
             dataset=dataset,

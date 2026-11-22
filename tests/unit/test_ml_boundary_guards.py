@@ -786,18 +786,16 @@ def test_ml_input_scalar_guards(call: Callable[[], object], message: str) -> Non
 
 
 def test_ml_input_projection_and_split_guards(tmp_path: Path) -> None:
-    class FakeControl:
-        def __init__(self, projection: object) -> None:
-            self.projection = projection
-
-        def get_project(self, project_id: str) -> dict[str, object]:
-            del project_id
-            return {"experiments": self.projection}
-
-    with pytest.raises(DataError, match="corrupt experiment"):
-        ml_input._experiment(cast(Any, FakeControl("bad")), "project", "experiment")
-    with pytest.raises(DataError, match="not linked"):
-        ml_input._experiment(cast(Any, FakeControl([])), "project", "experiment")
+    missing = tmp_path / "missing.json"
+    with pytest.raises(DataError, match="regular file"):
+        ml_input._read_spec(missing)
+    bad = tmp_path / "bad.json"
+    bad.write_text("[1]", encoding="utf-8")
+    with pytest.raises(DataError, match="must be a JSON object"):
+        ml_input._read_spec(bad)
+    bad.write_text("{", encoding="utf-8")
+    with pytest.raises(DataError, match="not valid JSON"):
+        ml_input._read_spec(bad)
     with pytest.raises(DataError, match="fully aligned sessions"):
         ml_input._aligned_panel(data_dir=tmp_path, snapshot_id="snapshot", universe=[])
     with pytest.raises(DataError, match="needs at least"):
@@ -863,12 +861,11 @@ def test_export_input_rejects_incomplete_experiment_projections(
     worker = tmp_path / "worker"
     worker.mkdir()
     (worker / "uv.lock").write_text("version = 1\n")
-    monkeypatch.setattr(ml_input, "_experiment", lambda *args: experiment)
+    monkeypatch.setattr(ml_input, "_read_spec", lambda *args: experiment)
     with pytest.raises(DataError, match=message):
-        ml_input.export_project_input(
+        ml_input.export_input(
             data_dir=tmp_path / "data",
-            project_id="project",
-            experiment_id="experiment",
+            spec_path=tmp_path / "spec.json",
             output_dir=tmp_path / "output",
             worker_project=worker,
         )
@@ -878,20 +875,18 @@ def test_export_input_rejects_existing_output_and_missing_worker_lock(tmp_path: 
     output = tmp_path / "output"
     output.mkdir()
     with pytest.raises(DataError, match="already exists"):
-        ml_input.export_project_input(
+        ml_input.export_input(
             data_dir=tmp_path,
-            project_id="project",
-            experiment_id="experiment",
+            spec_path=tmp_path / "spec.json",
             output_dir=output,
         )
 
     worker = tmp_path / "worker"
     worker.mkdir()
     with pytest.raises(DataError, match="worker lock is unavailable"):
-        ml_input.export_project_input(
+        ml_input.export_input(
             data_dir=tmp_path,
-            project_id="project",
-            experiment_id="experiment",
+            spec_path=tmp_path / "spec.json",
             output_dir=tmp_path / "new-output",
             worker_project=worker,
         )
@@ -917,7 +912,7 @@ def test_export_input_reports_a_concurrent_publish(
             "volume": [1_000.0],
         }
     ).select(PANEL_COLUMNS)
-    monkeypatch.setattr(ml_input, "_experiment", lambda *args: experiment)
+    monkeypatch.setattr(ml_input, "_read_spec", lambda *args: experiment)
     monkeypatch.setattr("alpha_cli.ml_input._runner.verified_snapshot_hash", lambda *args: "a" * 64)
     monkeypatch.setattr(ml_input, "_aligned_panel", lambda **kwargs: (panel, tuple(sessions)))
 
@@ -942,10 +937,9 @@ def test_export_input_reports_a_concurrent_publish(
     monkeypatch.setattr(ml_input, "prepare_exchange", accept_contract)
     monkeypatch.setattr("alpha_cli.ml_input.os.rename", concurrent_rename)
     with pytest.raises(DataError, match="already exists"):
-        ml_input.export_project_input(
+        ml_input.export_input(
             data_dir=tmp_path / "data",
-            project_id="project",
-            experiment_id="experiment",
+            spec_path=tmp_path / "spec.json",
             output_dir=output,
             worker_project=worker,
         )
@@ -979,19 +973,19 @@ def test_export_and_prepare_commands_translate_boundary_errors(
 ) -> None:
     monkeypatch.setattr(
         ml_cmds,
-        "export_project_input",
-        lambda **kwargs: {"status": "generated", "project_id": kwargs["project_id"]},
+        "export_ml_input",
+        lambda **kwargs: {"status": "generated", "spec": str(kwargs["spec_path"])},
     )
-    ml_cmds.export_input("project", "experiment", tmp_path / "output", as_json=True)
+    ml_cmds.export_input(tmp_path / "output", spec=tmp_path / "spec.json", as_json=True)
     assert json.loads(capsys.readouterr().out)["status"] == "generated"
 
     def fail_export(**kwargs: object) -> dict[str, object]:
         del kwargs
-        raise DataError("bad project")
+        raise DataError("bad spec")
 
-    monkeypatch.setattr(ml_cmds, "export_project_input", fail_export)
-    with pytest.raises(typer.BadParameter, match="bad project"):
-        ml_cmds.export_input("project", "experiment", tmp_path / "output", as_json=True)
+    monkeypatch.setattr(ml_cmds, "export_ml_input", fail_export)
+    with pytest.raises(typer.BadParameter, match="bad spec"):
+        ml_cmds.export_input(tmp_path / "output", spec=tmp_path / "spec.json", as_json=True)
 
     with pytest.raises(typer.BadParameter, match="panel source"):
         ml_cmds.prepare(

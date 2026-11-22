@@ -15,9 +15,9 @@ later, unseen slices.
 
 **Commands**
 ```text
-uv run alpha report <run_id>
-uv run alpha figures render <run_id> --figure fold_sharpe
-uv run alpha validate <SYMBOL> --strategy ma_crossover --param fast=50 --param slow=200 --train-size 504 --test-size 63
+alpha report <run_id>
+alpha figures render <run_id> --figure fold_sharpe
+alpha validate <SYMBOL> --strategy ma_crossover --param fast=50 --param slow=200 --train-size 504 --test-size 63
 ```
 
 **How to read it**

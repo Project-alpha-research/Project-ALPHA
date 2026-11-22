@@ -17,10 +17,10 @@ and daily short sale volume. Descriptive inputs only; no signal is defined on th
 **Commands** (no key; the owner pulls once, you read)
 
 ```text
-uv run alpha context list --json
-uv run alpha context show-cftc-cot --market 13874A --as-of 2024-03-15T21:00 --json
-uv run alpha context show-finra-short-volume --symbol SPY --as-of 2024-03-15 --json
-uv run alpha context show-derived --series cot_nc_net_pct_156w --key 13874A --asset SPY
+alpha context list --json
+alpha context show-cftc-cot --market 13874A --as-of 2024-03-15T21:00 --json
+alpha context show-finra-short-volume --symbol SPY --as-of 2024-03-15 --json
+alpha context show-derived --series cot_nc_net_pct_156w --key 13874A --asset SPY
 ```
 
 **How to read it**

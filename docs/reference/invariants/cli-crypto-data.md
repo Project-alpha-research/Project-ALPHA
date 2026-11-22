@@ -82,12 +82,9 @@ and [research integrity § Invalid data fails loud](research-integrity.md#invali
 
 ## Research-bound acquisition
 
-- High-frequency derivative trades and books require `--case-id`, `--expected-case-revision` and `--reason`; the scope
-  is refused for any other family (`crypto_data_cmds._acquisition_scope`).
-- Before such capture the current case revision must equal the expected one, else refresh and retry.
+- `alpha crypto-data acquire` takes no case option: every family, including derivative trades and books, works on the data home alone.
 - A Binance one-minute research selection binds 1 to 50 unique markets to one case revision and re-checks the revision
   after publishing its receipt.
-- Unscoped historical high-frequency artifacts stay readable but fail governed snapshot creation and re-verification.
 
 ## Backfill
 

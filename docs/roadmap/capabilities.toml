@@ -512,7 +512,7 @@ docs = ["docs/reference/invariants/web-frontend-ideas.md", "docs/reference/invar
 real_data = "not yet confirmed (to check on the Mac later)"
 needs = []
 state = "Partial"
-missing = "Proven on synthetic records and a fixture browser run only; no end-to-end smoke check. Step 9 (RD-Agent work) is not linked to an idea yet. A follow change does not refresh the page live. The tear sheet is not mounted yet."
+missing = "Proven on synthetic records and a fixture browser run only; no end-to-end smoke check. Step 9 (RD-Agent work) is not linked to an idea yet. A follow change shows within a minute (the page looks again on a timer), not at once. The tear sheet is not mounted yet."
 
 [[capability]]
 id = "forward-follow"

@@ -108,6 +108,7 @@ export function IdeaPageView({ file, error, selectedRun, onSelectRun, onBack }: 
 
 const words = (cause: unknown): string => (cause instanceof Error ? cause.message : String(cause))
 const CARD_PARAM = 'idea'
+const FOLLOW_POLL_MS = 60_000
 
 function cardFromHash(): string | null {
   const value = new URLSearchParams(window.location.hash.replace(/^#/, '')).get(CARD_PARAM)
@@ -130,6 +131,12 @@ export function IdeaWorkspace() {
   const [file, setFile] = useState<{ card: string; value: IdeaFile } | null>(null)
   const [fileError, setFileError] = useState<{ card: string; text: string } | null>(null)
   const [run, setRun] = useState<string | null>(null)
+  const [tick, setTick] = useState(0)
+  // Paper follows live under a folder the web may not open, so no activity area covers them: look again once a minute.
+  useEffect(() => {
+    const timer = window.setInterval(() => setTick(value => value + 1), FOLLOW_POLL_MS)
+    return () => window.clearInterval(timer)
+  }, [])
   useEffect(() => {
     let live = true
     api.ideaList().then(
@@ -146,7 +153,7 @@ export function IdeaWorkspace() {
       (cause: unknown) => { if (live) setFileError({ card, text: words(cause) }) },
     )
     return () => { live = false }
-  }, [card, version])
+  }, [card, version, tick])
   const open = (next: string | null) => { setCard(next); setRun(null); mirror(next) }
   if (!card) return <IdeaListView data={list} error={listError} onOpen={open} />
   return (

@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 0e02ceaa92bd112e on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified 9cc54c07a2c5890f on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 apps/alpha-cli/README.md
-  verified 0e02ceaa92bd112e on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified 9cc54c07a2c5890f on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified 1b579e1cb5d72fc5 on 2026-11-22: the Ideas read now relays the reading's costs block and the timeline lists every linked study; this page is still correct
+  verified 1ccb48d061749a85 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 apps/alpha-web/README.md
-  verified 1b579e1cb5d72fc5 on 2026-11-22: the Ideas read now relays the reading's costs block and the timeline lists every linked study; this page is still correct
+  verified 1ccb48d061749a85 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -35,7 +35,7 @@ docs/reference/invariants/cli-follow.md
   verified e8f80ddf444cf352 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-idea-file.md
-  verified 4e402cc8d1d62a08 on 2026-11-21: merge: took the split pages from the remote branch; content unchanged in meaning
+  verified c53c8ed6385c7a07 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 docs/reference/invariants/cli-investigation-tools.md
   verified fd5f1de814c19725 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -56,7 +56,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified e2d9558c73482a3b on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-runs.md
-  verified a2881ebcc1fd0c45 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified edc5ef52b277d8a6 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 docs/reference/invariants/cli-setups.md
   verified 0375e4ab3fe2b99a on 2026-11-21: Test narrowed for mypy; rules unchanged
@@ -113,10 +113,10 @@ docs/reference/invariants/web-api.md
   verified dfa61a5271106013 on 2026-11-22: the Ideas read now relays the reading's costs block and the timeline lists every linked study; this page is still correct
 
 docs/reference/invariants/web-frontend-ideas.md
-  verified aff28f3c4b3183e9 on 2026-11-22: the Ideas read now relays the reading's costs block and the timeline lists every linked study; this page is still correct
+  verified 3def381fc9c490c7 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 docs/reference/invariants/web-frontend.md
-  verified fc1d782471bcf88a on 2026-11-22: the Ideas read now relays the reading's costs block and the timeline lists every linked study; this page is still correct
+  verified 9abed5b02084045a on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 docs/reference/invariants/web-ideas.md
   verified e24cae1f03437816 on 2026-11-21: new page: the section moved here unchanged except the follow line, which is now true
@@ -127,7 +127,7 @@ docs/reference/invariants/web-research.md
   verified 8cfe152731a9e4fb on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/web-run-detail.md
-  verified e6e3da8a1a134040 on 2026-11-22: the Ideas read now relays the reading's costs block and the timeline lists every linked study; this page is still correct
+  verified 4944725ab96096db on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 docs/reference/invariants/workers.md
   verified 9c856742539b975c on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
@@ -187,7 +187,7 @@ docs/reference/project/components/toolbox.md
   verified a9b38e6041cf26ee on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 9ad0b7fa5d407c83 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified 164831af99f0120e on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -244,10 +244,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified fd0836c0602186f9 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified c6266e13d9cdd5b9 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 research/PLAYBOOK.md
-  verified f67466eaa9790c20 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified ca6053a0ce875702 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 research/README.md
   verified 3e955276bb8eea08 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -259,13 +259,13 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified cc1a8eac7869d020 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified 74819dd07f14aa8d on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 9eb94d34c9955f7b on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified 115bc752ec1680e7 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 research/tools/charts.md
   verified 874701b73cdea3df on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -274,10 +274,10 @@ research/tools/data-health.md
   verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 075c04b264c1db73 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified 29afe053d1eed621 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 research/tools/diagnose-and-audit.md
-  verified a25b857dc8a06535 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified 7346c720627963bf on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 research/tools/follow.md
   verified dc6f99f581b1ef4c on 2026-11-21: Merged main (calendar range) into the portfolio book branch; both sides' source changes re-read; text still correct
@@ -286,7 +286,7 @@ research/tools/home-backup.md
   verified a3faa58f0d76f0d5 on 2026-11-21: home_restore now keeps the restored folder at mode 0700 after a good restore too; this page states nothing that this changes, so its text holds
 
 research/tools/idea-card.md
-  verified 9d57bc8aaf1111d3 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified c93fb4bc74375a4c on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 research/tools/inverted-signal-control.md
   verified 1d2269669bfaf71a on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -325,13 +325,13 @@ research/tools/results-and-cite.md
   verified dcf452de93fa0890 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/rule-test.md
-  verified 5a75c4c7c7cb644f on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified 86b297ebc5d0b35f on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 research/tools/run-level-checks.md
   verified 67c21050f541ec73 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/sensitivity.md
-  verified 075c04b264c1db73 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified 29afe053d1eed621 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
 
 research/tools/setup-context.md
   verified ac071062a7a24370 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct

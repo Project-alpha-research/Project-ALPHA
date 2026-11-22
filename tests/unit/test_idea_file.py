@@ -384,3 +384,9 @@ def test_a_follow_with_a_damaged_journal_keeps_its_card_and_shows_as_broken(tmp_
     journal.write_text(journal.read_text().replace("a", "b", 1))
     rows = json.loads(_file(tmp_path, card, "--json")[1])["follows"]
     assert [(r["follow_id"], r["state"]) for r in rows] == [(follow, "broken")]
+
+
+def test_each_rule_test_carries_the_labels_stored_with_it(tmp_path: Path) -> None:
+    card = synthetic_home(tmp_path)
+    rows = json.loads(_file(tmp_path, card, "--json")[1])["readings"]
+    assert [r["labels"] for r in rows] == [["quick"], ["quick"]]

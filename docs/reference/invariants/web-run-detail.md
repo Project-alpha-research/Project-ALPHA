@@ -3,7 +3,7 @@ owner: web frontend
 sources:
   - apps/alpha-web/frontend/src/panels/**
   - apps/alpha-web/frontend/e2e/**
-verified: e6e3da8a1a134040
+verified: 4944725ab96096db
 ---
 
 # Web run detail invariants

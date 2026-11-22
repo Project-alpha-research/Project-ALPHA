@@ -88,6 +88,7 @@ def _rule_entry(home: Path, run_id: str, ledger: dict[str, Any]) -> dict[str, An
         "recorded_at": ledger.get("recorded_at"),
         "tested": {"asset": ledger.get("symbol") or UNKNOWN},
         "reading": None,
+        "labels": [],
         "figures_available": [],
         "word": None,
         "sentence": None,
@@ -108,6 +109,7 @@ def _rule_entry(home: Path, run_id: str, ledger: dict[str, Any]) -> dict[str, An
         return entry
     entry["figures_available"] = _figure_ids(rdir, manifest)
     spine = manifest.get("spine") or {}
+    entry["labels"] = [str(label) for label in spine.get("labels") or []]
     data, traded = spine.get("data_period") or {}, spine.get("traded_period") or {}
     block = manifest.get("reserve") or spine.get("reserve")
     labels = reserve.read_labels(manifest)

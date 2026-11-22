@@ -75,6 +75,9 @@ describe('ideaModel', () => {
     expect(row.labels).toEqual(['exploratory'])
     expect(row.studies[0].labels).toEqual(['overlapping-outcomes', 'exploratory'])
   })
+  it('keeps the labels stored with a rule test on its timeline row', () => {
+    expect(timeline(file({ readings: [run('a'.repeat(16), '2026-11-19', { labels: ['quick', 'short-history'] })] }))[0].labels).toEqual(['quick', 'short-history'])
+  })
   it('lists every linked study, not only the first', () => {
     const many = { ...find, studies: [{ id: 's1', reading: 'first', labels: [] }, { id: 's2', reading: 'second, contradicts', labels: ['overlapping-outcomes'] }] } as unknown as IdeaTest
     const row = timeline(file({ readings: [many] }))[0]

@@ -12,7 +12,9 @@ import copy
 from collections.abc import Mapping
 from typing import Any
 
-from alpha_cli.spine.owner_rule import canonical_spec
+from alpha_cli.spine.owner_rule import CONSTANT_NAME, canonical_spec
+from alpha_core import DataError
+from alpha_strategies.rules import parse_rule_spec
 
 MAX_VARIANTS = 8
 FACTORS = (0.8, 1.2)
@@ -67,18 +69,36 @@ def _changed(
         operand["lag"] = int(new)
     else:
         operand["params"][position] = int(new)
-    for attempt in (edit, {key: val for key, val in edit.items() if key != "history"}):
-        try:
-            return canonical_spec(attempt)
-        except ValueError:
-            continue
-    return None
+    try:
+        return canonical_spec(edit)
+    except ValueError:
+        pass
+    # The window outgrew the history: widen it only as far as the changed rule needs.
+    bare = {key: val for key, val in edit.items() if key != "history"}
+    try:
+        warmup = parse_rule_spec({**bare, "name": CONSTANT_NAME}).warmup
+        return canonical_spec({**bare, "history": max(int(spec["history"]), warmup)})
+    except (DataError, ValueError):
+        return None
 
 
-def _label(where: tuple[int, str], kind: str, old: float, new: float) -> str:
+_MACD_NAMES = ("fast", "slow", "signal")
+
+
+def _label(
+    spec: Mapping[str, Any],
+    where: tuple[int, str],
+    kind: str,
+    position: int,
+    old: float,
+    new: float,
+) -> str:
     def text(number: float) -> str:
         return str(int(number)) if float(number).is_integer() else repr(float(number))
 
+    operand = spec["long_when"][where[0]][where[1]]
+    if kind == "window" and operand.get("indicator") == "macd":
+        kind = f"{_MACD_NAMES[position]} window"
     return f"condition {where[0] + 1} {where[1]} {kind} {text(old)} to {text(new)}"
 
 
@@ -98,7 +118,7 @@ def owner_variants(spec: Mapping[str, Any]) -> list[tuple[str, dict[str, Any]]]:
             if variant is None or variant == dict(spec) or repr(sorted(variant.items())) in seen:
                 continue
             seen.add(repr(sorted(variant.items())))
-            found.append((_label(where, kind, value, new), variant))
+            found.append((_label(spec, where, kind, position, value, new), variant))
             if len(found) == MAX_VARIANTS:
                 return found
     return found

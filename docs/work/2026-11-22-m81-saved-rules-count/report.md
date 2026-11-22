@@ -24,7 +24,7 @@ Branch `feat/m81-saved-rules-count`. All four parts are built. Local gate (`gate
 - **What is a window:** the params of `sma`, `ema`, `rsi`, `atr`, the first of `bbands`, all three of `macd`, and a lag (floor 1, not
   2; lag 0 is "today" and is left alone). Bollinger width and the research indicators' params are not varied: their meaning is not
   a window length. Order: left to right through the conditions, first all numbers of condition 1, and so on.
-- **History:** a variant keeps the rule's `history`; if the new window needs more, the language default is used.
+- **History:** a variant keeps the rule's `history`; if the new window needs more, it is widened only as far as the new window needs (a review finding fixed after the first push). Labels name the MACD window that moved.
 - **Counts include variants.** K and M are what the code already used, and it counts scored variants as tries. So K is not just ledger rows.
 - **Old stored runs** keep the reading they stored: no count sentence is invented for them.
 - **Attribution line.** The common rules ask for a `Co-Authored-By: Claude Fable 5.2` line. The session that built this is not that

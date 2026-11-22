@@ -76,10 +76,22 @@ def test_every_variant_is_a_valid_owner_rule_that_differs_from_the_original() ->
         OwnerRule(kind="owner", spec=variant)
 
 
-def test_a_window_past_the_history_gets_the_default_history() -> None:
+def test_a_window_past_the_history_widens_it_only_as_far_as_needed() -> None:
     found = owner_variants(_spec(_sma(100), history=100))
     grown = [v for _, v in found if v["long_when"][0]["right"]["params"] == [120]]
-    assert len(grown) == 1 and grown[0]["history"] >= 120
+    assert len(grown) == 1 and grown[0]["history"] == 120
+
+
+def test_macd_variants_name_which_window_moved() -> None:
+    cond = {
+        "left": {"indicator": "macd", "params": [12, 26, 12], "field": "line"},
+        "op": ">",
+        "right": {"indicator": "macd", "params": [12, 26, 12], "field": "signal"},
+    }
+    names = [name for name, _ in owner_variants(_spec(cond))]
+    assert len(names) == len(set(names)) == 8
+    assert "condition 1 left fast window 12 to 10" in names
+    assert "condition 1 left signal window 12 to 10" in names
 
 
 def test_bollinger_width_is_not_a_window() -> None:

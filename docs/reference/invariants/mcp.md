@@ -5,7 +5,6 @@ sources:
   - tests/unit/test_mcp_invoke.py
   - tests/integration/test_mcp_server.py
   - tests/integration/test_research_mcp.py
-  - tests/unit/test_codex_investigation.py
   - tests/unit/test_mcp_spine_tools.py
   - tests/unit/test_mcp_front_door_tools.py
   - tests/integration/test_mcp_front_door.py
@@ -21,9 +20,6 @@ It is a surface like the web backend: it composes nothing and has no authority o
 
 - `server.py` is a stdio FastMCP server named `alpha`, started by `uv run alpha-mcp` (the repo `.mcp.json` launches it in
   Claude Code). Every tool reads `ALPHA_DATA_DIR` through `AlphaSettings`, so it shares one store with the CLI and web.
-- `investigation_server.py` is a separate, private facade bound to one investigation case. The CLI starts it for a Codex
-  investigation (`alpha_cli/codex_policy.py`). Its three tools take no arguments and each runs
-  `alpha research diagnostic investigation-tool <case> <action>`. Keep it argument-free.
 - Surfaces subprocess the CLI and never run the engine in-process — see
   [engineering § Subprocess boundary](engineering.md#subprocess-boundary) and
   [ADR-0002](../../adr/0002-cli-sole-composer-subprocess-surfaces.md).

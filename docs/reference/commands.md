@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-307 commands in 43 groups. Options marked (required) are
+318 commands in 44 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -290,6 +290,25 @@ Enroll or recover the local Touch ID owner credential.
 
 - `alpha owner-auth enroll` — Issue a short-lived localhost registration URL; browser enrollment cannot self-start. Options: `--reason (required)`, +2 more
 - `alpha owner-auth recover` — Begin a trusted credential-replacement ceremony without weakening browser authority. Options: `--reason (required)`, `--json`
+
+## alpha paper
+
+Nautilus paper trading: local crypto sandbox and fail-closed IBKR Paper.
+
+- `alpha paper ibkr-preflight <INSTRUMENT_ID>` — Construct native IB clients offline in read-only paper mode; never con… Options: `--asset-class`, +3 more
+- `alpha paper ibkr-run <SYMBOL>` — Run one long-only stock/ETF decision cycle through native IBKR Paper execution.
+- `alpha paper ibkr-what-if-execute <PLAN_HASH>` — Execute one SPY preview; never creates an order or earns paper credi…
+- `alpha paper ibkr-what-if-plan` — Freeze the exact offline SPY what-if contract; never connects or submits an order.
+- `alpha paper preflight <SYMBOL>` — Construct the Binance-data/sandbox-execution wiring offline without connecting. Options: `--strategy`, +2 more
+- `alpha paper readiness` — Generate the evidence-only paper acceptance report; elapsed time never passes it. Options: `--json`
+- `alpha paper reconcile <SESSION_ID>` — Report the machine-derived reconciliation state; this command cannot approve i… Options: `--json`
+- `alpha paper run <SYMBOL>` — Run ''BASE/USDT'' on Binance public data with local sandbox fills only. Options: `--snapshot (required)`, `--provider`, +9 more
+- `alpha paper scheduler-repair <SYMBOL> <SESSION>` — Clear one known crash marker; immutable outcomes and canonical pr… Options: `--config (required)`, +1 more
+- `alpha paper scheduler-status` — Inspect due/completed/interrupted daily work without contacting providers. Options: `--config (required)`
+- `alpha paper scheduler-tick` — Run one short wake-safe daily scheduler tick (intended for launchd every five minutes). Options: `--config (required)`
+- `alpha paper sessions` — List durable operational paper sessions, newest first. Options: `--json`
+- `alpha paper show <SESSION_ID>` — Show one durable paper session (never signals its recorded PID). Options: `--json`
+- `alpha paper stop <SESSION_ID>` — Request safe cooperative stop: cancel ALPHA orders, never flatten positions.
 
 ## alpha partner
 

@@ -13,8 +13,6 @@ import type { FunctionComponent } from 'react'
 
 import type { PanelHandleProps } from '../context/panelHandle'
 import { ActivityFeed } from '../panels/ActivityFeed'
-import { AiConsole } from '../panels/AiConsole'
-import { CodexBench } from '../panels/CodexBench'
 import { CompareRuns } from '../panels/CompareRuns'
 import { DataManager } from '../panels/DataManager'
 import { EvidenceHub } from '../panels/EvidenceHub'
@@ -131,7 +129,6 @@ export const DOCUMENTS: readonly DocumentDefinition[] = [
       { name: 'StrategyLab', title: 'Strategy Development', component: StrategyLab },
       { name: 'DevelopmentCenter', title: 'Development Center', component: DevelopmentCenter },
       { name: 'Pipeline', title: 'Development Next Step', component: Pipeline, area: 'side' },
-      { name: 'AiConsole', title: 'Standalone Sandbox', component: AiConsole, area: 'side' },
     ],
   },
   {
@@ -150,7 +147,6 @@ export const DOCUMENTS: readonly DocumentDefinition[] = [
         params: { initialSection: 'literature', compactLiterature: true },
         area: 'side',
       },
-      { name: 'CodexBench', title: 'Codex Research', component: CodexBench, area: 'side' },
     ],
   },
   {

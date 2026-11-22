@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 35 working, 37 partly working, 0 demo only, 3 shelved, 1 not started.
+- **Capabilities:** 35 working, 38 partly working, 0 demo only, 3 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 5.
 
@@ -63,6 +63,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Find papers and screen their claims (R4)** — paper download tested only with a stand-in worker. Needs: the literature worker setup (not installed on this computer).
 - **Link paper claims to experiments and keep the original PDFs** — no test takes one paper all the way to an experiment.
 - **Check data providers and background jobs** — job list tested only with a stand-in command; provider checks need real providers.
+- **Paper trading: practice trading with no real money (IBKR Paper)** — no end-to-end test; parts tested with stand-ins. Needs: an opt-in setting, live Binance public data, and an IBKR practice account and gateway for stocks.
 - **Corrected Alpha158 price features** — no ML run with version 2; superseded by version 3 (kept for stored results).
 - **AI stock research loop (RD-Agent, W02)** — RD-Agent's own factor loop now runs model-connected on real Binance bars, judged by ALPHA instead of its built-in Qlib backtest (ADR-0049), from one launcher command with a hash-pinned runtime and the gateway's call cap: by 2026-11-16 about 80 factors judged across runs, no candidate; since ADR-0055 a screened factor passes only if its top third beat its bottom third (offline this rejects 16 of the 18 earlier replays; they still count as trials), the proposer sees every idea family, and each paid call has a 180 s limit; new frozen universes support explicit missing days, causal membership and 30-day write-offs with a disclosed 30% haircut, and an optional store directory; a first system check on the wide store (142 pairs) found three tickers whose identity changes across a gap (LUNA reused, DREP and COCOS redenominated), which the data layer must split before that store is used; `alpha rdagent run` and `alpha rdagent status` now start and watch it from one config file (no retry, no daemon), but it is not yet supervised as an ALPHA job, has no end-to-end smoke check with a scripted model, the fixture and stock loops ALPHA runs still use stand-in steps, and restart after a crash is not solved. Needs: supervision of the factor loop as an ALPHA job under the native job supervisor (backlog: rdagent-factor-loop-supervision); `alpha rdagent run` starts it today as a plain child process; an end-to-end smoke check of the factor loop through the installed programs with a scripted model route. More: [docs/roadmap/rd-agent-in-alpha.md](docs/roadmap/rd-agent-in-alpha.md).
 - **RD-Agent recorded runs in the Workstation (RD-Agent)** — journey view awaits a browser check and owner review; the run records supply verdicts when available. More: [docs/reference/project/components/rd-agent.md](docs/reference/project/components/rd-agent.md).

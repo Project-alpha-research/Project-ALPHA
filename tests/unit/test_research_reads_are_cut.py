@@ -80,15 +80,12 @@ ALLOWED: dict[tuple[str, str], str] = {
     ("context_derived_cmds.py", "_bars_and_calendar"): "exempt: attach_context(cutoff=CUTOFF)",
     ("_native_rule_projection.py", "_snapshot"): "exempt: checks a synthetic snapshot's own rows",
     ("_native_daily_rule_projection.py", "chart_snapshot"): "exempt: checks a frozen chart query",
-    ("comparison_acquisition_evidence.py", "_replay"): "exempt: verifies stored bytes; no research",
-    ("comparison_acquisition_evidence.py", "_result"): "exempt: verifies stored bytes; no research",
 }
 # (file under alpha_cli/, enclosing function) that reads a bars store file with polars.
 PARQUET_ALLOWED: dict[tuple[str, str], str] = {
     ("spine/reserve.py", "held_back_count"): "exempt: counts stamps from the reserved day on",
     ("spine/reserve.py", "hold"): "exempt: counts stamps from the reserved day on",
     ("toolbox/run_months.py", "bar_dates"): "exempt: reads stamps up to the run's last bar",
-    ("investigation_comparisons.py", "_series"): "exempt: schema and row count; prices via PIT",
 }
 # fmt: on
 

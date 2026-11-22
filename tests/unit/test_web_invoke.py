@@ -198,26 +198,17 @@ def test_web_cli_matplotlib_directory_reaches_subprocess(
     assert not any(directory.iterdir())  # stdlib-only child, not renderer/cache verification
 
 
-def test_web_investigation_run_preserves_only_codex_auth_home(
+def test_web_command_environment_forwards_codex_home_only_to_the_assistant(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     auth_home = str(tmp_path / "synthetic-codex-home")
     monkeypatch.setenv("CODEX_HOME", auth_home)
-    monkeypatch.setenv("HOME", str(tmp_path / "owner-home"))
-    monkeypatch.setenv("ALPHA_CODEX_MODEL", "unbound-model")
     monkeypatch.setenv("ALPHA_TIINGO_API_KEY", "synthetic-provider-key")
-    command = ["research", "investigations", "run", "a" * 32]
-    environment = _catalog._cli_environment(tmp_path, command)
-    assert environment.get("CODEX_HOME") == auth_home
-    assert not {"HOME", "ALPHA_CODEX_MODEL", "ALPHA_TIINGO_API_KEY"}.intersection(environment)
-    for operation in ("show", "list", "create", "draft", "acquire", "run-extra"):
-        other = _catalog._cli_environment(
-            tmp_path, ["research", "investigations", operation, "a" * 32]
-        )
-        assert "CODEX_HOME" not in other
-    assert "CODEX_HOME" not in _catalog._cli_environment(tmp_path, ["backtest", "run", "SPY"])
-    monkeypatch.delenv("CODEX_HOME")
-    assert "CODEX_HOME" not in _catalog._cli_environment(tmp_path, command)
+    assistant = _catalog._cli_environment(tmp_path, ["assistant", "ask"])
+    assert assistant.get("CODEX_HOME") == auth_home
+    for command in (["backtest", "run", "SPY"], ["research", "list"]):
+        other = _catalog._cli_environment(tmp_path, command)
+        assert not {"CODEX_HOME", "HOME", "ALPHA_TIINGO_API_KEY"}.intersection(other)
 
 
 def test_launch_captures_output_and_parses_run_id(

@@ -274,3 +274,14 @@ def test_the_summary_line_says_rows_and_trials_apart(
     )
     out = CliRunner().invoke(ledger_app, ["summary", "--rdagent-ledger", str(rd)]).output
     assert "9 rows recorded; 5 count as separate trials" in out
+
+
+def test_the_default_list_never_exceeds_the_limit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home, rd = example(tmp_path)
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
+    out = CliRunner().invoke(
+        ledger_app, ["list", "--limit", "1", "--rdagent-ledger", str(rd), "--json"]
+    )
+    assert len(json.loads(out.output)["records"]) == 1

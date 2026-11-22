@@ -56,3 +56,4 @@ Fixed from my own changes: `scan`/`data` lazy imports, the structural-digest rea
 - Setup study/trade readings and outcomes (plain text in their summary) now print first in `results show`. Test added.
 - `data update` now prints the pull's whole report (snapshot, revised or removed bars) under each symbol. Test added.
 - Owning page `cli-runs.md` got two sentences on the new text outputs. `commands.md` and `fs.py verify` were left alone, as the brief says; the new commands `data coverage` and `data update` appear in `commands.md` only once the owner regenerates it.
+- Ledger default list is now capped at --limit even with more kinds than rows (review finding). Test added.

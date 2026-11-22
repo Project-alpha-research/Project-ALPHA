@@ -207,7 +207,10 @@ def summary(rdagent_ledger: RD = None, json_out: JSON = False) -> None:
 
 
 def _share_per_kind(records: list[TrialRecord], limit: int) -> list[TrialRecord]:
-    """Newest rows, with every kind of try given an equal share so none is pushed out of view."""
+    """Newest rows, with every kind of try given an equal share so none is pushed out of view.
+
+    Never more than `limit` rows: with more kinds than slots, the newest rows of all kinds win.
+    """
     kinds = sorted({r.kind for r in records})
     if not kinds:
         return []
@@ -219,7 +222,7 @@ def _share_per_kind(records: list[TrialRecord], limit: int) -> list[TrialRecord]
         [*chosen, *spare],
         key=lambda r: (r.created_at is not None, r.created_at or "", r.source, r.source_line),
         reverse=True,
-    )
+    )[:limit]
 
 
 @ledger_app.callback(invoke_without_command=True)

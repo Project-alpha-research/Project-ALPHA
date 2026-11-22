@@ -23,7 +23,6 @@ export default defineConfig({
         'src/panels/jobTableModel.ts',
         'src/panels/mlTearsheetModel.ts',
         'src/panels/paperModel.ts',
-        'src/panels/portfolioModels.ts',
         'src/panels/reportModel.ts',
         'src/panels/ruleTestModel.ts',
         'src/panels/readingModel.ts',
@@ -52,7 +51,6 @@ export default defineConfig({
         'src/panels/researchCockpitModel.ts',
         'src/panels/researchDataModel.ts',
         'src/panels/v3Models.ts',
-        'src/panels/workspaceModel.ts',
       ],
       exclude: ['src/api/generated.ts', 'src/**/*.test.{ts,tsx}'],
       thresholds: {

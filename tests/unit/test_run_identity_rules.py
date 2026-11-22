@@ -97,5 +97,4 @@ def test_tier1_surrogate_agrees_with_the_engine_rule_signal_bar_for_bar() -> Non
 
 def test_rules_registry_entry_reads_the_spec_for_its_warmup() -> None:
     assert "rules" in STRATEGIES and STRATEGIES["rules"].params == frozenset()
-    assert STRATEGIES["rules"].supports_live_paper is False
     assert warmup_for(_spec(_rules(5))) == 40  # history 40 > vol_window + 1

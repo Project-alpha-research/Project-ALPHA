@@ -857,7 +857,7 @@ name = "Check data providers and background jobs"
 what = "See which data providers are set up and working, and follow or cancel long-running jobs."
 see_it = [
   "uv run alpha info providers --json, uv run alpha provider check <provider>",
-  "Workstation: View → Jobs & providers",
+  "Workstation: View → Jobs",
 ]
 entry_points = [
   "cli: alpha info providers",
@@ -865,7 +865,6 @@ entry_points = [
   "api: GET /api/providers",
   "api: GET /api/jobs",
   "panel: apps/alpha-web/frontend/src/panels/JobMonitor.tsx",
-  "panel: apps/alpha-web/frontend/src/panels/ProviderSystem.tsx",
 ]
 proof_synthetic = [
   "tests/integration/test_provider_cli.py::test_info_system_reports_local_readiness_only",
@@ -876,28 +875,6 @@ real_data_needs = "Provider credentials (for example a Tiingo key)."
 needs = []
 state = "Partial"
 missing = "job list tested only with a stand-in command; provider checks need real providers"
-
-[[capability]]
-id = "paper-trading"
-name = "Paper trading: practice trading with no real money"
-codes = ["IBKR Paper"]
-what = "Run a strategy against live public prices in a local practice account, or an IBKR practice account; nothing touches real money."
-see_it = [
-  "uv run alpha paper readiness",
-  "Workstation: View → Paper sessions",
-]
-entry_points = [
-  "cli: alpha paper run",
-  "cli: alpha paper readiness",
-  "cli: alpha paper ibkr-run",
-  "api: GET /api/paper/sessions",
-  "panel: apps/alpha-web/frontend/src/panels/PaperMonitor.tsx",
-]
-proof_synthetic = []
-real_data = "not yet confirmed (to check on the Mac later)"
-needs = ["an opt-in setting, live Binance public data, and an IBKR practice account and gateway for stocks"]
-state = "Partial"
-missing = "no end-to-end test; parts tested with stand-ins"
 
 [[capability]]
 id = "ml-lab"

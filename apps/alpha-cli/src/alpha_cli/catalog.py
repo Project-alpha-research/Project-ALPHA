@@ -105,12 +105,6 @@ def classify_generic_command(argv: list[str]) -> GenericCommandClass:
             if len(argv) > 1 and argv[1] in {"repair", "rollback-promotion"}
             else "safe"
         )
-    if root == "paper":
-        return (
-            "safe"
-            if len(argv) > 1 and argv[1] in {"sessions", "readiness", "scheduler-status", "show"}
-            else "owner_only"
-        )
     if root == "crypto-data":
         return "safe" if len(argv) > 1 and argv[1] in _CRYPTO_DATA_SAFE else "owner_only"
     if root == "rdagent":

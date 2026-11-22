@@ -919,34 +919,5 @@ def _holdout_steps(ctx: _PlanContext) -> tuple[list[SuiteStep], dict[str, object
 
 
 def _paper_preflight_steps(ctx: _PlanContext) -> tuple[list[SuiteStep], dict[str, object]]:
-    steps: list[SuiteStep] = []
-    paper_symbol_raw = ctx.config.get("paper_symbol")
-    paper_symbol = (
-        str(paper_symbol_raw)
-        if paper_symbol_raw is not None
-        else next((symbol for symbol in ctx.universe if "/" in symbol), "")
-    )
-    if paper_symbol not in ctx.universe or "/" not in paper_symbol:
-        ctx.blockers.append("paper preflight requires a frozen BASE/QUOTE symbol")
-        paper_symbol = "<required-base/quote>"
-    paper_args = ["paper", "preflight", paper_symbol, "--strategy", ctx.strategy]
-    if "starting_cash" in ctx.definition:
-        paper_args.extend(
-            [
-                "--starting-cash",
-                _float_text(_number(ctx.definition["starting_cash"], "starting_cash", minimum=1.0)),
-            ]
-        )
-    paper_args.extend(_strategy_options(ctx.strategy, ctx.definition))
-    steps.append(
-        SuiteStep(
-            "Sandbox paper preflight",
-            tuple(paper_args),
-            tuple(paper_args),
-            "sandbox_preflight_only",
-        )
-    )
-    ctx.governance.update({"sandbox": True, "places_orders": False, "owner_only_launch": True})
-    workload = _workload(ctx.action, commands=1, canonical_runs=0)
-
-    return steps, workload
+    ctx.blockers.append("paper preflight is not available: paper trading was removed")
+    return [], _workload(ctx.action, commands=0, canonical_runs=0)

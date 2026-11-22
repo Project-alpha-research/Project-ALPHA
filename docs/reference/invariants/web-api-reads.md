@@ -19,8 +19,6 @@ What the Workstation backend reads, writes and relays. The other backend rules a
   The one in-process writer is the owner-auth seam, which records challenges and receipts in the control store.
 - Read runs only through bounded seams (`alpha_cli.run_store`, `artifact_contract.verify_manifest_artifacts`,
   `run_projection`). Operational state needs its own governed public seam — do not scan `RUN_DIRS` for it.
-- Read paper state only through `alpha_cli.paper_store` / `paper_readiness`. Starting or stopping a paper node is a CLI
-  job, never an in-process call. [ADR-0002](../../adr/0002-cli-sole-composer-subprocess-surfaces.md)
 - The only file the web code writes itself is a named workspace, `data_dir/web/workspaces/<slug>.json` (atomic write through
   `alpha_core.atomic`, slugified name). It is presentation state with no research or execution authority.
 - Never reconstruct trading evidence or compute metrics in the backend; relay what the CLI and artifacts record.

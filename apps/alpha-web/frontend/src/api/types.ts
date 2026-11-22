@@ -51,7 +51,6 @@ export type ScanCheckResult = Schema['ScanCheckResult']
 export type ScanAlerts = Schema['ScanAlerts']
 export type OverlaySeries = Schema['OverlaySeries']
 export type Ticker = Schema['Ticker']
-export type PaperCandleMarker = Schema['PaperCandleMarker']
 export type ParamSpec = Schema['ParamDefinition']
 export type StrategyDef = Schema['StrategyDefinition']
 export type CommandOption = Schema['CommandOption']
@@ -134,15 +133,7 @@ export type ResearchDatasetPage = Schema['ResearchDatasetPage']
 export type ProviderCredential = Schema['CredentialStatus']
 export type ProviderOption = Schema['ProviderOption']
 export type ProviderDefinition = Schema['ProviderDefinition']
-export type ProviderCheckReceipt = Schema['ProviderCheckReceipt']
 export type SystemStatus = Schema['SystemStatus']
-export type JsonScalar = Schema['JsonScalar']
-export type PaperSession = Schema['PaperSession']
-export type PaperStatus = PaperSession['status']
-export type PaperEvent = Schema['PaperEvent']
-export type PaperEventType = PaperEvent['event_type']
-export type PaperReadinessReport = Schema['PaperReadinessReport']
-export type PaperJobSummary = JobSummary
 
 // Intentionally opaque: trade schemas vary by engine and remain manifest-adjacent rows.
 export type TradeRow = Record<string, string | number | null>

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import pytest
@@ -37,7 +36,6 @@ def test_info_providers_json_is_redacted(monkeypatch: pytest.MonkeyPatch) -> Non
         "geckoterminal",
         "coinmetrics",
         "defillama",
-        "ibkr",
     } == set(providers)
     assert providers["ccxt"]["options"]["exchange"]["choices"] == ["coinbase", "binance"]
     assert providers["tiingo"]["research_authority"] is True
@@ -68,8 +66,6 @@ def test_info_system_reports_local_readiness_only(
     assert status["counts"] == {"symbols": 1, "snapshots": 1}
     assert status["nautilus"]["pinned_version"] == "1.228.0"
     assert status["kronos_cache"]["configured"] is True
-    assert status["paper_enabled"] is True
-    assert status["ibkr_paper_enabled"] is False
 
 
 def test_info_control_plane_has_human_readable_views(
@@ -85,13 +81,12 @@ def test_info_control_plane_has_human_readable_views(
     assert (
         "binance: available_without_credentials; unverified "
         "(crypto_market_bars, crypto_trades, crypto_aggregate_trades, "
-        "crypto_book_snapshots, live_bars, live_quotes, sandbox_paper)" in providers.stdout
+        "crypto_book_snapshots, live_bars, live_quotes)" in providers.stdout
     )
     assert system.exit_code == 0, system.output
     assert f"data_dir={tmp_path}" in system.stdout
     assert "symbols=0 snapshots=0" in system.stdout
     assert "nautilus=1.228.0 (pinned 1.228.0)" in system.stdout
-    assert "paper_enabled=False" in system.stdout
 
 
 def test_ccxt_snapshot_provenance_includes_exchange(
@@ -183,29 +178,6 @@ def test_ccxt_exchange_is_validated(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     assert result.exit_code == 2
     assert "coinbase" in result.output and "binance" in result.output
     assert "Traceback" not in result.output
-
-
-def test_paper_enabled_defaults_false(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.chdir(tmp_path)
-    for name in list(os.environ):
-        if name.startswith("ALPHA_"):
-            monkeypatch.delenv(name, raising=False)
-
-    result = runner.invoke(app, ["info", "system", "--json"])
-
-    assert result.exit_code == 0, result.output
-    assert json.loads(result.stdout)["paper_enabled"] is False
-
-
-def test_malformed_paper_enabled_fails_closed(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
-    monkeypatch.setenv("ALPHA_PAPER_ENABLED", "sometimes")
-
-    result = runner.invoke(app, ["info", "system", "--json"])
-
-    assert result.exit_code != 0
 
 
 def test_provider_check_cli_records_redacted_receipt(

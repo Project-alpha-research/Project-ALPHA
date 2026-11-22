@@ -19,8 +19,7 @@ test('archive chart identity stays distinct from the strategy context', async ({
   await page.route('**/api/candles/BTCUSD?*', route => {
     queries.push(new URL(route.request().url()).searchParams.get('manifest_id') ?? '')
     return route.fulfill({ json: {
-      symbol: 'BTCUSD', snapshot_id: null, paper_markers: [],
-      bars: [0, 1].map(i => ({ t: 1788220800 + i * 3600, o: 100, h: 110, l: 90, c: 105, v: 1000 })),
+      symbol: 'BTCUSD', snapshot_id: null,       bars: [0, 1].map(i => ({ t: 1788220800 + i * 3600, o: 100, h: 110, l: 90, c: 105, v: 1000 })),
       provenance: { source: 'bybit:derivative_bars', venue: 'bybit', timeframe: '1H', snapshot_id: null,
         provenance_sha256: manifest, receipt_id: null, knowledge_cutoff: null, quality_status: 'qualified',
         manifest_id: manifest, market_type: 'inverse', volume_unit: 'quote', history_kind: 'reconstructed_from_verified_archive' },
@@ -74,7 +73,7 @@ test('a same-symbol scan leaves the archive and opens the evaluated canonical ba
   const requests: string[] = []
   await page.route('**/api/candles/**', route => {
     requests.push(new URL(route.request().url()).search)
-    return route.fulfill({ json: { symbol: 'XRP/USDT', snapshot_id: null, paper_markers: [], bars: [0, 1].map(i => ({ t: 1704067200 + i * 3600, o: 100, h: 110, l: 90, c: 105, v: 1000 })), provenance: null } })
+    return route.fulfill({ json: { symbol: 'XRP/USDT', snapshot_id: null, bars: [0, 1].map(i => ({ t: 1704067200 + i * 3600, o: 100, h: 110, l: 90, c: 105, v: 1000 })), provenance: null } })
   })
   await page.route('**/api/scans', route => route.fulfill({ json: { scans: [{ name: 'match', rules: 'trend', universe: { kind: 'list', symbols: ['XRP/USDT'] } }], authority: 'none' } }))
   await page.route('**/api/scans/match/run', route => route.fulfill({ json: { scan: 'match', rules: 'trend', rules_sha256: 'c'.repeat(64), as_of: '2024-01-01', universe_as_of: '2024-01-01T00:00:00Z', rows: [{ symbol: 'XRP/USDT', signal: 1, bar_date: '2024-01-01', bar_ts: 1704067200, close: 105, values: {} }], skipped: [] } }))
@@ -109,7 +108,7 @@ test('main dropdown groups aliases and opens every archive pair with exact sourc
   const candleQueries: string[] = []
   await page.route('**/api/candles/ETHUSDT?*', route => {
     candleQueries.push(new URL(route.request().url()).search)
-    return route.fulfill({ json: { symbol: 'ETHUSDT', snapshot_id: null, paper_markers: [], provenance: null,
+    return route.fulfill({ json: { symbol: 'ETHUSDT', snapshot_id: null, provenance: null,
       bars: [{ t: 1788220800, o: 100, h: 110, l: 90, c: 105, v: 1000 }],
     } })
   })

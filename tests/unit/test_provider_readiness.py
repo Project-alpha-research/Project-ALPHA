@@ -3,17 +3,14 @@
 from __future__ import annotations
 
 import json
-import shutil
-import socket
-import subprocess
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Self, cast
+from typing import Any, cast
 
 import pytest
 
-from alpha_cli import ibkr_what_if, paper_acceptance, provider_readiness
+from alpha_cli import provider_readiness
 from alpha_core import DataError
 
 
@@ -73,128 +70,6 @@ def test_classifies_provider_failures_without_raw_vendor_body() -> None:
     assert provider_readiness.classify_failure(429, "anything") == "rate_limited"
     assert provider_readiness.classify_failure(None, "timeout") == "connectivity_failed"
     assert provider_readiness.classify_failure(200, "schema") == "schema_drift"
-
-
-def test_reachable_ibkr_gateway_stays_unverified_without_broker_callbacks(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/docker")
-    monkeypatch.setattr(
-        subprocess,
-        "run",
-        lambda *args, **kwargs: type("Result", (), {"returncode": 0})(),
-    )
-
-    class Connection:
-        def __enter__(self) -> Self:
-            return self
-
-        def __exit__(self, *args: object) -> None:
-            return None
-
-    monkeypatch.setattr(
-        socket,
-        "create_connection",
-        lambda *args, **kwargs: Connection(),
-    )
-    monkeypatch.setenv(
-        "ALPHA_IBKR_GATEWAY_IMAGE",
-        "gateway:latest@sha256:" + "a" * 64,
-    )
-    monkeypatch.setenv("ALPHA_IBKR_PAPER_ACCOUNT", "DU123456")
-
-    receipt = provider_readiness.run_explicit_check(tmp_path, "ibkr")
-
-    assert receipt["verification_state"] == "unverified"
-    assert receipt["granted_capabilities"] == []
-    details = cast(dict[str, object], receipt["details"])
-    assert details["account_alias"] == "DU…3456"
-
-
-def test_signed_local_ibkr_gateway_is_a_reviewed_installation_without_docker(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    class Connection:
-        def __enter__(self) -> Self:
-            return self
-
-        def __exit__(self, *args: object) -> None:
-            return None
-
-    monkeypatch.setattr(shutil, "which", lambda _: None)
-    monkeypatch.setattr(socket, "create_connection", lambda *args, **kwargs: Connection())
-    monkeypatch.setenv("ALPHA_IBKR_GATEWAY_APP", "/Applications/IB Gateway.app")
-    monkeypatch.setattr(provider_readiness, "_signed_local_ibkr_gateway", lambda _: True)
-
-    receipt = provider_readiness.run_explicit_check(tmp_path, "ibkr")
-
-    assert receipt["verification_state"] == "unverified"
-    details = cast(dict[str, object], receipt["details"])
-    assert details["signed_local_app_reviewed"] is True
-    assert details["gateway_reachable"] is True
-    assert details["docker_cli"] is False
-
-
-def test_ibkr_verified_what_if_receipt_grants_only_preview_capability(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/docker")
-    monkeypatch.setattr(
-        subprocess, "run", lambda *args, **kwargs: type("Result", (), {"returncode": 0})()
-    )
-
-    class Connection:
-        def __enter__(self) -> Self:
-            return self
-
-        def __exit__(self, *args: object) -> None:
-            return None
-
-    monkeypatch.setattr(socket, "create_connection", lambda *args, **kwargs: Connection())
-    monkeypatch.setenv("ALPHA_IBKR_GATEWAY_IMAGE", "gateway@sha256:" + "a" * 64)
-    monkeypatch.setenv("ALPHA_IBKR_PAPER_ACCOUNT", "DU123456")
-    now = datetime(2026, 8, 13, tzinfo=UTC)
-    plan = paper_acceptance.create_ibkr_what_if_plan(
-        tmp_path,
-        account_id="DU123456",
-        gateway_image="gateway@sha256:" + "a" * 64,
-        limit_price=640.0,
-        collar_low=600.0,
-        collar_high=680.0,
-        expires_at=datetime(2026, 8, 14, tzinfo=UTC),
-        now=now,
-    )
-
-    class Transport:
-        def preview(self, **kwargs: object) -> ibkr_what_if.PreviewEvidence:
-            return ibkr_what_if.PreviewEvidence(
-                broker_status="PreSubmitted",
-                commission=1.0,
-                commission_currency="USD",
-                initial_margin_change="640",
-                maintenance_margin_change="0",
-                equity_with_loan_change="-640",
-                position_before=0.0,
-                position_after=0.0,
-                order_status_callbacks=0,
-                execution_callbacks=0,
-            )
-
-    ibkr_what_if.execute_preview(
-        tmp_path,
-        plan_hash=str(plan["plan_hash"]),
-        account_id="DU123456",
-        transport=Transport(),
-        now=datetime(2026, 8, 13, 1, tzinfo=UTC),
-    )
-
-    receipt = provider_readiness.run_explicit_check(tmp_path, "ibkr")
-    assert receipt["verification_state"] == "verified"
-    assert receipt["granted_capabilities"] == ["paper_what_if_preview"]
-    details = cast(dict[str, object], receipt["details"])
-    assert details["permissions"] == "what_if_preview_verified"
-    assert details["market_data"] == "not_verified_by_what_if"
 
 
 @pytest.mark.parametrize(
@@ -301,20 +176,6 @@ def test_coingecko_check_receipt_never_contains_injected_key(
     assert secret not in json.dumps(receipt)
 
 
-def test_ibkr_missing_local_prerequisites_are_connectivity_failed(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(shutil, "which", lambda _: None)
-
-    def closed(*args: object, **kwargs: object) -> None:
-        raise OSError("closed")
-
-    monkeypatch.setattr(socket, "create_connection", closed)
-    receipt = provider_readiness.run_explicit_check(tmp_path, "ibkr")
-    assert receipt["verification_state"] == "connectivity_failed"
-    assert receipt["granted_capabilities"] == []
-
-
 def test_empty_and_malformed_receipt_directories_never_imply_readiness(tmp_path: Path) -> None:
     root = tmp_path / "provider-checks" / "tiingo"
     root.mkdir(parents=True)
@@ -369,26 +230,6 @@ def test_bounded_tiingo_check_grants_only_its_capabilities(
 
     assert tiingo["granted_capabilities"] == ["corporate_actions", "historical_bars"]
     assert cast(dict[str, object], tiingo["details"])["row_count"] == 7
-
-
-def test_ibkr_docker_probe_failure_is_redacted(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/docker")
-
-    def timeout(*args: object, **kwargs: object) -> None:
-        raise subprocess.TimeoutExpired("docker", 5)
-
-    def closed(*args: object, **kwargs: object) -> None:
-        raise OSError("closed")
-
-    monkeypatch.setattr(subprocess, "run", timeout)
-    monkeypatch.setattr(socket, "create_connection", closed)
-    receipt = provider_readiness.run_explicit_check(tmp_path, "ibkr")
-    details = cast(dict[str, object], receipt["details"])
-    assert receipt["verification_state"] == "connectivity_failed"
-    assert details["docker_cli"] is True
-    assert details["docker_daemon"] is False
 
 
 def test_internal_defect_propagates_instead_of_recording_schema_drift(

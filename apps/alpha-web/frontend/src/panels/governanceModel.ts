@@ -5,7 +5,6 @@
 import type {
   ActiveResearchGateOverride,
   CryptoStorage,
-  PaperSession,
   ProviderDefinition,
   SystemStatus,
 } from '../api/types'
@@ -18,7 +17,7 @@ import { profile as manifest } from '../shell/profiles'
 /** The sentences that were hazard stripes on Research, Build and Operate — verbatim. */
 export const GOVERNANCE_SENTENCES = {
   research: 'RESEARCH SANDBOX · SYNTHETIC D0 IS NOT REAL-MARKET EVIDENCE OR A TRADING SIGNAL',
-  paper: 'PAPER ONLY · BINANCE LOCAL SANDBOX + IBKR PAPER · LIVE-CAPITAL ROUTING ABSENT',
+  paper: 'NO LIVE-CAPITAL ROUTING EXISTS',
   standalone: 'STANDALONE_UNQUALIFIED · THESE RUNS CAN NEVER COUNT AS GOVERNED RESEARCH EVIDENCE',
   strategy: 'SANDBOX · PUBLIC BINANCE DATA · REAL EXECUTION IS NOT AVAILABLE',
   touchId: 'LOCAL CONFIRMATION · NO OVERRIDE · NO LIVE TRADING',
@@ -50,7 +49,6 @@ export interface GovernanceInput {
   system: SystemStatus | null
   providers: ProviderDefinition[] | null
   overrides: ActiveResearchGateOverride[] | null
-  sessions: PaperSession[] | null
   storage: Pick<CryptoStorage, 'state' | 'blocker' | 'bulk_root_label' | 'free_bytes' | 'total_bytes'> | null
   gate: { lock: StrategyGateLock | null; projectId: string | null; projectName: string | null }
   watermark: string | null
@@ -76,21 +74,6 @@ function authority(input: GovernanceInput): GovernanceRow[] {
     { label: 'Owner actions', value: GOVERNANCE_SENTENCES.touchId, tone: 'warn' },
   ]
   if (input.watermark) rows.push({ label: 'Selected run', value: input.watermark, tone: 'bad' })
-  const system = input.system
-  rows.push(
-    system === null
-      ? { label: 'Paper sessions', value: 'not loaded', tone: 'warn' }
-      : system.paper_enabled
-        ? { label: 'Paper sessions', value: 'enabled', tone: 'ok' }
-        : { label: 'Paper sessions', value: 'disabled (ALPHA_PAPER_ENABLED unset)', tone: 'warn' },
-    system === null
-      ? { label: 'IBKR paper', value: 'not loaded', tone: 'warn' }
-      : { label: 'IBKR paper', value: system.ibkr_paper_enabled ? 'enabled' : 'disabled', tone: system.ibkr_paper_enabled ? 'ok' : 'warn' },
-  )
-  if (input.sessions !== null) {
-    const live = input.sessions.filter((session) => session.ended_at === null).length
-    rows.push({ label: 'Open paper sessions', value: String(live), tone: live ? 'ok' : 'warn' })
-  }
   rows.push({
     label: 'Activity stream',
     value: input.connection,
@@ -153,7 +136,7 @@ export function governancePages(input: GovernanceInput): GovernancePage[] {
         { label: 'Owner actions', value: GOVERNANCE_SENTENCES.touchId, tone: 'warn' },
         {
           label: 'Research decisions',
-          value: 'Closed research actions require explicit local confirmation and an action-bound receipt. This records local intent, not biometric presence. Paper access remains separately gated.',
+          value: 'Closed research actions require explicit local confirmation and an action-bound receipt. This records local intent, not biometric presence. ',
           tone: 'ok',
         },
         {

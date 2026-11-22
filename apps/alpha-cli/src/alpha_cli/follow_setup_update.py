@@ -28,18 +28,28 @@ from alpha_core import DataError
 NOTHING = "no setup today"
 
 
-def _words(day: follow_setup.Day | None) -> tuple[str, str]:
-    """The paper action and its plain words for a decision on the close of a session."""
+def _words(
+    day: follow_setup.Day | None, fills: list[dict[str, Any]], holding: bool
+) -> tuple[str, str]:
+    """The paper action and its plain words for a decision on the close of a session. Only the
+    paper account's own holding and fills count: a position the account never bought gives no
+    hold or exit instruction. A new signal comes first; a sale made that day stays in the fills."""
     if day is None:
         return "none", "no decision"
-    sold = [f for f in day.fills if f["side"] == "sell"]
+    sold = [f for f in fills if f["side"] == "sell"]
+    if day.signal:
+        said = "setup found at the close: would buy at the next open"
+        return (
+            "enter",
+            f"{said} (after closing the paper position: {exit_words(sold[0]['reason'])})"
+            if sold
+            else said,
+        )
     if sold:
         return "closed", f"paper position closed: {exit_words(sold[0]['reason'])}"
-    if day.signal:
-        return "enter", "setup found at the close: would buy at the next open"
-    if day.exit_pending:
+    if holding and day.exit_pending:
         return "exit", "opposite signal at the close: would sell at the next open"
-    if day.held:
+    if holding:
         return "hold", "holding"
     return "none", day.skipped or NOTHING
 
@@ -71,7 +81,11 @@ class SetupCtx(SessionCtx):
         slip = float(self.costs["slippage_bps"]) / 10_000.0
         for fill in day.fills if day else []:
             buy = fill["side"] == "buy"
-            ready = (book["pending"] or {}).get("side") == "buy" if buy else book["units"] > 0
+            ready = (
+                (book["pending"] or {}).get("side") == "buy" and book["units"] == 0
+                if buy
+                else book["units"] > 0
+            )
             if not ready:
                 continue
             price = fill["raw_price"] * (1 + slip if buy else 1 - slip)
@@ -83,6 +97,9 @@ class SetupCtx(SessionCtx):
                 fee_bps=float(self.costs["fee_bps"]),
             )
             done.append({**made, "raw_price": fill["raw_price"], "reason": fill["reason"]})
+        # An order lives one session: it filled, or the study did not open the trade. Never later.
+        if (book["pending"] or {}).get("side") == "buy":
+            book = {**book, "pending": None}
         return book, done
 
     def entry(
@@ -99,15 +116,15 @@ class SetupCtx(SessionCtx):
             payload.update(reason="the bar of this session was not stored at run time", book=book)
             return kind, payload, {}, book
         book = paper.mark(book, self.bars[at].close)
-        action, words = _words(day)
+        action, words = _words(day, fills, book["units"] > 0)
         readings = {"close": self.bars[at].close}
         readings.update({k: v for k, v in (("stop", day.stop), ("target", day.target)) if v})
         payload.update(readings=readings, latest_bar_ts=self.bars[-1].ts.isoformat())
         payload["setup"] = {"signal": day.signal, "skipped": day.skipped, "trade": day.trade}
         if kind == "bar":
-            if day.signal:
+            if day.signal and book["units"] == 0:
                 book = {**book, "pending": {"side": "buy", "decided": session.isoformat()}}
-            payload["decision"] = {"action": action, "words": words, "long": day.held}
+            payload["decision"] = {"action": action, "words": words, "long": book["units"] > 0}
             payload["labels"] = self.labels(session, opens)
         else:
             payload.update(would_have=words, reason="written after the next open: no paper order")

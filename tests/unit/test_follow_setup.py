@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -182,3 +183,51 @@ def test_show_takes_all_or_last_and_uses_plain_words(
     assert "dividends" in text and "_" not in "".join(
         line for line in text.splitlines() if line.startswith("    ")
     )
+
+
+def _day(**kwargs: Any) -> Any:
+    from alpha_cli.follow_setup import Day
+
+    return Day(**kwargs)
+
+
+def test_a_new_signal_wins_over_a_sale_on_the_same_session() -> None:
+    from alpha_cli.follow_setup_update import _words
+
+    sale = [{"side": "sell", "reason": "target"}]
+    action, words = _words(_day(signal=True), sale, False)
+    assert action == "enter" and "profit target" in words
+    assert _words(_day(), sale, False)[0] == "closed"
+
+
+def test_no_hold_or_exit_instruction_without_a_paper_holding() -> None:
+    from alpha_cli.follow_setup_update import _words
+
+    assert _words(_day(held=True, exit_pending=True), [], False)[0] == "none"
+    assert _words(_day(held=True, exit_pending=True), [], True)[0] == "exit"
+    assert _words(_day(held=True), [], True)[0] == "hold"
+
+
+def test_a_buy_never_stacks_on_a_held_position_and_an_order_lives_one_session() -> None:
+    from alpha_cli import follow_book
+    from alpha_cli.follow_setup_update import SetupCtx
+
+    ctx = SetupCtx.__new__(SetupCtx)
+    ctx.costs = {"fee_bps": 1.0, "slippage_bps": 2.0}
+    ctx.record = type("R", (), {"paper_account_percent": 10.0})()
+    buy = {
+        "side": "buy",
+        "raw_price": 100.0,
+        "bar_ts": "2020-01-02T00:00:00+00:00",
+        "reason": "entry",
+    }
+    held = follow_book.new_book()
+    held, _ = follow_book.fill(
+        {**held, "pending": {"side": "buy"}}, price=100.0, ts="t", size_pct=10.0, fee_bps=1.0
+    )
+    held = {**held, "pending": {"side": "buy", "decided": "2020-01-01"}}
+    after, done = ctx._settle(held, _day(fills=[buy]), date(2020, 1, 2))
+    assert done == [] and after["units"] == held["units"] and after["pending"] is None
+    flat = {**follow_book.new_book(), "pending": {"side": "buy", "decided": "2020-01-01"}}
+    after, done = ctx._settle(flat, _day(), date(2020, 1, 2))
+    assert done == [] and after["pending"] is None

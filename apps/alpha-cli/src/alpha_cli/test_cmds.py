@@ -43,6 +43,8 @@ def _recheck_lines(output: dict[str, Any]) -> list[str]:
                 f"{asset}: computed again in {found['seconds']:.1f} s and compared with run "
                 f"{found['compared_with']}: {head}; {code} the stored run."
             )
+            if found.get("identity_note"):
+                lines.append(f"  {found['identity_note']}")
             lines.extend(
                 f"  {d['field']}: stored {d['stored']}, recomputed {d['recomputed']}"
                 for d in found["differences"]

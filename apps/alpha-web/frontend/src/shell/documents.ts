@@ -13,26 +13,15 @@ import type { FunctionComponent } from 'react'
 
 import type { PanelHandleProps } from '../context/panelHandle'
 import { CompareRuns } from '../panels/CompareRuns'
-import { DataManager } from '../panels/DataManager'
-import { EvidenceHub } from '../panels/EvidenceHub'
 import { GovernanceDocument } from '../panels/Governance'
 import { JobMonitor } from '../panels/JobMonitor'
 import { KronosStudio } from '../panels/KronosStudio'
-import { MlDiagnostics } from '../panels/MlDiagnostics'
-import { NativeJobResult } from '../panels/NativeJobResult'
-import { Pipeline } from '../panels/Pipeline'
 import { PriceChart } from '../panels/PriceChart'
 import { RdAgentPanel } from '../panels/RdAgentPanel'
 import { IdeaWorkspace } from '../panels/idea/IdeaWorkspace'
 import { SetupLabPanel } from '../panels/SetupLabPanel'
-import { ResearchBacklog } from '../panels/ResearchBacklog'
-import { ResearchCockpit } from '../panels/ResearchCockpit'
-import { ResearchDataExplorer } from '../panels/ResearchDataExplorer'
-import { RiskMonitor } from '../panels/RiskMonitor'
 import { Scanner } from '../panels/Scanner'
 import { StrategyBuilder } from '../panels/StrategyBuilder'
-import { StrategyLab } from '../panels/StrategyLab'
-import { AssetMemory, DevelopmentCenter, MlResearch } from '../panels/V3Workbenches'
 import { RunDetail } from '../panels/rundetail'
 import type { DockId, WindowId } from './profiles'
 
@@ -42,20 +31,17 @@ export type DocumentKind =
   | 'compare'
   | 'builder'
   | 'scanner'
-  | 'build'
   | 'research'
   | 'governance'
   | 'forecast'
   | 'ml'
   | 'jobs'
-  | 'data'
   | 'tools'
 
 export const DOCUMENT_KINDS: readonly DocumentKind[] = Object.freeze([
   'chart',
   'report',
   'compare',
-  'build',
   'builder',
   'scanner',
   'research',
@@ -63,7 +49,6 @@ export const DOCUMENT_KINDS: readonly DocumentKind[] = Object.freeze([
   'forecast',
   'ml',
   'jobs',
-  'data',
   'tools',
 ])
 
@@ -120,34 +105,6 @@ export const DOCUMENTS: readonly DocumentDefinition[] = [
     panes: [{ name: 'Scanner', title: 'Scanner', component: Scanner }],
   },
   {
-    id: 'build',
-    kind: 'build',
-    title: 'Build',
-    panes: [
-      { name: 'StrategyLab', title: 'Strategy Development', component: StrategyLab },
-      { name: 'DevelopmentCenter', title: 'Development Center', component: DevelopmentCenter },
-      { name: 'Pipeline', title: 'Development Next Step', component: Pipeline, area: 'side' },
-    ],
-  },
-  {
-    id: 'research',
-    kind: 'research',
-    title: 'Research',
-    panes: [
-      { name: 'ResearchCockpit', title: 'Research Case', component: ResearchCockpit },
-      { name: 'EvidenceHub', title: 'Evidence', component: EvidenceHub },
-      { name: 'NativeJobResult', title: 'Native job result', component: NativeJobResult },
-      { name: 'ResearchBacklog', title: 'Backlog', component: ResearchBacklog, area: 'side' },
-      {
-        name: 'Literature',
-        title: 'Literature',
-        component: EvidenceHub,
-        params: { initialSection: 'literature', compactLiterature: true },
-        area: 'side',
-      },
-    ],
-  },
-  {
     id: 'governance',
     kind: 'governance',
     title: 'Governance',
@@ -160,91 +117,10 @@ export const DOCUMENTS: readonly DocumentDefinition[] = [
     panes: [{ name: 'KronosStudio', title: 'Forecast', component: KronosStudio }],
   },
   {
-    id: 'ml-lab',
-    kind: 'ml',
-    title: 'Machine learning',
-    panes: [
-      { name: 'MlResearch', title: 'ML lab', component: MlResearch },
-      { name: 'MlDiagnostics', title: 'ML diagnostics', component: MlDiagnostics },
-      { name: 'RiskMonitor', title: 'Risk', component: RiskMonitor },
-      { name: 'AssetMemory', title: 'Findings', component: AssetMemory, area: 'side' },
-    ],
-  },
-  {
     id: 'jobs',
     kind: 'jobs',
     title: 'Jobs',
     panes: [{ name: 'JobMonitor', title: 'Jobs', component: JobMonitor }],
-  },
-  // Equities-only windows.
-  {
-    // Split/dividend actions arrive with a Tiingo pull; the Data Manager is where they are pulled
-    // and where the stored history that carries them is listed.
-    id: 'corporate-actions',
-    kind: 'data',
-    title: 'Corporate actions',
-    panes: [{ name: 'DataManager', title: 'Data Manager', component: DataManager }],
-  },
-  // Crypto-only windows: each opens the governed Crypto Data Center on its own section.
-  {
-    id: 'funding',
-    kind: 'data',
-    title: 'Funding',
-    panes: [
-      {
-        name: 'FundingData',
-        title: 'Funding',
-        component: ResearchDataExplorer,
-        params: { initialSection: 'derivatives', initialFamily: 'funding' },
-      },
-    ],
-  },
-  {
-    id: 'open-interest',
-    kind: 'data',
-    title: 'Open interest',
-    panes: [
-      {
-        name: 'OpenInterestData',
-        title: 'Open interest',
-        component: ResearchDataExplorer,
-        params: { initialSection: 'derivatives', initialFamily: 'open_interest' },
-      },
-    ],
-  },
-  {
-    id: 'onchain',
-    kind: 'data',
-    title: 'On-chain metrics',
-    panes: [
-      {
-        name: 'OnchainData',
-        title: 'On-chain metrics',
-        component: ResearchDataExplorer,
-        params: { initialSection: 'onchain', initialFamily: 'onchain_metrics' },
-      },
-    ],
-  },
-  {
-    id: 'dex',
-    kind: 'data',
-    title: 'DEX pools',
-    panes: [
-      {
-        name: 'DexData',
-        title: 'DEX pools',
-        component: ResearchDataExplorer,
-        params: { initialSection: 'dex', initialFamily: 'dex_pools' },
-      },
-    ],
-  },
-  {
-    // The registered BTCUSDT crowding question (ADR-0033) is a research case; the cockpit's
-    // Bybit crowding lane is where it is captured and read.
-    id: 'crowding',
-    kind: 'research',
-    title: 'Crypto crowding',
-    panes: [{ name: 'CrowdingCase', title: 'Crypto crowding', component: ResearchCockpit }],
   },
 ]
 

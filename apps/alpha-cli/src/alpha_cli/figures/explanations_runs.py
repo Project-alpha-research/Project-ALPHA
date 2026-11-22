@@ -58,8 +58,8 @@ _ROLLING: Final[Text] = (
     ),
     (
         "Each line is the stored rolling value of one measure: the Sharpe ratio, the "
-        "annualised volatility and the return over the window. A black line marks zero "
-        "where it applies."
+        "annualised volatility and the return over the window. The Sharpe line breaks "
+        "where a window never changed in value, because its Sharpe is undefined there."
     ),
     (
         "Look for stretches where a line leaves its usual range, and for whether the "
@@ -96,9 +96,8 @@ _PRICE: Final[Text] = (
         "their own units."
     ),
     (
-        "Candles or the closing-price line show the market. Triangles mark fills: an up "
-        "triangle is a buy and a down triangle is a sell. Coloured lines and shaded spans"
-        " are what the strategy chose to draw."
+        "Candles or the closing-price line show the market; up triangles are buys, down "
+        "triangles are sells, and coloured lines and shaded spans are the strategy's own."
     ),
     (
         "Look at whether the fills sit where the rule says they should, and whether "

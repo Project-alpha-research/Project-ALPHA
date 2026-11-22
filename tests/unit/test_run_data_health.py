@@ -15,7 +15,8 @@ from alpha_cli.spine.check import check_text
 from alpha_cli.spine.stores import resolve_asset
 from alpha_data.store import ParquetStore
 
-CHECKED = datetime(2024, 1, 4, 23, tzinfo=UTC)
+# The series sit before the reserved day: a problem in a held-back row no longer blocks (M97).
+CHECKED = datetime(2023, 12, 29, 23, tzinfo=UTC)
 
 
 def series(home: Path, symbol: str, prices: tuple[float, float] = (101, 102)) -> ParquetStore:
@@ -24,7 +25,7 @@ def series(home: Path, symbol: str, prices: tuple[float, float] = (101, 102)) ->
         symbol,
         pl.DataFrame(
             {
-                "ts": [datetime(2024, 1, d, tzinfo=UTC) for d in (3, 4)],
+                "ts": [datetime(2023, 12, d, tzinfo=UTC) for d in (28, 29)],
                 **{k: list(prices) for k in ("open", "high", "low", "close")},
                 "volume": [200, 205],
             }
@@ -76,7 +77,7 @@ def test_stock_peers_worst_and_override(tmp_path: Path) -> None:
     with pytest.raises(SpineError) as stopped:
         run_health_record(assets, check_data=True, report_time=CHECKED)
     message = str(stopped.value)
-    for word in ("SPLIT@home", "2024-01-04", "quiet", "Fix the data", '--accept-bad-data "reason"'):
+    for word in ("SPLIT@home", "2023-12-29", "quiet", "Fix the data", '--accept-bad-data "reason"'):
         assert word in message
     report = run_health_record(assets, accept_bad_data="inspect raw prices")
     assert report["verdict"] == "fail" and report["override_reason"] == "inspect raw prices"
@@ -125,7 +126,7 @@ def test_cli_stops_before_engine(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     message = json.loads(result.stdout)["error"]["message"]
     for words in (
         "BAD@home, check unflagged split",
-        "First dates: 2024-01-04",
+        "First dates: 2023-12-29",
         "covers all stored",
     ):
         assert words in message
@@ -381,7 +382,7 @@ def test_a_pass_report_changes_nothing_but_the_health_record(tmp_path: Path) -> 
         "pass",
     )
     assert after["data_health"]["sentence"] == (
-        "Data health: pass. SPY@home: report of 2024-01-04 covers all stored bars. "
+        "Data health: pass. SPY@home: report of 2023-12-29 covers all stored bars. "
         "SPY@home: 0 stock peers used."
     )
     old_dir, new_dir = Path(before["run_dir"]), Path(after["run_dir"])

@@ -410,3 +410,19 @@ def test_a_damaged_figure_artifact_is_one_runs_fault_not_the_end_of_the_page(
     rows = json.loads(output)["readings"]
     assert len(rows) == 2 and all(r["figures_available"] == [] for r in rows)
     assert all("could not be listed: bad parquet" in r["problem"] for r in rows)
+
+
+def test_a_follow_journal_that_is_not_text_shows_as_broken_and_the_page_still_prints(
+    tmp_path: Path,
+) -> None:
+    from tests.fixtures import follow_today_fixtures as fx
+
+    fx.seed(tmp_path)
+    card = synthetic_home(tmp_path)
+    follow = fx.start(tmp_path, "AAA", run_id="a" * 16, card=card)
+    (tmp_path / "forward" / follow / "journal.jsonl").write_bytes(b"\xff\xfe\x00 not utf-8")
+    code, output = _file(tmp_path, card, "--json")
+    assert code == 0, output
+    rows = json.loads(output)["follows"]
+    assert [(r["follow_id"], r["state"]) for r in rows] == [(follow, "broken")]
+    assert len(json.loads(output)["readings"]) == 2

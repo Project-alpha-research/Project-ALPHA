@@ -2,27 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 6e52e7eefce46263 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
+  verified 5ba684f583649fdd on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 apps/alpha-cli/README.md
-  verified 6e52e7eefce46263 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
-  verified 5bb1f902dcbdbc55 on 2026-11-21: re-read after merging main; the figure-pack changes do not alter what this document says
-
-apps/alpha-cli/README.md
-  verified 5bb1f902dcbdbc55 on 2026-11-21: re-read after merging main; the figure-pack changes do not alter what this document says
+  verified 5ba684f583649fdd on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified 11ecea13d48adaf9 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
+  verified d906602e7706cd6a on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 apps/alpha-web/README.md
-  verified 11ecea13d48adaf9 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
-  verified 408dfac40167f7c4 on 2026-11-21: re-read after merging main; the figure-pack changes do not alter what this document says
-
-apps/alpha-web/README.md
-  verified 408dfac40167f7c4 on 2026-11-21: re-read after merging main; the figure-pack changes do not alter what this document says
+  verified d906602e7706cd6a on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -38,13 +30,16 @@ docs/reference/invariants/cli-cost-classes.md
   verified 1feb169bd782f16b on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-crypto-data.md
-  verified 6c209c3dd25568b8 on 2026-11-21: merge of main; this branch only adds the run-price command and the series route, described in the owning pages
+  verified f031d0d564fa51a8 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+
+docs/reference/invariants/cli-figures.md
+  verified 18bd7eaebe3406f3 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/cli-follow.md
-  verified 6bbdfb18ed4d09c2 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
+  verified d7b2fc56f2f23b5b on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/cli-idea-file.md
-  verified 70817702c141b473 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
+  verified 1360d683025ba488 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/cli-investigation-tools.md
   verified fd5f1de814c19725 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -62,23 +57,25 @@ docs/reference/invariants/cli-results-check.md
   verified 31a9f5fdd9f3f626 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-rule-readings.md
-  verified d29632ece47cdc73 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
+  verified 4a174ac317ae341c on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/cli-runs.md
-  verified 2de0fddd9bd59b21 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
-  verified 4a642a5420f95c34 on 2026-11-21: re-read after merging main; the figure-pack changes do not alter what this document says
+  verified fea476f4018e929c on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/cli-setups.md
-  verified a9c64db705d810f7 on 2026-11-21: price-signal window fix does not change what this document says
+  verified 74c7d81adc77154d on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/cli-toolbox.md
   verified a9b38e6041cf26ee on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-trial-ledger.md
-  verified 85f323ffb7e0a2ae on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
+  verified 6c092f6a4b3b1b4a on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/data-context.md
   verified 96f2fe7a59fd5f97 on 2026-11-21: calendar range sweep; text still correct
+
+docs/reference/invariants/data-crypto.md
+  verified 15be891d490388ff on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/data-freeze-before-replace.md
   verified 5efe89cf0d49bb54 on 2026-11-20: Only formatting and a mypy-only callback change in the sources after the review edit; the freeze page text already states the reviewed behaviour.
@@ -87,7 +84,7 @@ docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified e4ab39b0d50fe178 on 2026-11-21: merge of main: only stamps conflicted; the options derived command and its stale-quote and log-return fixes change no text here
+  verified 663c4103493f9199 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -97,7 +94,7 @@ docs/reference/invariants/engineering.md
   verified eeaf1119cdc62ef4 on 2026-11-21: price-signal window fix does not change what this document says
 
 docs/reference/invariants/patterns.md
-  verified 2ba90d5fb0e8531e on 2026-11-21: Re-read the figure and theme lines against the change: the claims (1600x900 PNG, light stored figures, light card for journey steps, PNG routes) are still true; the figure-pair change adds no claim here.
+  verified ec724060a0cafaaa on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/rdagent.md
   verified 9caaba5ecf2b6203 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
@@ -107,11 +104,7 @@ docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
 docs/reference/invariants/research.md
-  verified 61a95ddc5d74e787 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
-
-docs/reference/invariants/testing.md
-  verified 64a42f2eb7d3858e on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
-  verified 428ec363dbb2e794 on 2026-11-21: reversal fix does not change what this document says
+  verified 7d77ec24788f7154 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/testing.md
   verified 64a42f2eb7d3858e on 2026-11-21: price-signal window fix does not change what this document says
@@ -123,16 +116,16 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified e1743d03666d696a on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
+  verified e2d40de5b0aeaf8a on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/web-api.md
-  verified 3d520ea11ec65f6b on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
+  verified 9932eaf90ba312d1 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/web-frontend-ideas.md
   verified 319638e83a814588 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
 
 docs/reference/invariants/web-frontend.md
-  verified 8e795673eec881b2 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
+  verified 708c163d1295a38d on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/web-ideas.md
   verified e24cae1f03437816 on 2026-11-21: new page: the section moved here unchanged except the follow line, which is now true
@@ -143,20 +136,7 @@ docs/reference/invariants/web-research.md
   verified 8cfe152731a9e4fb on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/web-run-detail.md
-  verified a2a55f45a6153bde on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
-
-docs/reference/invariants/workers.md
-  verified 9c856742539b975c on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
-  verified e7f27b18a6b2d4a1 on 2026-11-21: re-read after merging main; the figure-pack changes do not alter what this document says
-
-docs/reference/invariants/web-api.md
-  verified eeed7d9bae616931 on 2026-11-21: re-read after merging main; the figure-pack changes do not alter what this document says
-
-docs/reference/invariants/web-frontend.md
-  verified e2d46b2d8544373c on 2026-11-21: re-read after merging main; the figure-pack changes do not alter what this document says
-
-docs/reference/invariants/web-run-detail.md
-  verified ef6fe99a0b5d5a7b on 2026-11-21: re-read after merging main; the figure-pack changes do not alter what this document says
+  verified e4dc7d713fd36e33 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/workers.md
   verified 9c856742539b975c on 2026-11-21: price-signal window fix does not change what this document says
@@ -210,14 +190,13 @@ docs/reference/project/components/setup-lab.md
   verified 50d5da70210ce0b5 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/project/components/strategies-and-signals.md
-  verified 74d73350e2e95ac3 on 2026-11-21: price-signal window fix does not change what this document says
+  verified 78a2703c0128ef97 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/project/components/toolbox.md
   verified a9b38e6041cf26ee on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 79eed8b9ec068f78 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
-  verified 5f8881910f63bb25 on 2026-11-21: price-signal window fix does not change what this document says
+  verified 22656583f20fc4da on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -277,14 +256,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 8ebb28d548071f0f on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
+  verified ca0022ae2d890aed on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 research/PLAYBOOK.md
-  verified 82ff48da76dff990 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
-  verified 09d680fc9d15514c on 2026-11-21: price-signal window fix does not change what this document says
-
-research/PLAYBOOK.md
-  verified 4d56df24bd3fa55e on 2026-11-21: price-signal window fix does not change what this document says
+  verified 0df874f4c73fe3c0 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 research/README.md
   verified 3e955276bb8eea08 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -296,34 +271,25 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 8623dd2e6b90970f on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
-  verified 49b5ca65c0fb042a on 2026-11-21: price-signal window fix does not change what this document says
+  verified 1633fb4a40e2514f on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 725bf8b5f185c2a2 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
+  verified 9abcd7a62076e408 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 research/tools/charts.md
-  verified 874701b73cdea3df on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
-  verified 601a2a1b281eccf7 on 2026-11-21: price-signal window fix does not change what this document says
-
-research/tools/charts.md
-  verified 943bd65230e88e6c on 2026-11-21: price-signal window fix does not change what this document says
+  verified 26313c47945d6bb7 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 research/tools/data-health.md
   verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 6b7eeee0de80c296 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
+  verified 43cc6d1ac6a077ba on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 research/tools/diagnose-and-audit.md
-  verified ff65f25f9dc3db1f on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
-  verified 9d15527e3405d4f4 on 2026-11-21: price-signal window fix does not change what this document says
-
-research/tools/diagnose-and-audit.md
-  verified 75ae443ea55eeaaa on 2026-11-21: price-signal window fix does not change what this document says
+  verified fd9daf1f382e50ad on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 research/tools/follow.md
   verified 03f12254bb58b8f0 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
@@ -358,6 +324,9 @@ research/tools/price-noise.md
 research/tools/published-factors.md
   verified a5ffcba587102f16 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
+research/tools/quick-screen.md
+  verified 9bab39f345a7e8c9 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+
 research/tools/random-price-null.md
   verified 5fb05fc5476f8113 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
@@ -371,15 +340,13 @@ research/tools/results-and-cite.md
   verified dcf452de93fa0890 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/rule-test.md
-  verified 70dc55317c626603 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
-  verified a2624cb907b80c75 on 2026-11-21: price-signal window fix does not change what this document says
+  verified a358e38a2bd7753d on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 research/tools/run-level-checks.md
   verified 67c21050f541ec73 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/sensitivity.md
-  verified 6b7eeee0de80c296 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
-  verified 9d15527e3405d4f4 on 2026-11-21: price-signal window fix does not change what this document says
+  verified 43cc6d1ac6a077ba on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 research/tools/setup-context.md
   verified ac071062a7a24370 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
@@ -388,10 +355,10 @@ research/tools/setup-find.md
   verified 0eb84ea138f66e14 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/setup-study.md
-  verified 65dcadb3c1803907 on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
+  verified 456c9ca0ef311c90 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 research/tools/setup-trade.md
-  verified ac00893f72e800eb on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
+  verified ad91ed08449da8b2 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 research/tools/toolbox-by-situation.md
   verified a1934950ce3233d7 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -415,10 +382,6 @@ workflow/README.md
 
 workflow/stages/03-build/CONTEXT.md
   verified 4bb90e5006d5dce5 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
-
-workflow/stages/04-verify/CONTEXT.md
-  verified b0ecdda77b4d329c on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
-  verified 4bb90e5006d5dce5 on 2026-11-21: price-signal window fix does not change what this document says
 
 workflow/stages/04-verify/CONTEXT.md
   verified b0ecdda77b4d329c on 2026-11-21: price-signal window fix does not change what this document says

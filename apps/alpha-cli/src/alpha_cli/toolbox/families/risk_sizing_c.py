@@ -190,6 +190,7 @@ CHECKS = (
             " not a stake.",
         ),
         compute=kelly,
+        version=2,  # v2: returns are after-cost profit, not the price return
     ),
     check(
         "risk.fractional_kelly",
@@ -233,6 +234,7 @@ CHECKS = (
         ),
         caveats=(SIZING_CAVEAT,),
         compute=fractional_kelly,
+        version=2,  # v2: returns are after-cost profit, not the price return
     ),
     check(
         "risk.optimal_f",
@@ -275,5 +277,6 @@ CHECKS = (
         ),
         caveats=(SIZING_CAVEAT + " Optimal f is tied to the single worst trade seen.",),
         compute=optimal_f,
+        version=2,  # v2: returns are after-cost profit, not the price return
     ),
 )

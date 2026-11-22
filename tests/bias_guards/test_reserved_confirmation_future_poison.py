@@ -24,6 +24,7 @@ from alpha_cli.spine.deflation import count_snapshot
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.ledger import read_trials
 from alpha_cli.spine.run import run_idea
+from alpha_cli.spine.run import write_run as real_write_run
 from alpha_cli.spine.spec import load_spec
 from alpha_cli.spine.trial_reader import spine_snapshot
 from alpha_core import Bar, DataError
@@ -77,7 +78,7 @@ def _test(home: Path, *params: str) -> dict[str, Any]:
     spec = load_spec(
         None, rule="ma_cross", param=list(params or ("fast=5", "slow=20")), asset=["SPY"]
     )
-    out = run_idea(spec, home=home, quick=True, no_diagnose=True)["results"][0]
+    out: dict[str, Any] = run_idea(spec, home=home, quick=True, no_diagnose=True)["results"][0]
     assert out["error"] is None, out
     return out
 
@@ -184,7 +185,6 @@ def test_a_crash_after_the_receipt_resumes_with_the_same_slot(
     run_id = _test(home)["run_id"]
     enroll(home)
     authorization = _yes(home, run_id)
-    real = confirm_module.write_run
 
     def crash(*_: Any, **__: Any) -> dict[str, Any]:
         raise OSError("power cut")
@@ -198,7 +198,7 @@ def test_a_crash_after_the_receipt_resumes_with_the_same_slot(
         reserved_slots.take_slot(
             home, authorization_id=authorization, frozen=spent["frozen"], now=datetime.now(UTC)
         )
-    monkeypatch.setattr(confirm_module, "write_run", real)
+    monkeypatch.setattr(confirm_module, "write_run", real_write_run)
     done = confirm_run(home, run_id, authorization_id=None)
     assert done["receipt_id"] == spent["receipt_id"] and done["slot"] == 1
     assert len(reserved_slots.receipts(home)) == 1

@@ -80,3 +80,13 @@ Rules: `docs/work/2026-11-21-common-build-rules/brief.md`.
 - Seen, not mine: `research/tools/rule-test.md` had a 182-character line on main (the card test failed); wrapped within its
   40 lines.
 - Test: `tests/unit/test_propfirm_words.py` (fail first: all 3 failed; the unknown preset read data first).
+
+### 7. `alpha library search` needed the network and an e-mail
+
+- Cause: `search` had only the network route (the literature worker) and a required `--unpaywall-email`.
+- Change: `spine/library_search.py` searches offline by default: every checked and imported record (public and private:
+  name, idea, mechanism, notes, market, holding time, and the imported facts as tags) and every kept paper (title, authors,
+  source, why a search kept it); all words must match, case is ignored. Nothing is fetched or written. The network route is
+  `--online`, and only it needs `--unpaywall-email` (refused in plain words without it).
+- Test: `tests/unit/test_library_offline_search.py` (fail first: all 3 failed); `test_library_papers.py` now passes `--online`.
+- Docs: `research/tools/library.md`.

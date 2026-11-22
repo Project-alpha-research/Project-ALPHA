@@ -39,16 +39,66 @@ def _authors(value: object) -> list[str] | None:
     return None
 
 
+def _offline(words: str, json_out: bool) -> None:
+    """The stored seed ideas and kept papers that hold every word. No network, nothing written."""
+    from alpha_cli.spine.library_search import search as offline_search
+
+    try:
+        found = offline_search(AlphaSettings().data_dir, words)
+    except (SpineError, ValueError) as exc:
+        fail(
+            exc
+            if isinstance(exc, SpineError)
+            else SpineError("LIBRARY_SEARCH", str(exc), "Give the words to look for."),
+            json_out,
+        )
+    records, kept = found["records"], found["papers"]
+    lines = [
+        f"Searched offline: {len(records)} seed idea(s) and {len(kept)} kept paper(s) match "
+        f"{words!r}. {SOURCE_LINE}",
+        *(f"  {r['id']}  {r['name']} ({r['market']}; tier {r['tier']})" for r in records),
+        *(_line(r) for r in kept),
+    ]
+    if not records and not kept:
+        lines[0] = (
+            f"No seed idea or kept paper matches {words!r}. To search the literature sources on "
+            "the network: add --online --unpaywall-email <your contact>."
+        )
+    lines += [f"Left out: {name}: {why}" for name, why in found["left_out"].items()]
+    emit(found, json_out=json_out, fallback="\n".join(lines))
+
+
 @library_app.command("search")
 def search(
     words: Annotated[str, typer.Argument(help="What to look for, in plain words.")],
+    online: Annotated[
+        bool,
+        typer.Option(
+            "--online", help="Search the literature sources on the network and keep the hits."
+        ),
+    ] = False,
     unpaywall_email: Annotated[
-        str, typer.Option("--unpaywall-email", help="Contact for Unpaywall.")
-    ],
+        str | None,
+        typer.Option("--unpaywall-email", help="Contact for Unpaywall (with --online only)."),
+    ] = None,
     max_candidates: Annotated[int, typer.Option(min=1, max=20)] = 20,
     json_out: JSON = False,
 ) -> None:
-    """Search the literature sources and keep the hits as papers. Nothing is tested."""
+    """Search the shipped seed ideas and the kept papers offline. Nothing is tested.
+
+    With --online, search the literature sources on the network and keep the hits as papers."""
+    if not online:
+        _offline(words, json_out)
+        return
+    if not unpaywall_email:
+        fail(
+            SpineError(
+                "LIBRARY_SEARCH",
+                "The online search needs a contact address for Unpaywall.",
+                "Add --unpaywall-email <your contact>, or leave out --online to search offline.",
+            ),
+            json_out,
+        )
     home = AlphaSettings().data_dir
     try:
         artifact = _run_literature_worker(

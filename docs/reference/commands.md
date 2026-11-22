@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-306 commands in 44 groups. Options marked (required) are
+318 commands in 44 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -67,6 +67,8 @@ Point-in-time macro, SEC filings, Binance derivatives, CFTC and FINRA context.
 Provider-native crypto acquisition, qualification, snapshots, and storage.
 
 - `alpha crypto-data acquire <PROVIDER> <FAMILY> <INSTRUMENT>` — Acquire one bounded public provider page; this grants… Options: `--base (required)`, +15 more
+- `alpha crypto-data asset <SYMBOL>` — Inspect one reviewed native-asset identity and provider-symbol lineage. Options: `--as-of (required)`, `--json`
+- `alpha crypto-data asset-contract <NETWORK> <CONTRACT_ADDRESS>` — Resolve one contract by exact network and address;…
 - `alpha crypto-data asset-master-create` — Freeze exact cross-provider contract identities; ticker joins remain prohib…
 - `alpha crypto-data asset-master-verify <VERSION>` — Rederive a frozen asset master's content identity before snapshot… Options: `--json`
 - `alpha crypto-data asset-masters` — List verified asset masters without exposing internal paths or requiring opaque i… Options: `--json`
@@ -75,18 +77,31 @@ Provider-native crypto acquisition, qualification, snapshots, and storage.
 - `alpha crypto-data cache-clean` — Delete only the explicitly disposable external cache; immutable data is untouched. Options: `--confirm`, `--json`
 - `alpha crypto-data capabilities` — Project discovered support and recorded qualification without hashing data artifac… Options: `--json`
 - `alpha crypto-data catalog` — List the exact provider authority for every supported dataset family. Options: `--json`
+- `alpha crypto-data compare` — Persist non-substituting cross-venue close-price divergence diagnostics. Options: `--primary-manifest-id (required)`, +4 more
 - `alpha crypto-data coverage` — Show exact normalized family coverage and qualification without provider probes. Options: `--json`, `--metadata-only`
 - `alpha crypto-data estimate <FAMILY>` — Estimate a bounded acquisition before any network or storage write. Options: `--instruments`, `--days`, +2 more
 - `alpha crypto-data feature-create <FEATURE_NAME>` — Materialize one immutable provenance-bound research feature. Options: `--input`, `--available-at`, +1 more
 - `alpha crypto-data feature-show <MANIFEST_ID>` — Reverify one immutable derived feature and its exact input lineage. Options: `--json`
 - `alpha crypto-data features` — List immutable derived crypto features after full lineage re-verification. Options: `--json`
+- `alpha crypto-data liquidity-freeze <PROFILE_ID>` — Freeze one complete prior-day top-liquidity scope without cross-u…
 - `alpha crypto-data market-catalog` — Search the latest qualified Binance spot listing catalog without network access. Options: `--query`, `--limit`, `--json`
+- `alpha crypto-data profile-batches` — List bounded coverage batch checkpoints without exposing provider bytes. Options: `--json`
+- `alpha crypto-data profile-create` — Freeze the default coverage tasks from exact qualified Bybit catalogs. Options: `--as-of`, `--json`
+- `alpha crypto-data profile-resume <BATCH_ID>` — Resume exactly one failed or interrupted coverage batch. Options: `--confirm`, `--json`
+- `alpha crypto-data profile-run <PROFILE_ID>` — Run and checkpoint one bounded cadence page from an immutable profile. Options: `--cadence (required)`, +4 more
+- `alpha crypto-data profile-select-one-minute <PROFILE_ID>` — Bind at most 50 exact one-minute markets to a fresh rese…
+- `alpha crypto-data profile-show <PROFILE_ID>` — Inspect a bounded page of one immutable coverage profile. Options: `--offset`, `--limit`, +6 more
+- `alpha crypto-data profiles` — List immutable coverage profiles without exposing their full task membership. Options: `--json`
 - `alpha crypto-data quality <MANIFEST_ID>` — Reverify and display one normalized artifact's mechanical quality report. Options: `--json`, +9 more
 - `alpha crypto-data snapshot-create` — Freeze qualified membership in canonical order; the id is independent of option…
+- `alpha crypto-data snapshot-query <SNAPSHOT_ID>` — Read one bounded DefiLlama TVL page from an exact frozen snapshot… Options: `--limit`, `--offset`, +3 more
 - `alpha crypto-data snapshot-verify <SNAPSHOT_ID>` — Reverify every external byte and current qualification before res… Options: `--required-family`, +2 more
+- `alpha crypto-data snapshot-verify-crowding <SNAPSHOT_ID>` — Verify exact Bybit BTCUSDT crowding-research compatibili… Options: `--json`
+- `alpha crypto-data snapshot-verify-hedged-basis <SNAPSHOT_ID>` — Verify the exact two-venue candidate bundle without… Options: `--json`
 - `alpha crypto-data storage` — Verify the configured bulk identity and inventory without probing providers. Options: `--json`, `--metadata-only`
 - `alpha crypto-data storage-inventory` — Inventory immutable artifacts and removable cache without exposing private pa… Options: `--json`
 - `alpha crypto-data storage-verify` — Re-hash every manifest artifact and rederive every frozen snapshot membership. Options: `--json`
+- `alpha crypto-data yield-pools` — Search a bounded selection from the latest verified stored yield-pool catalog. Options: `--query`, `--limit`, `--json`
 
 ## alpha data
 

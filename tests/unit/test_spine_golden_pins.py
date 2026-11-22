@@ -164,14 +164,16 @@ COMMON = {
     "fee_bps": 1.0,
     "forecast_cache": None,
     "halt_drawdown": None,
-    "labels": ["all-in", "data-health-unchecked", "short-history"],
+    # Pin change: no health label in an identity (the report describes the whole stored file).
+    "labels": ["all-in", "short-history"],
     "max_leverage": 1.0,
     "mean_block": 5.0,
     "n_resamples": 2000,
     "null_model": "bootstrap",
     "periods_per_year": 365,
     "rebalance_every": 1,
-    "research_cutoff": None,
+    # Pin change: always the cut-off, so whether any bar was held back never enters the identity.
+    "research_cutoff": "2023-12-31",
     "rules_spec": None,
     "seed": 7,
     "size_on_equity": False,
@@ -228,7 +230,8 @@ def test_identity_payload_is_pinned(
     # The tuple pairs of strategy_params travel as lists in JSON; compare in that form.
     payload = json.loads(json.dumps(payload, default=str))
     assert payload.pop("spec_sha256") == KINDS[kind][2]
-    assert payload.pop("data_health")["verdict"] == "unchecked"
+    # Pin change: only the assets checked and the owner's override; no verdict, no file fingerprint.
+    assert payload.pop("data_health") == {"assets": ["SPY@home"], "override_reason": None}
     assert payload == {**COMMON, **PER_KIND[kind]}
 
 

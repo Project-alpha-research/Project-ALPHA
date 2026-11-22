@@ -16,16 +16,26 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from alpha_cli.spine.reserve import HELD_BACK
+
 REL_TOL = 1e-9
 ABS_TOL = 1e-12
 MISMATCH_EXIT = 4
-# Fields that say which code ran or which health report was read, not what was computed.
-# The code identity is reported as `code_changed`; the data identity (`source_fingerprint`)
-# is compared. `artifacts.*.sha256` and `size_bytes` are file bytes: the tables are compared
-# value by value instead. `spine.test_id` names the command that wrote the run.
+# Fields that say which code ran, which health report was read, or what was held back, not what
+# was computed. The held-back count, the cut-off note and the held-back label describe rows the
+# test never read; a nightly pull moves them with no research cause. The code identity is reported
+# as `code_changed`; the data identity (`source_fingerprint`, of the rows read) is compared.
+# `artifacts.*.sha256` and `size_bytes` are file bytes: the tables are compared value by value
+# instead. `spine.test_id` names the command that wrote the run.
 SKIPPED = {
-    "manifest": {"execution_fingerprint", "strategy_fingerprint", "data_health"},
-    "spine": {"test_id"},
+    "manifest": {
+        "execution_fingerprint",
+        "strategy_fingerprint",
+        "data_health",
+        "research_cutoff",
+        "reserve",
+    },
+    "spine": {"test_id", "reserve"},
     "artifact": {"sha256", "size_bytes"},
 }
 # Statements added to new runs after older runs were written: `spine.costs` and `reading.costs`
@@ -109,10 +119,14 @@ def _read(path: Path) -> dict[str, Any] | None:
 
 
 def without_health(labels: object) -> object:
-    """Labels without the health-report labels (they describe the report, not the result)."""
+    """Labels without the health-report and held-back labels (they describe data, not results)."""
     if not isinstance(labels, list):
         return labels
-    return [x for x in labels if not (isinstance(x, str) and x.startswith(HEALTH_LABEL))]
+    return [
+        x
+        for x in labels
+        if not (isinstance(x, str) and (x.startswith(HEALTH_LABEL) or x == HELD_BACK))
+    ]
 
 
 def _manifest_view(manifest: dict[str, Any] | None) -> dict[str, Any] | None:

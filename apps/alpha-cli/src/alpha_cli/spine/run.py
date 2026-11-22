@@ -16,7 +16,13 @@ from typing import Any
 from alpha_cli import _artifacts, _gauntlet, _runner
 from alpha_cli._identity import RunIdentity
 from alpha_cli.spine import cost_classes, idea_card, reserve
-from alpha_cli.spine.data_health import health_labels, run_health_record, verify_inputs
+from alpha_cli.spine.data_health import (
+    health_labels,
+    identity_labels,
+    identity_record,
+    run_health_record,
+    verify_inputs,
+)
 from alpha_cli.spine.deflation import (
     TrialFamily,
     count_snapshot,
@@ -190,14 +196,15 @@ def prepare_asset(
             "command": "validate",
             "symbol": resolved.symbol,
             "snapshot_id": snapshot_id,
-            "research_cutoff": reserve.CUTOFF_DATE if held_back else None,
+            # Always the same: whether a bar was held back is a fact about held-back rows.
+            "research_cutoff": reserve.CUTOFF_DATE,
             **_fields(spec),
             **{key: value for key, value in _fields(knobs).items() if key != "max_workers"},
             "spec_sha256": idea.spec_sha256,
             "source": resolved.source,
             "store": resolved.store_name,
-            "labels": result["labels"],
-            "data_health": record,
+            "labels": identity_labels(result["labels"]),
+            "data_health": identity_record(record),
         },
         source_fingerprint=_runner.source_fingerprint(bars, dividends=dividends),
     )

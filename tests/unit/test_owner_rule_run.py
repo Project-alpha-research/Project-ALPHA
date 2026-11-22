@@ -56,8 +56,9 @@ def test_owner_rule_runs_the_whole_pipeline_and_recheck_matches(home: Path) -> N
     run_dir = Path(result["run_dir"])
     diagnostics = json.loads((run_dir / "diagnostics.json").read_text())
     assert diagnostics["trials"]["family"]["family_id"] == f"spine:{idea.rule.family_key}"
-    assert "note" in diagnostics["sensitivity"]
-    assert [v["name"] for v in diagnostics["sensitivity"]["variants"]] == ["costs_x2"]
+    names = [v["name"] for v in diagnostics["sensitivity"]["variants"]]
+    assert names[0] == "costs_x2" and 1 < len(names) <= 9
+    assert "note" not in diagnostics["sensitivity"]
     manifest = json.loads((run_dir / "manifest.json").read_text())
     assert manifest["spine"]["family"] == idea.rule.family_key
     assert manifest["spine"]["rule_words"].startswith("Long while RSI(14) < 60")

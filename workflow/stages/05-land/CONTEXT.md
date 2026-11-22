@@ -35,8 +35,9 @@ Get the verified branch merged through a green pull request whose description is
    request ready only when CI is green. Review by another model goes on the pull request and is advisory.
 4. The orchestrating session merges once `ci-ok` is green and the branch is up to date: `gh pr merge <n> --merge` (a merge commit, never squash or rebase).
    The owner delegated routine merging on 2026-11-14. It grants nothing else: research approvals, branch protection, required checks and credentials stay with
-   the owner. When the change altered what a capability does, update its block in `docs/roadmap/capabilities.toml` and run `uv run python scripts/status.py`
-   on the branch before merging.
+   the owner. When the change altered what a capability does, update its block in `docs/roadmap/capabilities.toml` on the branch.
+   Do not regenerate `STATUS.md`, `docs/roadmap/README.md` or `docs/reference/commands.md` in a feature change: the sweep change does
+   (`workflow/README.md`, step 6).
 5. When CI failed twice or more for this work, add a short dated retrospective with a `## Watch-outs` section to `docs/operations/retrospectives/`.
 
 ## Outputs

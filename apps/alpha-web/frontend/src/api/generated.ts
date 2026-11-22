@@ -963,6 +963,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ml-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Ml Runs
+         * @description The newest stored runs made by ``alpha ml run``, each with its split, model and folds.
+         */
+        get: operations["list_ml_runs_api_ml_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ml/capabilities": {
         parameters: {
             query?: never;
@@ -8084,7 +8104,7 @@ export interface components {
             embargo_sessions: number;
             feature_recipe: components["schemas"]["MlFeatureRecipe"];
             /** Folds */
-            folds: components["schemas"]["MlFold"][];
+            folds: components["schemas"]["alpha_web__api__ml__MlFold"][];
             label_recipe: components["schemas"]["MlLabelRecipe"];
             model: components["schemas"]["MlLightgbmModelRecipe"];
             /** Panel Rows */
@@ -8126,7 +8146,7 @@ export interface components {
             embargo_sessions: number;
             feature_recipe: components["schemas"]["MlFeatureRecipe"];
             /** Folds */
-            folds: components["schemas"]["MlFold"][];
+            folds: components["schemas"]["alpha_web__api__ml__MlFold"][];
             label_recipe: components["schemas"]["MlLabelRecipe"];
             model: components["schemas"]["MlRankEnsembleV1ModelRecipe"];
             /** Panel Rows */
@@ -8168,7 +8188,7 @@ export interface components {
             embargo_sessions: number;
             feature_recipe: components["schemas"]["MlFeatureRecipe"];
             /** Folds */
-            folds: components["schemas"]["MlFold"][];
+            folds: components["schemas"]["alpha_web__api__ml__MlFold"][];
             label_recipe: components["schemas"]["MlLabelRecipe"];
             model: components["schemas"]["MlTabularModelRecipe"];
             /** Panel Rows */
@@ -8401,23 +8421,6 @@ export interface components {
              */
             version: 1 | 2 | 3;
         };
-        /** MlFold */
-        MlFold: {
-            /** Fold */
-            fold: number;
-            /** Test End */
-            test_end: string;
-            /** Test Start */
-            test_start: string;
-            /** Train End */
-            train_end: string;
-            /** Train Start */
-            train_start: string;
-            /** Validation End */
-            validation_end: string;
-            /** Validation Start */
-            validation_start: string;
-        };
         /** MlFoldBoundaries */
         MlFoldBoundaries: {
             /** Test End */
@@ -8612,6 +8615,30 @@ export interface components {
                 [key: string]: number;
             };
         };
+        /**
+         * MlMetrics
+         * @description Stored numbers after costs; a number that could not be worked out is null with a reason.
+         */
+        MlMetrics: {
+            /** Benchmark Total Return */
+            benchmark_total_return: number | null;
+            /** Cagr */
+            cagr: number | null;
+            /** Max Drawdown */
+            max_drawdown: number | null;
+            /** Mean Turnover */
+            mean_turnover: number | null;
+            /** Sharpe */
+            sharpe: number | null;
+            /** Sharpe Reason */
+            sharpe_reason: string | null;
+            /** Total Fees */
+            total_fees: number | null;
+            /** Total Return */
+            total_return: number | null;
+            /** Total Slippage Cost */
+            total_slippage_cost: number | null;
+        };
         /** MlPortfolioPoint */
         MlPortfolioPoint: {
             /** Benchmark Equity */
@@ -8792,7 +8819,7 @@ export interface components {
             /** Counterfactual Refit */
             counterfactual_refit: boolean;
             /** Folds */
-            folds: components["schemas"]["MlFold"][];
+            folds: components["schemas"]["alpha_web__api__ml__MlFold"][];
             /** Label */
             label: string;
             /** Metrics */
@@ -8833,6 +8860,35 @@ export interface components {
             validation: components["schemas"]["JsonObject"];
             /** Worker Lock Hash */
             worker_lock_hash: string;
+        };
+        /** MlRun */
+        MlRun: {
+            /** Assets */
+            assets: string[];
+            /** Costs */
+            costs: string;
+            /** Folds */
+            folds: components["schemas"]["alpha_web__api__models__ml_runs__MlFold"][];
+            /** Label */
+            label: string | null;
+            metrics: components["schemas"]["MlMetrics"];
+            /** Model */
+            model: string;
+            /** Mtime */
+            mtime: number;
+            /** N Oos Periods */
+            n_oos_periods: number | null;
+            /** Run Id */
+            run_id: string;
+            /** Split Sentence */
+            split_sentence: string | null;
+        };
+        /** MlRunList */
+        MlRunList: {
+            /** Items */
+            items: components["schemas"]["MlRun"][];
+            /** Total */
+            total: number;
         };
         /** MlScopedActionRequest */
         MlScopedActionRequest: {
@@ -13274,6 +13330,36 @@ export interface components {
             /** Slug */
             slug: string;
         };
+        /** MlFold */
+        alpha_web__api__ml__MlFold: {
+            /** Fold */
+            fold: number;
+            /** Test End */
+            test_end: string;
+            /** Test Start */
+            test_start: string;
+            /** Train End */
+            train_end: string;
+            /** Train Start */
+            train_start: string;
+            /** Validation End */
+            validation_end: string;
+            /** Validation Start */
+            validation_start: string;
+        };
+        /** MlFold */
+        alpha_web__api__models__ml_runs__MlFold: {
+            /** Fold */
+            fold: number;
+            /** Test End */
+            test_end: string;
+            /** Test Start */
+            test_start: string;
+            /** Train End */
+            train_end: string;
+            /** Train Start */
+            train_start: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -15074,6 +15160,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MarketOverview"];
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    list_ml_runs_api_ml_runs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MlRunList"];
                 };
             };
             /** @description Stable, redacted Workstation error */

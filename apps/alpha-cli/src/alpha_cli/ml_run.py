@@ -176,7 +176,7 @@ def _folds(base: Path) -> list[dict[str, str]]:
     ]
 
 
-def _split_sentence(folds: list[dict[str, str]]) -> str:
+def split_sentence(folds: list[dict[str, str]]) -> str:
     first, last = folds[0], folds[-1]
     return (
         f"The model was refit {len(folds)} times, each time on days before its own test days. "
@@ -278,7 +278,7 @@ def run_spec(
         "status": "replayed",
         "run_id": replayed.run_id,
         "folds": folds,
-        "split_sentence": _split_sentence(folds),
+        "split_sentence": split_sentence(folds),
         "costs": f"{FEE_BPS} bp fee and {SLIPPAGE_BPS} bp slippage per trade",
         "n_oos_periods": manifest["n_oos_periods"],
         "metrics": manifest["metrics"],

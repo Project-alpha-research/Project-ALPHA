@@ -402,6 +402,13 @@
     {
       "method": "GET",
       "mode": "automatic",
+      "operation_id": "list_ml_runs_api_ml_runs_get",
+      "path": "/api/ml-runs",
+      "reason": "Safe read exercised against an isolated temporary store."
+    },
+    {
+      "method": "GET",
+      "mode": "automatic",
       "operation_id": "get_capabilities_api_ml_capabilities_get",
       "path": "/api/ml/capabilities",
       "reason": "Safe read exercised against an isolated temporary store."

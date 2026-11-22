@@ -5,6 +5,9 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/reserve.py
   - apps/alpha-cli/src/alpha_cli/spine/reserve.py
   - apps/alpha-cli/src/alpha_cli/toolbox/inputs.py
+  - apps/alpha-cli/src/alpha_cli/confirm_cmds.py
+  - apps/alpha-cli/src/alpha_cli/reserved_slots.py
+  - apps/alpha-cli/src/alpha_cli/spine/confirm*.py
   - packages/alpha-data/src/alpha_data/context/daily_funding.py
   - workers/rdagent/alpha_factor_data.py
   - workers/rdagent/alpha_factor_judge.py
@@ -93,7 +96,7 @@ Three kinds: the code locks it out (it refuses reserved rows or aborts), only la
   the exchange, and `alpha ml replay` records `reserve` and the label on its run; a later replay `--as-of` is recorded as 2023-12-31.
   Labels and fold targets come from the cut panel only, so the last panel session has no label. `alpha forecast run` stays forward use: its
   manifest records `use: forward` (not part of the run id), and `alpha report` shows it; an older run shows "not recorded".
-- Not built: the owner's confirmation path. It is designed, not built. It needs a new owner action type and a second build with the owner's sign-off.
+- The owner's confirmation is the one way to open the period: [below](#the-owners-confirmation).
 
 ### Only labels it
 
@@ -119,11 +122,52 @@ These still read bars from the date on.
   Its verdict can label or stop a run; its numbers do not enter a result, and neither its verdict nor its fingerprint enters an identity.
 - `alpha project reveal-holdout` is a separate owner-only action on a project's sealed holdout. Whether it is tied to this date: not verified.
 
+## The owner's confirmation
+
+`alpha confirm plan|run|list|show` ([card](../../../research/tools/reserved-confirmation.md)) is the final check. The rules, enforced in
+code and by the store:
+
+- What: one frozen rule test. That is a stored `alpha test` run made with the period held back: its spec hash, test key (spec, asset,
+  store, dates, data content), costs and engine settings (seed, quick, diagnostics). Nothing can change. Setup Lab runs: not yet.
+- Who: the owner asks for it in chat, by idea name; Claude shows `plan`, then runs `alpha confirm run` in the terminal. There is no
+  confirmation step and no Touch ID ([decision](owner-decisions-6.md#2026-11-22-no-touch-id-for-the-final-check-claude-runs-it-on-request)).
+  MCP, web routes, the generic web launcher, the nightly run, RD-Agent, follow and the toolbox cannot reach it (tested).
+- `run` prints the plan first: what is tested, the slots used and left, every earlier confirmation, whether the code changed,
+  and that the slot cannot be given back. Then it spends.
+- Span: from the first stored bar on or after 2024-01-01 to the last stored bar when the slot is spent. It is frozen in the
+  receipt, so a later bar is never read (bars added afterwards are left out; the stamps up to it must still match).
+- Recheck first: the earlier period is computed again (`spine/recheck.py`). It must match the stored run; only the count of
+  held-back bars may differ. A mismatch spends nothing.
+- Receipt before read: a slot receipt (slot, test key, family, run, spec hash, frozen test, time) is written in one
+  `BEGIN IMMEDIATE` transaction before any reserved bar is read. Then the frozen test is read again; its hash must equal the
+  receipt's. A crash after the receipt resumes with the same slot and the same span.
+- Ten slots, ever: slot 1 to 10, one receipt per test key, per run and per rule on one asset (the deflation family on that
+  asset). The store's UNIQUE and CHECK constraints refuse a duplicate or an eleventh slot; two processes cannot both take the last.
+- The read: only `reserve.open_with_receipt`, which reads the receipt and checks the asset and the frozen bars on every call.
+  Only `spine/confirm_run.py` calls it. The structural guard lists it under its own kind, `receipt:`. It scores the frozen rule
+  only, and the same rule at double costs: no parameter neighbours are run on the reserved bars (they would show which tuning did
+  best there). `alpha follow start` refuses the confirmation run.
+- The result: the same reading, scored on reserved bars only (the rule warms up on the bars just before 2024), beside the
+  earlier reading. It is stored as a run labelled `reserved-period-confirmation`, shown whatever it is, and never
+  discarded. Tools refuse that run. Its ledger kind is `reserved_confirmation`: not a research trial, and outside every
+  family count used to deflate another test. Its own deflation uses the family count as it stood.
+- The family label: after a confirmation, every later `alpha test` of the same rule on the same asset carries
+  `reserved-period-confirmed-in-family` (tuned settings are new test keys but the same idea), and cannot be confirmed.
+  The family is the rule kind on one symbol, so all owner rules on one symbol are one family. Not covered: the same idea
+  on a similar asset (SPY, then VOO), or rewritten as another rule kind. `plan` lists every earlier confirmation, so a
+  near-duplicate is seen before a slot is spent; no similarity is computed. `alpha next` shows the slots.
+- Limits: any process on this computer that runs `alpha confirm run` spends a slot. The rows are plain, unsigned rows: whoever
+  can write the control store can change them. The reserved bars are in store files the same OS user can read. This guards
+  the research pipeline, not the files.
+
 ## What the owner decided
 
 - 2026-11-18: shortlisted factors may be confirmed once each on the reserved data. There are ten slots for the life of the reserved window, and each
-  needs the owner's own yes. Approved, not built, queued behind the screens. Nothing may use a slot yet, and a stand-in user can never give the yes
+  needs the owner's own yes. A stand-in user can never give the yes
   ([log](owner-decisions-5.md#2026-11-18-one-shot-confirmation-of-shortlisted-factors-on-reserved-data-approved-not-built)).
+  2026-11-21: built for rule tests as [above](#the-owners-confirmation), each idea once, ten slots.
+  2026-11-22: no Touch ID and no confirmation step; Claude runs the final check when the owner asks in chat
+  ([log](owner-decisions-6.md#2026-11-22-no-touch-id-for-the-final-check-claude-runs-it-on-request)).
 - Settled, and a different matter: only the owner reveals a project's sealed holdout ([owner authority](../invariants/research-integrity.md#owner-authority)).
   That rule is about the holdout, not about the reserved period.
 
@@ -132,7 +176,8 @@ These still read bars from the date on.
 - The commands under "Still to cover": each should hold the period back or label it. Not built. Open: archived runs scored on held-back bars before
   this change are not relabelled; only rule runs derive `reserved-period-seen`. Stored hypothesis scans and backtest runs carry no last-bar
   date in a common place, so a read-only label on display needs its own design.
-- Open: who may reveal the reserved period itself to rule tests or setups. This is separate from the settled holdout rule above.
+- Only the owner's request opens the period, one frozen rule test at a time ([above](#the-owners-confirmation)). Setup Lab runs and
+  RD-Agent factors cannot be confirmed yet.
 - Guard: [a structural test](../../../tests/unit/test_research_reads_are_cut.py) checks every `load_bars`, `load_dividends` and `read_bars` call.
   Its `as_of` must come from the reserve (`reserve.CUTOFF`, a `Hold`'s `as_of`, or a helper parameter that every caller fills so). Every other
   read is listed as `exempt:` (forward use, display, verification) or `open:` (a known leak, with the change that fixes it). A new unlisted read

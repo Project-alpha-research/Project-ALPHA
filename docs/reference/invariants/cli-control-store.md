@@ -91,6 +91,9 @@ workspaces. [ADR-0014](../../adr/0014-cli-owned-development-control-plane.md)
 - The receipt records the actual method (`local_confirmation` or `webauthn`). Local confirmation proves local intent,
   not human presence; never describe it as biometric. Legacy WebAuthn stays optional.
   [ADR-0030](../../adr/0030-touch-id-owner-presence-for-research-actions.md) is partly superseded by ADR-0038.
+- The reserved-period final check (`alpha confirm run`) is not an owner-auth action: it has no challenge and no
+  receipt in `owner_action_receipts`. Its slots are two additive, insert-only tables (`_SCHEMA_RESERVED_CONFIRMATION`,
+  written only by `reserved_slots.py`) ([reserved period](../project/reserved-period.md#the-owners-confirmation)).
 - `alpha owner-auth enroll|recover` is a trusted local ceremony; never expose it to MCP or generic jobs.
 - Owner confirmation grants no broker, order, holdout, paper-entry, risk-override or research-gate-override capability.
 - Owner-auth enrollment is optional: ordinary owner actions need only local confirmation, and a legacy

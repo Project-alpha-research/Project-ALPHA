@@ -545,6 +545,29 @@ state = "Partial"
 missing = "Proven with in-process unit tests only; no smoke test through the installed program. Follow sizes are fixed paper sizes, not marked to market. No real-data run recorded."
 
 [[capability]]
+id = "reserved-period-confirmation"
+name = "Confirm one tested idea once on the reserved period"
+what = "Test one frozen rule test once on the held-back data from 2024-01-01 on, when the owner asks: ten slots in all, each idea once, the result recorded whatever it is."
+see_it = [
+  "uv run alpha confirm plan <run id>",
+  "uv run alpha confirm list",
+]
+entry_points = [
+  "cli: alpha confirm",
+  "code: apps/alpha-cli/src/alpha_cli/reserved_slots.py",
+]
+proof_synthetic = [
+  "tests/bias_guards/test_reserved_confirmation_future_poison.py::test_one_confirmation_reads_reserved_bars_only_after_its_receipt",
+  "tests/unit/test_reserved_slots.py::test_two_processes_cannot_both_take_the_last_slot",
+  "tests/unit/test_reserved_confirmation_surfaces.py::test_plan_says_what_is_spent_and_run_prints_the_plan_before_it_spends",
+]
+docs = ["docs/reference/project/reserved-period.md"]
+real_data = "not yet: no real slot may be used in a test; the owner's first use is the real run"
+needs = []
+state = "Partial"
+missing = "tested in-process on synthetic data only; Setup Lab runs cannot be confirmed yet."
+
+[[capability]]
 id = "follow-today-screen"
 name = "Today screen for followed ideas"
 what = "See what is active today among the ideas followed on paper: cards in four groups plus waiting, and for one card the paper equity path, the last entries and the replay check. It only shows; it places no order."

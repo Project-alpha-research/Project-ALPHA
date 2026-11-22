@@ -474,11 +474,17 @@ def hypotheses(
         None, help="Equity PIT membership name, frozen in the spec"
     ),
     snapshot: str | None = typer.Option(None, help="Required immutable equity snapshot"),
-    signals: str | None = typer.Option(None, help="Comma-separated registered screening signals"),
+    signals: str | None = typer.Option(
+        None,
+        help="Comma-separated signal names. Equity: mom_12_1, mom_6_1, rev_1m, vol_63, "
+        "range_52w. Crypto: funding_z_30d, oi_chg_7d, mom_30d. Default: all of the lane.",
+    ),
     horizons: str = typer.Option(
         "1,5,10,21", help="Forward observed-row horizons (crypto: UTC days)"
     ),
-    min_names: int = typer.Option(5, help="Minimum names in each scored cross-section"),
+    min_names: int = typer.Option(
+        5, help="Fewest assets a screen compares on one date; you must give at least this many"
+    ),
     quantiles: int = typer.Option(5, help="Equal-count ranking buckets"),
     cost_bps: float = typer.Option(0.0, help="One-way illustrative turnover cost"),
     category: str = typer.Option("linear", help="Exact Bybit market: linear or inverse"),

@@ -9,6 +9,7 @@ from typing import Annotated, Any
 import typer
 
 from alpha_cli._cli_json import emit
+from alpha_cli.results_summary import summary_lines, table
 from alpha_cli.run_store import RUN_DIRS, find_run_dir, read_manifest, valid_run_id
 from alpha_cli.spine import book, reserve
 from alpha_cli.spine.check import FlagLookup, check_text, render_check
@@ -131,13 +132,29 @@ def list_results(
             for row in selected
         ]
         home = AlphaSettings().data_dir
-        lines = [
-            "\t".join(
-                _row_word(home, row, found.get("evidence")) if key == "verdict" else str(row[key])
-                for key in row
-            )
-            for row, found in zip(items, selected, strict=True)
-        ]
+        lines = table(
+            (
+                "trial",
+                "recorded",
+                "kind",
+                "name",
+                "symbol",
+                "reading",
+                "OOS Sharpe",
+                "buy-and-hold Sharpe",
+                "labels",
+                "run",
+                "idea",
+                "flags",
+            ),
+            [
+                [
+                    _row_word(home, row, found.get("evidence")) if key == "verdict" else row[key]
+                    for key in row
+                ]
+                for row, found in zip(items, selected, strict=True)
+            ],
+        )
         for row, found in zip(items, selected, strict=True):
             row["reading"] = run_reading(home, row["run_id"])
             row.update(evidence=found.get("evidence"), aim_relation=found.get("aim_relation"))
@@ -149,9 +166,13 @@ def list_results(
                 for key in ("oos_sharpe", "benchmark_sharpe", "flags_count")
                 if row[key] is None
             }
-        lines.append(f"Total trials: {len(rows)}")
+        from alpha_cli.spine.trial_reader import spine_snapshot
+        from alpha_cli.spine.tries import sentence, tries
+
+        counted = tries(spine_snapshot(AlphaSettings().data_dir), symbol)
+        lines.append(sentence(counted))
         emit(
-            {"items": items, "total_trials": len(rows)},
+            {"items": items, "total_trials": len(rows), "tries": counted},
             json_out=json_out,
             fallback="\n".join(lines),
         )
@@ -227,9 +248,7 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
         "labels": labels,
         "flags": diagnostics.get("flags", []),
         "audit": diagnostics.get("audit", []),
-        "diagnostics_reason": None
-        if diagnostics
-        else "diagnostics.json is unavailable; re-run alpha test for this spec",
+        "diagnostics_reason": None if diagnostics else _no_diagnostics_reason(manifest),
         # Investigation-tool outputs live outside the immutable run directory.
         "tool_history": history(home, run_id),
         "tools": [
@@ -334,8 +353,9 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
             + (f"\n{reading_text(row['reading'])}" if isinstance(row.get("reading"), dict) else "")
             for row in runs
         ]
-        details = [_show_text_fields(row) for row in runs]
-        lines.append(json.dumps({"runs": details, "failed": failed}, indent=2, allow_nan=False))
+        for row in runs:
+            lines.append("\n".join(summary_lines(_show_text_fields(row))))
+        lines += [f"Not completed: {item['symbol']}: {item['reason']}" for item in failed]
         emit(output, json_out=json_out, fallback="\n".join(lines))
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)
@@ -386,11 +406,23 @@ def _plain_audit(output: dict[str, Any]) -> dict[str, Any]:
     return {**output, "audit": audit}
 
 
+def _no_diagnostics_reason(manifest: dict[str, Any]) -> str:
+    if manifest.get("command") == "ml_replay":
+        return "this ML run has no diagnostics file; alpha report shows its stored numbers"
+    return "diagnostics.json is unavailable; re-run alpha test for this spec"
+
+
 def diagnose_run(run_id: str, json_out: bool = typer.Option(False, "--json")) -> None:
     """Read the automatic diagnostic pass and audit stored with a rule test."""
     try:
         rdir, manifest = _run(AlphaSettings().data_dir, run_id)
         if not (rdir / "diagnostics.json").exists():
+            if manifest.get("command") == "ml_replay":
+                raise SpineError(
+                    "NO_DIAGNOSTICS",
+                    f"Run {run_id} is an ML replay. It has no diagnostics file.",
+                    f"Run alpha report {run_id} for its stored numbers.",
+                )
             raise SpineError(
                 "NO_DIAGNOSTICS",
                 f"Run {run_id} has no diagnostics.json.",

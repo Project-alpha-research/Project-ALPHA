@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -24,7 +25,7 @@ from alpha_cli.spine.diagnose import staged_run
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.ledger import append_trial, read_trials
 from alpha_cli.spine.reading import reading_word, stored_reading
-from alpha_cli.spine.recheck import recheck_one
+from alpha_cli.spine.recheck import frozen_costs, recheck_one
 from alpha_cli.spine.run import (
     assemble_run_spec,
     gauntlet_knobs,
@@ -73,7 +74,7 @@ def receipt_for(home: Path, run_id: str) -> dict[str, Any] | None:
     return next((r for r in reserved_slots.receipts(home) if r["run_id"] == run_id), None)
 
 
-def _take(home: Path, run_id: str, now: datetime) -> dict[str, Any]:
+def _take(home: Path, run_id: str, now: datetime, on_spent: Callable[[], None]) -> dict[str, Any]:
     """Recheck the earlier period, then spend the slot. A refusal here spends nothing."""
     frozen = frozen_test(home, run_id)
     refuse_spent(frozen, home)
@@ -85,7 +86,16 @@ def _take(home: Path, run_id: str, now: datetime) -> dict[str, Any]:
         quick=frozen.quick,
         no_diagnose=frozen.no_diagnose,
     )["recheck"]
-    if not _matches(found) or found.get("compared_with") != run_id:
+    newest = found.get("compared_with")
+    if newest and newest != run_id:
+        # The same test has a newer run (a repeat after a code change): only that one is confirmed.
+        raise SpineError(
+            "RECHECK_MISMATCH",
+            f"Run {run_id} is not the newest run of this test; the newest is {newest}. "
+            "No slot was used.",
+            f"Run alpha confirm plan {newest}, then alpha confirm run {newest}.",
+        )
+    if not _matches(found):
         fields = ", ".join(str(d["field"]) for d in found.get("differences") or [])
         why = found.get("reason") or f"{found.get('differences_total')} differences: {fields}"
         raise SpineError(
@@ -94,7 +104,9 @@ def _take(home: Path, run_id: str, now: datetime) -> dict[str, Any]:
             f"({why}; compared with {found.get('compared_with')}). No slot was used.",
             "Run alpha test <spec> --recheck to see the differences.",
         )
-    return reserved_slots.take_slot(home, frozen=frozen.record(), now=now)
+    receipt = reserved_slots.take_slot(home, frozen=frozen.record(), now=now)
+    on_spent()
+    return receipt
 
 
 def _compute(home: Path, frozen: Frozen, receipt: dict[str, Any]) -> dict[str, Any]:
@@ -124,6 +136,7 @@ def _compute(home: Path, frozen: Frozen, receipt: dict[str, Any]) -> dict[str, A
         {"research_cutoff": None, "confirmation": receipt["receipt_id"], "of": frozen.run_id},
         ppy_given=(frozen.periods_per_year, frozen.periods_per_year_basis),
     )
+    prepared = frozen_costs(frozen.idea, prepared, _artifacts.run_dir(home, frozen.run_id), result)
     rdir = Path(result["run_dir"])
     if (rdir / "manifest.json").is_file():  # a resumed run that was already stored
         return _artifacts.read_manifest(rdir)
@@ -166,12 +179,20 @@ def _ledger(home: Path, frozen: Frozen, receipt: dict[str, Any], manifest: dict[
     )
 
 
-def confirm_run(home: Path, run_id: str, *, now: datetime | None = None) -> dict[str, Any]:
-    """Confirm one frozen test once, or resume or show the one confirmation it already has."""
+def confirm_run(
+    home: Path,
+    run_id: str,
+    *,
+    now: datetime | None = None,
+    on_spent: Callable[[], None] = lambda: None,
+) -> dict[str, Any]:
+    """Confirm one frozen test once, or resume or show the one confirmation it already has.
+
+    `on_spent` is called once, right after the slot receipt is written."""
     stamp = now or datetime.now(UTC)
     receipt = receipt_for(home, run_id)
     if receipt is None:
-        receipt = _take(home, run_id, stamp)
+        receipt = _take(home, run_id, stamp, on_spent)
     if receipt["result"] is None:
         frozen = frozen_test(home, run_id, reserved_end=str(receipt["frozen"]["reserved_end"]))
         if frozen.record()["artifact_hash"] != receipt["frozen"]["artifact_hash"]:

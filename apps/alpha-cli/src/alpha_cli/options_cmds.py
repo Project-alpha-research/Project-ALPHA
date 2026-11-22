@@ -52,9 +52,14 @@ def _provider(root: Path, underlying: str, wanted: str | None) -> str:
         return wanted
     if len(found) == 1:
         return found[0]
-    raise DataError(
-        f"no stored options for {underlying!r}" if not found else f"several providers: {found}"
-    )
+    if found:
+        raise DataError(f"several providers: {found}")
+    if not any((root / "options").glob("*/*")):
+        raise DataError(
+            "No options data is stored yet, for any name. This feature needs a stored "
+            "option-chain history from a data provider; ALPHA has none until one is imported."
+        )
+    raise DataError(f"no stored options for {underlying!r}")
 
 
 def _realized(underlying: str, data_dir: Path) -> dict[date, RealizedPoint]:
@@ -131,7 +136,10 @@ def derived(
         realized = _realized(underlying, root) if "iv_minus_rv" in chosen else {}
         result = derive(read, cfg, series=chosen, realized=realized)
     except (DataError, OSError, pl.exceptions.PolarsError) as exc:
-        raise typer.BadParameter(f"{exc}. Next: check the underlying and --series.") from None
+        said = str(exc).rstrip(".")
+        if said.startswith("No options data is stored yet"):
+            raise typer.BadParameter(f"{said}.") from None
+        raise typer.BadParameter(f"{said}. Next: check the underlying and --series.") from None
     shown = {n: (pts[-rows:] if rows > 0 else pts) for n, pts in result.series.items()}
     coverage = {n: _counts(pts) for n, pts in result.series.items()}
     payload = dict(

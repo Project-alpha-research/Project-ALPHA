@@ -40,10 +40,23 @@ def _rule_words(rule: dict[str, Any]) -> str:
     )
 
 
+def _rate_lines(rate: dict[str, Any]) -> list[str]:
+    """How often the rule traded before; read from the earlier period only."""
+    if rate["per_year"] is None:
+        return [f"  Trades per year (earlier period): not known; {rate['reason']}."]
+    lines = [
+        f"  Trades per year (earlier period): {rate['per_year']:.1f} "
+        f"({rate['trades']} trades in {rate['years']:.1f} years)."
+    ]
+    return [*lines, f"  {rate['warning']}"] if rate["warning"] else lines
+
+
 def _plan_lines(found: dict[str, Any]) -> list[str]:
     frozen, slots, earlier = found["frozen"], found["slots"], found["earlier_reading"]
     engine = "the small (quick) gauntlet" if frozen["quick"] else "the full gauntlet"
-    sentence = earlier.get("sentence") or "no reading was stored"
+    from alpha_cli.spine.reading import plain  # lazy: reading pulls in scipy
+
+    sentence = plain(earlier.get("sentence") or "no reading was stored")
     return [
         RESERVED_WORDS,
         "",
@@ -58,6 +71,7 @@ def _plan_lines(found: dict[str, Any]) -> list[str]:
         f"  Earlier period (already seen): {sentence}",
         f"  Reserved period (not seen): {frozen['reserved_first'][:10]} to "
         f"{frozen['reserved_end'][:10]}, {frozen['reserved_bars']} bars",
+        *_rate_lines(found["trade_rate"]),
         "  Code: "
         + (
             "CHANGED since the stored test. The earlier period must still compute the same."
@@ -110,15 +124,22 @@ def run_cmd(
 
     home = _settings().data_dir
     found = None
+    shown = sys.stdout
+    words = ""
     try:
         if confirm_run.receipt_for(home, run_id) is None:
             found = plan(home, run_id)
-            left = found["slots"]["left"] - 1
+            words = f"Spending 1 slot now. After this, {found['slots']['left'] - 1} slots are left."
             if not json_out:
                 typer.echo("\n".join(_plan_lines(found)))
-                typer.echo(f"Spending 1 slot now. After this, {left} slots are left.")
+
+        def spent() -> None:
+            # Printed when the receipt is written, not before: a refusal spends nothing.
+            if words and not json_out:
+                typer.echo(words, file=shown)
+
         with redirect_stdout(sys.stderr):
-            output = confirm_run.confirm_run(home, run_id)
+            output = confirm_run.confirm_run(home, run_id, on_spent=spent)
     except SpineError as exc:
         fail(exc, json_out)
     except (DataError, OSError, ValueError) as exc:
@@ -128,6 +149,7 @@ def run_cmd(
 
 def result_lines(output: dict[str, Any]) -> list[str]:
     """Both periods side by side, as readings: numbers in context, no pass or fail."""
+    from alpha_cli.spine.reading import plain  # lazy: reading pulls in scipy
 
     def one(name: str, part: dict[str, Any]) -> list[str]:
         sharpe = part.get("oos_sharpe")
@@ -136,7 +158,7 @@ def result_lines(output: dict[str, Any]) -> list[str]:
             f"{str(part.get('scored_to'))[:10]} (run {part.get('run_id')})",
             "  Sharpe (return per unit of risk, per year): "
             + (f"{sharpe:.3f}" if isinstance(sharpe, float) else "not computed"),
-            f"  Reading: {part.get('reading')}. {part.get('sentence') or ''}".rstrip(),
+            f"  Reading: {part.get('reading')}. {plain(part.get('sentence') or '')}".rstrip(),
         ]
 
     return [

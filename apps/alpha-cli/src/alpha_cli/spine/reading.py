@@ -74,6 +74,25 @@ AIM_BASIS = (
 )
 
 
+def relation_text(relation: str) -> str:
+    """The plain sentence for a stored relation word: what it says, and what it does not."""
+    return {
+        RELATIONS[0]: "this rule's Sharpe is above buy-and-hold's by more than the uncertainty "
+        "in the estimate",
+        RELATIONS[1]: "this rule's Sharpe is below buy-and-hold's by more than the uncertainty "
+        "in the estimate",
+        RELATIONS[2]: "buy-and-hold's Sharpe is inside this rule's 95% range, so this test "
+        "cannot tell the two apart",
+    }[relation]
+
+
+def plain(sentence: str) -> str:
+    """A stored reading sentence with its relation words in plain words, for the screen."""
+    for relation in RELATIONS:
+        sentence = sentence.replace(f"this reading is {relation}.", f"{relation_text(relation)}.")
+    return sentence
+
+
 def _num(value: Any) -> float | None:
     """A finite float, or None for a missing or non-finite statistic."""
     if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -97,7 +116,23 @@ def _sharpe_ci(manifest: Mapping[str, Any]) -> Mapping[str, Any]:
     return found
 
 
-def _checks(manifest: Mapping[str, Any], diagnostics: Mapping[str, Any]) -> list[dict[str, str]]:
+def no_trades(manifest: Mapping[str, Any], trades: int | None) -> str | None:
+    """The plain sentence for a scored span in which the rule made no trades, else None.
+
+    No trade and no movement of equity (volatility exactly 0) is a real outcome, not a fault:
+    the Sharpe and the risk of ruin then have nothing to measure. A missing count never counts."""
+    if trades != 0 or _num(_get(manifest, "oos_metrics", "annualized_vol")) != 0.0:
+        return None
+    scored = _get(manifest, "spine", "periods", "scored")
+    first = str(_get(scored, "first_ts") or "")[:10]
+    last = str(_get(scored, "last_ts") or "")[:10]
+    span = f"from {first} to {last}" if first and last else "in the scored days (dates not stored)"
+    return f"The rule made no trades {span}; nothing can be concluded from this period."
+
+
+def _checks(
+    manifest: Mapping[str, Any], diagnostics: Mapping[str, Any], trades: int | None
+) -> list[dict[str, str]]:
     metrics = manifest.get("oos_metrics")
     missing = [
         label
@@ -109,9 +144,14 @@ def _checks(manifest: Mapping[str, Any], diagnostics: Mapping[str, Any]) -> list
         if _num(_get(metrics, key)) is None
     ]
     computed = (
-        {"state": "fault", "detail": f"the {missing[0]} could not be computed"}
-        if missing
-        else {"state": "sound", "detail": "every statistic was computed"}
+        {"state": "sound", "detail": "every statistic was computed"}
+        if not missing
+        else {
+            "state": "not-checked",
+            "detail": "the rule made no trades, so there was nothing to measure",
+        }
+        if no_trades(manifest, trades)
+        else {"state": "fault", "detail": f"the {missing[0]} could not be computed"}
     )
     audit = {item.get("check"): item for item in diagnostics.get("audit", [])}
     fills = audit.get("fills-after-decisions", {}).get("status")
@@ -272,9 +312,12 @@ def _sentence(
     evidence: Mapping[str, Any],
     aim: Mapping[str, Any],
     counts: Mapping[str, Any],
+    idle: str | None = None,
 ) -> str:
     if faults:
         return f"Fault: {faults[0]}. Fix this first. No reading."
+    if idle:
+        return f"{idle} Evidence strength: {evidence['word']}."
     parts = []
     if aim["rows"]:
         row = aim["rows"][0]
@@ -282,6 +325,7 @@ def _sentence(
             f"Out-of-sample Sharpe {_f(row['observed'])}; buy-and-hold over the same days "
             f"{_f(row['aim'])}."
         )
+        # Stored words: a recheck compares them, so they never change; `plain` reworks them.
         parts.append(f"Default aim: beat buy-and-hold; this reading is {row['relation']}.")
     parts.append(f"Evidence strength: {evidence['word']}.")
     tail = [
@@ -313,9 +357,9 @@ def build_reading(
 ) -> dict[str, Any]:
     """Arrange a stored run's numbers as a reading; works for old manifests too."""
     diag: Mapping[str, Any] = diagnostics or {}
-    checks = _checks(manifest, diag)
-    faults = [c["detail"] for c in checks if c["state"] == "fault"]
     trades = _trades(manifest, diag)
+    checks = _checks(manifest, diag, trades)
+    faults = [c["detail"] for c in checks if c["state"] == "fault"]
     evidence = _evidence(manifest, diag, trades)
     aim = _aim(manifest)
     counts = _counts(manifest, diag)
@@ -330,7 +374,7 @@ def build_reading(
         "evidence": evidence,
         "aim": aim,
         "counts": counts,
-        "sentence": _sentence(faults, evidence, aim, counts),
+        "sentence": _sentence(faults, evidence, aim, counts, no_trades(manifest, trades)),
         **reading_additions(diag),
     }
 
@@ -341,7 +385,7 @@ def reading_text(reading: Mapping[str, Any]) -> str:
     extra = [
         costs[key] for key in ("line", "periods") if isinstance(costs, Mapping) and costs.get(key)
     ]
-    return "\n".join([reading["sentence"], *extra])
+    return "\n".join([plain(reading["sentence"]), *extra])
 
 
 def stored_reading(

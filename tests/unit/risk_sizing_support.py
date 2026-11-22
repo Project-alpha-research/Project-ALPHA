@@ -27,7 +27,6 @@ def put_returns(home: Path, returns: np.ndarray) -> None:
 def put_trades(
     home: Path,
     pnl: list[float],
-    ret: list[float] | None = None,
     entry_days: list[int] | None = None,
     hold_days: list[int] | None = None,
 ) -> None:
@@ -38,7 +37,9 @@ def put_trades(
         {
             "side": ["BUY"] * n,
             "realized_pnl": pnl,
-            "realized_return": ret if ret is not None else [p / 100 for p in pnl],
+            "quantity": [1.0] * n,
+            "entry_price": [1000.0] * n,
+            "realized_return": [0.0] * n,
             "entry_ts": [START + timedelta(days=d) for d in entry],
             "exit_ts": [START + timedelta(days=d + h) for d, h in zip(entry, hold, strict=True)],
         },

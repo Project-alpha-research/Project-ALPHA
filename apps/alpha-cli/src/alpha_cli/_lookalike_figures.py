@@ -149,6 +149,7 @@ def lookalike_figure(
     timeframe: str,
     result_id: str,
     looks: int,
+    boundary: str = "",
 ) -> FigureSpec:
     from alpha_research.figures import FigureSpec, Panel, RuleMark
 
@@ -206,7 +207,8 @@ def lookalike_figure(
         title=f"Has {asset} looked like this before?  N = {count} lookalike"
         f"{'s' if count != 1 else ''}",
         subtitle=(
-            f"Last {window} {_bars_word(timeframe)} bars vs every earlier stretch · threshold "
+            (f"{boundary} · " if boundary else "")
+            + f"Last {window} {_bars_word(timeframe)} bars vs every earlier stretch · threshold "
             f"set first: shape correlation {result.max_distance_correlation:.2f}+ · descriptive, "
             f"not a forecast · look {looks} in the ledger (more looks, more chance finds)"
         ),

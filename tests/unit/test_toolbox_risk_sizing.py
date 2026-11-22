@@ -70,7 +70,7 @@ def test_repeat_is_identical(tmp_path: Path, tool: str) -> None:
         stored(home)
         put_returns(home, sample_returns())
         pnl, ret = sample_trades()
-        put_trades(home, pnl, ret, hold_days=[1 + i % 9 for i in range(30)])
+        put_trades(home, pnl, hold_days=[1 + i % 9 for i in range(30)])
         results.append(read(home, tool)["result"])
     assert results[0] == results[1]
     assert str(results[0]) == str(results[1])
@@ -81,7 +81,7 @@ def test_future_input_rejected(tmp_path: Path, tool: str) -> None:
     stored(tmp_path)
     put_returns(tmp_path, sample_returns())
     pnl, ret = sample_trades()
-    put_trades(tmp_path, pnl, ret)
+    put_trades(tmp_path, pnl)
     folder = tmp_path / "runs" / RUN
     later = END + timedelta(days=1)
     if tool in EQUITY_TOOLS:

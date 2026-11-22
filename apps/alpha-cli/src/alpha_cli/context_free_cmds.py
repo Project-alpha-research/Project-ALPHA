@@ -44,15 +44,47 @@ def _fail(exc: Exception, *, pull: str) -> typer.BadParameter:
     return typer.BadParameter(f"{text}. Next: {step}.")
 
 
+def plain_market_name(raw: str) -> str:
+    """A CFTC market name in plain words: the exchange moves into brackets, words get small caps."""
+
+    def soft(text: str) -> str:
+        words = (
+            "-".join(p.title() if len(p) > 3 and p.isalpha() else p for p in w.split("-"))
+            for w in text.split()
+        )
+        return " ".join(words)
+
+    market, _, exchange = raw.partition(" - ")
+    return f"{soft(market)} ({soft(exchange)})" if exchange else soft(market)
+
+
+def _named(rows: list[dict[str, Any]], data_dir: Any) -> list[dict[str, Any]]:
+    """Give each stored CFTC market its plain name beside the bare code."""
+    out = []
+    for row in rows:
+        if row["source"] == cftc_cot.SOURCE:
+            frame = load_events(
+                cftc_cot.table_path(data_dir, row["key"]),
+                source=cftc_cot.SOURCE,
+                schema=cftc_cot.SCHEMA,
+            )
+            row = {**row, "name": plain_market_name(str(frame["market_name"][0]))}
+        out.append(row)
+    return out
+
+
 def free_listing() -> list[dict[str, Any]]:
     """Stored free context tables for `alpha context list`; read locally, no network."""
     data_dir = AlphaSettings().data_dir
     try:
-        return [
-            *cftc_cot.describe(data_dir),
-            *finra_short.describe(data_dir),
-            *osap_portfolios.describe(data_dir),
-        ]
+        return _named(
+            [
+                *cftc_cot.describe(data_dir),
+                *finra_short.describe(data_dir),
+                *osap_portfolios.describe(data_dir),
+            ],
+            data_dir,
+        )
     except (DataError, OSError) as exc:
         raise typer.BadParameter(f"{exc}. Next: re-pull the named source.") from None
 

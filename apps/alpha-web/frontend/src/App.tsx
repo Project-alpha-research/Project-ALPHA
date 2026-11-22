@@ -8,24 +8,24 @@ import { IndicatorsDialog } from './components/IndicatorsDialog'
 import { Toasts } from './components/Toasts'
 import { OwnerEnrollment } from './auth/OwnerEnrollment'
 import { getLinked, getLinkedWorkspace, restoreLinked, setLinked, useLinked } from './context/linked'
-import { requestNewIdea } from './context/newIdea'
-import { onResearchCase } from './context/researchCase'
 import { ChartWorkspace } from './shell/ChartWorkspace'
 import { MenuBar } from './shell/MenuBar'
 import { restoreDocumentTabs, type TerminalDocument } from './shell/documentTabs'
 import { Toolbox } from './shell/Toolbox'
 import { FollowToday } from './panels/FollowToday'
+import { MarketOverview } from './panels/MarketOverview'
+import { RecentTests } from './panels/RecentTests'
 import { registerNavigator } from './panels/actions'
 import { ContextBar } from './shell/ContextBar'
 import { DOCUMENTS } from './shell/documents'
 import { PanelHost } from './shell/PanelHost'
 import { showsWindow, symbolFitsProfile, type WindowId } from './shell/profiles'
-import { StatusChip, WorkspaceModeAttribute } from './shell/Toolbar'
+import { WorkspaceModeAttribute } from './shell/Toolbar'
 import { StatusBar } from './shell/StatusBar'
 import { functionEntries } from './shell/terminalModel'
 import { workflowPages, resolveWorkflow, workflowHash, documentRoute, type PageId } from './shell/workflowModel'
-import { initActivity, useActivityField } from './state/activity'
-import { setSettings, useSettings, workspaceModeFor } from './state/settings'
+import { initActivity } from './state/activity'
+import { setSettings, useSettings } from './state/settings'
 
 const CONTEXT_KEY = 'alpha.workflow.context'
 function restoreContext() {
@@ -57,7 +57,6 @@ function WorkstationApp() {
     } catch { return {} }
   })
   const [indicatorsOpen, setIndicatorsOpen] = useState(false)
-  const running = useActivityField('runningJobs')
   const route = resolveWorkflow(hash, profile)
   const pages = workflowPages(profile)
   const page = pages.find(item => item.id === route.page)!
@@ -72,10 +71,6 @@ function WorkstationApp() {
     const destination = documentRoute(id)
     go(destination.page, destination.pane)
   }, [go, profile])
-  const newIdea = useCallback(() => {
-    go('research', 'ResearchCockpit')
-    window.setTimeout(requestNewIdea, 100)
-  }, [go])
   useEffect(() => { initActivity() }, [])
   useEffect(() => {
     if (route.pane) setLastTasks(previous => previous[`${profile}:${route.page}`] === route.pane ? previous : { ...previous, [`${profile}:${route.page}`]: route.pane! })
@@ -110,14 +105,13 @@ function WorkstationApp() {
       showScanner: () => go('strategies', 'Scanner'),
       showRun: openRun,
       showStrategyLab: () => go('strategies', 'StrategyLab'),
-      showProjects: () => go('strategies', 'DevelopmentCenter'),
-      showResearchSources: () => go('research', 'Literature'),
+      showProjects: () => go('results', 'Navigator'),
+      showResearchSources: () => go('research', 'IdeaWorkspace'),
       showResearchData: () => go('data', 'DataManager'),
       showDataSymbol: () => { go('data', 'DataManager'); window.setTimeout(() => document.getElementById('data-manager-symbol')?.focus(), 100) },
       showCompare: () => go('results', 'CompareRuns'),
       showIndicators: () => setIndicatorsOpen(true),
     })
-    return onResearchCase(projectId => { setLinked({ projectId }); go('research', 'ResearchCockpit') })
   }, [go, openRun, requestWorkspace])
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
@@ -148,7 +142,6 @@ function WorkstationApp() {
     setOpenTabs(tabs => tabs.filter(t => t.key !== key))
     if (key === tabKey) { const next = remaining[Math.max(0, index - 1)]; go(next?.page ?? 'overview', next?.pane, next?.runId) }
   }
-  const mode = workspaceModeFor(settings, linked.projectId)
   const documentFooter: ReactNode = <><nav className="document-strip" aria-label="Document navigation"><div className="document-tabs" role="tablist" aria-label="Open documents" onKeyDown={event => {
         if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
         const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role=tab]'))
@@ -162,30 +155,30 @@ function WorkstationApp() {
   return <div className="workflow-shell shell">
     <WorkspaceModeAttribute />
     <a className="workflow-skip" href="#workflow-main" onClick={event => { event.preventDefault(); document.getElementById('workflow-main')?.focus() }}>Skip to content</a>
-    <div role="region" aria-label="Terminal title"><h1 className="terminal-titlebar">ALPHA Terminal — {profile === 'crypto' ? 'Crypto' : 'Equities'}{archiveContext ? ` — [${archiveContext.instrument},${archiveContext.frequency}] — ${archiveContext.venue} ${archiveContext.market_type} archive` : linked.symbol ? ` — [${linked.symbol},${linked.timeframe}]` : ''}</h1></div>
-    <nav aria-label="Terminal navigation"><MenuBar tasks={pages.flatMap(p => p.panes.map(pane => ({ title: `${p.title} › ${pane.title}`, page: p.id, pane: pane.name })))} onTask={(page, pane) => go(page as PageId, pane)} open={visibleTabs.map(t => ({ key: t.key, title: t.title, window: 'chart' as WindowId }))} active={tabKey} available={DOCUMENTS.filter(doc => showsWindow(profile, doc.id))} shell={{ mode: { current: mode, advancedAvailable: Boolean(linked.projectId) } }} onOpenWindow={openDocument} onActivate={key => { const tab = openTabs.find(t => t.key === key); if (tab) go(tab.page, tab.pane, tab.runId) }} onPalette={() => setPaletteOpen(true)} onSettings={() => go('settings', 'Governance')} onNewIdea={newIdea} onIndicators={() => setIndicatorsOpen(true)} onNewChart={() => { go('data', 'PriceChart'); requestWorkspace('duplicate') }} onTile={() => { go('data', 'PriceChart'); requestWorkspace('tile') }} onToggleDock={() => go('data', 'DataManager')} onMode={value => linked.projectId && setSettings({ projectModes: { ...settings.projectModes, [linked.projectId]: value } })} /></nav>
+    <div role="region" aria-label="Terminal title"><h1 className="terminal-titlebar">ALPHA Terminal — {profile === 'crypto' ? 'Crypto' : 'Stocks & ETFs'}{archiveContext ? ` — [${archiveContext.instrument},${archiveContext.frequency}] — ${archiveContext.venue} ${archiveContext.market_type} archive` : linked.symbol ? ` — [${linked.symbol},${linked.timeframe}]` : ''}</h1></div>
+    <nav aria-label="Terminal navigation"><MenuBar open={visibleTabs.map(t => ({ key: t.key, title: t.title, window: 'chart' as WindowId }))} active={tabKey} available={DOCUMENTS.filter(doc => showsWindow(profile, doc.id))} shell={{}} onOpenWindow={openDocument} onActivate={key => { const tab = openTabs.find(t => t.key === key); if (tab) go(tab.page, tab.pane, tab.runId) }} onPalette={() => setPaletteOpen(true)} onSettings={() => go('settings', 'Governance')} onIndicators={() => setIndicatorsOpen(true)} onNewChart={() => { go('data', 'PriceChart'); requestWorkspace('duplicate') }} onTile={() => { go('data', 'PriceChart'); requestWorkspace('tile') }} onToggleDock={() => go('data', 'DataManager')} /></nav>
     <div className="workflow-content">
       <header className="workflow-topbar" aria-label="Terminal controls">
         <div id="analytical-toolbar" hidden={route.pane !== 'PriceChart'} /><details className="desk-options" hidden={route.pane !== 'PriceChart'}><summary>Docks</summary><div id="dock-toolbar" /></details>
         <ThemeSwitch />
-        <label>Profile<select aria-label="Market profile" className="field" value={profile} onChange={e => setSettings({ profile: e.target.value as 'crypto' | 'equities' })}><option value="crypto">Crypto</option><option value="equities">Equities</option></select></label>
+        <label>Market<select aria-label="Market profile" className="field" value={profile} onChange={e => setSettings({ profile: e.target.value as 'crypto' | 'equities', profileChosen: true })}><option value="equities">Stocks &amp; ETFs</option><option value="crypto">Crypto</option></select></label>
         <ContextBar archive={archiveContext} />
         <button className="btn toolbar-search" onClick={() => setPaletteOpen(true)}>Search · Ctrl+K</button>
-        <StatusChip onOpenGovernance={() => go('settings', 'Governance')} />
         <button className="btn" onClick={() => go('settings', 'Governance')}>Governance</button>
       </header>
       <main id="workflow-main" className="workflow-main" tabIndex={-1}>
-        <header className="document-caption" hidden={route.pane === 'PriceChart'}>{pane?.title ?? page.title}{linked.projectId ? <span className="chip" title={linked.projectId}>Project {linked.projectId.slice(0, 12)}</span> : null}</header>
+        <header className="document-caption" hidden={route.pane === 'PriceChart'}>{pane?.title ?? page.title}</header>
         {page.id === 'overview' ? <>
-          <div className="workflow-cards">{pages.filter(item => !['overview', 'settings'].includes(item.id)).map(item => <a key={item.id} href={workflowHash(item.id)}><h2>{item.title}</h2><p>{item.description}</p><span>Open {item.title.toLowerCase()} →</span></a>)}</div>
-          <div className="workflow-overview-status"><h2>Continue your work</h2><p>{running} active jobs · {linked.projectId ? `Selected project: ${linked.projectId}` : 'No project selected. Start a research idea.'}</p></div>
-          <div className="workflow-panel workflow-overview-panel"><PanelHost name="FollowToday" component={FollowToday} /></div>
+          <section className="workflow-overview-block" aria-label="Recent tests"><h2>Recent tests <button className="btn" onClick={() => go('results', 'AllTests')}>All tests</button></h2><RecentTests /></section>
+          <div className="workflow-overview-pair">
+            <section className="workflow-overview-block" aria-label="Followed today"><PanelHost name="FollowToday" component={FollowToday} /></section>
+            <section className="workflow-overview-block" aria-label="Market now"><PanelHost name="MarketOverview" component={MarketOverview} /></section>
+          </div>
         </> : <>
           {page.id === 'settings' ? <div className="workflow-preferences">
             <label>Density<select aria-label="Density" className="field" value={settings.density} onChange={e => setSettings({ density: e.target.value as 'compact' | 'comfortable' })}><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></label>
             <label>Explanations<select aria-label="Explanations" className="field" value={settings.explain} onChange={e => setSettings({ explain: e.target.value as 'terse' | 'narrative' })}><option value="narrative">Detailed notes</option><option value="terse">Concise</option></select></label>
             <label><input type="checkbox" aria-label="Backtest result card" checked={settings.backtestResultCard} onChange={e => setSettings({ backtestResultCard: e.target.checked })}/>Backtest result card (off by default)</label>
-            <label>Project detail<select aria-label="Project detail" className="field" value={mode} disabled={!linked.projectId} title={!linked.projectId ? 'Select a project to change its detail level' : undefined} onChange={e => linked.projectId && setSettings({ projectModes: { ...settings.projectModes, [linked.projectId]: e.target.value as 'guided' | 'advanced' } })}><option value="guided">Guided</option><option value="advanced">Advanced</option></select></label>
           </div> : null}
           {pane && pane.name !== 'PriceChart' ? <section className="workflow-panel" aria-label={pane.title}><PanelHost key={`${pane.name}:${linked.projectId ?? ''}`} name={pane.name} component={pane.component} params={pane.params} /></section> : null}
 
@@ -197,7 +190,7 @@ function WorkstationApp() {
     </div>
     {indicatorsOpen ? <IndicatorsDialog onClose={() => setIndicatorsOpen(false)} /> : null}
     <Toasts onOpenRun={openRun} />
-    <CommandPalette functions={functionEntries(profile)} onNavigate={go} open={paletteOpen} onClose={() => setPaletteOpen(false)} documents={DOCUMENTS.filter(doc => showsWindow(profile, doc.id))} onOpenDocument={openDocument} onOpenRun={openRun} onNewIdea={newIdea} />
+    <CommandPalette functions={functionEntries(profile)} onNavigate={go} open={paletteOpen} onClose={() => setPaletteOpen(false)} documents={DOCUMENTS.filter(doc => showsWindow(profile, doc.id))} onOpenDocument={openDocument} onOpenRun={openRun} />
   </div>
 }
 

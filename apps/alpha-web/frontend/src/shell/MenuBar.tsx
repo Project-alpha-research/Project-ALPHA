@@ -1,20 +1,14 @@
 // Menu bar (spec 2026-09-01 §4.2 item 2): eleven menus, keyboard operable — ArrowLeft/Right move
 // between menus (and switch an open one), Enter/Space/ArrowDown open, ArrowUp/Down walk the items,
-// Escape closes and returns focus. Catalog commands prefill the Strategy Development lab, so a
-// menu item always lands on the command's real launch surface.
+// Escape closes and returns focus. Only menus with items are shown.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { api } from '../api/client'
-import type { CommandDef } from '../api/types'
-import { openStrategyLab } from '../panels/actions'
 import type { OpenDocument } from './mdiModel'
-import { MENUS, commandHome, menuBar, type MenuItem, type MenuName, type ShellMenuState, type WorkspaceMode } from './menuModel'
+import { commandHome, menuBar, visibleMenus, type MenuItem, type MenuName, type ShellMenuState } from './menuModel'
 import type { DockId, WindowId } from './profiles'
 
 interface Props {
-  tasks?: readonly { title: string; page: string; pane: string }[]
-  onTask?: (page: string, pane: string) => void
   open: readonly OpenDocument[]
   active: string | null
   available: readonly { id: WindowId; title: string }[]
@@ -23,12 +17,10 @@ interface Props {
   onActivate: (key: string) => void
   onPalette: () => void
   onSettings: () => void
-  onNewIdea: () => void
   onIndicators: () => void
   onNewChart: () => void
   onTile: () => void
   onToggleDock: (id: DockId) => void
-  onMode: (mode: WorkspaceMode) => void
 }
 
 /** A shell item with a `checked` flag renders as a checkbox (Window › Tile charts). */
@@ -37,7 +29,6 @@ function checkedOf(item: MenuItem): boolean | undefined {
 }
 
 export function MenuBar({
-  tasks = [], onTask,
   open,
   active,
   available,
@@ -46,27 +37,13 @@ export function MenuBar({
   onActivate,
   onPalette,
   onSettings,
-  onNewIdea,
   onIndicators,
   onNewChart,
   onTile,
   onToggleDock,
-  onMode,
 }: Props) {
-  const [catalog, setCatalog] = useState<CommandDef[]>([])
   const [openMenu, setOpenMenu] = useState<MenuName | null>(null)
   const bar = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    let live = true
-    api
-      .commands()
-      .then((list) => live && setCatalog(list))
-      .catch(() => live && setCatalog([]))
-    return () => {
-      live = false
-    }
-  }, [])
 
   useEffect(() => {
     if (!openMenu) return
@@ -77,7 +54,8 @@ export function MenuBar({
     return () => document.removeEventListener('mousedown', onDown)
   }, [openMenu])
 
-  const menus = menuBar(catalog, open, active, available, shell)
+  const menus = menuBar(open, active, available, shell)
+  const shown = visibleMenus(menus)
 
   const focusMenu = useCallback((name: MenuName) => {
     bar.current?.querySelector<HTMLButtonElement>(`[data-menu="${name}"]`)?.focus()
@@ -89,14 +67,11 @@ export function MenuBar({
       const home = commandHome(item.id)
       if (home?.kind === 'window') onOpenWindow(home.id)
       else if (home?.kind === 'dock') onToggleDock(home.id)
-      else openStrategyLab({ command: item.id, args: '' })
     }
     else if (item.kind === 'document') onActivate(item.key)
     else if (item.kind === 'open') onOpenWindow(item.window)
     else if (item.kind === 'dock') onToggleDock(item.id)
-    else if (item.kind === 'mode') onMode(item.id)
     else if (item.id === 'palette') onPalette()
-    else if (item.id === 'new-idea') onNewIdea()
     else if (item.id === 'indicators') onIndicators()
     else if (item.id === 'new-chart') onNewChart()
     else if (item.id === 'tile') onTile()
@@ -107,7 +82,7 @@ export function MenuBar({
     const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
     if (step) {
       event.preventDefault()
-      const next = MENUS[(index + step + MENUS.length) % MENUS.length]
+      const next = shown[(index + step + shown.length) % shown.length]
       focusMenu(next)
       if (openMenu) setOpenMenu(next)
     } else if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
@@ -136,8 +111,8 @@ export function MenuBar({
       focusMenu(name)
     } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       event.preventDefault()
-      const at = MENUS.indexOf(name)
-      const next = MENUS[(at + (event.key === 'ArrowRight' ? 1 : -1) + MENUS.length) % MENUS.length]
+      const at = shown.indexOf(name)
+      const next = shown[(at + (event.key === 'ArrowRight' ? 1 : -1) + shown.length) % shown.length]
       setOpenMenu(next)
       focusMenu(next)
     }
@@ -145,7 +120,7 @@ export function MenuBar({
 
   return (
     <div className="menubar" role="menubar" aria-label="Terminal menu" ref={bar}>
-      {MENUS.map((name, index) => (
+      {shown.map((name, index) => (
         <div key={name} className="menu">
           <button
             type="button"
@@ -162,31 +137,24 @@ export function MenuBar({
           </button>
           {openMenu === name ? (
             <div className="menu-pop" role="menu" aria-label={name} data-menu-of={name}>
-              {menus[name].length === 0 ? (
-                <span className="menu-empty muted">nothing here yet</span>
-              ) : (
-                menus[name].map((item) => (
+              {menus[name].map((item) => (
                   <button
                     key={`${item.kind}:${'id' in item ? item.id : 'key' in item ? item.key : item.window}`}
                     type="button"
-                    role={item.kind === 'dock' || item.kind === 'mode' || checkedOf(item) !== undefined ? 'menuitemcheckbox' : 'menuitem'}
-                    aria-checked={item.kind === 'dock' ? item.open : item.kind === 'mode' ? item.active : checkedOf(item)}
-                    disabled={item.kind === 'mode' && item.disabled}
-                    title={item.kind === 'mode' && item.disabled ? 'Advanced needs a linked project' : undefined}
-                    className={`menu-item${(item.kind === 'document' && item.active) || (item.kind === 'mode' && item.active) ? ' active' : ''}${item.kind === 'dock' || item.kind === 'mode' || checkedOf(item) !== undefined ? ' menu-check' : ''}`}
+                    role={item.kind === 'dock' || checkedOf(item) !== undefined ? 'menuitemcheckbox' : 'menuitem'}
+                    aria-checked={item.kind === 'dock' ? item.open : checkedOf(item)}
+                    className={`menu-item${item.kind === 'document' && item.active ? ' active' : ''}${item.kind === 'dock' || checkedOf(item) !== undefined ? ' menu-check' : ''}`}
                     onClick={() => select(item)}
                     onKeyDown={onItemKey(name)}
                   >
-                    {item.kind === 'dock' || item.kind === 'mode' || checkedOf(item) !== undefined ? (
+                    {item.kind === 'dock' || checkedOf(item) !== undefined ? (
                       <span className="menu-mark" aria-hidden="true">
-                        {(item.kind === 'dock' ? item.open : item.kind === 'mode' ? item.active : checkedOf(item)) ? '✓' : ''}
+                        {(item.kind === 'dock' ? item.open : checkedOf(item)) ? '✓' : ''}
                       </span>
                     ) : null}
                     {item.kind === 'command' ? <span className="mono">alpha {item.label}</span> : item.label}
                   </button>
-                ))
-              )}
-              {name === 'View' ? tasks.map(task => <button key={task.pane} role="menuitem" className="menu-item" onKeyDown={onItemKey(name)} onClick={() => { setOpenMenu(null); onTask?.(task.page, task.pane) }}>{task.title}</button>) : null}
+                ))}
             </div>
           ) : null}
         </div>

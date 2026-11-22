@@ -51,8 +51,7 @@ describe('PROFILES', () => {
         expect(showsWindow(id, window)).toBe(true)
       }
     }
-    expect(showsWindow('equities', 'funding')).toBe(false)
-    expect(showsWindow('crypto', 'corporate-actions')).toBe(false)
+    expect(profile('crypto').windows).toEqual(profile('equities').windows)
   })
 
   it('pullDefaults and starterSymbols are derived from the manifest', () => {

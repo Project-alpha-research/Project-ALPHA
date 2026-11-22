@@ -1,0 +1,13 @@
+.recent-tests { min-width: 0; }
+.recent-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pad); margin-bottom: var(--pad-sm); }
+.recent-filters label { display: inline-flex; gap: 6px; align-items: center; }
+.recent-filters select { max-width: 320px; }
+.recent-table { width: 100%; }
+.recent-sort { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.recent-row { cursor: pointer; }
+.recent-row:hover td, .recent-row:focus-visible td { background: var(--selection); color: var(--selection-ink); }
+.recent-idea { max-width: 460px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent-date { white-space: nowrap; }
+.recent-spark { display: block; color: var(--muted); }
+.recent-spark.up { color: var(--up); }
+.recent-spark.down { color: var(--down); }

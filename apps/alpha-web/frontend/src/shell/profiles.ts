@@ -9,10 +9,8 @@ export type WindowId =
   | 'chart'
   | 'report'
   | 'compare'
-  | 'build'
   | 'builder'
   | 'scanner'
-  | 'research'
   | 'rdagent'
   | 'ideas'
   | 'setup-lab'
@@ -20,12 +18,6 @@ export type WindowId =
   | 'forecast'
   | 'ml-lab'
   | 'jobs'
-  | 'corporate-actions'
-  | 'funding'
-  | 'open-interest'
-  | 'onchain'
-  | 'dex'
-  | 'crowding'
 
 export type DockId = 'MarketWatch' | 'Navigator' | 'DataManager' | 'Toolbox'
 
@@ -45,15 +37,14 @@ export interface ProfileManifest {
   readonly glossaryTags: readonly string[]
 }
 
-/** Windows that belong to neither market and appear in both profiles. */
+/** Windows that belong to neither market and appear in both profiles. Research cases, projects
+ *  and the crypto-only data windows were removed from the product and are not shown. */
 export const MARKET_NEUTRAL_WINDOWS: readonly WindowId[] = Object.freeze([
   'chart',
   'report',
   'compare',
-  'build',
   'builder',
   'scanner',
-  'research',
   'rdagent',
   'ideas',
   'setup-lab',
@@ -76,7 +67,7 @@ export const PROFILES: Readonly<Record<Profile, ProfileManifest>> = freeze({
   crypto: {
     id: 'crypto',
     label: 'Crypto',
-    windows: [...MARKET_NEUTRAL_WINDOWS, 'funding', 'open-interest', 'onchain', 'dex', 'crowding'],
+    windows: [...MARKET_NEUTRAL_WINDOWS],
     docks: DOCKS,
     providers: ['ccxt', 'binance', 'bybit', 'coingecko', 'geckoterminal', 'coinmetrics'],
     defaultSource: 'ccxt',
@@ -88,8 +79,8 @@ export const PROFILES: Readonly<Record<Profile, ProfileManifest>> = freeze({
   },
   equities: {
     id: 'equities',
-    label: 'Equities',
-    windows: [...MARKET_NEUTRAL_WINDOWS, 'corporate-actions'],
+    label: 'Stocks & ETFs',
+    windows: [...MARKET_NEUTRAL_WINDOWS],
     docks: DOCKS,
     providers: ['tiingo', 'yfinance', 'stooq'],
     defaultSource: 'tiingo',

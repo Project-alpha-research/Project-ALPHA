@@ -241,3 +241,7 @@
 .tear-sheet-host { width: 100%; min-height: 240px; }
 .tear-sheet-readout { margin: 0; min-height: 1.4em; font-size: var(--font-size); }
 .tear-sheet-bands { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; font-size: var(--font-size); }
+
+.workflow-overview-block { padding: var(--pad-sm) var(--pad); border: 1px solid var(--line-strong); background: var(--panel); min-width: 0; }
+.workflow-overview-block > h2 { display: flex; align-items: center; justify-content: space-between; margin: 0 0 var(--pad-sm); font-size: 14px; }
+.workflow-overview-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(520px, 1fr)); gap: 6px; align-items: start; }

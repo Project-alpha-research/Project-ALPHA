@@ -10,12 +10,25 @@ import json
 import os
 import re
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
 from alpha_cli.run_context import RUN_CONTEXT_ENV
 
-_ALPHA_BIN = "alpha"
+
+
+def alpha_executable() -> list[str]:
+    """The argv prefix that runs `alpha` with this server's own interpreter, never through PATH.
+
+    The console script beside ``sys.executable`` is used when it exists; otherwise the same
+    interpreter imports the CLI entry point directly.
+    """
+    script = Path(sys.executable).with_name("alpha")
+    if script.is_file():
+        return [str(script)]
+    return [sys.executable, "-c", "import sys; from alpha_cli.main import main; sys.exit(main())"]
+
 
 #: Bounded wall-clock ceiling for every synchronous ``alpha`` projection. A hung CLI child must
 #: surface as a typed error (the routers' 422) instead of pinning the request thread forever;
@@ -98,7 +111,7 @@ def _strip_ansi(text: str) -> str:
 
 def _command(args: list[str]) -> list[str]:
     """The argv to spawn (seam: tests monkeypatch this with a fake command)."""
-    return [_ALPHA_BIN, *args]
+    return [*alpha_executable(), *args]
 
 
 def _run_json(

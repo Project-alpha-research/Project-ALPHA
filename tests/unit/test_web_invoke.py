@@ -638,3 +638,21 @@ def test_launch_failure_without_error_line_keeps_exit_code_reason(
     _wait(job)
     assert job.terminal_error == "alpha process exited 3"
     assert job.summary()["current_step"] == "boom"
+
+
+def test_web_spawns_alpha_through_its_own_interpreter_not_path(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A server started without the venv on PATH must still reach the CLI."""
+    monkeypatch.setenv("PATH", str(tmp_path))
+    for command in (_catalog._command(["system"]), _invoke._command(["system"])):
+        assert Path(command[0]).is_absolute()
+        assert command[-1] == "system"
+    script = tmp_path / "alpha"
+    script.write_text("")
+    monkeypatch.setattr(sys, "executable", str(tmp_path / "python"))
+    assert _catalog.alpha_executable() == [str(script)]
+    script.unlink()
+    fallback = _catalog.alpha_executable()
+    assert fallback[0] == str(tmp_path / "python")
+    assert "alpha_cli.main" in fallback[-1]

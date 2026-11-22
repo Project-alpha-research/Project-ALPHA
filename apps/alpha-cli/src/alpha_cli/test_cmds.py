@@ -13,7 +13,7 @@ from alpha_cli._cli_json import emit
 from alpha_cli.spine.data_health import health_sentence
 from alpha_cli.spine.errors import SpineError, fail, test_error
 from alpha_cli.spine.owner_reading import variant_lines
-from alpha_cli.spine.reading import reading_word
+from alpha_cli.spine.reading import reading_text, reading_word
 from alpha_cli.spine.recheck import MISMATCH_EXIT, recheck_idea
 from alpha_cli.spine.run import run_idea
 from alpha_cli.spine.spec import IdeaSpec, load_spec
@@ -212,7 +212,7 @@ def test_rule(
             )
         )
         if result.get("reading"):
-            lines.append(result["reading"]["sentence"])
+            lines.append(reading_text(result["reading"]))
             if result["reading"].get("count_sentence"):
                 lines.append(result["reading"]["count_sentence"])
             lines.extend(variant_lines(result["reading"]))

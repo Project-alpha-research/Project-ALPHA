@@ -9,7 +9,7 @@ function row(id: string, group: string, extra: Partial<FollowRow> = {}): FollowR
   return {
     follow_id: id, group, name: `Idea ${id}`, asset: 'AAA', decision: 'no signal', entry_kind: 'bar', as_of_text: 'as of the close of 2026-11-19; the newest session',
     behind: false, kind: 'rule_test', card_id: '', calendar: 'XNYS', session_date: '2026-11-19', sessions_ago: 0, started_at: '2026-11-09T08:00:00+00:00',
-    readings: { fast_sma: 101.2, slow_sma: 99.8 }, paper: { open: false, units: 0, entry_price: null, equity: 10000, equity_pct: 0 }, ...extra,
+    readings: { 'fast average price': 101.2, 'slow average price': 99.8 }, exits: [], study_labels: [], paper: { open: false, units: 0, entry_price: null, equity: 10000, equity_pct: 0 }, ...extra,
   }
 }
 
@@ -71,7 +71,7 @@ describe('Today model', () => {
   })
 
   it('shows readings as label: value pairs', () => {
-    expect(readingPairs(today.rows[0])).toEqual([['fast_sma', '101.20'], ['slow_sma', '99.80']])
+    expect(readingPairs(today.rows[0])).toEqual([['fast average price', '101.20'], ['slow average price', '99.80']])
     expect(readingPairs(row('x', 'waiting', { readings: {} }))).toEqual([])
   })
 

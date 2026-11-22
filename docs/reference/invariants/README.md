@@ -45,7 +45,7 @@ verified: 8115bbcdee4c05e0
 | [cli-trial-ledger.md](cli-trial-ledger.md) | one trial ledger over spine and RD-Agent | `alpha ledger` |
 | [cli-toolbox.md](cli-toolbox.md) | toolbox catalogue: adding a check, honesty rules | `alpha tool`, adding a check |
 | [cli-investigation-tools.md](cli-investigation-tools.md) | follow-up questions on one rule test | investigating a recorded rule test |
-| [cli-rule-readings.md](cli-rule-readings.md) | rule-test reading: words, aim, faults | `alpha test` text, the stored `reading` |
+| [cli-rule-readings.md](cli-rule-readings.md), [cli-cost-classes.md](cli-cost-classes.md) | readings; costs by class | `alpha test` text, costs line |
 | [cli-rule-context-gate.md](cli-rule-context-gate.md) | rule spec `context` and `when`, `--plan` | `alpha test --plan`, a context spec |
 | [cli-results-check.md](cli-results-check.md) | draft checks and run comparisons | `alpha results check` or `compare` |
 | [cli-crypto-data.md](cli-crypto-data.md) | `alpha data`, crypto data house | `alpha data`, `alpha crypto-data` |

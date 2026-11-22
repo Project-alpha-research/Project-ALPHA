@@ -48,7 +48,7 @@ def stored_run(home: Path, tool: str, kind: str = PRICE_ONLY) -> Path:
     (folder / "manifest.json").write_text(
         json.dumps(
             {
-                "metadata": {"symbol": "SPY", "last_ts": END.isoformat()},
+                "metadata": {"symbol": "SPY", "last_ts": END.isoformat(), "starting_cash": 1.0},
                 "spine": {
                     "store": "home",
                     "labels": [],

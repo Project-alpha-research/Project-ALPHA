@@ -6,7 +6,6 @@ import textwrap
 from typing import Any
 
 from alpha_cli.spine import idea_card as cards
-from alpha_cli.spine.reading import relation_text
 
 SHOWN_EACH_END = 10
 CAP = 2 * SHOWN_EACH_END
@@ -78,6 +77,8 @@ def _rule(n: int, total: int, e: dict[str, Any]) -> list[str]:
         lines.append(f"    Held back: {t['held_back']}")
     lines += _wrap("Reading:", str(e["sentence"]), 4)
     lines.append(f"    Evidence word: {e['word']}")
+    from alpha_cli.spine.reading import relation_text  # lazy: reading pulls in scipy
+
     aim = e["aim"]
     lines.append(
         f"    Aim: out-of-sample Sharpe {aim['observed']:.2f} against buy-and-hold "

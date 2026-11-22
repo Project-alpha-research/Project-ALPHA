@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from alpha_cli.spine.compare import render_compare
 
 
-def _cell(value: float | int | None, diff: float | int | None, ratio: float | None) -> dict:
-    def fact(v: float | int | None) -> dict:
+def _cell(
+    value: float | int | None, diff: float | int | None, ratio: float | None
+) -> dict[str, Any]:
+    def fact(v: float | int | None) -> dict[str, Any]:
         return {"value": v, "reason": None if v is not None else "not stored"}
 
     return {"value": fact(value), "diff": fact(diff), "ratio": fact(ratio)}

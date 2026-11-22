@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import pytest
 from typer.testing import CliRunner
@@ -139,11 +140,12 @@ def test_a_picture_in_the_held_back_period_says_so(
 
     boxes: list[list[str]] = []
     real = plain_style.how_to_read
-    monkeypatch.setattr(
-        plain_style,
-        "how_to_read",
-        lambda fig, sentences, y: (boxes.append(sentences), real(fig, sentences, y))[1],
-    )
+
+    def spy(fig: Any, sentences: list[str], y: float) -> Any:
+        boxes.append(sentences)
+        return real(fig, sentences, y)
+
+    monkeypatch.setattr(plain_style, "how_to_read", spy)
     out = draw_pattern_pictures(_late_bars(), "swings", since=None, out_dir=tmp_path)
     assert HELD_BACK_NOTE in out.summary
     assert HELD_BACK_NOTE.startswith("This picture shows data from the held-back period.")

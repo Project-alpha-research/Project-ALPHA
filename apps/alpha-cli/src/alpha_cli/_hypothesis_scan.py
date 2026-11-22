@@ -207,7 +207,6 @@ def _options(request: Mapping[str, Any]) -> dict[str, Any]:
     ):
         raise DataError("symbols must be a list of nonempty identifiers")
     options["symbols"] = sorted({s.strip() for s in symbols})
-    _need_assets(len(options["symbols"]), options["min_names"])
     universe = options["universe"]
     if universe is not None and (not isinstance(universe, str) or not universe.strip()):
         raise DataError("universe must be a name")
@@ -219,6 +218,7 @@ def _options(request: Mapping[str, Any]) -> dict[str, Any]:
         raise DataError("crypto hypotheses require explicit symbols and no equity snapshot")
     if options["category"] not in {"linear", "inverse"}:
         raise DataError("category must be linear or inverse")
+    _need_assets(len(options["symbols"]), options["min_names"])
     available = EQUITY_SIGNALS if lane == "equity" else CRYPTO_SIGNALS
     names = options["signals"]
     if not isinstance(names, list) or not names or any(name not in available for name in names):

@@ -24,10 +24,8 @@ uv run alpha risk scenario --from-run <run_id> --periods-per-year 365 --json
   `regime_switching`, `student_t`) and prints, for each: the median final value with a 5% to 95% range, the
   median and 95th-percentile drawdown, and the chance of a loss and of ruin (a 50% drawdown) with ranges.
   It writes a new run and prints its id. It reads bars up to the source run's cut-off, never past 2023-12-31
-  (the held-back boundary). A short warm-up cuts the 63-day regime window to about half the warm-up; the
-  output says so.
-- The classical families resample single daily account returns (flat days included): a trade is not kept
-  whole. Kronos replays whole synthetic paths, so trades are recomputed.
+  (the held-back boundary). A short warm-up cuts the 63-day regime window to about half the warm-up (stated).
+  Unit: one daily account return (flat days included), so a trade is not kept whole; Kronos recomputes trades.
 - `alpha monte-carlo kronos` replays the rule on synthetic Kronos price paths. It needs an `alpha forecast eval` run.
 - `alpha risk scenario` re-scores the stored equity curve under higher volatility and shocks, with value at risk
   and expected shortfall. Pass the run's `periods_per_year`; it assumes 252 otherwise.

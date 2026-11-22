@@ -15,8 +15,8 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any
 
-from alpha_cli.spine.deflation import distinct_asset_tests
 from alpha_cli.spine.trial_reader import LedgerSnapshot
+from alpha_cli.spine.trial_record import TestKey, row_test_key
 
 DEFINITION = (
     "A try is one distinct test on an asset (one spec on one stretch of one asset's data, with a "
@@ -24,6 +24,39 @@ DEFINITION = (
     "on that asset counts at least this many."
 )
 UNKNOWN = "not recorded"
+
+
+# The deflated Sharpe's same-asset count reads this too (`deflation.same_asset_tests`); it lives
+# here so the ledger commands need no statistics library.
+def distinct_asset_tests(
+    snapshot: LedgerSnapshot, symbol: str | None
+) -> tuple[list[tuple[tuple[str, int], dict[str, Any]]], int, set[TestKey]]:
+    """The distinct tests on one asset (every asset when ``symbol`` is None): the rows kept, with
+    their ledger keys, the rows not counted, and the test keys seen.
+
+    A row is scored when it has a Sharpe and a bar size. Scored rows of one test key count once;
+    a row without a key counts as its own test unless it is labelled repeat (same run id).
+    """
+    seen: set[TestKey] = set()
+    kept: list[tuple[tuple[str, int], dict[str, Any]]] = []
+    repeats = 0
+    for where, row in snapshot.raw_rows.items():
+        scored = row.get("oos_sharpe") is not None and bool(row.get("periods_per_year"))
+        # A screen try has no Sharpe; it is a try on this asset all the same (never a zero).
+        if not (scored or row.get("kind") == "screen_trial"):
+            continue
+        if not row.get("symbol") or (symbol is not None and row.get("symbol") != symbol):
+            continue
+        key = row_test_key(row)
+        # A keyed row is matched by its key alone, so a labelled repeat whose earlier row has no
+        # Sharpe still counts once; a key-less row is a repeat only by its label (same run id).
+        if key in seen or (key is None and "repeat" in (row.get("labels") or ())):
+            repeats += 1
+            continue
+        if key is not None:
+            seen.add(key)
+        kept.append((where, row))
+    return kept, repeats, seen
 
 
 def tries(snapshot: LedgerSnapshot, symbol: str | None = None) -> dict[str, Any]:

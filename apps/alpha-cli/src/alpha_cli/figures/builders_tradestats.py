@@ -33,10 +33,12 @@ def trade_pnl(ctx: BuildContext) -> FigureSpec:
     # Plot in thousands or millions: matplotlib prints a "1e6" offset above the axis for
     # raw currency amounts, and that offset is one more text that can leave the figure.
     peak = max(abs(value) for value in (*pnl, *cumulative))
-    divisor, unit = (1e6, "M") if peak >= 1e6 else (1e3, "k") if peak >= 1e5 else (1.0, "")
+    divisor, unit = (
+        (1e6, "millions, ") if peak >= 1e6 else (1e3, "thousands, ") if peak >= 1e5 else (1.0, "")
+    )
     shown_pnl = tuple(value / divisor for value in pnl)
     shown_cumulative = tuple(value / divisor for value in cumulative)
-    suffix = f"{unit} ccy" if unit else "ccy"
+    suffix = f"{unit}account currency"
     return ctx.spec(
         "trade_pnl",
         x_label="Trade (chronological)",
@@ -45,12 +47,12 @@ def trade_pnl(ctx: BuildContext) -> FigureSpec:
         answer=(
             f"{len(pnl):,} closed trades, {wins:,} profitable ({pct(wins / len(pnl), 0)}); the "
             f"single best made {money(best)} and the worst lost {money(abs(worst))}, with the "
-            f"best trade accounting for {pct(share, 0)} of gross P&L."
+            f"best trade accounting for {pct(share, 0)} of gross profit and loss."
         ),
         panels=(
             Panel(
                 panel_id="pnl",
-                y_label=f"P&L ({suffix})",
+                y_label=f"Profit or loss ({suffix})",
                 y_unit="account_currency",
                 y_zero_rule=True,
                 legend=False,
@@ -58,7 +60,7 @@ def trade_pnl(ctx: BuildContext) -> FigureSpec:
             ),
             Panel(
                 panel_id="cumulative",
-                y_label=f"Cum. P&L ({suffix})",
+                y_label=f"Running total ({suffix})",
                 y_unit="account_currency",
                 y_zero_rule=True,
                 legend=False,

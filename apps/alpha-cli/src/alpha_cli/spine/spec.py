@@ -112,8 +112,9 @@ AnyRule = Annotated[
 class Costs(FrozenModel):
     """Costs per side. `costs = "class-default"` asks for the default of the asset class.
 
-    The numbers then stay at the flat placeholder; the run takes the class row. `mode` is left
-    out of every dump unless it is set, so no older spec changes its hash.
+    A spec that states no costs gets the class default too (owner decision, 2026-11-22). The
+    numbers then stay at the flat placeholder; the run takes the class row. `mode` is left out of
+    every dump unless it is set, so a stored spec with stated costs keeps its hash.
     """
 
     fee_bps: float = Field(default=1.0, ge=0)
@@ -142,7 +143,7 @@ class IdeaSpec(FrozenModel):
     idea: str = ""
     assets: tuple[Annotated[str, Field(min_length=1)], ...] = Field(min_length=1)
     rule: AnyRule
-    costs: Costs = Field(default_factory=Costs)
+    costs: Costs = Field(default_factory=lambda: Costs(mode="class-default"))
     # Context gate: `{alias: "series@key"}` and an expression over the aliases. A spec without
     # them dumps without these keys, so its hash, run id and stored spec stay as before. The
     # stored spec keeps the text as written; the hash takes the canonical form (see canonical).
@@ -243,6 +244,6 @@ def load_spec(
             "idea_card": idea_card or "",
             "assets": asset or [],
             "rule": values,
-            "costs": costs,
+            **({"costs": costs} if costs else {}),
         }
     )

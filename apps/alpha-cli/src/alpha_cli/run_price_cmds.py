@@ -18,6 +18,7 @@ import typer
 
 from alpha_core import Bar, DataError
 
+AVAILABLE = "available"
 BARS_CHANGED = "bars_changed_since_run"
 NOT_SAVED = "price_not_saved_with_run"
 UNAVAILABLE = "price_unavailable"
@@ -101,7 +102,7 @@ def verified_bars(
     kept = [bar for bar in bars if bar.ts <= edge]
     if _runner.source_fingerprint(kept, dividends=dividends) != recorded:
         return BARS_CHANGED, []
-    return "available", [_row(bar) for bar in kept]
+    return AVAILABLE, [_row(bar) for bar in kept]
 
 
 def run_run_price(run_id: str, json_out: bool) -> None:

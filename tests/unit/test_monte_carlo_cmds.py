@@ -190,7 +190,7 @@ def test_kronos_projection_rejects_bad_sequences_and_physical_values() -> None:
             symbol="SPY", timestamps=(timestamp,), sample=bad_price, path_index=2
         )
 
-    bad_volume = SimpleNamespace(**{**valid, "volume": (-1.0,)})
+    bad_volume = SimpleNamespace(**{**valid, "volume": (float("inf"),)})
     with pytest.raises(DataError, match="invalid volume"):
         _project_forecast_path(
             symbol="SPY", timestamps=(timestamp,), sample=bad_volume, path_index=3

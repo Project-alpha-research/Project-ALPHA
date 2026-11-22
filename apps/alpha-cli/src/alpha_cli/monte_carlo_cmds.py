@@ -209,11 +209,9 @@ def _project_forecast_path(
             for name in ("open", "high", "low", "close")
         ):
             raise DataError(f"Kronos path {path_index} step {step} contains an invalid price")
-        if not math.isfinite(raw["volume"]) or raw["volume"] < 0.0:
-            raise DataError(
-                f"Kronos path {path_index} step {step} contains invalid volume "
-                f"{raw['volume']!r}. ALPHA does not change model output, so the run stopped."
-            )
+        if not math.isfinite(raw["volume"]):
+            raise DataError(f"Kronos path {path_index} step {step} contains invalid volume")
+        volume_adjusted = raw["volume"] < 0.0
         projected_high = max(raw["high"], raw["open"], raw["close"])
         projected_low = min(raw["low"], raw["open"], raw["close"])
         high_adjusted = projected_high != raw["high"]
@@ -226,7 +224,7 @@ def _project_forecast_path(
             high=projected_high,
             low=projected_low,
             close=raw["close"],
-            volume=raw["volume"],
+            volume=0.0 if volume_adjusted else raw["volume"],
         )
         bars.append(bar)
         rows.append(
@@ -242,6 +240,7 @@ def _project_forecast_path(
                 "projected_volume": bar.volume,
                 "high_adjusted": high_adjusted,
                 "low_adjusted": low_adjusted,
+                "volume_adjusted": volume_adjusted,
             }
         )
     return bars, rows, adjustments
@@ -752,6 +751,7 @@ def kronos(
         synthetic_rows: list[dict[str, object]] = []
         engine_paths: list[np.ndarray] = []
         adjustment_count = 0
+        volume_zeroed = 0
         scored_ts: list[datetime] = []
         for path_index, sample in enumerate(generated.samples):
             projected, rows, adjusted = _project_forecast_path(
@@ -762,6 +762,7 @@ def kronos(
             )
             synthetic_rows.extend(rows)
             adjustment_count += adjusted
+            volume_zeroed += sum(bool(row["volume_adjusted"]) for row in rows)
             scenario_bars = [*training_prefix, *projected]
             scenario_spec, _ = _forecast_cache.prepare_spec_for_engine(
                 scenario_bars,
@@ -909,6 +910,7 @@ def kronos(
             "raw_values_preserved": True,
             "candle_projection": "expand high/low only to enclose open/close",
             "projection_adjustments": adjustment_count,
+            "negative_volumes_set_to_zero": volume_zeroed,
         }
         encoded_diagnostics = json.dumps(
             _artifacts.sanitize(diagnostics),
@@ -931,7 +933,9 @@ def kronos(
             "Signals are recomputed from each synthetic OHLCV path; observed signals are never "
             "replayed. Weak calibration is a caveat to read, not a reason to drop the run.\n\n"
             f"Caveats: {'; '.join(summary.caveats)}. Raw model values are retained alongside "
-            f"projected candles; {adjustment_count} high/low enclosure adjustments were recorded.\n"
+            f"projected candles; {adjustment_count} high/low enclosure adjustments were recorded. "
+            f"The model gave a negative volume on {volume_zeroed} simulated bars; "
+            "each was set to zero. Prices were not changed.\n"
         )
         _artifacts.publish_artifact(
             rdir / "report.md", lambda path: path.write_text(report, encoding="utf-8")
@@ -967,6 +971,11 @@ def kronos(
         typer.echo(
             f"No path made a trade in these {source_horizon} days: the rule did not act on "
             f"them. A longer window shows more: --horizon {_forecast.MAX_WINDOW} is the most."
+        )
+    if volume_zeroed:
+        typer.echo(
+            f"The model gave a negative volume on {volume_zeroed} simulated bars. "
+            "Each was set to zero. Prices were not changed."
         )
     typer.echo(
         f"More paths give a fuller fan: --paths {4 * paths} takes "

@@ -54,8 +54,8 @@ Each family gets its own grade and is never majority-voted; a warning pauses unt
 
 `alpha monte-carlo classical --from-run <run>` publishes the three classical families together and was checked
 against an independent recomputation on 2026-11-14. `alpha monte-carlo kronos` ran with the real model on
-2026-11-23: the default 8 paths over the first test window take about 3 minutes on a CPU. The run then stops if
-the model sampled a negative volume on any bar (seen on 3 to 4 bars in 2,000): a guard forbids changing model output.
+2026-11-23: the default 8 paths over the first test window take about 3 minutes on a CPU. A negative volume
+from the model (seen on 3 to 4 bars in 2,000) is set to zero and counted in the output (owner decision, 2026-11-23).
 The Workstation groups the path figures under
 `monte_carlo` (ADR-0029); Kronos Studio shows forecast runs. See the capability on [STATUS.md](../../../../STATUS.md) and the
 [path-risk card](../../../../research/tools/path-risk.md).

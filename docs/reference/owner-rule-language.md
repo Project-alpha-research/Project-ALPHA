@@ -6,7 +6,6 @@ sources:
   - packages/alpha-strategies/src/alpha_strategies/rule_paths.py
   - apps/alpha-cli/src/alpha_cli/spine/owner_variants.py
   - apps/alpha-cli/src/alpha_cli/spine/owner_reading.py
-  - apps/alpha-cli/src/alpha_cli/spine/spec.py
 verified: 01af7ad62633b879
 ---
 # Owner rule language in `alpha test`
@@ -26,10 +25,6 @@ What an owner rule can say today, and what it cannot. The tool card is [rule tes
   history (their recursion starts at the window's first bar). The value is the same on every run and in every place that
   reads it: the engine, the random-price test and `alpha rules`.
 - Example: `research/examples/owner-rsi-dip.toml`.
-- A saved rule: `rule = {kind = "owner", saved = "<name>"}` in place of `spec`. The name is a rule that `alpha rules save` wrote.
-  It is read when the spec loads, and the full rule goes into the spec before hashing. So the hash, test key and family are those of
-  the same rule written inline, and the stored run keeps the full rule: a later edit of the saved rule never changes an old run or
-  its recheck. A missing or invalid saved rule fails with its name. `saved` and `spec` together are refused.
 
 ## Operands
 

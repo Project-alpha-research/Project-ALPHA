@@ -20,7 +20,6 @@ from pydantic import (
 )
 
 from alpha_cli.spine.owner_rule import OwnerRule
-from alpha_core import DataError
 
 
 class FrozenModel(BaseModel):
@@ -198,36 +197,6 @@ class IdeaSpec(FrozenModel):
         return hashlib.sha256(self.canonical().encode()).hexdigest()
 
 
-def _resolve_saved(raw: Any, data_dir: Path | None) -> Any:
-    """Replace ``rule = {kind = "owner", saved = NAME}`` by the full inline rule, before hashing.
-
-    The saved rule is read once, here, through the reader ``alpha rules`` uses. The spec then holds
-    the whole rule, so its hash, its stored copy and its recheck never follow a later edit of NAME.
-    """
-    rule = raw.get("rule") if isinstance(raw, dict) else None
-    if not isinstance(rule, dict) or "saved" not in rule:
-        return raw
-    name = rule["saved"]
-    if rule.get("kind") != "owner" or set(rule) - {"kind", "saved"}:
-        raise ValueError(
-            f'saved rule {name!r}: write rule = {{kind = "owner", saved = NAME}} with no '
-            "other key (an inline [rule.spec] cannot go with saved)"
-        )
-    if data_dir is None or not isinstance(name, str):
-        raise ValueError(f"saved rule {name!r} cannot be read: no saved rules store was given")
-    from alpha_cli import rules_cmds
-
-    try:
-        text = rules_cmds.load_rule_text(data_dir, name)
-        spec = json.loads(text)
-        if not isinstance(spec, dict):
-            raise ValueError("it is not a rule spec object")
-        resolved = OwnerRule(kind="owner", spec=spec)
-    except (DataError, ValueError) as exc:
-        raise ValueError(f"saved rule {name!r}: {exc}") from exc
-    return {**raw, "rule": {"kind": "owner", "spec": resolved.spec}}
-
-
 def load_spec(
     path: Path | None,
     *,
@@ -239,26 +208,17 @@ def load_spec(
     fee_bps: float | None = None,
     slippage_bps: float | None = None,
     idea_card: str | None = None,
-    data_dir: Path | None = None,
 ) -> IdeaSpec:
-    """Read one file or an equivalent complete set of flags, never a silent override.
-
-    ``data_dir`` is the home that holds the saved rules (``alpha rules``); a file may name one.
-    """
+    """Read one file or an equivalent complete set of flags, never a silent override."""
     if path is not None:
         flags = (rule, param, asset, name, idea, fee_bps, slippage_bps, idea_card)
         if any(value is not None for value in flags):
             raise ValueError("a spec path and rule flags cannot be used together")
         if path.suffix.lower() == ".toml":
             with path.open("rb") as stream:
-                return IdeaSpec.model_validate(_resolve_saved(tomllib.load(stream), data_dir))
+                return IdeaSpec.model_validate(tomllib.load(stream))
         if path.suffix.lower() == ".json":
-            text = path.read_text(encoding="utf-8")
-            raw = json.loads(text)
-            resolved = _resolve_saved(raw, data_dir)
-            if resolved is raw:
-                return IdeaSpec.model_validate_json(text)
-            return IdeaSpec.model_validate(resolved)
+            return IdeaSpec.model_validate_json(path.read_text(encoding="utf-8"))
         raise ValueError("spec file must have .toml or .json suffix")
     if rule == "owner":
         raise ValueError("an owner rule needs a spec file with a [rule.spec] table")

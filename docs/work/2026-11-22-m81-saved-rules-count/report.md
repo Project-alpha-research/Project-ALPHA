@@ -4,9 +4,7 @@ Branch `feat/m81-saved-rules-count`. All four parts are built. Local gate (`gate
 
 ## What changed
 
-1. **Saved rule.** `rule = {kind = "owner", saved = "<name>"}` now loads. `load_spec` (`spine/spec.py`, new `data_dir` argument, passed by
-   `test_cmds.py`) reads the file with `rules_cmds.load_rule_text` (the `alpha rules` reader; no second store). It builds the full
-   `OwnerRule` before the spec is hashed. A missing, invalid or short-side saved rule fails with its name. `saved` with `[rule.spec]` is refused.
+1. **Saved rule.** Built, then removed in review: it read the old `alpha rules` store, which is being deleted.
 2. **Count sentence.** `spine/owner_reading.py` (new). `diagnose.trials` adds `trials.owner_counts` for owner families only
    (`shape_tests` = family `n_trials`, `asset_tests` = `available_sharpes`, `n_used` = `n_trials_used`). `build_reading` adds
    `count_sentence` and `variant_table` to an owner-rule reading. `alpha test` text prints both. How N is computed did not change.
@@ -33,15 +31,11 @@ Branch `feat/m81-saved-rules-count`. All four parts are built. Local gate (`gate
 
 ## Fail-first evidence
 
-- `tests/unit/test_owner_saved_rule.py`: 7 of 8 failed with `TypeError: load_spec() got an unexpected keyword argument 'data_dir'`
-  before the change (the 8th, "saved needs a data dir", passed by accident through the old error text).
 - `tests/unit/test_owner_counts.py`: failed at import (`No module named alpha_cli.spine.owner_reading`) before the change.
 - `tests/unit/test_owner_variants.py` was written together with its module; no separate fail-first run was kept.
 
 ## Tests
 
-- Hash, family, dumped spec equal for saved and inline; edit after load changes nothing; missing, invalid, short-side, mixed and bad-name refusals.
-- Old run rechecks to `match: true, computed: true` after the saved rule is edited (stored `spec.json` carries the full rule).
 - K and M on a temp ledger with 3 thresholds of one shape and 2 other shapes; the sentence text; a repeat counts once;
   an `ma_cross` reading has neither key.
 - Variant list: four for a window and a constant, rounding and floors, equal variant skipped, zero constant, cap of 8, history, Bollinger width, lag.

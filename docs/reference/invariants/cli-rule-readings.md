@@ -11,11 +11,9 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/owner_rule.py
   - apps/alpha-cli/src/alpha_cli/spine/owner_reading.py
   - apps/alpha-cli/src/alpha_cli/spine/owner_variants.py
-  - apps/alpha-cli/src/alpha_cli/spine/spec.py
   - apps/alpha-cli/src/alpha_cli/spine/diagnose.py
   - tests/unit/test_owner_counts.py
   - tests/unit/test_owner_variants.py
-  - tests/unit/test_owner_saved_rule.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/report_cmds.py
@@ -75,9 +73,6 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
 - An owner rule (`rule.kind = "owner"`, [language](../owner-rule-language.md)) is read like the old kinds: same reading, same words. Its
   ledger `rule` field and family are `owner:<shape12>`. The label `null-closes-for-high-low` says the first random-price null used closes
   for high and low (the rule reads `atr`, `hawkes`, `cmma` or a high or low source). It is a caveat on one null, not a result.
-- A spec may give `saved = "<name>"` in place of `[rule.spec]`. `load_spec` reads the file `alpha rules save` wrote and puts the full
-  rule in the spec before hashing. Hash, test key, family, stored `spec.json` and recheck are those of the inline rule; a later edit
-  of the saved rule changes no old run. A missing or invalid saved rule fails with its name. `saved` with `[rule.spec]` is refused.
 - Every new owner-rule reading adds `count_sentence`: "This rule shape: K tests on this data. All rules on <asset>: M tests. The
   deflated Sharpe uses N = max(K, M)." K and M are `trials.owner_counts` in the diagnostics (the family `n_trials` and the
   same-asset `available_sharpes`); N is `n_trials_used`. Nothing about how N is computed changed. Other rule kinds add nothing.

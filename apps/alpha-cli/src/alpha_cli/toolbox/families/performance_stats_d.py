@@ -25,15 +25,14 @@ if TYPE_CHECKING:
 def _trades(inputs: Inputs) -> pl.DataFrame:
     """Closed trades in entry order; dated, finite and inside the recorded run period."""
     run = inputs.stored
-    frame = run.table("run_trades", "entry_ts", "exit_ts", "realized_pnl", "realized_return")
+    frame = run.table("run_trades", "entry_ts", "exit_ts", "realized_pnl")
     for entry, exit_ts in frame.select("entry_ts", "exit_ts").iter_rows():
         if any(not isinstance(ts, datetime) or ts.utcoffset() is None for ts in (entry, exit_ts)):
             raise ValueError("Closed trades require timezone-aware entry and exit dates")
         if entry >= exit_ts or exit_ts > run.last_ts:
             raise ValueError("Closed trades require entry before exit within the run period")
-    for column in ("realized_pnl", "realized_return"):
-        if not frame[column].is_finite().all():
-            raise ValueError(f"trades.parquet requires finite {column}")
+    if not frame["realized_pnl"].is_finite().all():
+        raise ValueError("trades.parquet requires finite realized_pnl")
     return frame.sort("entry_ts", maintain_order=True)
 
 
@@ -44,7 +43,7 @@ def _short(keys: tuple[str, ...], count: int) -> Result:
 
 
 def payoff_expectancy(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
-    keys = ("payoff_ratio", "expectancy", "expectancy_in_average_losses", "average_return")
+    keys = ("payoff_ratio", "expectancy", "expectancy_in_average_losses")
     frame = _trades(inputs)
     if frame.height < MIN_TRADES:
         return _short(keys, frame.height)
@@ -57,7 +56,6 @@ def payoff_expectancy(inputs: Inputs, params: dict[str, Any], rng: Generator | N
         "payoff_ratio": None,
         "expectancy": expectancy,
         "expectancy_in_average_losses": None,
-        "average_return": math.fsum(frame["realized_return"].to_list()) / len(pnl),
     }
     reasons = {}
     if losses:
@@ -75,6 +73,7 @@ def payoff_expectancy(inputs: Inputs, params: dict[str, Any], rng: Generator | N
 
 PAYOFF_EXPECTANCY = ToolSpec(
     id="performance.payoff_expectancy",
+    version=2,
     situations=("risk-adjusted",),
     answers=(
         "Do the winning trades outsize the losing ones?",
@@ -104,12 +103,6 @@ PAYOFF_EXPECTANCY = ToolSpec(
             "Expectancy divided by the size of the average losing trade; one average loss"
             " stands in for Tharp's R, because the stored trades carry no stop distance.",
             "ratio",
-        ),
-        Output(
-            "average_return",
-            "Average trade return",
-            "Mean after-cost return of a closed trade, as a fraction of its entry value.",
-            "fraction",
         ),
     ),
     reading=(

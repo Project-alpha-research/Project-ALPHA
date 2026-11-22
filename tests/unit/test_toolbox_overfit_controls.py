@@ -402,3 +402,11 @@ def test_non_finite_trade_profits_fail_loud(bad: float, tmp_path: Path) -> None:
     write_trades(folder, [1.0, bad, -1.0], ["BUY"] * 3)
     with pytest.raises(SpineError, match="finite"):
         go(tmp_path, TRADES)
+
+
+def test_required_history_needs_no_return_spread(tmp_path: Path) -> None:
+    prepare(tmp_path, np.zeros(60))
+    values = go(tmp_path, POWER)["values"]
+    z = stats.norm.ppf(0.95) + stats.norm.ppf(0.9)
+    assert values["required_bars"] == math.ceil((z / (0.5 / math.sqrt(PPY))) ** 2)
+    assert values["detectable_sharpe"] == pytest.approx(z / math.sqrt(60 / PPY), rel=1e-9)

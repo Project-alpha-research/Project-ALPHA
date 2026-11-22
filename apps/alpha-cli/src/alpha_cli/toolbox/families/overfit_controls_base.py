@@ -66,7 +66,7 @@ class Sample:
         return self.sharpe_bar * math.sqrt(self.ppy)
 
 
-def sample(inputs: Inputs, minimum: int = MIN_BARS) -> Sample:
+def sample(inputs: Inputs, minimum: int = MIN_BARS, *, spread: bool = True) -> Sample:
     returns = inputs.stored.scored_returns()
     ppy = inputs.stored.ppy
     if len(returns) < minimum:
@@ -74,10 +74,11 @@ def sample(inputs: Inputs, minimum: int = MIN_BARS) -> Sample:
             f"The reading needs at least {minimum} scored bar returns; this run has {len(returns)}."
         )
         return Sample(returns, ppy, reason, None)
-    spread = float(returns.std(ddof=1))
-    if spread <= 0.0:
-        return Sample(returns, ppy, FLAT, None)
-    return Sample(returns, ppy, None, float(returns.mean()) / spread)
+    deviation = float(returns.std(ddof=1))
+    if deviation <= 0.0:
+        # Only a check that needs no Sharpe ratio (``spread=False``) may read a flat history.
+        return Sample(returns, ppy, FLAT if spread else None, None)
+    return Sample(returns, ppy, None, float(returns.mean()) / deviation)
 
 
 def blank(keys: tuple[str, ...], reason: str, basis: str = BASIS, **known: float | str) -> Result:

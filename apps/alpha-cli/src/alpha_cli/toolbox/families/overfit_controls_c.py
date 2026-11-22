@@ -24,7 +24,7 @@ def required_history(inputs: Inputs, params: dict[str, Any], rng: Generator | No
     from alpha_research import required_observations_known_sigma
 
     keys = ("required_bars", "required_years", "detectable_sharpe", "run_bars", "run_years")
-    data = sample(inputs)
+    data = sample(inputs, spread=False)
     if data.reason:
         return blank(keys, data.reason, run_bars=data.bars)
     target, power = params["target_sharpe"], params["power"]

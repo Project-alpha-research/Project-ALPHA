@@ -89,7 +89,7 @@ Labels go before numbers. Label reserved-period-seen: data on or after the 2024-
 
 ```text
 $ uv run alpha test --rule ma_cross --param fast=50 --param slow=200 --asset SPY --asset BTC/USDT
-Test <test id> — ma_cross-50-200 (trials total: <N>)
+Test <test id> — ma_cross-50-200
 ASSET     RUN       READING         OOS SHARPE  LABELS / ERROR
 SPY       <run id>  <evidence word> <value>     all-in, dev-machine-data
 BTC/USDT  —         —               —           DataError: asset 'BTC/USDT' not found; stores searched: home
@@ -98,7 +98,7 @@ $ uv run alpha results cite <run id> oos_sharpe
 ```
 
 Report: the system could not find BTC/USDT (system finding, with the `next` line of the error);
-SPY ran as trial `<N>`; labels in words; then `<value> [<run id>:oos_sharpe]` beside the
+SPY ran (its "Tries on SPY" line gives the count); labels in words; then `<value> [<run id>:oos_sharpe]` beside the
 scored buy-and-hold figure `[<run id>:scored_benchmark_sharpe]`. BTC is "not tested", not guessed.
 
 **A surprise.** `alpha diagnose` shows the flag `drawdown-with-market`: "During the worst drawdown

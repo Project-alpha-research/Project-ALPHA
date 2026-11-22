@@ -7,6 +7,7 @@ sheet under ``data_dir/runs/<run_id>/``.
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -358,16 +359,21 @@ def write_validation_run(
         ),
     )
     write_validation_sidecars(rdir, bars, spec, out, rule_test="spine" in manifest)
-    _artifacts.publish_artifact(
-        rdir / "tearsheet.html",
-        lambda path: render_tearsheet_html(
-            out.report,
-            oos_returns=out.oos.oos_returns,
-            oos_timestamps=out.oos.oos_timestamps[1:],
-            output_path=path,
-            periods_per_year=spec.periods_per_year,
-        ),
-    )
+    with warnings.catch_warnings():
+        if not out.oos.oos_returns.any():
+            # A rule that made no trades has a flat equity line: the report library then divides
+            # by zero inside its charts. The reading states the outcome; the noise is not shown.
+            warnings.simplefilter("ignore")
+        _artifacts.publish_artifact(
+            rdir / "tearsheet.html",
+            lambda path: render_tearsheet_html(
+                out.report,
+                oos_returns=out.oos.oos_returns,
+                oos_timestamps=out.oos.oos_timestamps[1:],
+                output_path=path,
+                periods_per_year=spec.periods_per_year,
+            ),
+        )
     _artifacts.write_manifest(rdir, manifest)
 
     # Figure cache keys use the published artifact hashes and contract version.

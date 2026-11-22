@@ -32,6 +32,8 @@ STOCK_SESSIONS = 252
 # Broad US index funds, known by symbol when the store records no asset class (yfinance does not).
 US_LARGE_ETFS = frozenset({"SPY", "QQQ", "IWM", "DIA", "VOO", "IVV", "VTI"})
 CRYPTO_DAYS = 365
+# A crypto ticker of a stock-data vendor, such as BTC-USD, has no slash and no crypto provider.
+CRYPTO_TICKER_ENDS = ("-USD", "-USDT")
 
 
 @dataclass(frozen=True)
@@ -109,7 +111,8 @@ def asset_class(resolved: ResolvedAsset, *, by_symbol: bool = False) -> str | No
 
     A stored dataset identity decides. Without one, a crypto provider or a slash pair is crypto
     spot; an equity provider alone does not tell a stock from an ETF, so it is not known. When
-    costs are chosen by class (``by_symbol``), a broad US index fund is also known by its symbol;
+    costs are chosen by class (``by_symbol``), a broad US index fund or a dash-quoted crypto
+    ticker is also known by its symbol;
     a run with stated costs records only what the store says, as every stored run did.
     """
     path = ParquetStore(store_dir(resolved.data_dir, DAILY))._provenance_path(resolved.symbol)
@@ -132,6 +135,8 @@ def asset_class(resolved: ResolvedAsset, *, by_symbol: bool = False) -> str | No
         return "crypto_spot"
     if by_symbol and resolved.symbol in US_LARGE_ETFS:
         return "us_large_etf"
+    if by_symbol and resolved.symbol.endswith(CRYPTO_TICKER_ENDS):
+        return "crypto_spot"
     return None
 
 

@@ -78,9 +78,19 @@ their existing records. See the [discussion protocol](../../../workers/rdagent/p
   design. Rows without a spec hash or symbol cannot be matched and each count. `append_trial` labels a
   new row `repeat` when an earlier non-error row has its key (or its run id; an error row never
   matches) and adds `repeat_of`, the first such `run_id`; old rows are never rewritten, so every dedupe happens on read.
+  An exact repeat of a rule test (`executed: false`, the stored run served) writes no row at all, so no count moves; a
+  repeat after a code change ran the engine again and writes its labelled row.
   The wider count is of distinct keys: `same_asset_tests` (counted) and `same_asset_repeats` (rows not
   counted: key-equal, or key-less and labelled repeat) in `trials.family`. `total_trials` is the ledger row number
   (audit sequence, no statistic reads it).
+- One headline count of tries (`spine/tries.py`): the distinct tests on an asset, exactly the rows `same_asset_tests`
+  counts (`distinct_asset_tests`). `alpha test`, `alpha results`, `ledger summary`, `ledger families` and `ledger tries
+  <ASSET>` print it; row counts stay in the JSON only. The summary's `by_kind` and `by_family` add up to it.
+  The deflated Sharpe of one reading counts at least this: the larger of its family's tests on any asset and the
+  tries on the asset, plus its nearby settings; `alpha test` prints that count and its parts under the headline.
+
+## Deflated Sharpe inputs
+
 - `trial_dsr` uses exactly the verdict's inputs below, so for a rule test with diagnostics it equals
   the verdict's `dsr`. The public expected-maximum and PSR functions compute the probability.
   Diagnostics and `spine.deflation` store the count, components, ledger rows and reader version;

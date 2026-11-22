@@ -184,3 +184,31 @@ def test_hourly_crypto_stays_365_and_records_weekend_share() -> None:
     ppy, basis = annualisation(stamps, bar_size=parse_timeframe("1h"))
     assert ppy == 24 * 365
     assert "27% of bar dates fall on weekends" in basis
+
+
+def test_resolve_asset_short_name_matches_one_stored_symbol(tmp_path: Path) -> None:
+    _provenance(tmp_path, "BTC/USDT")
+    _provenance(tmp_path, "SPY")
+    result = resolve_asset("BTC", data_dir=tmp_path)
+    assert result.symbol == "BTC/USDT"
+
+
+def test_resolve_asset_short_name_with_two_matches_lists_names(tmp_path: Path) -> None:
+    _provenance(tmp_path, "BTC/USDT")
+    _provenance(tmp_path, "BTC/USD")
+    with pytest.raises(DataError) as caught:
+        resolve_asset("BTC", data_dir=tmp_path)
+    message = str(caught.value)
+    assert "BTC/USD" in message
+    assert "BTC/USDT" in message
+    assert "alpha data symbols" in message
+
+
+def test_resolve_asset_unknown_name_lists_closest_and_command(tmp_path: Path) -> None:
+    _provenance(tmp_path, "SPY")
+    _provenance(tmp_path, "QQQ")
+    with pytest.raises(DataError) as caught:
+        resolve_asset("SPX", data_dir=tmp_path)
+    message = str(caught.value)
+    assert "SPY" in message
+    assert "alpha data symbols" in message

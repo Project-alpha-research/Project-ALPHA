@@ -24,6 +24,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | "Does the pipeline still work?", "did last night fail?", "is the disk filling up?" | [nightly run](nightly-run.md), [failure marker, disk](nightly-alert.md) |
 | A chart setup: "show me every time this happened"; its TOML file | [setup find](setup-find.md), [spec file](setup-spec.md), [context](setup-context.md) |
 | What followed each setup occurrence; a setup traded with stops, targets and a time limit | [setup study](setup-study.md), [setup trade](setup-trade.md) |
+| "Show me the trend lines, flags or head and shoulders"; test one as a condition | [chart patterns](chart-patterns.md) |
 | "Did we test this?", "what was the number?", "do two runs move together?" | [results and cite](results-and-cite.md), [portfolio book](portfolio-book.md) |
 | The result looks too good | [diagnose and audit](diagnose-and-audit.md), then [random-price null](random-price-null.md) |
 | Too good after many tries; a first look at many signals | [deflated Sharpe, trials](deflated-sharpe-and-trials.md), [quick screen](quick-screen.md) |
@@ -35,7 +36,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | "Does it hold up out of sample?" | [walk-forward efficiency](walk-forward.md) |
 | "Is this just the market going up?", "a known factor?" | [inverted control](inverted-signal-control.md), [published factors](published-factors.md) |
 | Market beta, calm or turbulent regimes, "when did it change?" | [beta, regimes, changes](attribution-regimes-changepoints.md), [more](toolbox-regimes.md) |
-| How wide is the return range, or how deep the drop? | [resampling](resampling-checks.md), [fat tails](montecarlo-checks.md), [path risk](path-risk.md) |
+| Return range, drop depth, prop-firm odds | [resampling](resampling-checks.md), [fat tails](montecarlo-checks.md), [path risk](path-risk.md), [prop firm](propfirm.md) |
 | Why a judged RD-Agent idea stopped; a picture for the owner | [one idea’s journey](rdagent-journey.md), [charts](charts.md) (`trade_pnl`: profit by trade) |
 | Overfitting; resampling; time series | [overfit](toolbox-overfit-controls.md), [resampling](toolbox-resampling-more.md), [series](toolbox-timeseries.md) |
 | Performance statistics; risk and sizing | [performance](toolbox-performance-stats.md), [risk](toolbox-risk-sizing.md) |

@@ -35,6 +35,6 @@ alpha optim grid <SYMBOL> --strategy ma_crossover --grid fast=20,50 --grid slow=
   `RC` p-values (is the best better than no skill, allowing for the search).
 - Under 30 closed OOS trades: `too-few-trades` shows and the reading says `too little to read`. Noise copies are no trial.**What it cannot tell you**
 - Trials nobody recorded (`alpha validate`, `alpha optim`, `alpha backtest` runs): count by hand; the true number is higher.
-- `alpha ledger summary` and `families` count every recorded try read-only; effective tests are not shown. Family counting feeds the verdict.
+- The one headline count is tries: distinct tests on an asset (`alpha ledger tries SPY`); `ledger summary` splits it by kind and family.
 **Next** A setting that survives: check it against [the random-price null](random-price-null.md) and the
 benchmark. A setting that does not: report it as best-of-many and stop tuning.

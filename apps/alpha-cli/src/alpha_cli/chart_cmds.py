@@ -50,6 +50,9 @@ PATTERNS: tuple[PatternName, ...] = (
     "flags",
     "structure_levels",
 )
+# families the terminal chart does not request: drawn only by the picture
+PICTURE_ONLY = ("head_shoulders", "wedges", "triple_taps")
+ALL_PATTERNS = (*PATTERNS, *PICTURE_ONLY)
 SWING_LOOKBACK = 5
 # fixed pattern parameters (documented in the reason strings; never caller-selected)
 DC_SIGMA = 0.02
@@ -135,7 +138,15 @@ def parse_pattern(spec: str) -> PatternName:
     for known in PATTERNS:
         if name == known:
             return known
-    raise DataError(f"unknown pattern {name!r}; choose from {list(PATTERNS)}")
+    raise DataError(f"unknown pattern {name!r}; choose from {list(ALL_PATTERNS)}")
+
+
+def parse_picture_pattern(spec: str) -> str:
+    """A pattern name for the picture: any family `--help` lists."""
+    name = spec.strip().lower()
+    if name not in ALL_PATTERNS:
+        raise DataError(f"unknown pattern {name!r}; choose from {list(ALL_PATTERNS)}")
+    return name
 
 
 def to_ohlcv(bars: list[Bar]) -> OHLCV:
@@ -496,6 +507,22 @@ def compute_overlays(
     }
 
 
+def _pictures(bars: list[Bar], names: list[str], since: str | None) -> list[str]:
+    """The plain summary of each picture written for the asked patterns (none: no picture)."""
+    from alpha_cli.chart_pattern_picture import draw_pattern_pictures
+
+    if not names:
+        return []
+    try:
+        first = date.fromisoformat(since) if since else None
+    except ValueError as exc:
+        raise DataError(f"--since must be YYYY-MM-DD: {exc}") from exc
+    out_dir = AlphaSettings().data_dir / "chart_patterns"
+    return [
+        draw_pattern_pictures(bars, name, since=first, out_dir=out_dir).summary for name in names
+    ]
+
+
 @chart_app.command("overlays")
 def overlays(
     symbol: str,
@@ -512,8 +539,10 @@ def overlays(
         "--pattern",
         "-p",
         help="swings | trendlines | levels | dc_extremes | pips | market_profile | harmonics | "
-        "flags | structure_levels",
+        "flags | structure_levels | head_shoulders | wedges | triple_taps. "
+        "With a pattern, two pictures are also written.",
     ),
+    since: str = typer.Option(None, help="first day of the picture YYYY-MM-DD (default: 2 years)"),
     end: str = typer.Option(None, help="as-of cutoff YYYY-MM-DD (inclusive)"),
     snapshot: str = typer.Option(None, help="snapshot id for provenance"),
     manifest_id: str = typer.Option(None, help="exact qualified bulk chart manifest"),
@@ -533,7 +562,8 @@ def overlays(
         raise typer.BadParameter(f"--end must be YYYY-MM-DD: {exc}") from exc
     try:
         specs = [parse_indicator(s) for s in indicator]
-        names = [parse_pattern(s) for s in pattern]
+        shown = [parse_picture_pattern(s) for s in pattern]
+        names = [parse_pattern(s) for s in shown if s not in PICTURE_ONLY]
         provenance = None
         if manifest_id:
             from alpha_cli._chart_data import load_chart_dataset
@@ -550,6 +580,7 @@ def overlays(
                 symbol, data_dir=AlphaSettings().data_dir, snapshot_id=snapshot, as_of=when
             )
         body = compute_overlays(bars, specs, names)
+        pictures = [] if json_out else _pictures(bars, shown, since)
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc
     payload = {
@@ -562,6 +593,8 @@ def overlays(
     }
     if json_out:
         typer.echo(json.dumps(payload))
+    elif pictures:
+        typer.echo("\n".join(pictures))
     else:
         typer.echo(
             f"{symbol}: {len(body['t'])} bars, {len(body['indicators'])} series, "

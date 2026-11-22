@@ -34,6 +34,8 @@ def write_trades(folder: Path, pnls: list[float], sides: list[str]) -> None:
         {
             "side": sides,
             "realized_pnl": pnls,
+            "quantity": [1.0] * len(pnls),
+            "entry_price": [100.0] * len(pnls),
             "realized_return": [p / 100 for p in pnls],
             "entry_ts": [START + timedelta(days=i) for i in range(len(pnls))],
             "exit_ts": [START + timedelta(days=i + 1) for i in range(len(pnls))],

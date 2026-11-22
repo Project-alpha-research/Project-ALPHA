@@ -168,3 +168,10 @@ def test_the_command_changes_no_file_and_prints_json(
     assert [row["asset"] for row in payload["assets"]] == ["AAA", "BBB"]
     assert (_listing(data_dir), _listing(home)) == before
     assert not (data_dir / "ledger").exists()
+
+
+def test_the_text_overview_states_the_period_beside_each_percent(data_dir: Path) -> None:
+    result = runner.invoke(app, ["data", "market-overview", "--window", "30", "--limit", "2"])
+    assert result.exit_code == 0, result.output
+    lines = [line for line in result.stdout.splitlines() if "%" in line]
+    assert lines and all("over the last 30 days" in line for line in lines)

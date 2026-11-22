@@ -292,6 +292,16 @@ def _lookalike_document(
     }
 
 
+def boundary_sentence(held: Any) -> str:
+    """Why 'Now' is not today: the comparison stops where the held-back days begin."""
+    if not held.held_back:
+        return ""
+    return (
+        f"The comparison ends at the held-back boundary ({held.research_cutoff}), not today: "
+        "later bars are kept for the owner's confirmation of an idea."
+    )
+
+
 def _lookalike_text(
     result: Any,
     summaries: Sequence[Any],
@@ -303,10 +313,12 @@ def _lookalike_text(
     declared: str,
     labels: list[str],
     rdir: Path,
+    boundary: str = "",
 ) -> str:
     lines = [
         f"Lookalike {result_id} — {resolved.symbol}, last {last} {timeframe} bars "
-        f"({_iso(result.query_start_ts)[:10]} to {_iso(result.query_end_ts)[:10]})",
+        f"({_iso(result.query_start_ts)[:10]} to {_iso(result.query_end_ts)[:10]})"
+        + (f". {boundary}" if boundary else ""),
         f"Matches: {len(result.matches)} (threshold: shape correlation "
         f"{result.max_distance_correlation:.2f}+; {declared})",
         "START\tEND\tCORRELATION",
@@ -431,6 +443,11 @@ def lookalike(
                 timeframe=timeframe,
                 result_id=result_id,
                 looks=looks,
+                boundary=(
+                    f"Ends at the held-back boundary, {held.research_cutoff}, not today"
+                    if held.held_back
+                    else ""
+                ),
             )
         )
         _publish(rdir, document, figure)
@@ -452,6 +469,7 @@ def lookalike(
         declared=declared,
         labels=labels,
         rdir=rdir,
+        boundary=boundary_sentence(held),
     )
     emit(output, json_out=json_out, fallback=text + held.note())
 

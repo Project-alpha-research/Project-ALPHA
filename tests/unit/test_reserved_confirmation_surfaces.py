@@ -116,8 +116,9 @@ def test_plan_says_what_is_spent_and_run_prints_the_plan_before_it_spends(
     monkeypatch.setattr(confirm_run_module, "confirm_run", fake_run)
     ran = runner.invoke(confirm_cmds.confirm_app, ["run", run_id])
     assert ran.exit_code == 1 and order == ["run"]
-    for words in (*SPENT_WORDS, "Spending 1 slot now. After this, 9 slots are left."):
+    for words in SPENT_WORDS:
         assert words in ran.output, words
+    assert "Spending 1 slot now" not in ran.output  # nothing was spent
     assert ran.output.index("It cannot be undone.") < ran.output.index("No slot was used.")
     names = {command.name for command in confirm_cmds.confirm_app.registered_commands}
     assert names == {"plan", "run", "list", "show"}

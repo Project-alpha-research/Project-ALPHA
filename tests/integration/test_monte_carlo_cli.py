@@ -448,7 +448,11 @@ def test_kronos_monte_carlo_prints_its_reading_and_its_window(
     text = " ".join(result.output.split())
     assert re.search(r"median end value [+-]\d+\.\d\d%", text), text
     assert re.search(r"the middle 90% of the 4 simulated paths end between [+-]\d+\.\d\d%", text)
-    assert re.search(r"The real run ended [+-]\d+\.\d\d%, above \d+% of the simulated paths", text)
+    assert re.search(
+        r"The real run ended [+-]\d+\.\d\d%, above (all|\d+ of) 4 simulated paths, "
+        r"which is too few to rank \(window \d+ \w+ \d{4} to \d+ \w+ \d{4}\)",
+        text,
+    )
     assert re.search(
         r"The replay covers \d+ trading days, from \d+ \w+ \d{4} to \d+ \w+ \d{4}", text
     )

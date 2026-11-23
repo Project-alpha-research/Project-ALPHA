@@ -215,7 +215,7 @@ def _family_reading(
 
 
 def stored_lines(rdir: Path, manifest: Mapping[str, Any]) -> list[str]:
-    """A stored Monte Carlo run in plain words: its window, then each family against the real one."""
+    """A stored Monte Carlo run in plain words: its window, then each family and the real run."""
     families = manifest.get("families")
     families = families if isinstance(families, list) else [manifest["family"]]
     observed = pl.read_parquet(rdir / "observed_oos.parquet").sort("step")["equity"].to_list()

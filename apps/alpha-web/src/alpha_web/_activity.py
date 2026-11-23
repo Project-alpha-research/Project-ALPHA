@@ -11,7 +11,7 @@ Events: an initial ``snapshot`` (counts), then ``run_added`` / ``run_updated`` (
 JSON), ``job_started`` / ``job_done`` / ``job_failed`` / ``job_cancelled`` (data = job summary
 JSON) and ``store_changed`` (data = ``{"area", "at"}``) whenever the newest mtime under one of
 the governed data areas in ``AREAS`` rises — research cases, the CLI control plane, the bar
-store, web workspaces, scan alerts. The web never reads those bytes to notice
+store, web workspaces. The web never reads those bytes to notice
 a change; panels refetch their own public seam. No event ids: a reconnecting client refetches
 instead of replaying (the store is the durable record; the stream is only a change notification).
 """
@@ -42,7 +42,6 @@ AREAS: dict[str, tuple[str, ...]] = {
     ),
     "bars": ("store/bars",),
     "workspaces": ("web/workspaces",),
-    "alerts": ("scans/alerts.jsonl",),
     # The Ideas page: cards and their links, stored tool results, setup finds and studies, and the
     # trial ledger. Walked ONE level deep (see ``_newest_shallow``), so the cost stays bounded.
     "ideas": ("ideas", "diagnostics", "setups", "setup-studies", "ledger/trials.jsonl"),

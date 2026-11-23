@@ -63,7 +63,7 @@ the SPA: `alpha chart overlays` gains the indicators `hawkes`, `vsa`, `runs_z`, 
 `*_known_by(last)` filter; single-anchor extremes are `marker` annotations); `alpha_strategies.rules`
 accepts the same indicators as operands except `rsi_pc1` (its PCA lives in `alpha_research`, which
 the strategy layer may not import), read from the identical `alpha_patterns` functions (parity
-test); the Strategy Builder and Insert › Indicators dialogs mirror the tables (drift test
+test); the Insert › Indicators dialog mirrors the tables (drift test
 `tests/unit/test_overlay_tables_drift.py`); the figure catalogue gains `trade_runs_test` and
 `mcpt_null_histogram`. Not delivered: `pip_cluster_examples` and `retracement_density` figures — no
 run publishes a PIP-cluster or retracement artifact and a builder may not compute its own

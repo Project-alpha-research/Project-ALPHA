@@ -42,21 +42,3 @@ test('skip link, profile changes and unavailable local storage preserve a usable
   await expect(page.getByRole('menubar', { name: 'Terminal menu' })).toBeVisible()
   await expect(page.getByText(/panel crashed/i)).toHaveCount(0)
 })
-
-test('mounted Builder clears linked and independently selected assets when the market changes', async ({ page }) => {
-  const bar = { t: 1700000000, o: 1, h: 1, l: 1, c: 1, v: 1 }
-  await preparePage(page, { candles: { 'BTC/USDT': [bar], 'SPY': [bar] } })
-  await openTask(page, 'Strategies & Tests', 'Builder')
-  const asset = page.getByRole('combobox', { name: 'Test asset' })
-  await expect(asset).toHaveValue('XRP/USDT')
-  // A market change opens that market's default stored symbol, never the old market's one.
-  await page.getByLabel('Market profile').selectOption('equities')
-  await expect(asset).toHaveValue('SPY')
-  await page.getByLabel('Market profile').selectOption('crypto')
-  await expect(asset).toHaveValue('BTC/USDT')
-  await asset.click()
-  await page.getByRole('listbox', { name: 'Stored assets' }).getByRole('option', { name: /BTC\/USDT/ }).click()
-  await page.getByLabel('Market profile').selectOption('equities')
-  await expect(asset).toHaveValue('SPY')
-  await expect(page.getByRole('button', { name: 'Run a backtest' })).toBeDisabled()
-})

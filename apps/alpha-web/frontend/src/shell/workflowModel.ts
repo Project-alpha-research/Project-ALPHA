@@ -10,19 +10,18 @@ import { MarketOverview } from '../panels/MarketOverview'
 import { FollowToday } from '../panels/FollowToday'
 import { MachineLearning } from '../panels/MachineLearning'
 import { Navigator } from '../panels/Navigator'
-import { Alerts } from '../panels/Alerts'
 import { DataPulls } from '../panels/JobMonitor'
 import { AllTests } from '../panels/RecentTests'
 import { RiskMonitor } from '../panels/RiskMonitor'
 
 function RunLibrary() { return createElement(Navigator, { onOpenRun: openRunDetail }) }
 
-export const PAGE_IDS = ['overview', 'data', 'research', 'strategies', 'results', 'operations', 'settings'] as const
+export const PAGE_IDS = ['overview', 'data', 'research', 'results', 'operations', 'settings'] as const
 export type PageId = typeof PAGE_IDS[number]
 export interface WorkflowPage { id: PageId; title: string; description: string; panes: DocumentPane[] }
 
 const DOCUMENT_PAGE: Record<WindowId, PageId> = {
-  chart: 'data', report: 'results', compare: 'results', builder: 'strategies', scanner: 'strategies',
+  chart: 'data', report: 'results', compare: 'results',
   rdagent: 'research', ideas: 'research', 'setup-lab': 'research', governance: 'settings', forecast: 'results',
   jobs: 'operations',
 }
@@ -36,13 +35,12 @@ export function workflowPages(profile: Profile): WorkflowPage[] {
       { name: 'MarketOverview', title: 'Market', component: MarketOverview },
     ] },
     { id: 'research', title: 'Research', description: 'Ideas, setups, RD-Agent runs and what is followed today.', panes: [] },
-    { id: 'strategies', title: 'Strategies & Tests', description: 'Build rules and scan stored data.', panes: [] },
     { id: 'results', title: 'Results', description: 'Review stored tests, compare runs and open reports.', panes: [
       { name: 'AllTests', title: 'All tests', component: AllTests },
       { name: 'Navigator', title: 'Run library', component: RunLibrary },
       { name: 'RiskMonitor', title: 'Risk', component: RiskMonitor },
     ] },
-    { id: 'operations', title: 'Operations', description: 'Track jobs and alerts.', panes: [] },
+    { id: 'operations', title: 'Operations', description: 'Track jobs.', panes: [] },
     { id: 'settings', title: 'Settings', description: 'Display preferences, owner authentication and research safeguards.', panes: [{ name: 'Workspaces', title: 'Saved workspaces', component: Workspaces }] },
   ]
   for (const doc of DOCUMENTS) {
@@ -53,10 +51,7 @@ export function workflowPages(profile: Profile): WorkflowPage[] {
     }
   }
   pages.find(page => page.id === 'research')!.panes.push({ name: 'FollowToday', title: 'Today', component: FollowToday }, { name: 'MachineLearning', title: 'Machine learning', component: MachineLearning })
-  pages.find(page => page.id === 'operations')!.panes.push(
-    { name: 'DataPulls', title: 'Data jobs', component: DataPulls },
-    { name: 'Alerts', title: 'Alerts', component: Alerts },
-  )
+  pages.find(page => page.id === 'operations')!.panes.push({ name: 'DataPulls', title: 'Data jobs', component: DataPulls })
   return pages
 }
 

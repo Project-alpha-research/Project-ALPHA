@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { preparePage, openDocument, openDeskTool } from './support/workstationHarness'
+import { preparePage, openDocument } from './support/workstationHarness'
 import type { components } from '../src/api/generated'
 
 test('archive chart identity stays distinct from the strategy context', async ({ page }) => {
@@ -64,33 +64,6 @@ test('archive picker filters by exact native timeframe', async ({ page }) => {
   await expect(picker.getByRole('row')).toHaveCount(2)
   await expect(picker.getByRole('row').nth(1).getByRole('cell').nth(2)).toHaveText('4h')
 })
-
-test('a same-symbol scan leaves the archive and opens the evaluated canonical bar', async ({ page }) => {
-  await preparePage(page)
-  const manifest = 'b'.repeat(64)
-  const dataset = { schema_version: 1, provider: 'binance', venue: 'binance', market_type: 'spot', family: 'spot_bars', instrument: 'XRP/USDT', base_asset: 'XRP', quote_asset: 'USDT', frequency: '1h', units: 'quote_price', timestamp_convention: 'interval_start_utc', manifest_id: manifest, manifest_ids: [manifest], manifest_count: 1, start: '2024-01-01T00:00:00Z', end: '2024-01-02T00:00:00Z', row_count: 2, verification: 'metadata_only' }
-  await page.route('**/api/chart-datasets', route => route.fulfill({ json: { datasets: [dataset], authority: 'none', state: 'available' } }))
-  const requests: string[] = []
-  await page.route('**/api/candles/**', route => {
-    requests.push(new URL(route.request().url()).search)
-    return route.fulfill({ json: { symbol: 'XRP/USDT', snapshot_id: null, bars: [0, 1].map(i => ({ t: 1704067200 + i * 3600, o: 100, h: 110, l: 90, c: 105, v: 1000 })), provenance: null } })
-  })
-  await page.route('**/api/scans', route => route.fulfill({ json: { scans: [{ name: 'match', rules: 'trend', universe: { kind: 'list', symbols: ['XRP/USDT'] } }], authority: 'none' } }))
-  await page.route('**/api/scans/match/run', route => route.fulfill({ json: { scan: 'match', rules: 'trend', rules_sha256: 'c'.repeat(64), as_of: '2024-01-01', universe_as_of: '2024-01-01T00:00:00Z', rows: [{ symbol: 'XRP/USDT', signal: 1, bar_date: '2024-01-01', bar_ts: 1704067200, close: 105, values: {} }], skipped: [] } }))
-  await page.goto('/#page=data&pane=PriceChart')
-  await page.getByRole('button', { name: 'External archive…' }).click()
-  await page.getByRole('button', { name: 'Open XRP/USDT', exact: true }).click()
-  await expect(page.locator('.sym-input')).toHaveAttribute('readonly', '')
-  await openDeskTool(page, 'Workspace results')
-  const dock = page.getByRole('region', { name: 'Workspace results', exact: true })
-  await dock.getByRole('button', { name: 'Run', exact: true }).click()
-  await dock.getByRole('table', { name: 'Scan results' }).getByRole('button', { name: 'XRP/USDT', exact: true }).click()
-  await expect(page.locator('.sym-input')).not.toHaveAttribute('readonly', '')
-  await expect(page.locator('.terminal-titlebar')).not.toContainText('archive')
-  await expect.poll(() => requests.at(-1)).toContain('end=2024-01-01')
-  expect(requests.at(-1)).not.toContain('manifest_id')
-})
-
 
 test('main dropdown groups aliases and opens every archive pair with exact source and interval', async ({ page }) => {
   await preparePage(page)

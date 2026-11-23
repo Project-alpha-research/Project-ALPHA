@@ -9,8 +9,6 @@ export type WindowId =
   | 'chart'
   | 'report'
   | 'compare'
-  | 'builder'
-  | 'scanner'
   | 'rdagent'
   | 'ideas'
   | 'setup-lab'
@@ -42,8 +40,6 @@ export const MARKET_NEUTRAL_WINDOWS: readonly WindowId[] = Object.freeze([
   'chart',
   'report',
   'compare',
-  'builder',
-  'scanner',
   'rdagent',
   'ideas',
   'setup-lab',

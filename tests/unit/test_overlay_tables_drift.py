@@ -12,11 +12,9 @@ import re
 from pathlib import Path
 
 from alpha_cli.chart_cmds import INDICATORS, PATTERNS, parse_indicator
-from alpha_strategies.rules import INDICATOR_ARITY, INDICATOR_FIELDS, SOURCES, parse_operand
 
 _FRONTEND = Path(__file__).resolve().parents[2] / "apps" / "alpha-web" / "frontend" / "src"
 _MODEL = (_FRONTEND / "panels" / "chartOverlaysModel.ts").read_text(encoding="utf-8")
-_BUILDER = (_FRONTEND / "panels" / "ruleBuilderModel.ts").read_text(encoding="utf-8")
 
 
 def _ts_block(source: str, name: str) -> str:
@@ -25,26 +23,13 @@ def _ts_block(source: str, name: str) -> str:
 
 
 def _ts_arity(source: str) -> dict[str, int]:
+    start = source.index("export const ARITY")
     return {
         head: int(n)
         for head, n in re.findall(
-            r"^\s+([a-z_0-9]+): (\d+),$", _ts_block(source, "export const ARITY"), re.M
+            r"^\s+([a-z_0-9]+): (\d+),$", source[start : source.index("\n})", start)], re.M
         )
     }
-
-
-def _ts_fields(source: str) -> dict[str, tuple[str, ...]]:
-    return {
-        head: tuple(re.findall(r"'([a-z]+)'", members))
-        for head, members in re.findall(
-            r"^\s+([a-z_0-9]+): \[(.*)\],$", _ts_block(source, "export const FIELDS"), re.M
-        )
-    }
-
-
-def _ts_operand_examples() -> list[str]:
-    start = _BUILDER.index("export const OPERAND_EXAMPLES")
-    return re.findall(r"'([^']+)'", _BUILDER[start : _BUILDER.index("\n])", start)])
 
 
 def _ts_patterns() -> list[str]:
@@ -73,43 +58,6 @@ def test_every_spa_preset_is_a_spec_the_cli_accepts_and_covers_every_head() -> N
     for preset in presets:
         assert parse_indicator(preset).id == preset
     assert {preset.split(":")[0] for preset in presets} == set(INDICATORS)
-
-
-def test_rule_builder_tables_match_the_rules_parser() -> None:
-    assert _ts_arity(_BUILDER) == dict(INDICATOR_ARITY)
-    assert _ts_fields(_BUILDER) == dict(INDICATOR_FIELDS)
-    # a rule operand reads exactly the series the chart draws, so the rule table is the chart
-    # table minus the one indicator the strategy layer cannot compute
-    assert set(INDICATORS) - set(INDICATOR_ARITY) == {"rsi_pc1"}
-
-
-def test_every_rule_builder_example_is_an_operand_the_parser_accepts() -> None:
-    examples = _ts_operand_examples()
-    assert examples, "no OPERAND_EXAMPLES parsed from ruleBuilderModel.ts"
-    heads: set[str] = set()
-    source_lags: set[tuple[str, int]] = set()
-    for text in examples:
-        if text in SOURCES:
-            payload: dict[str, object] = {"source": text}
-        elif text.split(":")[0] in SOURCES:
-            source, *rest = text.split(":")
-            assert len(rest) == 2 and rest[0] == "lag", f"invalid source-lag example: {text}"
-            assert re.fullmatch(r"\d+", rest[1]), f"source lag must be an integer: {text}"
-            lag = int(rest[1])
-            payload = {"source": source, "lag": lag}
-            source_lags.add((source, lag))
-        elif re.fullmatch(r"-?\d+(\.\d+)?", text):
-            payload = {"value": float(text)}
-        else:
-            head, *rest = text.split(":")
-            params = [float(v) for v in rest[: INDICATOR_ARITY[head]]]
-            payload = {"indicator": head, "params": params}
-            if head in INDICATOR_FIELDS:
-                payload["field"] = rest[-1]
-            heads.add(head)
-        assert parse_operand(payload, "example").label == text
-    assert heads == set(INDICATOR_ARITY)
-    assert ("close", 20) in source_lags
 
 
 def test_e2e_overlay_stand_in_bars_needed_matches_cli() -> None:

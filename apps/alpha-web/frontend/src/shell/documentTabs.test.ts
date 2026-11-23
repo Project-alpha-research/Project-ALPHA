@@ -6,3 +6,7 @@ it('validates routes, run identity and profile-specific documents on restore', (
   expect(restoreDocumentTabs(tabs, 'crypto').map(t => t.title)).toEqual(['Report'])
   expect(restoreDocumentTabs(null, 'crypto')).toEqual([])
 })
+it('drops saved tabs of the removed Builder, Scanner and Alerts windows without an error', () => {
+  const stale = [{ page: 'strategies', pane: 'StrategyBuilder' }, { page: 'strategies', pane: 'Scanner' }, { page: 'operations', pane: 'Alerts' }, { page: 'results', pane: 'RunDetail', runId: 'a'.repeat(16) }]
+  expect(restoreDocumentTabs(stale, 'crypto').map(t => t.title)).toEqual(['Report'])
+})

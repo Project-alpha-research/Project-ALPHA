@@ -25,7 +25,7 @@ test('chart checklist reports backend values and dock layout survives navigation
   await openTask(page, 'Data & Assets', 'Price')
   await expect(page.getByRole('tab', { name: 'Indicators', exact: true })).toHaveAttribute('aria-selected', 'true')
   await openDeskTool(page, 'Workspace results')
-  await page.getByRole('tab', { name: 'Scan results', exact: true }).press('ArrowRight')
+  await page.getByRole('tab', { name: 'Results', exact: true }).press('ArrowLeft')
   await expect(page.getByRole('region', { name: 'Workspace results', exact: true }).getByRole('tab', { name: 'Trades', exact: true })).toBeFocused()
   await expect(page.getByRole('region', { name: 'Recorded trades' })).toContainText('Choose a recorded run')
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width)

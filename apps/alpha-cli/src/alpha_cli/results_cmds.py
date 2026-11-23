@@ -9,6 +9,7 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.ml_reading import fold_table
+from alpha_cli.results_other_runs import NOT_HELD, folder_rows, ml_fields
 from alpha_cli.results_summary import summary_lines, table
 from alpha_cli.run_store import RUN_DIRS, find_run_dir, read_manifest, valid_run_id
 from alpha_cli.spine import book, reserve
@@ -116,9 +117,18 @@ def list_results(
             if row.get("run_id") and not row.get("idea_id"):
                 rdir = find_run_dir(AlphaSettings().data_dir, row["run_id"])
                 row["idea_id"] = read_manifest(rdir).get("idea_id") if rdir is not None else None
+        home = AlphaSettings().data_dir
+        everything = sorted(
+            [
+                {**row, **ml_fields(home, row)} if row.get("kind") == "ml_run" else row
+                for row in rows
+            ]
+            + folder_rows(home),
+            key=lambda row: str(row["recorded_at"]),
+        )
         selected = [
             row
-            for row in reversed(rows)
+            for row in reversed(everything)
             if (tools or not str(row.get("kind", "")).startswith("tool:"))
             and (symbol is None or row.get("symbol") == symbol)
             and (name is None or row.get("name") == name)
@@ -146,7 +156,6 @@ def list_results(
             }
             for row in selected
         ]
-        home = AlphaSettings().data_dir
         lines = table(
             (
                 "trial",
@@ -180,12 +189,16 @@ def list_results(
         if legend:
             lines.append(legend)
         for row, found in zip(items, selected, strict=True):
-            row["reading"] = run_reading(home, row["run_id"])
+            row["reading"] = found.get("reading") or (
+                None if found.get("from_folder") else run_reading(home, row["run_id"])
+            )
             row.update(evidence=found.get("evidence"), aim_relation=found.get("aim_relation"))
         for row in items:
             row["reasons"] = {
                 key: "an investigation-tool row; see alpha results show for its output"
                 if str(row["kind"]).startswith("tool:")
+                else NOT_HELD
+                if row["trial_index"] is None
                 else "unavailable in the stored ledger row"
                 for key in ("oos_sharpe", "benchmark_sharpe", "flags_count")
                 if row[key] is None

@@ -27,7 +27,8 @@ SWEEP_OUTPUTS = (
         Output(
             f"return_x{m}",
             f"Return at {m} times costs" if m else "Return with no costs",
-            f"Compounded total return with the stored fill costs multiplied by {m}.",
+            f"Compounded return (bar returns multiplied together) with the stored fill costs "
+            f"multiplied by {m}.",
             "fraction",
         )
         for m in MULTIPLES
@@ -89,11 +90,14 @@ CHURN_OUTPUTS = (
     Output(
         "gross_return",
         "Return before costs",
-        "Compounded total return before fill costs.",
+        "Compounded return (bar returns multiplied together) before fill costs.",
         "fraction",
     ),
     Output(
-        "net_return", "Return after costs", "Compounded total return after fill costs.", "fraction"
+        "net_return",
+        "Return after costs",
+        "Compounded return (bar returns multiplied together) after fill costs.",
+        "fraction",
     ),
     Output(
         "trades_per_year",

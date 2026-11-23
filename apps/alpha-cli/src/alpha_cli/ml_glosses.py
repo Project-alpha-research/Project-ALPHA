@@ -80,7 +80,7 @@ _ROWS = (
         "Return before costs",
         "gross_total_return",
         _percent,
-        "the same days with no fees or slippage",
+        "compounded return over the same days with no fees or slippage",
         "not stored",
     ),
     (

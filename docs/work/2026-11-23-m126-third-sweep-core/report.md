@@ -42,7 +42,7 @@ Decision: the commit trailer names the model that did the work (Sonnet 5.5), not
 - a. Cause: raw metric name and two unrelated counts. Change: `GLOSS` in `results_summary.py` explains "inverted sharpe"; when flags and flagged checks both show, one sentence says they are counted apart. Test: `test_m126_wording.py`.
 - b. See item 7b above.
 - c. Cause: the money axis never named the account. Change: `trade_pnl` caption says "account size assumed: N" from `metadata.starting_cash`, or "account size not stored in this run" (never a made-up number). In the caption, because a longer answer text left the figure. Test: `test_figure_pack.py`.
-- d. Cause: two messages said `uv run alpha`. Change: both say `alpha` (data health hint, toolbox pull hint). Test: source scan in `test_m126_wording.py`; one old test text updated.
+- d. Cause: a stored data-health sentence and one toolbox hint said `uv run alpha`. Change: the toolbox hint says `alpha`; `emit` prints `alpha` for any `uv run alpha` in screen text. The stored sentence is not changed (a setup study stores it and its pinned hash must stay). Test: `test_m126_wording.py`.
 - e. Follow: the refusal now says `--test` wants the id in the RUN column and where to find it. Tool: `alpha tool run <tool> --run <id>` works; exactly one of the two forms. Test: `test_m126_wording.py`.
 - f. `alpha idea new "text"` takes the bare text as the claim (an error when `--claim` is also given). The saved hint names `--idea-card`. Test: `test_m126_wording.py`.
 - g. Cause: callout boxes were drawn inside the plot. Change: pattern pictures mark points with letters; the notes sit under the plot. The shared `ps.callout` helper is unchanged (other figures use it). Test: `test_chart_pattern_picture.py`.

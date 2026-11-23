@@ -83,7 +83,7 @@ def summary_lines(run: dict[str, Any]) -> list[str]:
     flags = run.get("flags") or []
     flagged = audit.get("flagged", 0)
     apart = (
-        f" These are warnings from the diagnostic pass; the {flagged} flagged "
+        f" These are warnings from the diagnostic step; the {flagged} flagged "
         f"{'check' if flagged == 1 else 'checks'} above are counted apart."
         if flags and flagged
         else ""

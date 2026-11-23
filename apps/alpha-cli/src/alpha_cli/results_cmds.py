@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import typer
 
@@ -160,7 +160,9 @@ def list_results(
                 for row, found in zip(items, selected, strict=True)
             ],
         )
-        legend = legend_line(label for row in items for label in row["labels"] or [])
+        legend = legend_line(
+            label for row in items for label in cast(list[str], row["labels"] or [])
+        )
         if legend:
             lines.append(legend)
         for row, found in zip(items, selected, strict=True):

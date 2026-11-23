@@ -44,7 +44,7 @@ def expected_line(seconds: float) -> str:
     minutes = max(1, round(seconds / 60))
     return (
         f"alpha test: this takes about {minutes} {'minute' if minutes == 1 else 'minutes'}; "
-        "a busy machine takes longer. A progress line follows about every 10 seconds."
+        "a busy machine takes longer. Progress lines follow about every 10 seconds."
     )
 
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import replace
 from typing import Any, Literal, cast
 
@@ -38,7 +39,7 @@ def marker_size(fills: int) -> float:
     """Full size for few fills; smaller as fills grow, never below a readable size."""
     if fills <= _FULL_SIZE_FILLS:
         return _FULL_MARKER
-    return max(_SMALLEST_MARKER, _FULL_MARKER * (_FULL_SIZE_FILLS / fills) ** 0.5)
+    return max(_SMALLEST_MARKER, _FULL_MARKER * math.sqrt(_FULL_SIZE_FILLS / fills))
 
 
 def thin_step(fills: int) -> int:

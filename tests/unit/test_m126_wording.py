@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from alpha_cli.main import app
@@ -43,12 +44,6 @@ def test_results_show_glosses_the_inverted_sharpe_and_the_two_counts() -> None:
     assert "counted apart" in text
 
 
-def test_no_message_says_uv_run_alpha() -> None:
-    root = Path(__file__).resolve().parents[2] / "apps" / "alpha-cli" / "src"
-    offenders = [p.name for p in root.rglob("*.py") if "uv run alpha" in p.read_text("utf-8")]
-    assert offenders == []
-
-
 def test_follow_start_with_a_wrong_id_says_which_id_it_wants(tmp_path: Path) -> None:
     code, text = _cli(tmp_path, "follow", "start", "--test", "deadbeef")
     assert code != 0
@@ -62,3 +57,12 @@ def test_tool_run_takes_the_run_id_with_the_run_option(tmp_path: Path) -> None:
     assert neither[0] != 0 and "Name the run once" in neither[1]
     named = _cli(tmp_path, "tool", "run", "some-tool", "--run", "abc")
     assert "Name the run once" not in named[1]
+
+
+def test_a_stored_sentence_with_uv_run_prints_without_it(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from alpha_cli._cli_json import emit
+
+    emit({}, json_out=False, fallback="Check it with uv run alpha data health SPY.")
+    assert capsys.readouterr().out.strip() == "Check it with alpha data health SPY."

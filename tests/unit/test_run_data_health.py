@@ -46,7 +46,7 @@ def test_lookup_and_refresh(tmp_path: Path) -> None:
 
     missing = lookup()
     assert missing["verdict"] == "unchecked"
-    assert "alpha data health ABC@home" in missing["sentence"]
+    assert "uv run alpha data health ABC@home" in missing["sentence"]
     report = lookup(True)
     assert report["verdict"] == "pass"
     path = store.root / "health/ABC.json"

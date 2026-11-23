@@ -127,7 +127,7 @@ def run_health_record(
                 "No report" if row["status"] == "unchecked" else "The stored report is out of date"
             )
             parts.append(
-                f"{asset}: {why}. Check it with uv run alpha data health {shlex.quote(asset)}, "
+                f"{asset}: {why}. Check it with alpha data health {shlex.quote(asset)}, "
                 "or run again with --check-data."
             )
         else:

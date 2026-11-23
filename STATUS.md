@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 35 working, 39 partly working, 0 demo only, 3 shelved, 1 not started.
+- **Capabilities:** 35 working, 38 partly working, 0 demo only, 2 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 5.
 
@@ -58,14 +58,13 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Idea workspace: one page for one idea (Workstation, Ideas)** — Proven on synthetic records and a fixture browser run only; no end-to-end smoke check. Step 9 (RD-Agent work) is not linked to an idea yet. A follow change shows within a minute (the page looks again on a timer), not at once. The tear sheet is not mounted yet.. More: [docs/reference/invariants/web-frontend-ideas.md](docs/reference/invariants/web-frontend-ideas.md). More: [docs/reference/invariants/web-api-reads.md](docs/reference/invariants/web-api-reads.md). More: [docs/reference/invariants/cli-idea-file.md](docs/reference/invariants/cli-idea-file.md).
 - **Follow a tested idea on paper (alpha follow)** — Build F2: a followed rule test updates on stored bars (synthetic proof only). A setup or factor cannot be updated yet. Build F3 added `follow today` and the nightly steps N4 (update every follow, check journals) and N0 (opt-in bar refresh for followed assets); proven with fakes only. `scripts/status.py` does not show the follow count yet (protected). No real-data run yet.. More: [docs/reference/invariants/cli-follow.md](docs/reference/invariants/cli-follow.md).
 - **Portfolio view across strategies (alpha results correlate, alpha follow book)** — Proven with in-process unit tests only; no smoke test through the installed program. Follow sizes are fixed paper sizes, not marked to market. No real-data run recorded.. More: [docs/reference/invariants/cli-results-check.md](docs/reference/invariants/cli-results-check.md). More: [docs/reference/invariants/cli-follow.md](docs/reference/invariants/cli-follow.md).
-- **Confirm one tested idea once on the reserved period** — tested in-process with a Touch ID test double; the browser page has no end-to-end check yet; Setup Lab runs cannot be confirmed yet.. Needs: The owner's enrolled Touch ID credential (alpha owner-auth enroll).. More: [docs/reference/project/reserved-period.md](docs/reference/project/reserved-period.md).
+- **Confirm one tested idea once on the reserved period** — tested in-process on synthetic data only; Setup Lab runs cannot be confirmed yet.. More: [docs/reference/project/reserved-period.md](docs/reference/project/reserved-period.md).
 - **Today screen for followed ideas** — tested with a faked relay and in a browser; the detail shows the last 5 entries the command returns, not 10. No real-data run yet.. More: [docs/reference/invariants/web-frontend.md](docs/reference/invariants/web-frontend.md).
 - **Price forecasts with the Kronos model** — proved only with a stand-in model. Needs: the Kronos model files (downloaded on first use; not on this computer).
 - **Research cases from idea to decision (D0, D1, D2)** — proven up to the owner-approval boundary; a full case needs provider data and your approval.
 - **Find papers and screen their claims (R4)** — paper download tested only with a stand-in worker. Needs: the literature worker setup (not installed on this computer).
 - **Link paper claims to experiments and keep the original PDFs** — no test takes one paper all the way to an experiment.
 - **Check data providers and background jobs** — job list tested only with a stand-in command; provider checks need real providers.
-- **Paper trading: practice trading with no real money (IBKR Paper)** — no end-to-end test; parts tested with stand-ins. Needs: an opt-in setting, live Binance public data, and an IBKR practice account and gateway for stocks.
 - **Corrected Alpha158 price features** — no ML run with version 2; superseded by version 3 (kept for stored results).
 - **AI stock research loop (RD-Agent, W02)** — RD-Agent's own factor loop now runs model-connected on real Binance bars, judged by ALPHA instead of its built-in Qlib backtest (ADR-0049), from one launcher command with a hash-pinned runtime and the gateway's call cap: by 2026-11-16 about 80 factors judged across runs, no candidate; since ADR-0055 a screened factor passes only if its top third beat its bottom third (offline this rejects 16 of the 18 earlier replays; they still count as trials), the proposer sees every idea family, and each paid call has a 180 s limit; new frozen universes support explicit missing days, causal membership and 30-day write-offs with a disclosed 30% haircut, and an optional store directory; a first system check on the wide store (142 pairs) found three tickers whose identity changes across a gap (LUNA reused, DREP and COCOS redenominated), which the data layer must split before that store is used; `alpha rdagent run` and `alpha rdagent status` now start and watch it from one config file (no retry, no daemon), but it is not yet supervised as an ALPHA job, has no end-to-end smoke check with a scripted model, the fixture and stock loops ALPHA runs still use stand-in steps, and restart after a crash is not solved. Needs: supervision of the factor loop as an ALPHA job under the native job supervisor (backlog: rdagent-factor-loop-supervision); `alpha rdagent run` starts it today as a plain child process; an end-to-end smoke check of the factor loop through the installed programs with a scripted model route. More: [docs/roadmap/rd-agent-in-alpha.md](docs/roadmap/rd-agent-in-alpha.md).
 - **RD-Agent recorded runs in the Workstation (RD-Agent)** — journey view awaits a browser check and owner review; the run records supply verdicts when available. More: [docs/reference/project/components/rd-agent.md](docs/reference/project/components/rd-agent.md).
@@ -89,7 +88,6 @@ Tested piece by piece inside the test suite, but not yet run from start to finis
 - **Write trading rules and scan markets** — tested in-process and in a browser against a test server.
 - **Strategy development workspace** — tested in-process only.
 - **Prop-firm challenge check** — tested in-process only.
-- **Ask the AI assistant about a recorded run (Codex)** — tested in a browser against a test server only (a real run is recorded).
 - **Let an AI assistant use ALPHA's tools (MCP)** — tested in-process only.
 - **Purged cross-validation for labels that last several days** — tested in-process only (a real run is recorded).
 - **Fractional differencing with d chosen on training data only** — tested in-process only (a real run is recorded).
@@ -110,7 +108,6 @@ Found by running the installed program; each has a check that will fail once it 
 
 - **Qlib model refit evidence (W11)** — shelved 2026-11-14: not wired into any fit; kept for Qlib fold retraining once the reviewed statistics modules exist.
 - **Qlib models inside research cases (W09)** — shelved 2026-11-14: unused groundwork, not wired in; kept for routing Qlib models through RD-Agent research cases after the daily rule study.
-- **Qlib and Nautilus demonstration views** — shelved 2026-11-14: made-up prices only, not a production path; kept as a demonstration that Qlib and Nautilus connect (it re-ran on this computer on 2026-11-14).
 
 ## Not started
 

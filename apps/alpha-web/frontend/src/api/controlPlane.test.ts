@@ -59,6 +59,14 @@ describe('control-plane API client', () => {
     await expect(api.providers()).rejects.toThrow('The Workstation server could not answer this request. Try again. If it keeps failing, restart the Workstation.')
   })
 
+  it('reads as plain text when a panel prints the error, with no Error: prefix', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(apiError('The data store is not ready.', 422)))
+
+    const failure = await api.providers().catch((cause: unknown) => cause)
+
+    expect(String(failure)).toBe('The data store is not ready. Retry after resolving the blocker.')
+  })
+
   it('uses bounded artifact endpoints for causal charts and native analytics', async () => {
     const fetchMock = vi
       .fn()

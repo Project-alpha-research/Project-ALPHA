@@ -546,7 +546,9 @@ def list_runs(root: Path, ledger: Path) -> RdAgentRunList:
         items.append(_summary(folder, receipt, _json(folder, "panel/panel-receipt.json"), counts))
     return RdAgentRunList(
         items=items,
-        reason=None if items else "No recorded RD-Agent factor runs were found.",
+        reason=None
+        if items
+        else "No RD-Agent run is stored yet. Start one with: alpha rdagent run",
         ledger_reason=ledger_reason if not has_ledger else None,
     )
 

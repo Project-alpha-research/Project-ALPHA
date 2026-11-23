@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -136,3 +137,38 @@ def test_a_promotion_marker_appearing_or_clearing_makes_a_new_cache_key(
     assert pending != before
     marker.unlink()
     assert market._fingerprint(tmp_path) == before
+
+
+def test_start_up_warms_the_default_overview(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_web.api import market
+
+    client = _client(tmp_path, monkeypatch)
+    market._cache.clear()
+    with client:  # runs the start-up task
+        for _ in range(100):
+            if market._cache:
+                break
+            time.sleep(0.1)
+        assert len(market._cache) == 1
+        assert client.get("/api/market/overview").status_code == 200
+    assert len(market._cache) == 1
+
+
+def test_failed_warm_up_logs_one_line_and_carries_on(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    from alpha_web.api import market
+
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    market._cache.clear()
+
+    def boom(*_a: object, **_k: object) -> None:
+        raise RuntimeError("no store")
+
+    monkeypatch.setattr(market, "_run_json", boom)
+    with caplog.at_level("WARNING"):
+        market.warm()
+    assert [r.getMessage() for r in caplog.records] == ["market warm-up skipped: no store"]
+    assert not market._cache

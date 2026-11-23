@@ -180,7 +180,14 @@ def run(
     _artifacts.write_manifest(rdir, manifest)
 
     label = symbol if symbol is not None else f"run {from_run}"
-    _report(out, label=label, run_id=run_id, manifest_path=rdir / "manifest.json", horizon=horizon)
+    _report(
+        out,
+        label=label,
+        run_id=run_id,
+        manifest_path=rdir / "manifest.json",
+        horizon=horizon,
+        stock_or_etf=is_stock_or_etf(settings.data_dir, symbol),
+    )
 
 
 def _refuse_unknown(firm: str | None) -> None:
@@ -200,6 +207,7 @@ def _report(
     run_id: str,
     manifest_path: Path,
     horizon: int | None,
+    stock_or_etf: bool = False,
 ) -> None:
     """The rules used and the evaluation length first, then the rates, in plain words."""
     res = out.result
@@ -221,10 +229,41 @@ def _report(
         f"propfirm {label} -> run {run_id}: {out.firm}\n"
         f"  pass {res.pass_probability:.1%}, bust {res.bust_probability:.1%}, "
         f"payout {res.payout_probability:.1%}, median days-to-pass {days}\n"
-        f"  expected payout ${res.expected_payout:,.0f} over {res.horizon_days} days "
+        f"  expected payout {money(res.expected_payout)} over {res.horizon_days} days "
         f"({res.n_paths} paths)\n"
-        f"  manifest at {manifest_path}" + (out.held.note() if out.held else "")
+        f"  manifest at {manifest_path}"
+        + (out.held.note() if out.held else "")
+        + futures_note(out.firm, stock_or_etf)
     )
+
+
+def money(value: float) -> str:
+    """A money value with the minus sign before the currency sign: ``-$5``, never ``$-5``."""
+    sign = "-" if round(value) < 0 else ""
+    return f"{sign}${abs(value):,.0f}"
+
+
+def futures_note(firm: str, stock_or_etf: bool) -> str:
+    """One sentence when a futures-firm preset is used on a stock or ETF run; else empty."""
+    if firm == "custom" or not stock_or_etf:
+        return ""
+    return (
+        f"\nThe {firm} preset is a futures-firm rule set; this run trades a stock or ETF, "
+        "so read the rates as a rough guide."
+    )
+
+
+def is_stock_or_etf(data_dir: Path, symbol: str | None) -> bool:
+    """True when the stored dataset of ``symbol`` is a stock or ETF (no dataset: a plain ticker)."""
+    if symbol is None:
+        return False
+    from alpha_data.store import ParquetStore
+
+    provenance = ParquetStore(data_dir / "store").read_provenance(symbol)
+    dataset = provenance.get("dataset") if provenance is not None else None
+    if isinstance(dataset, dict):
+        return dataset.get("asset_class") in {"stock", "etf"}
+    return "/" not in symbol
 
 
 def rule_lines(firm: str, rules: PropFirmRules) -> list[str]:

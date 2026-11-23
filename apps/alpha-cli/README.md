@@ -21,7 +21,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 | Sub-area | Modules (count) | Tests in `tests/unit/` |
 |---|---|---|
 | Research cases | `research_*` (22), `_research_cmd_parts`, `_research_artifact_io`, `_structural_digest`, `study_semantic` | `test_research_*` |
-| Control store | `control_store`, `_control_*`, `owner_auth*`, `durable_lease`, `job_capacity`, `project_*` | `test_control_*`, `test_owner_*` |
+| Control store | `control_store`, `_control_*`, `owner_auth*`, `durable_lease`, `job_capacity`, `project_*`; kept part: `home_db`, `job_store`, `job_rows`, `reserved_slots` | `test_control_*`, `test_owner_*`, `test_home_db_split` |
 | Rule tests, tools, setups | `{test,results,tool,partner,setup}_cmds`, `spine/`, `toolbox/` | `test_{spine,setup,toolbox}_*`, `test_contact_*`,
 `test_look*` |
 | Front door | `next_cmds` (read-only; reuses `spine/stores`, `spine/trial_reader`, `rdagent_discussion`) | `test_next_cmd`, `smoke/test_next_smoke` |

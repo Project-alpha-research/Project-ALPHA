@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import math
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
@@ -111,6 +111,63 @@ def estimate_seconds(
 BATCH = 32  # Kronos draws up to 32 paths in one batch, for about the time of one path
 
 
+@dataclass(frozen=True)
+class Calibration:
+    """What a short timed warm-up on this machine measured; it prices any run of the same model.
+
+    One formula serves every number printed: the expected time and the "--paths N takes about"
+    tip. ``load`` is the one-off model load; a batch costs ``fixed`` plus ``per_read`` for each
+    bar the model reads."""
+
+    model: str
+    context: int
+    window: int  # bars in the timed window
+    load: float
+    fixed: float
+    per_read: float
+    batch: int
+
+    def seconds(self, *, horizon: int, rows: int, scale: int = 1) -> float:
+        """The time for ``rows`` paths of ``horizon`` steps, rounded up to a whole second."""
+        if self.model == "fake":
+            return estimate_seconds(context=self.context, horizon=horizon, rows=rows) * scale
+        batches = math.ceil(rows / self.batch)
+        run = batches * (self.fixed + self.per_read * _reads(self.window, horizon))
+        return float(math.ceil(self.load + run * scale))
+
+
+def calibrate(
+    forecaster: Forecaster,
+    bars: Sequence[Bar],
+    *,
+    context: int,
+    rows: int,
+    model: str,
+    clock: Callable[[], float] = time.monotonic,
+) -> Calibration:
+    """Time the warm-up: the first call loads the model, then one full batch of one step and of
+    two steps give the time per bar read and the fixed time of a batch. The offline double is
+    never timed. ``clock`` is stubbed in tests."""
+    if model == "fake" or len(bars) < 2:
+        return Calibration("fake", context, 0, 0.0, 0.0, 0.0, BATCH)
+    window = list(bars[-context:])
+    typer.echo("Timing a short warm-up step on this computer first.", err=True)
+    batch = min(rows, BATCH)
+
+    def timed(paths: int, steps: int) -> float:
+        started = clock()
+        forecaster.forecast(window, horizon=steps, sample_count=paths, seed=0)
+        return clock() - started
+
+    load = timed(1, 1)  # includes loading the model
+    one, two = timed(batch, 1), timed(batch, 2)
+    first = _reads(len(window), 1)
+    # The second step's own time; a noisy reading falls back to the one-step time.
+    per_read = (two - one) / (_reads(len(window), 2) - first) if two > one else one / first
+    fixed = max(0.0, one - per_read * first)
+    return Calibration(model, context, len(window), load, fixed, per_read, BATCH)
+
+
 def calibrated_seconds(
     forecaster: Forecaster,
     bars: Sequence[Bar],
@@ -123,31 +180,9 @@ def calibrated_seconds(
 ) -> float:
     """The time for the run, from a short timed warm-up on this machine, rounded up.
 
-    The first warm-up call loads the model; its time is added once. Two short forecasts of one
-    full batch (a single path costs nearly as much as a batch), one step and two steps long, give
-    the time per step and the fixed time of each batch. The offline double is never timed.
-    ``scale`` repeats the run (one per scored origin).
-    """
-    if model == "fake" or len(bars) < 2:
-        return estimate_seconds(context=context, horizon=horizon, rows=rows) * scale
-    window = list(bars[-context:])
-    typer.echo("Timing a short warm-up step on this computer first.", err=True)
-    batch = min(rows, BATCH)
-
-    def timed(paths: int, steps: int) -> float:
-        started = time.monotonic()
-        forecaster.forecast(window, horizon=steps, sample_count=paths, seed=0)
-        return time.monotonic() - started
-
-    load = timed(1, 1)  # includes loading the model
-    one, two = timed(batch, 1), timed(batch, 2)
-    first = _reads(len(window), 1)
-    # The second step's own time; a noisy reading falls back to the one-step time.
-    per_read = (two - one) / (_reads(len(window), 2) - first) if two > one else one / first
-    fixed = max(0.0, one - per_read * first)
-    batches = math.ceil(rows / batch)
-    run = batches * (fixed + per_read * _reads(len(window), horizon))
-    return float(math.ceil(load + run * scale))
+    ``scale`` repeats the run (one per scored origin)."""
+    found = calibrate(forecaster, bars, context=context, rows=rows, model=model)
+    return found.seconds(horizon=horizon, rows=rows, scale=scale)
 
 
 def say_time(seconds: float) -> str:

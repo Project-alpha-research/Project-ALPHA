@@ -782,14 +782,14 @@ def kronos(
         )
         provenance = _forecast._provenance(forecaster, model=resolved_model)
         _same_model(eval_manifest, provenance)
-        expected = _forecast.calibrated_seconds(
+        timing = _forecast.calibrate(
             forecaster,
             training_prefix,
             context=resolved_context,
-            horizon=steps,
             rows=paths,
             model=resolved_model,
         )
+        expected = timing.seconds(horizon=steps, rows=paths)
         for line in (lowered, _forecast.expected_time_line(resolved_model, expected)):
             if line is not None:
                 typer.echo(line)
@@ -995,7 +995,8 @@ def kronos(
         )
     typer.echo(
         f"More paths give a fuller fan: --paths {4 * paths} takes "
-        f"{_forecast.say_time(4 * expected)} on a desktop CPU."
+        f"{_forecast.say_time(timing.seconds(horizon=steps, rows=4 * paths))} "
+        "on a desktop CPU."
     )
     typer.echo(
         f"{_mc_reading.built_from_sentence(source_info)}\nmanifest at {rdir / 'manifest.json'}"

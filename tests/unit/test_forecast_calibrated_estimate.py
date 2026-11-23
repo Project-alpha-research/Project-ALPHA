@@ -110,3 +110,37 @@ def test_the_estimate_counts_batches_not_single_samples(rows: int) -> None:
     stub.forecast(bars[-120:], horizon=12, sample_count=rows)
     real = time.monotonic() - started
     assert expected <= 1.3 * real + 1.0, (expected, real)  # +1: rounded up
+
+
+def test_the_more_paths_tip_uses_the_batched_formula_with_a_stubbed_clock() -> None:
+    """One clock, one formula: 4x the paths costs 4x the batches, not 4x the whole run."""
+
+    class Ticks:
+        now = 0.0
+
+        def __call__(self) -> float:
+            return self.now
+
+    ticks = Ticks()
+
+    class Timed:
+        calls = 0
+
+        def forecast(
+            self, bars: Sequence[Bar], *, horizon: int, sample_count: int, **_: object
+        ) -> object:
+            reads = sum(min(len(bars) + step, _forecast.MAX_WINDOW) for step in range(horizon))
+            ticks.now += (5.0 if self.calls == 0 else 0.0) + 0.5 + reads * 1e-3
+            self.calls += 1
+            return object()
+
+    found = _forecast.calibrate(
+        cast(Any, Timed()), _bars(300), context=120, rows=8, model="kronos", clock=ticks
+    )
+    now = found.seconds(horizon=10, rows=8)
+    tip = found.seconds(horizon=10, rows=32)
+    assert tip == now  # eight and thirty-two paths are one batch each: same time
+    assert found.seconds(horizon=10, rows=64) - found.load == pytest.approx(
+        2 * (found.seconds(horizon=10, rows=32) - found.load), abs=2.0
+    )
+    assert found.seconds(horizon=10, rows=32 * 4) < 4 * now  # not four times the whole run

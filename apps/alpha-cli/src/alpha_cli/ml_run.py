@@ -14,7 +14,7 @@ import time
 import tomllib
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from alpha_cli import ml_cmds, ml_progress
 from alpha_cli._ml_replay import run_ml_replay
@@ -94,19 +94,11 @@ def _require_worker(project: Path | None) -> Path:
     return root
 
 
-def _pull_window(
-    store: ParquetStore, symbols: list[str], days: int, today: date
-) -> tuple[date, date]:
-    """The dates to pull: from the earliest stored bar of the other assets, to today.
-
-    A spec holds no start date. With nothing stored, the start is two calendar days for each
-    training, validation and test day the split needs (a weekend and holiday margin)."""
-    firsts = [
-        cast(datetime, store.read_bars(symbol).select("ts").min().item()).date()
-        for symbol in symbols
-        if store._bars_path(symbol).is_file()
-    ]
-    return (min(firsts) if firsts else today - timedelta(days=2 * days)), today
+def _pull_window(days: int, today: date) -> tuple[date, date]:
+    """The dates to pull: two calendar days for each training, validation and test day the
+    split needs (a weekend and holiday margin), up to today. A spec holds no start date, and no
+    stored bar is read here: the dates only tell the owner where a pull may start."""
+    return today - timedelta(days=2 * days), today
 
 
 def _require_stored(
@@ -115,7 +107,7 @@ def _require_stored(
     """Name every symbol with no stored bars at once, each with the line that pulls it."""
     missing = [symbol for symbol in symbols if not store._bars_path(symbol).is_file()]
     if missing:
-        start, end = _pull_window(store, symbols, days, datetime.now(UTC).date())
+        start, end = _pull_window(days, datetime.now(UTC).date())
         pulls = "\n".join(
             f"  alpha data pull {symbol} --start {start.isoformat()} --end {end.isoformat()}"
             for symbol in missing

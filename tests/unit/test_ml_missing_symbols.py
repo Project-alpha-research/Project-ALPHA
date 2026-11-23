@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import cast
 
 import pytest
 
-from alpha_cli.ml_run import MlRunError, _require_stored
+from alpha_cli.ml_run import _SPLIT_DEFAULTS, MlRunError, _require_stored
 from alpha_data.store import ParquetStore
 from tests.fixtures.cli_fixtures import seed_store
 
@@ -21,8 +20,8 @@ def test_all_missing_symbols_are_named_with_their_pull_lines(tmp_path: Path) -> 
     said = str(caught.value)
     assert "No stored bars for QQQ, IWM." in said
     assert "<date>" not in said
-    first = cast(datetime, ParquetStore(tmp_path / "store").read_bars("SPY")["ts"].min())
-    start = first.date().isoformat()
+    days = sum(_SPLIT_DEFAULTS.values())
+    start = (datetime.now(UTC).date() - timedelta(days=2 * days)).isoformat()
     today = datetime.now(UTC).date().isoformat()
     assert f"alpha data pull QQQ --start {start} --end {today}" in said
     assert f"alpha data pull IWM --start {start} --end {today}" in said

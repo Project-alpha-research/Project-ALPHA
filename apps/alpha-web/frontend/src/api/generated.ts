@@ -1878,26 +1878,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/research-gate-overrides": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Active Research Gate Overrides
-         * @description Override events on projects whose research gate is currently overridden (read-only).
-         */
-        get: operations["list_active_research_gate_overrides_api_research_gate_overrides_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/research/cases": {
         parameters: {
             query?: never;
@@ -2919,26 +2899,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/system": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get System
-         * @description Local readiness only; this endpoint performs no provider network probes.
-         */
-        get: operations["get_system_api_system_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/development/jobs": {
         parameters: {
             query?: never;
@@ -3897,28 +3857,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/research-gate-overrides": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * V3 List Active Research Gate Overrides
-         * @description Override events on projects whose research gate is currently overridden (read-only).
-         *
-         *     Versioned Workstation-v3 alias of `/api/research-gate-overrides`.
-         */
-        get: operations["v3_list_active_research_gate_overrides_api_v3_research_gate_overrides_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/runs/compare": {
         parameters: {
             query?: never;
@@ -4049,54 +3987,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/workspaces": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Workspaces
-         * @description Every saved workspace (``{slug, name, updated}``).
-         */
-        get: operations["list_workspaces_api_workspaces_get"];
-        put?: never;
-        /**
-         * Save Workspace
-         * @description Save (upsert) a workspace under a slug derived from its name.
-         */
-        post: operations["save_workspace_api_workspaces_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/workspaces/{slug}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Workspace
-         * @description The full workspace document to restore.
-         */
-        get: operations["get_workspace_api_workspaces__slug__get"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Workspace
-         * @description Delete a workspace (idempotent).
-         */
-        delete: operations["delete_workspace_api_workspaces__slug__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/app": {
         parameters: {
             query?: never;
@@ -4158,21 +4048,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** ActiveResearchGateOverride */
-        ActiveResearchGateOverride: {
-            /** Actor */
-            actor: string;
-            /** Project Id */
-            project_id: string;
-            /** Project Name */
-            project_name: string;
-            /** Reason */
-            reason: string;
-            /** Recorded At */
-            recorded_at: string;
-            /** Sequence */
-            sequence: number;
-        };
         /** AgentBrief */
         AgentBrief: {
             allowed_scope: components["schemas"]["AgentScope"];
@@ -5893,11 +5768,6 @@ export interface components {
              */
             verdict: "accept" | "reject" | "revise";
         };
-        /** Deleted */
-        Deleted: {
-            /** Deleted */
-            deleted: string;
-        };
         /** @enum {string} */
         DevelopmentStageValue: "hypothesis" | "data" | "strategy" | "baseline" | "oos" | "robustness" | "monte_carlo" | "optimization" | "portfolio" | "candidate" | "holdout" | "paper" | "decision" | "kronos" | "ml";
         /** EquitySeries */
@@ -7583,17 +7453,6 @@ export interface components {
             [key: string]: components["schemas"]["JsonValue"];
         };
         JsonValue: unknown;
-        /** KronosCacheStatus */
-        KronosCacheStatus: {
-            /** Configured */
-            configured: boolean;
-            /** Exists */
-            exists: boolean;
-            /** Local Only */
-            local_only: boolean;
-            /** Path */
-            path: string | null;
-        };
         /** LiteratureAcquisitionRequest */
         LiteratureAcquisitionRequest: {
             /** Candidate Id */
@@ -9370,15 +9229,6 @@ export interface components {
             return_value: number;
             /** Year */
             year: number;
-        };
-        /** NautilusStatus */
-        NautilusStatus: {
-            /** Installed Version */
-            installed_version: string | null;
-            /** Matches Pin */
-            matches_pin: boolean;
-            /** Pinned Version */
-            pinned_version: string;
         };
         /** NullTier */
         NullTier: {
@@ -12781,33 +12631,6 @@ export interface components {
             /** Symbols */
             symbols: string[];
         };
-        /** SystemCounts */
-        SystemCounts: {
-            /** Snapshots */
-            snapshots: number;
-            /** Symbols */
-            symbols: number;
-        };
-        /** SystemDataDirectory */
-        SystemDataDirectory: {
-            /** Exists */
-            exists: boolean;
-            /** Free Bytes */
-            free_bytes: number;
-            /** Path */
-            path: string;
-            /** Readable */
-            readable: boolean;
-            /** Writable */
-            writable: boolean;
-        };
-        /** SystemStatus */
-        SystemStatus: {
-            counts: components["schemas"]["SystemCounts"];
-            data_dir: components["schemas"]["SystemDataDirectory"];
-            kronos_cache: components["schemas"]["KronosCacheStatus"];
-            nautilus: components["schemas"]["NautilusStatus"];
-        };
         /**
          * Ticker
          * @description A displayed public last-trade quote; never stored, never a data authority.
@@ -12849,124 +12672,6 @@ export interface components {
              * @constant
              */
             source_verification: "verified_completed_d0_recomputation";
-        };
-        /**
-         * WorkspaceBody
-         * @description A workspace to save: a display name and the research context it was saved from.
-         *
-         *     ``dockview`` is retired. A workspace used to be a window arrangement, and the shell that
-         *     produced those arrangements is gone -- but an old client may still post one, so the field
-         *     is accepted and stored verbatim rather than rejected.
-         */
-        WorkspaceBody: {
-            /** Dockview */
-            dockview?: {
-                [key: string]: unknown;
-            } | null;
-            /**
-             * @default {
-             *       "linkGroup": "A",
-             *       "schemaVersion": 3,
-             *       "timeframe": "1D"
-             *     }
-             */
-            linked_context: components["schemas"]["WorkspaceLinkedContext"];
-            /** Name */
-            name: string;
-        };
-        /** WorkspaceDocument */
-        WorkspaceDocument: {
-            /** Dockview */
-            dockview?: {
-                [key: string]: unknown;
-            } | null;
-            linked_context: components["schemas"]["WorkspaceLinkedContext"];
-            /** Name */
-            name: string;
-            /** Updated */
-            updated?: number | null;
-        };
-        /** WorkspaceGroupLinkedContext */
-        WorkspaceGroupLinkedContext: {
-            /** End */
-            end?: string | null;
-            /** Projectid */
-            projectId?: string | null;
-            /** Runid */
-            runId?: string | null;
-            /** Snapshotid */
-            snapshotId?: string | null;
-            /** Start */
-            start?: string | null;
-            /** Symbol */
-            symbol?: string | null;
-            /**
-             * Timeframe
-             * @default 1D
-             * @constant
-             */
-            timeframe: "1D";
-            /** Universe */
-            universe?: string | null;
-            /** Versionid */
-            versionId?: string | null;
-        };
-        /** WorkspaceLinkedContext */
-        WorkspaceLinkedContext: {
-            /** End */
-            end?: string | null;
-            /** Groups */
-            groups?: {
-                [key: string]: components["schemas"]["WorkspaceGroupLinkedContext"];
-            } | null;
-            /**
-             * Linkgroup
-             * @default A
-             * @enum {string}
-             */
-            linkGroup: "A" | "B" | "C" | "D";
-            /** Projectid */
-            projectId?: string | null;
-            /** Runid */
-            runId?: string | null;
-            /**
-             * Schemaversion
-             * @default 3
-             * @constant
-             */
-            schemaVersion: 3;
-            /** Snapshotid */
-            snapshotId?: string | null;
-            /** Start */
-            start?: string | null;
-            /** Symbol */
-            symbol?: string | null;
-            /**
-             * Timeframe
-             * @default 1D
-             * @constant
-             */
-            timeframe: "1D";
-            /** Universe */
-            universe?: string | null;
-            /** Versionid */
-            versionId?: string | null;
-        };
-        /** WorkspaceMeta */
-        WorkspaceMeta: {
-            /** Name */
-            name: string;
-            /** Slug */
-            slug: string;
-            /** Updated */
-            updated: number | null;
-        };
-        /** WorkspaceSaved */
-        WorkspaceSaved: {
-            /** Name */
-            name: string;
-            /** Slug */
-            slug: string;
         };
     };
     responses: never;
@@ -16399,38 +16104,6 @@ export interface operations {
             };
         };
     };
-    list_active_research_gate_overrides_api_research_gate_overrides_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ActiveResearchGateOverride"][];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
     research_cases_api_research_cases_get: {
         parameters: {
             query?: {
@@ -18186,35 +17859,6 @@ export interface operations {
             };
         };
     };
-    get_system_api_system_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SystemStatus"];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
     v3_list_development_jobs_api_v3_development_jobs_get: {
         parameters: {
             query?: {
@@ -19807,38 +19451,6 @@ export interface operations {
             };
         };
     };
-    v3_list_active_research_gate_overrides_api_v3_research_gate_overrides_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ActiveResearchGateOverride"][];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
     compare_runs_api_v3_runs_compare_post: {
         parameters: {
             query?: never;
@@ -20030,130 +19642,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StageRunLink"];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
-    list_workspaces_api_workspaces_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkspaceMeta"][];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
-    save_workspace_api_workspaces_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WorkspaceBody"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkspaceSaved"];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
-    get_workspace_api_workspaces__slug__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkspaceDocument"];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
-    delete_workspace_api_workspaces__slug__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Deleted"];
                 };
             };
             /** @description Stable, redacted Workstation error */

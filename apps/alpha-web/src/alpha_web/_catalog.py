@@ -211,8 +211,3 @@ def providers(*, data_dir: Path) -> list[dict[str, Any]]:
     result: list[dict[str, Any]] = _run_json(["info", "providers", "--json"], data_dir=data_dir)
     return result
 
-
-def system(*, data_dir: Path) -> dict[str, Any]:
-    """Local system readiness (fresh because store, disk, and opt-in state can change)."""
-    result: dict[str, Any] = _run_json(["info", "system", "--json"], data_dir=data_dir)
-    return result

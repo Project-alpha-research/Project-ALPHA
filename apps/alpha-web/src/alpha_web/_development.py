@@ -156,26 +156,6 @@ def refresh_project_workspace(project_id: str, *, data_dir: Path) -> dict[str, o
     )
 
 
-def active_research_gate_overrides(
-    *, data_dir: Path, limit: int, offset: int
-) -> list[dict[str, object]]:
-    return _objects(
-        _run_json(
-            [
-                "project",
-                "research-gate-overrides",
-                "--limit",
-                str(limit),
-                "--offset",
-                str(offset),
-                "--json",
-            ],
-            data_dir=data_dir,
-        ),
-        "active research gate overrides",
-    )
-
-
 def strategy_version(project_id: str, version_id: str, *, data_dir: Path) -> dict[str, object]:
     return _object(
         _run_json(

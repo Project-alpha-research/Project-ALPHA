@@ -539,15 +539,6 @@ def test_research_gate_state_and_active_overrides_projection(
     overrides = cast(list[dict[str, object]], after["research_gate_overrides"])
     assert [(row["sequence"], row["actor"]) for row in overrides] == [(1, "owner")]
 
-    active = client.get("/api/research-gate-overrides")
-    assert active.status_code == 200, active.text
-    rows = cast(list[dict[str, object]], active.json())
-    assert [(row["project_id"], row["sequence"]) for row in rows] == [(project_id, 1)]
-    assert rows[0]["project_name"] == "Gate state probe"
-
-    # No mutation verb exists for the override surface.
-    assert client.post("/api/research-gate-overrides", json={}).status_code == 405
-
     legacy = _legacy_project(tmp_path, name="Grandfathered momentum")
     legacy_detail = client.get(f"/api/projects/{legacy['project_id']}").json()
     assert legacy_detail["research_gate_state"] == "not_required"

@@ -1,4 +1,4 @@
-"""Provider/system control-plane HTTP projections remain redacted and local-only."""
+"""The provider control-plane HTTP projection remains redacted and local-only."""
 
 from __future__ import annotations
 
@@ -25,16 +25,3 @@ def test_provider_api_is_registry_derived_and_redacts_credentials(
     assert by_id["tiingo"]["credential_env"] == [{"name": "ALPHA_TIINGO_API_KEY", "present": True}]
     assert "never-return-this-secret" not in response.text
 
-
-def test_system_api_reports_local_readiness_without_network(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
-    monkeypatch.setenv("ALPHA_PAPER_ENABLED", "false")
-    response = TestClient(create_app()).get("/api/system")
-
-    assert response.status_code == 200
-    status = response.json()
-    assert status["data_dir"]["path"] == str(tmp_path)
-    assert status["counts"] == {"symbols": 0, "snapshots": 0}
-    assert status["nautilus"]["pinned_version"] == "1.228.0"

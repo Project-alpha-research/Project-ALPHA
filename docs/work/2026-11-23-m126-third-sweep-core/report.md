@@ -20,4 +20,9 @@ Decision: the commit trailer names the model that did the work (Sonnet 5.5), not
 - Cause: the paragraph gave three counts with no reason.
 - Change: `reading_count_sentence` (the one helper every view calls) now says what each count is and why the all-assets count can be larger. Numbers unchanged.
 - Test: `tests/unit/test_m126_counts_bridge.py`; the older count tests still pass.
-- Not fixed: `tests/unit/test_code_size.py::test_baseline_entries_are_ceilings` already fails on `origin/main` (functions shrank below baseline). It asks to lower baseline entries in `.claude/`, which is protected. Numbers: `forecast_cmds.run` 172 vs 163, `monte_carlo_cmds.kronos` 372 vs 315, `report_cmds.report` 225 vs 219.
+- Not fixed: `tests/unit/test_code_size.py::test_baseline_entries_are_ceilings` already fails on `origin/main` (three functions are longer than their baseline). I did not touch them or the baseline in `.claude/`, which is protected. Numbers: `forecast_cmds.run` 172 vs 163, `monte_carlo_cmds.kronos` 372 vs 315, `report_cmds.report` 225 vs 219.
+
+## 5. Bridge sentence
+- Cause: the reading word came from checks the luck-adjusted number does not show.
+- Change: `deciding_sentence` (in `spine/reading.py`) builds "What decided it: ..." from the stored reading's `evidence.because` and `measures`. `reading_text` (test, results show) and `alpha report` print it under the reading. No statistic or stored field changes. Not changed: the toolbox's own "probabilistic Sharpe" screen (no reading is stored there).
+- Test: `tests/unit/test_m126_counts_bridge.py`, `test_m126_labels_compare.py`.

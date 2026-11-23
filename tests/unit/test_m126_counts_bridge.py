@@ -22,3 +22,47 @@ def test_each_count_says_what_it_counts() -> None:
     assert "7 times across all assets, which can be more than the first count" in text
     assert "plus 5 nearby settings tried inside this test" in text
     assert text.endswith("plus the nearby settings: 12.")
+
+
+def _reading(word: str, because: list[str], sharpe: float, lower: float, dsr: float) -> dict:
+    return {
+        "sentence": "x.",
+        "evidence": {"word": word, "because": because},
+        "measures": [
+            {"name": "out-of-sample Sharpe", "value": sharpe, "interval_95": [lower, 2.0]},
+            {"name": "deflated Sharpe", "value": dsr, "interval_95": None},
+        ],
+    }
+
+
+def test_the_bridge_names_the_random_price_tests_when_they_decided() -> None:
+    from alpha_cli.spine.reading import deciding_sentence
+
+    found = _reading(
+        "not clear of chance",
+        ["Random-data tests held: 1 of 3.", "Sharpe interval 0.10 to 2.00 (95%)."],
+        1.0,
+        0.1,
+        0.999,
+    )
+    text = deciding_sentence(found)
+    assert text is not None
+    assert "random-price tests" in text and "1 of 3" in text
+    assert "deflated Sharpe" not in text
+
+
+def test_the_bridge_names_the_trade_count_when_it_decided() -> None:
+    from alpha_cli.spine.reading import deciding_sentence
+
+    found = _reading(
+        "too little to read", ["8 closed trades (fewer than 30 make too few to judge)."], 1, 1, 1
+    )
+    assert deciding_sentence(found) == (
+        "What decided it: 8 closed trades (fewer than 30 make too few to judge)."
+    )
+
+
+def test_the_bridge_is_absent_for_a_reading_without_evidence() -> None:
+    from alpha_cli.spine.reading import deciding_sentence
+
+    assert deciding_sentence({"sentence": "x."}) is None

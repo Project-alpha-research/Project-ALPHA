@@ -12,7 +12,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from alpha_cli.spine.label_meaning import label_block
-from alpha_cli.spine.reading import plain, reading_word
+from alpha_cli.spine.reading import deciding_sentence, plain, reading_word
 from alpha_cli.spine.reserve import read_labels
 
 
@@ -148,6 +148,7 @@ def plain_report_lines(
     paragraph = _count_paragraph(run_symbol(manifest), diagnostics)
     lines = [
         reading_sentence(manifest, found),
+        deciding_sentence(found) if found else None,
         _result_line(_map(manifest.get("oos_metrics"))),
         _folds_count(manifest),
         _luck_line(manifest),

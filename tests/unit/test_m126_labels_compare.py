@@ -58,3 +58,9 @@ def test_compare_prints_each_run_id_once_and_no_self_column() -> None:
     header = text.splitlines()[0]
     assert header.count("aaa") == header.count("bbb") == 1
     assert "1.00x" not in text and text.splitlines()[1].count("\t") == 4
+
+
+def test_report_and_show_print_what_decided_the_reading(runs: tuple[Path, list[str]]) -> None:
+    home, ids = runs
+    assert "What decided it: 8 closed trades" in _cli(home, "report", ids[0])
+    assert "What decided it: 8 closed trades" in _cli(home, "results", "show", ids[0])

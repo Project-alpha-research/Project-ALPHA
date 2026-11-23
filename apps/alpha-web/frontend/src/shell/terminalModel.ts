@@ -3,8 +3,8 @@ import { workflowPages, type PageId } from './workflowModel'
 
 const CODES: Record<string, string> = {
   PriceChart: 'CHART', MarketWatch: 'WATCH', DataManager: 'DATA', IdeaWorkspace: 'IDEAS',
-  StrategyBuilder: 'RULES', Scanner: 'SCAN', Navigator: 'LIBRARY', AllTests: 'TESTS',
-  Workspaces: 'DESKS', Governance: 'HELP', Alerts: 'ALERTS', MachineLearning: 'ML', JobMonitor: 'JOBS',
+  Navigator: 'LIBRARY', AllTests: 'TESTS',
+  Workspaces: 'DESKS', Governance: 'HELP', MachineLearning: 'ML', JobMonitor: 'JOBS',
 }
 export function functionEntries(profile: Profile) {
   return workflowPages(profile).flatMap(page => page.panes.map(pane => ({

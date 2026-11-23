@@ -82,7 +82,7 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
 - A non-finite operand on the decision bar (warm-up or undefined statistic) is a `DataError`, never zero.
 - Indicator operands are `rules.RULE_ARITY`: `INDICATOR_ARITY`, the table `alpha chart overlays` accepts (every chart
   indicator except `rsi_pc1`, whose PCA lives in `alpha_research`), plus the rule-only channels `highest` and
-  `lowest` (`CHANNEL_FIELDS`: `field` is the price source). The chart and the rule builder mirror only
+  `lowest` (`CHANNEL_FIELDS`: `field` is the price source). The chart mirrors only
   `INDICATOR_ARITY` and `INDICATOR_FIELDS` (the multi-series fields); `FLOAT_FIRST` marks `hawkes`, whose first
   parameter is a decay rate, not a window. A channel includes the bar it is read on; `lag = 1` excludes it.
 - `RuleStrategy` sets `min_history = spec.history`, and its indicator snapshot records every operand's value on

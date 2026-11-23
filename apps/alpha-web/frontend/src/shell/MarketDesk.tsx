@@ -42,9 +42,9 @@ export function MarketDesk({ children, tools, profile, archive, onFooterMount }:
       open: typeof raw.open === 'boolean' ? raw.open : false,
       tab: ['Conditions', 'Indicators', 'Notes'].includes(raw.tab) ? String(raw.tab) : 'Conditions',
       bottom: typeof raw.bottom === 'boolean' ? raw.bottom : false,
-      result: RESULT_TABS.includes(raw.result) ? raw.result as ResultTab : 'Scan results' as ResultTab,
+      result: RESULT_TABS.includes(raw.result) ? raw.result as ResultTab : 'Trades' as ResultTab,
       width: typeof raw.width === 'number' && Number.isFinite(raw.width) ? Math.min(480, Math.max(280, raw.width)) : 340,
-    } } catch { return { open: false, tab: 'Conditions', bottom: false, result: 'Scan results' as ResultTab, width: 340 } }
+    } } catch { return { open: false, tab: 'Conditions', bottom: false, result: 'Trades' as ResultTab, width: 340 } }
   })
   useEffect(() => { try { localStorage.setItem(`alpha.edge-desk.v1.${profile}`, JSON.stringify(edge)) } catch { /* Optional presentation preferences. */ } }, [edge, profile])
   const dockTools = <div className="market-desk-tools" aria-label="Desk layout">

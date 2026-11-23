@@ -7,7 +7,7 @@ runs: run contexts, listings, details and job status.
 rules: rules and daily rule evidence.
 rule_test: what a rule test (alpha test) recorded.
 charts: run charts, analytics, candles and overlays.
-scans_strategies: scans and strategy definitions.
+scans_strategies: strategy definitions.
 data_sources: data sources, providers and kronos.
 system: system status and command definitions.
 crypto_data: crypto data contracts.
@@ -365,13 +365,8 @@ from .rules import DailyRuleAccountingPage as DailyRuleAccountingPage
 from .rules import DailyRuleEvidenceResponse as DailyRuleEvidenceResponse
 from .rules import DailyRuleRoleSummary as DailyRuleRoleSummary
 from .rules import DailyRuleTerminalEvidence as DailyRuleTerminalEvidence
-from .rules import RuleDeleted as RuleDeleted
 from .rules import RuleList as RuleList
-from .rules import RuleRecord as RuleRecord
-from .rules import RuleSaveRequest as RuleSaveRequest
 from .rules import RuleSummary as RuleSummary
-from .rules import RuleValidateRequest as RuleValidateRequest
-from .rules import RuleValidation as RuleValidation
 from .runs import GovernedRunContextV1 as GovernedRunContextV1
 from .runs import JobDetail as JobDetail
 from .runs import JobLaunchRequest as JobLaunchRequest
@@ -383,20 +378,6 @@ from .runs import RunList as RunList
 from .runs import RunListItem as RunListItem
 from .runs import StandaloneRunContextV1 as StandaloneRunContextV1
 from .scans_strategies import ParamDefinition as ParamDefinition
-from .scans_strategies import ScanAlert as ScanAlert
-from .scans_strategies import ScanAlerts as ScanAlerts
-from .scans_strategies import ScanCheck as ScanCheck
-from .scans_strategies import ScanCheckResult as ScanCheckResult
-from .scans_strategies import ScanDeleted as ScanDeleted
-from .scans_strategies import ScanList as ScanList
-from .scans_strategies import ScanRecord as ScanRecord
-from .scans_strategies import ScanRow as ScanRow
-from .scans_strategies import ScanRunRequest as ScanRunRequest
-from .scans_strategies import ScanRunResult as ScanRunResult
-from .scans_strategies import ScanSaveRequest as ScanSaveRequest
-from .scans_strategies import ScanSkipped as ScanSkipped
-from .scans_strategies import ScanSummary as ScanSummary
-from .scans_strategies import ScanUniverse as ScanUniverse
 from .scans_strategies import StrategyDefinition as StrategyDefinition
 from .semantic_reads import BlindSemanticProjectionV1 as BlindSemanticProjectionV1
 from .semantic_reads import SemanticPointV1 as SemanticPointV1

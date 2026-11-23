@@ -87,7 +87,7 @@ Research actions use a server-bound click confirmation; no Touch ID enrollment i
 ## Connected edge workspace
 
 On Price, **Research tools** opens Assistant, Conditions, Indicators and Notes. **Workspace results**
-opens Scan results, Trades, Results and Run library beneath the chart. Dock selections and widths
+opens Trades, Results and Run library beneath the chart. Dock selections and widths
 persist per market profile; arrow keys navigate dock tabs. Data Manager and Research tools share
 the right-hand space. Individual panel maximize fills the viewport while preserving the dock layout for restoration.
 
@@ -96,19 +96,16 @@ Stored quote variants remain separate and are shown with their exact symbols; se
 the canonical Price chart with its date window, snapshot and run selection cleared.
 
 Select saved Conditions to see CLI-evaluated operands, pass/fail/unavailable status, signal, cutoff
-and rule hash. A scan row opens its symbol and evaluated date, clearing prior archive/run/snapshot
-context. Changed rule hashes are flagged. Exact archive and run charts remain explicitly labelled;
+and rule hash. Changed rule hashes are flagged. Exact archive and run charts remain explicitly labelled;
 canonical rule evaluation is unavailable for these alternate datasets.
 
 Assistant uses the installed, authenticated local Codex CLI; model inference is remote. It sends
 only bounded, server-assembled context to that service. Readiness verifies isolation. Sessions and
 source hashes persist locally; cancellation and a five-minute watchdog bound inference. Answers
-cite attached sources and identify missing evidence. Changing context makes old drafts unavailable. Scan-linked sessions pin the exact rule hash;
-editing that saved rule requires a rescan or explicitly selecting current rules. Saved running turns
+cite attached sources and identify missing evidence. Changing context makes old drafts unavailable. Sessions for a saved rule pin the exact rule hash. Saved running turns
 continue to be checked after a web restart even if their job handle was lost; failed turns show
 the backend error and a recovery action.
-**Open draft in rule builder** rechecks context and validates the proposed RuleSpec; you still
-review, name, save and test it through the existing workflow. No draft grants research approval,
+A draft is never applied without a context recheck; save a rule with `alpha rules save`. No draft grants research approval,
 executes arbitrary code or places an order. Legacy runs without verified snapshots and cutoffs
 cannot be attached as verified evidence.
 

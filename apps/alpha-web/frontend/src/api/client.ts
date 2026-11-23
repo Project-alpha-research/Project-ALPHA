@@ -102,8 +102,6 @@ import type {
   IdeaList,
   ChartOverlays,
   RuleList,
-  RuleRecord,
-  RuleValidation,
   ChartBundle,
   CommandDef,
   ControlJob,
@@ -200,11 +198,6 @@ import type {
   TradeRow,
   WorkspaceDoc,
   WorkspaceMeta,
-  ScanAlerts,
-  ScanCheckResult,
-  ScanList,
-  ScanRecord,
-  ScanRunResult,
 } from './types'
 
 export function runContextForProject(projectId: string | null): RunContextV1 {
@@ -445,31 +438,6 @@ export const api = {
   overlays: (symbol: string, query = ''): Promise<ChartOverlays> =>
     getJSON(`/api/overlays/${encodeURIComponent(symbol)}${query}`),
   rules: (): Promise<RuleList> => getJSON('/api/rules'),
-  rule: (name: string): Promise<RuleRecord> => getJSON(`/api/rules/${encodeURIComponent(name)}`),
-  ruleSave: (name: string, spec: Record<string, unknown>): Promise<RuleRecord> =>
-    postJSON('/api/rules', { name, spec }),
-  ruleValidate: (spec: Record<string, unknown>): Promise<RuleValidation> =>
-    postJSON('/api/rules/validate', { spec }),
-  ruleDelete: async (name: string): Promise<{ name: string; deleted: boolean }> => {
-    const res = await fetch(`/api/rules/${encodeURIComponent(name)}`, { method: 'DELETE' })
-    if (!res.ok) throw await responseError(res)
-    return (await res.json()) as { name: string; deleted: boolean }
-  },
-  scans: (): Promise<ScanList> => getJSON('/api/scans'),
-  scan: (name: string): Promise<ScanRecord> => getJSON(`/api/scans/${encodeURIComponent(name)}`),
-  scanSave: (name: string, rules: string, symbols: string[] | null): Promise<ScanRecord> =>
-    postJSON('/api/scans', { name, rules, symbols }),
-  scanRun: (name: string, asOf: string | null): Promise<ScanRunResult> =>
-    postJSON(`/api/scans/${encodeURIComponent(name)}/run`, { as_of: asOf }),
-  scanCheck: (name: string): Promise<ScanCheckResult> =>
-    postJSON(`/api/scans/${encodeURIComponent(name)}/check`, {}),
-  scanCheckAll: (): Promise<ScanCheckResult> => postJSON('/api/scans/check', {}),
-  scanDelete: async (name: string): Promise<{ name: string; deleted: boolean }> => {
-    const res = await fetch(`/api/scans/${encodeURIComponent(name)}`, { method: 'DELETE' })
-    if (!res.ok) throw await responseError(res)
-    return (await res.json()) as { name: string; deleted: boolean }
-  },
-  alerts: (limit: number): Promise<ScanAlerts> => getJSON(`/api/alerts?limit=${limit}`),
   strategies: (): Promise<StrategyDef[]> => getJSON('/api/strategies'),
   commands: (): Promise<CommandDef[]> => getJSON('/api/commands'),
   symbols: (): Promise<{ symbols: string[] }> => getJSON('/api/symbols'),

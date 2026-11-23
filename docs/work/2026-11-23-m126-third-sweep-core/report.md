@@ -37,3 +37,16 @@ Decision: the commit trailer names the model that did the work (Sonnet 5.5), not
 - Change (`figures/_price_signal.py`): marker size falls smoothly with the fill count (never under 10). Past 200 fills, every k-th fill is drawn and the caption says "every kth of N fills drawn". A span over five years (and all lows above 0) gets a log price axis, named in the axis label. Look unchanged: white, standard matplotlib.
 - Decision: no zoomed second panel. All panels of a figure share one x-axis in `alpha_research.figures` (protected), so a last-two-years panel cannot be drawn. The brief allowed thinning instead.
 - Test: `tests/unit/test_figure_pack.py` (three new tests).
+
+## 7. Small wording
+- a. Cause: raw metric name and two unrelated counts. Change: `GLOSS` in `results_summary.py` explains "inverted sharpe"; when flags and flagged checks both show, one sentence says they are counted apart. Test: `test_m126_wording.py`.
+- b. See item 7b above.
+- c. Cause: the money axis never named the account. Change: `trade_pnl` caption says "account size assumed: N" from `metadata.starting_cash`, or "account size not stored in this run" (never a made-up number). In the caption, because a longer answer text left the figure. Test: `test_figure_pack.py`.
+- d. Cause: two messages said `uv run alpha`. Change: both say `alpha` (data health hint, toolbox pull hint). Test: source scan in `test_m126_wording.py`; one old test text updated.
+- e. Follow: the refusal now says `--test` wants the id in the RUN column and where to find it. Tool: `alpha tool run <tool> --run <id>` works; exactly one of the two forms. Test: `test_m126_wording.py`.
+- f. `alpha idea new "text"` takes the bare text as the claim (an error when `--claim` is also given). The saved hint names `--idea-card`. Test: `test_m126_wording.py`.
+- g. Cause: callout boxes were drawn inside the plot. Change: pattern pictures mark points with letters; the notes sit under the plot. The shared `ps.callout` helper is unchanged (other figures use it). Test: `test_chart_pattern_picture.py`.
+
+## Not done / notes
+- `docs/reference/commands.md` is not regenerated (the brief forbids it); `alpha idea new` and `alpha tool run` options changed, so it is stale.
+- Item 1: `forecast`, `propfirm` and `data` read bars by symbol and fail loud on a short name; they never print a false "nothing tried", so I left them.

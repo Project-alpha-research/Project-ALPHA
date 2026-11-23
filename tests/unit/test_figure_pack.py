@@ -836,3 +836,20 @@ def test_thousands_of_fills_are_thinned_and_the_caption_says_so(
     spec = _build(_long_run(tmp_path, monkeypatch, years=7, fills=1000), "price_signal")
     drawn = sum(len(m.x) for m in spec.panels[0].marks if type(m).__name__ == "ScatterMark")
     assert drawn <= 200 and "of 1,000 fills drawn" in spec.caption
+
+
+def test_trade_pnl_says_the_account_size_the_money_axis_assumes(tmp_path: Path) -> None:
+    def spec_for(root: Path, **metadata: object) -> Any:
+        rdir = _synthetic(root, **metadata)
+        pl.DataFrame(
+            {
+                "entry_ts": [datetime(2022, 1, 3, tzinfo=UTC), datetime(2022, 2, 3, tzinfo=UTC)],
+                "realized_pnl": [100.0, -40.0],
+            }
+        ).write_parquet(rdir / "trades.parquet")
+        return _build(rdir, "trade_pnl")
+
+    known = spec_for(tmp_path / "a", starting_cash=1_000_000.0)
+    assert "account size assumed: 1,000,000" in known.caption
+    unknown = spec_for(tmp_path / "b")
+    assert "account size not stored in this run" in unknown.caption

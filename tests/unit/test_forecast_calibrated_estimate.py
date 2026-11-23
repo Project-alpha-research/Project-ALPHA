@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
+from typing import Any, cast
 
 import pytest
 
@@ -54,7 +55,7 @@ def test_the_estimate_is_within_thirty_percent_on_a_slower_or_faster_machine(
     stub = _Stub(per_read, load=0.05)
     bars = _bars(300)
     expected = _forecast.calibrated_seconds(
-        stub, bars, context=120, horizon=6, rows=10, model="kronos"
+        cast(Any, stub), bars, context=120, horizon=6, rows=10, model="kronos"
     )
     started = time.monotonic()
     stub.forecast(bars[-120:], horizon=6, sample_count=10)
@@ -65,7 +66,7 @@ def test_the_estimate_is_within_thirty_percent_on_a_slower_or_faster_machine(
 def test_the_estimate_is_rounded_up_to_a_whole_second() -> None:
     stub = _Stub(2e-5)
     seconds = _forecast.calibrated_seconds(
-        stub, _bars(300), context=120, horizon=12, rows=30, model="kronos"
+        cast(Any, stub), _bars(300), context=120, horizon=12, rows=30, model="kronos"
     )
     assert seconds == int(seconds) and seconds >= 1
 
@@ -73,7 +74,7 @@ def test_the_estimate_is_rounded_up_to_a_whole_second() -> None:
 def test_the_offline_double_is_never_timed() -> None:
     stub = _Stub(1.0)
     seconds = _forecast.calibrated_seconds(
-        stub, _bars(300), context=120, horizon=12, rows=30, model="fake"
+        cast(Any, stub), _bars(300), context=120, horizon=12, rows=30, model="fake"
     )
     assert stub.calls == 0
     assert seconds == pytest.approx(
@@ -103,7 +104,7 @@ def test_the_estimate_counts_batches_not_single_samples(rows: int) -> None:
     stub = _BatchedStub(1e-4)
     bars = _bars(300)
     expected = _forecast.calibrated_seconds(
-        stub, bars, context=120, horizon=12, rows=rows, model="kronos"
+        cast(Any, stub), bars, context=120, horizon=12, rows=rows, model="kronos"
     )
     started = time.monotonic()
     stub.forecast(bars[-120:], horizon=12, sample_count=rows)

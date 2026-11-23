@@ -29,18 +29,13 @@ afterEach(() => {
 })
 
 describe('control-plane API client', () => {
-  it('reads the provider and system projections from their stable endpoints', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(jsonResponse([]))
-      .mockResolvedValueOnce(jsonResponse({ paper_enabled: false }))
+  it('reads the provider projection from its stable endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse([]))
     vi.stubGlobal('fetch', fetchMock)
 
     await api.providers()
-    await api.system()
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/providers')
-    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/system')
   })
 
   it('cancels through the linked job endpoint with DELETE', async () => {

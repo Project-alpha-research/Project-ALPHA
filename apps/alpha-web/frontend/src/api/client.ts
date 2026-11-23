@@ -92,7 +92,6 @@ async function originalPdfDownload(
 }
 
 import type {
-  ActiveResearchGateOverride,
   AgentBrief,
   Candles,
   MarketOverview,
@@ -190,14 +189,11 @@ import type {
   RunList,
   StrategyDef,
   StrategyVersion,
-  SystemStatus,
   SuiteAction,
   SuiteCancelResponse,
   SuiteLaunch,
   SuitePlan,
   TradeRow,
-  WorkspaceDoc,
-  WorkspaceMeta,
 } from './types'
 
 export function runContextForProject(projectId: string | null): RunContextV1 {
@@ -510,7 +506,6 @@ export const api = {
     symbol: string,
   ): Promise<CryptoSnapshotRegister> =>
     postJSON(`/api/crypto-data/snapshots/${encodeURIComponent(snapshotId)}/register`, { symbol }),
-  system: (): Promise<SystemStatus> => getJSON('/api/system'),
   jobs: (): Promise<JobSummary[]> => getJSON('/api/jobs'),
   job: (id: string): Promise<JobDetail> => getJSON(`/api/jobs/${id}`),
   async launch(
@@ -528,23 +523,6 @@ export const api = {
   },
   cancel: (id: string): Promise<Response> => fetch(`/api/jobs/${id}`, { method: 'DELETE' }),
   streamUrl: (id: string): string => `/api/jobs/${id}/stream`,
-  workspaces: (): Promise<WorkspaceMeta[]> => getJSON('/api/workspaces'),
-  getWorkspace: (slug: string): Promise<WorkspaceDoc> => getJSON(`/api/workspaces/${slug}`),
-  // The slug is derived server-side from the name, so there is nothing to pass here.
-  async saveWorkspace(body: {
-    name: string
-    linked_context: unknown
-  }): Promise<{ slug: string; name: string }> {
-    const res = await fetch('/api/workspaces', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-    if (!res.ok) throw await responseError(res)
-    return (await res.json()) as { slug: string; name: string }
-  },
-  deleteWorkspace: (slug: string): Promise<Response> =>
-    fetch(`/api/workspaces/${slug}`, { method: 'DELETE' }),
   riskScenario: (runId: string, confidence = 0.95): Promise<RiskReport> =>
     getJSON(`/api/risk/scenario?run_id=${encodeURIComponent(runId)}&confidence=${confidence}&include_metric_basis=true`),
   researchCompare: (symbol: string, runContext: RunContextV1): Promise<ResearchReport> => {
@@ -650,8 +628,6 @@ export const api = {
     if (query.symbol) params.set('symbol', query.symbol)
     return getJSON(`/api/research/datasets?${params.toString()}`)
   },
-  researchGateOverrides: (): Promise<ActiveResearchGateOverride[]> =>
-    getJSON('/api/research-gate-overrides'),
   projects: (limit = 50, offset = 0): Promise<ProjectPage> =>
     getJSON(`/api/projects?limit=${limit}&offset=${offset}`),
   project: (id: string, lineageLimit = 100): Promise<ProjectDetail> =>

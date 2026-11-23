@@ -32,7 +32,7 @@ test('Market Watch only lists stored markets and opens the selected market chart
   await preparePage(page, { candles })
   await page.route('**/api/symbols', route => route.fulfill({ json: { symbols: ['XRP/USDT', 'ETH/USDT'] } }))
   const unreadable = page.waitForResponse(response => decodeURIComponent(new URL(response.url()).pathname).endsWith('/api/candles/ETH/USDT'))
-  await openTask(page, 'Data & Assets', 'Watchlist')
+  await openTask(page, 'Data & Assets', 'Price')
   const table = page.getByRole('table', { name: 'Market Watch' }); await unreadable
   await expect(table.getByRole('button', { name: 'XRP/USDT', exact: true })).toBeVisible()
   await expect(table.getByRole('button', { name: 'BTC/USDT', exact: true })).toHaveCount(0)

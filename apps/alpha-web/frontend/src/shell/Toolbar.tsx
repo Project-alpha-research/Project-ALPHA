@@ -1,22 +1,18 @@
 // Toolbar (spec 2026-09-01 §4.2 item 3; artboard 1-Terminal): chart-type, crosshair, grid and
 // zoom glyphs that drive the price chart through `chartControls`; timeframes (only what the data
 // house serves is enabled); Data / Research / Run / Stop / Report glyphs; the Profile combo; the
-// symbol · venue · timeframe combo; the `Search Ctrl+K` field; the lock `Paper only` status chip
-// and the shield Governance button. Every enabled button opens a real surface; Stop is disabled
+// symbol · venue · timeframe combo; and the `Search Ctrl+K` field. Every enabled button opens a real surface; Stop is disabled
 // because the terminal owns no running process (jobs cancel from the Jobs table).
 
 import { useEffect } from 'react'
 
 import { setChartControls, useChartControls, zoomStep, type ChartType, type ChartControls as Controls } from '../context/chartControls'
 import { useLinked } from '../context/linked'
-import { useLinkedProjectGate } from '../panels/useLinkedProjectGate'
-import { useSelectedRunWatermark } from '../panels/useSelectedRunWatermark'
 import { setSettings, useSettings, workspaceModeFor, type Profile } from '../state/settings'
 import { ContextBar } from './ContextBar'
 import { Icon, type IconName } from './icons'
 import { PROFILES } from './profiles'
 import { SettingsMenu } from './SettingsMenu'
-import { statusChip } from './statusModel'
 import { timeframeButtons } from './toolbarModel'
 
 interface Props {
@@ -25,7 +21,6 @@ interface Props {
   onRun: () => void
   onReport: () => void
   onSearch: () => void
-  onGovernance: () => void
 }
 
 const CHART_TYPES: { id: ChartType; icon: IconName; label: string }[] = [
@@ -101,23 +96,6 @@ export function ChartControls({ value, onChange, market = true, disabled = false
   )
 }
 
-export function StatusChip({ onOpenGovernance }: { onOpenGovernance: () => void }) {
-  const gate = useLinkedProjectGate()
-  const watermark = useSelectedRunWatermark()
-  const chip = statusChip({ watermark, gateLock: gate.lock })
-  return (
-    <button
-      type="button"
-      className={`chip ${chip.tone} status-chip`}
-      title={chip.title}
-      onClick={onOpenGovernance}
-    >
-      <Icon name="lock" size={12} />
-      {chip.text}
-    </button>
-  )
-}
-
 /** Mirrors the detail mode onto the document so `.advanced-only` rules can read it. */
 export function WorkspaceModeAttribute() {
   const linked = useLinked()
@@ -129,7 +107,7 @@ export function WorkspaceModeAttribute() {
   return null
 }
 
-export function Toolbar({ onData, onResearch, onRun, onReport, onSearch, onGovernance }: Props) {
+export function Toolbar({ onData, onResearch, onRun, onReport, onSearch }: Props) {
   const { profile } = useSettings()
   const linked = useLinked()
   return (
@@ -208,17 +186,6 @@ export function Toolbar({ onData, onResearch, onRun, onReport, onSearch, onGover
           onKeyDown={(event) => event.key === 'Enter' && onSearch()}
         />
       </div>
-      <StatusChip onOpenGovernance={onGovernance} />
-      <button
-        type="button"
-        className="btn governance-btn"
-        aria-label="Governance"
-        title="Authority, research gates, overrides, providers, storage and the glossary"
-        onClick={onGovernance}
-      >
-        <Icon name="shield" />
-        <span className="governance-label">Governance</span>
-      </button>
       <SettingsMenu />
     </div>
   )

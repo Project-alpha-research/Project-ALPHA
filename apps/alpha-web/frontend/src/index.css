@@ -137,7 +137,7 @@ html[data-density='compact'] {
 small { font-size: var(--font-size); }
 
 /* Compact controls retain a minimum 24px hit target. */
-.btn, .kbd, .area-tab, .tree-leaf, .settings-row, .context-chip, .status-chip { min-height: 24px; }
+.btn, .kbd, .area-tab, .tree-leaf, .settings-row, .context-chip { min-height: 24px; }
 
 /* Classic bevels: raised controls and sunken wells, drawn with the two bevel tokens. */
 .raised { border: 1px solid; border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light); }
@@ -1107,48 +1107,6 @@ textarea.field:focus {
 }
 
 /* ==========================================================================
-   Workspaces
-   ========================================================================== */
-
-.ws-save {
-  align-self: flex-end;
-}
-.ws-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.ws-item {
-  display: flex;
-  align-items: stretch;
-  gap: 6px;
-}
-.ws-open {
-  all: unset;
-  cursor: pointer;
-  flex: 1;
-  padding: 9px 12px;
-  border-radius: var(--r);
-  border: 1px solid var(--line-strong);
-  background: var(--panel-2);
-  color: var(--ink);
-  font-size: var(--font-size);
-  transition: all 0.12s;
-}
-.ws-open:hover {
-  border-color: var(--accent-line);
-  background: var(--accent-soft);
-}
-.ws-del {
-  padding: 0 11px;
-  color: var(--muted);
-}
-.ws-del:hover {
-  color: var(--negative-text);
-  border-color: var(--down);
-}
-
-/* ==========================================================================
    AI Console
    ========================================================================== */
 
@@ -1261,48 +1219,6 @@ textarea.field:focus {
 }
 .panel-error .eyebrow {
   color: var(--negative-text);
-}
-
-/* glossary panel */
-.glossary {
-  display: flex;
-  flex-direction: column;
-  gap: var(--pad-sm);
-  height: 100%;
-}
-.glossary .field-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.glossary-list {
-  overflow-y: auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.glossary-entry {
-  padding: 9px 11px;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-}
-.glossary-entry h3 {
-  margin: 0 0 2px;
-  font-size: var(--font-size);
-  color: var(--ink);
-}
-.glossary-short {
-  margin: 0 0 4px;
-  font-size: var(--font-size);
-  color: var(--accent-text);
-}
-.glossary-long {
-  margin: 0;
-  font-size: var(--font-size);
-  line-height: 1.55;
-  color: var(--ink-dim);
 }
 
 /* ==========================================================================
@@ -3987,14 +3903,6 @@ textarea.field:focus {
 }
 
 @media (max-width: 1280px) {
-  /* The toolbar is full at 1280px: the Governance button keeps its glyph and accessible name,
-     the status chip truncates rather than wrapping, and the docks narrow. */
-  .governance-label {
-    display: none;
-  }
-  .status-chip {
-    max-width: 140px;
-  }
   .kronos-main-grid,
   .development-grid {
     grid-template-columns: 1fr;
@@ -4265,33 +4173,6 @@ textarea.field:focus {
 .figure-overlay-image { display: block; width: 100%; height: auto; max-height: 78vh; object-fit: contain; background: var(--panel-2); border-radius: var(--r); }
 .figure-copy-error { margin: 0; color: var(--negative-text); font-size: var(--font-size); }
 
-/* Shell-level modal (Governance): backdrop, box, head. */
-.shell-modal {
-  position: fixed; inset: 0; z-index: 60;
-  display: flex; align-items: center; justify-content: center;
-  padding: var(--pad);
-  background: var(--scrim);
-}
-.shell-modal-box {
-  display: flex; flex-direction: column;
-  width: min(96vw, 1100px); height: min(92vh, 720px);
-  background: var(--panel); border: 1px solid var(--line-strong); border-radius: var(--r-lg);
-  overflow: hidden;
-}
-.shell-modal-head { display: flex; align-items: center; gap: var(--pad); padding: var(--pad-sm) var(--pad); border-bottom: 1px solid var(--line); }
-.shell-modal-head b { color: var(--ink); }
-.governance-body { display: grid; grid-template-columns: 200px 1fr; min-height: 0; flex: 1; }
-.governance-tree { border-right: 1px solid var(--line); padding: var(--pad-sm) 0; overflow: auto; }
-.governance-tree ul { list-style: none; margin: 0; padding: 0; }
-.governance-page { min-width: 0; overflow: auto; padding: var(--pad); display: flex; flex-direction: column; gap: var(--pad); }
-.governance-page h2 { margin: 0; font-size: var(--font-size); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-.governance-table td.k { color: var(--muted); white-space: nowrap; }
-.governance-table td.tone-ok { color: var(--up); }
-.governance-table td.tone-warn { color: var(--gold); }
-.governance-table td.tone-bad { color: var(--negative-text); }
-.governance-page .glossary { padding: 0; }
-.status-chip { font: inherit; cursor: pointer; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.status-chip:hover { filter: brightness(1.2); }
 .figure-absent-reason { margin: 0; color: var(--muted); font-size: var(--font-size); }
 .figure-flag {
   padding: 1px 6px;
@@ -4539,7 +4420,6 @@ html[data-workspace-mode='guided'] .advanced-only { display: none !important; }
   text-transform: none; letter-spacing: 0; font-size: inherit;
 }
 .terminal .placeholder .big { font-family: inherit; font-size: 14px; font-weight: 600; }
-.terminal .status-chip, .terminal .chip.status-chip { text-transform: none; }
 .terminal-body { grid-template-columns: 300px minmax(0, 1fr) 345px; }
 .terminal--no-right .terminal-body { grid-template-columns: 300px minmax(0, 1fr); }
 .terminal--no-left .terminal-body { grid-template-columns: minmax(0, 1fr) 345px; }
@@ -4571,7 +4451,6 @@ html[data-workspace-mode='guided'] .advanced-only { display: none !important; }
 .toolbar-search { display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; background: var(--elevated); border: 1px solid var(--line-strong); min-height: 24px; box-sizing: border-box; color: var(--muted); }
 .toolbar-search-field { all: unset; width: 150px; font: inherit; color: var(--ink); cursor: pointer; }
 .toolbar-search-field::placeholder { color: var(--muted); }
-.toolbar .status-chip, .toolbar .governance-btn { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .toolbar .toolbar-search { flex-shrink: 1; min-width: 60px; }
 .toolbar .context-chip { background: var(--elevated); border: 1px solid var(--line-strong); }
 .context-caret { color: var(--muted); margin-left: 4px; }
@@ -4618,7 +4497,7 @@ html[data-workspace-mode='guided'] .advanced-only { display: none !important; }
 .research-choice-card label { display: flex; gap: 6px; align-items: flex-start; cursor: pointer; }
 .owner-decision-form { display: flex; flex-wrap: wrap; gap: var(--pad-sm); align-items: flex-end; }
 .owner-decision-form label { display: grid; gap: 2px; }
-/* Report (artboard 2) and Governance (artboard 4) documents. */
+/* Report (artboard 2) document. */
 .report-toolbar { gap: 4px; }
 .report-toolbar .btn.active { background: var(--panel-2); box-shadow: inset 1px 1px 0 var(--bevel-dark), inset -1px -1px 0 var(--bevel-light); }
 .report-hint { margin: var(--pad-sm) 0 0; font-size: var(--font-size); }
@@ -4628,11 +4507,6 @@ html[data-workspace-mode='guided'] .advanced-only { display: none !important; }
 .terminal .report-tree .tree-leaf .icon { flex: 0 0 auto; color: var(--muted); }
 .terminal .report-tree .tree-leaf.active { background: var(--selection); color: var(--selection-ink); border-left-color: var(--selection); }
 .terminal .report-tree .tree-leaf.active .icon { color: var(--selection-ink); }
-.governance-table { width: 100%; table-layout: auto; }
-.governance-table thead th { text-align: left; }
-.governance-table td { white-space: normal; }
-.governance-table td.k { white-space: nowrap; }
-.governance-page h2 { text-transform: none; letter-spacing: 0; font-size: inherit; font-weight: 600; }
 /* Figure maximised (artboard 3): the overlay is the whole window under the chrome. */
 .terminal .figure-overlay { padding: 0; }
 .terminal .figure-overlay-box { width: 100vw; max-width: none; height: 100vh; max-height: none; border-radius: 0; padding: 0; gap: 0; display: flex; flex-direction: column; overflow: hidden; }
@@ -4652,7 +4526,6 @@ html[data-workspace-mode='guided'] .advanced-only { display: none !important; }
   .terminal--no-left.terminal--no-right .terminal-body { grid-template-columns: minmax(0, 1fr); }
   .toolbar .btn { padding-left: 6px; padding-right: 6px; }
   .toolbar-search-field { width: 80px; }
-  .governance-label { display: none; }
 }
 
 /* Phase 5 S3 — Insert › Indicators dialog and tiled chart windows */

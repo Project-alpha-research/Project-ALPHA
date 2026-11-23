@@ -57,13 +57,6 @@ class ProviderDefinition(StrictModel):
     recovery_action: str
 
 
-class KronosCacheStatus(StrictModel):
-    configured: bool
-    path: str | None
-    exists: bool
-    local_only: bool
-
-
 class Symbols(StrictModel):
     symbols: list[str]
 

@@ -13,7 +13,7 @@ async function openRisk(page: Page, pane: string, runId: string) {
   }
 }
 
-for (const pane of ['RunDetail', 'RiskMonitor']) {
+for (const pane of ['RunDetail']) {
   test(`${pane}: compiled SPA and real backend preserve/display metric basis`, async ({ page }, testInfo) => {
     const assets: string[] = []
     page.on('response', (response) => { if (/\/static\/app\/assets\/.*\.js$/.test(response.url())) assets.push(response.url()) })
@@ -68,7 +68,7 @@ for (const pane of ['RunDetail', 'RiskMonitor']) {
 
 test('malformed stored source is rejected live; no fabricated metadata response', async ({ page }, testInfo) => {
   const responseReady = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/risk/scenario')
-  await openRisk(page, 'RiskMonitor', runs.malformed_source.run_id)
+  await openRisk(page, 'RunDetail', runs.malformed_source.run_id)
   const response = await responseReady
   expect(response.status()).toBe(422)
   const body = await response.json()
@@ -83,7 +83,7 @@ test('malformed stored source is rejected live; no fabricated metadata response'
 
 test('compiled opted-in risk view rejects disordered stored clocks', async ({ page }, testInfo) => {
   const responseReady = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/risk/scenario')
-  await openRisk(page, 'RiskMonitor', runs.disordered_clocks.run_id)
+  await openRisk(page, 'RunDetail', runs.disordered_clocks.run_id)
   const response = await responseReady
   expect(new URL(response.url()).searchParams.get('include_metric_basis')).toBe('true')
   expect(response.status()).toBe(422)

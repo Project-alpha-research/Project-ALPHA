@@ -167,7 +167,6 @@ def _touch(path: Path, text: str = "x") -> None:
         ("research", "research/projects/p1/status.json"),
         ("control", "control/workstation.sqlite3-wal"),
         ("bars", "store/bars/BTC/USDT.parquet"),
-        ("workspaces", "web/workspaces/idea.json"),
     ],
 )
 def test_store_changed_per_area(tmp_path: Path, area: str, relative: str) -> None:

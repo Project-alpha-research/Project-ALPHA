@@ -81,7 +81,7 @@ describe('menuModel', () => {
     expect(() => assignCommands([command('quantum thing')])).toThrow(/"quantum" \(quantum thing\) has no menu/)
   })
 
-  it('lists the open documents under Window and pins Governance under View; no raw commands', () => {
+  it('lists the open documents under Window and pins Settings under View; no raw commands', () => {
     const menus = menuBar(
       [
         { key: 'chart', window: 'chart', title: 'Chart' },
@@ -90,7 +90,7 @@ describe('menuModel', () => {
       'report:aaaaaaaa',
       [
         { id: 'chart', title: 'Chart' },
-        { id: 'governance', title: 'Governance' },
+        { id: 'compare', title: 'Compare' },
       ],
     )
     expect(menus.Window).toEqual([
@@ -101,7 +101,7 @@ describe('menuModel', () => {
     expect(menus.Insert).toEqual([{ kind: 'shell', id: 'indicators', label: 'Indicators…' }])
     expect(menus.View).toEqual([
       { kind: 'open', window: 'chart', label: 'Chart' },
-      { kind: 'open', window: 'governance', label: 'Governance' },
+      { kind: 'open', window: 'compare', label: 'Compare' },
       { kind: 'shell', id: 'settings', label: 'Settings' },
     ])
     expect(menus.Backtest).toEqual([])

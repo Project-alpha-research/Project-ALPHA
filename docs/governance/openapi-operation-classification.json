@@ -745,13 +745,6 @@
     {
       "method": "GET",
       "mode": "automatic",
-      "operation_id": "list_active_research_gate_overrides_api_research_gate_overrides_get",
-      "path": "/api/research-gate-overrides",
-      "reason": "Safe read exercised against an isolated temporary store."
-    },
-    {
-      "method": "GET",
-      "mode": "automatic",
       "operation_id": "research_cases_api_research_cases_get",
       "path": "/api/research/cases",
       "reason": "Safe read exercised against an isolated temporary store."
@@ -1116,13 +1109,6 @@
     {
       "method": "GET",
       "mode": "automatic",
-      "operation_id": "get_system_api_system_get",
-      "path": "/api/system",
-      "reason": "Safe read exercised against an isolated temporary store."
-    },
-    {
-      "method": "GET",
-      "mode": "automatic",
       "operation_id": "v3_list_development_jobs_api_v3_development_jobs_get",
       "path": "/api/v3/development/jobs",
       "reason": "Safe read exercised against an isolated temporary store."
@@ -1457,13 +1443,6 @@
       "reason": "Mutation is exercised with deterministic local fixtures and no vendor network."
     },
     {
-      "method": "GET",
-      "mode": "automatic",
-      "operation_id": "v3_list_active_research_gate_overrides_api_v3_research_gate_overrides_get",
-      "path": "/api/v3/research-gate-overrides",
-      "reason": "Safe read exercised against an isolated temporary store."
-    },
-    {
       "method": "POST",
       "mode": "fixture_backed",
       "operation_id": "compare_runs_api_v3_runs_compare_post",
@@ -1504,34 +1483,6 @@
       "operation_id": "v3_update_stage_state_api_v3_stage_links__link_id__state_post",
       "path": "/api/v3/stage-links/{link_id}/state",
       "reason": "Mutation is exercised with deterministic local fixtures and no vendor network."
-    },
-    {
-      "method": "GET",
-      "mode": "automatic",
-      "operation_id": "list_workspaces_api_workspaces_get",
-      "path": "/api/workspaces",
-      "reason": "Safe read exercised against an isolated temporary store."
-    },
-    {
-      "method": "POST",
-      "mode": "fixture_backed",
-      "operation_id": "save_workspace_api_workspaces_post",
-      "path": "/api/workspaces",
-      "reason": "Mutation is exercised with deterministic local fixtures and no vendor network."
-    },
-    {
-      "method": "DELETE",
-      "mode": "fixture_backed",
-      "operation_id": "delete_workspace_api_workspaces__slug__delete",
-      "path": "/api/workspaces/{slug}",
-      "reason": "Mutation is exercised with deterministic local fixtures and no vendor network."
-    },
-    {
-      "method": "GET",
-      "mode": "fixture_backed",
-      "operation_id": "get_workspace_api_workspaces__slug__get",
-      "path": "/api/workspaces/{slug}",
-      "reason": "Parameterized safe read uses typed identity and boundary fixtures."
     },
     {
       "method": "GET",

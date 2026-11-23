@@ -9,8 +9,8 @@ from pathlib import Path
 from alpha_web._activity import AREAS, snapshot_areas
 
 
-def test_areas_are_the_five_governed_roots() -> None:
-    assert set(AREAS) == {"research", "control", "bars", "workspaces", "ideas"}
+def test_areas_are_the_four_governed_roots() -> None:
+    assert set(AREAS) == {"research", "control", "bars", "ideas"}
     assert set(AREAS["ideas"]) == {
         "ideas",
         "diagnostics",

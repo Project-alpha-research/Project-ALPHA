@@ -54,7 +54,6 @@ from alpha_web.api import rules as rules_api
 from alpha_web.api import runs as runs_api
 from alpha_web.api import setup_runs as setup_runs_api
 from alpha_web.api import v3 as v3_api
-from alpha_web.api import workspaces as workspaces_api
 from alpha_web.api.errors import api_error_response, request_id, validation_field_errors
 from alpha_web.api.models import ApiErrorV1
 
@@ -149,7 +148,6 @@ def create_app() -> FastAPI:
     app.include_router(ideas_api.router)
     app.include_router(market_api.router)
     app.include_router(figures_api.router)
-    app.include_router(workspaces_api.router)
     app.include_router(owner_auth_api.router)
     app.include_router(risk_api.router)
     app.include_router(rules_api.router)

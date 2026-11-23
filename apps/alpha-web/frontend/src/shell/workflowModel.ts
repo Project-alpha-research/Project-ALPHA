@@ -1,18 +1,15 @@
 import { createElement } from 'react'
 import { openRunDetail } from '../panels/actions'
-import { Workspaces } from '../panels/Workspaces'
 import { DOCUMENTS, documentOf, type DocumentPane } from './documents'
 import { showsWindow, type WindowId } from './profiles'
 import type { Profile } from '../state/settings'
 import { DataManager } from '../panels/DataManager'
-import { MarketWatch } from '../panels/MarketWatch'
 import { MarketOverview } from '../panels/MarketOverview'
 import { FollowToday } from '../panels/FollowToday'
 import { MachineLearning } from '../panels/MachineLearning'
 import { Navigator } from '../panels/Navigator'
 import { DataPulls } from '../panels/JobMonitor'
 import { AllTests } from '../panels/RecentTests'
-import { RiskMonitor } from '../panels/RiskMonitor'
 
 function RunLibrary() { return createElement(Navigator, { onOpenRun: openRunDetail }) }
 
@@ -22,7 +19,7 @@ export interface WorkflowPage { id: PageId; title: string; description: string; 
 
 const DOCUMENT_PAGE: Record<WindowId, PageId> = {
   chart: 'data', report: 'results', compare: 'results',
-  rdagent: 'research', ideas: 'research', 'setup-lab': 'research', governance: 'settings', forecast: 'results',
+  rdagent: 'research', ideas: 'research', 'setup-lab': 'research', forecast: 'results',
   jobs: 'operations',
 }
 
@@ -31,17 +28,15 @@ export function workflowPages(profile: Profile): WorkflowPage[] {
     { id: 'overview', title: 'Overview', description: 'Recent tests, what is followed today and the market.', panes: [] },
     { id: 'data', title: 'Data & Assets', description: 'Find assets, explore charts and prepare reliable data.', panes: [
       { name: 'DataManager', title: 'Data downloads', component: DataManager },
-      { name: 'MarketWatch', title: 'Watchlist', component: MarketWatch },
       { name: 'MarketOverview', title: 'Market', component: MarketOverview },
     ] },
     { id: 'research', title: 'Research', description: 'Ideas, setups, RD-Agent runs and what is followed today.', panes: [] },
     { id: 'results', title: 'Results', description: 'Review stored tests, compare runs and open reports.', panes: [
       { name: 'AllTests', title: 'All tests', component: AllTests },
       { name: 'Navigator', title: 'Run library', component: RunLibrary },
-      { name: 'RiskMonitor', title: 'Risk', component: RiskMonitor },
     ] },
     { id: 'operations', title: 'Operations', description: 'Track jobs.', panes: [] },
-    { id: 'settings', title: 'Settings', description: 'Display preferences, owner authentication and research safeguards.', panes: [{ name: 'Workspaces', title: 'Saved workspaces', component: Workspaces }] },
+    { id: 'settings', title: 'Settings', description: 'Display preferences.', panes: [] },
   ]
   for (const doc of DOCUMENTS) {
     if (!showsWindow(profile, doc.id)) continue

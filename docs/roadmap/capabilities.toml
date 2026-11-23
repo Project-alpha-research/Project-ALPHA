@@ -44,7 +44,7 @@ what = "Open ALPHA in a browser on this computer and move between its charts, re
 see_it = ["uv run alpha-web, then open http://localhost:8801 — it starts by itself on the Dell"]
 entry_points = [
   "script: alpha-web",
-  "api: GET /api/system",
+  "api: GET /api/providers",
   "panel: apps/alpha-web/frontend/src/shell/MenuBar.tsx",
 ]
 proof_synthetic = [
@@ -665,12 +665,12 @@ codes = ["C04"]
 what = "See VaR, CVaR and other risk figures for a backtest together with what they are measured against; bad dates or numbers are refused."
 see_it = [
   "uv run alpha risk scenario --from-run <run-id> --json --include-metric-basis",
-  "Workstation: Results › Risk, or a run's report → Stress test",
+  "Workstation: a run's report → Stress test",
 ]
 entry_points = [
   "cli: alpha risk scenario",
   "api: GET /api/risk/scenario",
-  "panel: apps/alpha-web/frontend/src/panels/RiskMonitor.tsx",
+  "panel: apps/alpha-web/frontend/src/panels/rundetail/Risk.tsx",
   "panel: apps/alpha-web/frontend/src/panels/RiskMetricBasis.tsx",
 ]
 proof_synthetic = [

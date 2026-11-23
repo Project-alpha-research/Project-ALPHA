@@ -131,18 +131,18 @@ test('an archive read error stays explicit and never falls back to canonical can
 test('watchlist picker supports keyboard sources, Escape and discovery retry', async ({ page }) => {
   await preparePage(page)
   await page.route('**/api/symbols', route => route.fulfill({ json: { symbols: ['BTC-USD', 'BTC/USD', 'XRP/USDT'] } }))
-  let reads = 0
-  await page.route('**/api/chart-datasets', route => {
-    reads += 1
-    return reads === 1 ? route.fulfill({ status: 503, body: 'Drive unavailable' }) : route.fulfill({ json: { datasets: [], authority: 'none', state: 'unavailable' } })
-  })
-  await page.goto('/#page=data&pane=MarketWatch')
+  // The chart window reads the same route on its own, so fail every read until the retry.
+  let failing = true
+  await page.route('**/api/chart-datasets', route => failing ? route.fulfill({ status: 503, body: 'Drive unavailable' }) : route.fulfill({ json: { datasets: [], authority: 'none', state: 'unavailable' } }))
+  await page.goto('/#page=data&pane=PriceChart')
   await page.getByText('Browse all available markets', { exact: true }).click()
   const input = page.getByRole('combobox', { name: 'Available market' })
   await input.click()
-  await expect(page.getByRole('alert')).toContainText('Archive discovery failed')
-  await page.getByRole('button', { name: 'Retry archive', exact: true }).click()
-  await expect(page.getByRole('alert')).toHaveCount(0)
+  const dock = page.locator('.watch-available-markets')
+  await expect(dock.getByRole('alert')).toContainText('Archive discovery failed')
+  failing = false
+  await dock.getByRole('button', { name: 'Retry archive', exact: true }).click()
+  await expect(dock.getByRole('alert')).toHaveCount(0)
   await input.fill('BTC/USD')
   await input.press('Enter')
   const source = page.getByRole('button', { name: 'Open BTC/USD · Stored BTC-USD · daily', exact: true })

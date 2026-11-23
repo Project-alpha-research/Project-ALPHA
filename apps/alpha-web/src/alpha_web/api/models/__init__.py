@@ -9,10 +9,9 @@ rule_test: what a rule test (alpha test) recorded.
 charts: run charts, analytics, candles and overlays.
 scans_strategies: strategy definitions.
 data_sources: data sources, providers and kronos.
-system: system status and command definitions.
+system: command definitions.
 crypto_data: crypto data contracts.
 projects: projects, control-plane jobs, suites and evidence.
-workspaces: workspace documents and linked contexts.
 risk: risk reports and their nested contracts.
 research_cases: research cases, proposals and study status.
 research_hub: research reports and evidence hub.
@@ -120,7 +119,6 @@ from .data_sources import DataSnapshotRow as DataSnapshotRow
 from .data_sources import DataSnapshots as DataSnapshots
 from .data_sources import DataSourceStatus as DataSourceStatus
 from .data_sources import FirstBar as FirstBar
-from .data_sources import KronosCacheStatus as KronosCacheStatus
 from .data_sources import ProviderDefinition as ProviderDefinition
 from .data_sources import ProviderOption as ProviderOption
 from .data_sources import Symbols as Symbols
@@ -172,7 +170,6 @@ from .market import MarketAsset as MarketAsset
 from .market import MarketOverview as MarketOverview
 from .market import MarketTooFewBars as MarketTooFewBars
 from .market import MarketUnreadable as MarketUnreadable
-from .projects import ActiveResearchGateOverride as ActiveResearchGateOverride
 from .projects import AgentBrief as AgentBrief
 from .projects import AgentScope as AgentScope
 from .projects import AgentStageStatus as AgentStageStatus
@@ -389,13 +386,3 @@ from .setup_runs import SetupRunList as SetupRunList
 from .system import CommandArgument as CommandArgument
 from .system import CommandDefinition as CommandDefinition
 from .system import CommandOption as CommandOption
-from .system import NautilusStatus as NautilusStatus
-from .system import SystemCounts as SystemCounts
-from .system import SystemDataDirectory as SystemDataDirectory
-from .system import SystemStatus as SystemStatus
-from .workspaces import Deleted as Deleted
-from .workspaces import WorkspaceDocument as WorkspaceDocument
-from .workspaces import WorkspaceGroupLinkedContext as WorkspaceGroupLinkedContext
-from .workspaces import WorkspaceLinkedContext as WorkspaceLinkedContext
-from .workspaces import WorkspaceMeta as WorkspaceMeta
-from .workspaces import WorkspaceSaved as WorkspaceSaved

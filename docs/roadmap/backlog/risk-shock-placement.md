@@ -5,7 +5,7 @@
 
 ## Problem / why
 
-`alpha risk scenario` (and the Workstation's Risk tab) shows "-3σ shock" and "-5σ shock" rows.
+`alpha risk scenario` (and the Stress test tab of a run's report) shows "-3σ shock" and "-5σ shock" rows.
 Each appends one bad day after the last recorded return, so the worst drawdown changes only if
 the series happens to end near a peak. On the free Alpaca SPY validation run (2026-11-14) both
 shock rows showed the same maximum drawdown as the base (-0.2601) and the same VaR, which reads
@@ -18,7 +18,7 @@ every return around the mean, so a flat (out-of-market) day becomes a small loss
 Shock rows that test the path: for example the shock day inserted at the start of the deepest
 drawdown (or at the worst point by search), labelled as such, with a metamorphic oracle (a shock
 can only deepen the drawdown it is inserted into) and an option to leave flat days flat under
-volatility scaling. A versioned change to the scenario panel's contract and the Risk tab.
+volatility scaling. A versioned change to the scenario panel's contract and the Stress test tab.
 
 Related stress ideas, each its own checklist row: replay of named crises (2008, March 2020, the
 2022 crypto bear, flash crashes) with settings unchanged, and synthetic crisis stress with

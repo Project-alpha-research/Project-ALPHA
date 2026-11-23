@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
   page.on('response', (response) => { if (response.status() >= 400) console.error('Risk harness HTTP:', response.status(), response.url()) })
 })
 
-for (const view of ['detail', 'monitor']) {
+for (const view of ['detail']) {
   test(`${view}: actual consumer requests and visibly renders the serialized basis`, async ({ page }, testInfo) => {
     const requests: string[] = []
     let releaseSecond!: () => void

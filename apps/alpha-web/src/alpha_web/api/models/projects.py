@@ -83,10 +83,6 @@ class ResearchGateOverride(StrictModel):
     recorded_at: str
 
 
-class ActiveResearchGateOverride(ResearchGateOverride):
-    project_name: str
-
-
 class ProjectPage(StrictModel):
     items: list[ProjectSummary]
     limit: int

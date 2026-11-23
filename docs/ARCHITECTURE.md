@@ -149,7 +149,6 @@ another package is named.
 | `strategy-workspaces/` | `project_workspace` | Disposable hash-only per-project workspace projections. |
 | `crypto/` | `crypto_data_cmds`, `_crypto_panel` | Crypto manifests, asset masters, coverage profiles/batches, backfill ledgers and `storage-config.json`. |
 | `quantpad/` | none (code removed 2026-11-14) | Old QuantPad archive manifests; nothing reads or writes them any more. |
-| `web/` | `alpha_web._workspaces` | Workstation UI workspace layouts (`web/workspaces`); no research authority. |
 
 Native fixture/rule jobs also use per-job `payload-<job_id>` directories directly under the
 control-store data root (`native_supervisor`, `_native_fixture_store`, `_native_rule_completion`).

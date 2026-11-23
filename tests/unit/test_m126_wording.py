@@ -66,3 +66,12 @@ def test_a_stored_sentence_with_uv_run_prints_without_it(
 
     emit({}, json_out=False, fallback="Check it with uv run alpha data health SPY.")
     assert capsys.readouterr().out.strip() == "Check it with alpha data health SPY."
+
+
+def test_json_output_also_prints_alpha_without_uv_run(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from alpha_cli._cli_json import emit
+
+    emit({"hint": "Check it with uv run alpha data health SPY."}, json_out=True, fallback="")
+    assert capsys.readouterr().out.strip() == '{"hint": "Check it with alpha data health SPY."}'

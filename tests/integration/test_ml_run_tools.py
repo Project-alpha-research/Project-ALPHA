@@ -233,8 +233,17 @@ def test_ml_run_prints_the_expected_time_and_fold_progress(
     data = tmp_path / "alpha-data"
     _seed_store(data)
     ml_run.run_spec(_spec(tmp_path), data_dir=data)
+    first = capsys.readouterr().err.splitlines()
+    # Nothing was timed on this computer yet: no number is made up.
+    assert first[0].startswith("The model trains ") and "No time estimate yet" in first[0]
+    assert (data / "ml_timing.json").is_file()
+    # With a rate kept from an earlier run, the estimate and the fold count both appear.
+    other = tmp_path / "alpha-data-2"
+    _seed_store(other)
+    other.mkdir(exist_ok=True)
+    (other / "ml_timing.json").write_text('{"seconds_per_asset_fold": 0.01}', encoding="utf-8")
+    ml_run.run_spec(_spec(tmp_path), data_dir=other)
     lines = capsys.readouterr().err.splitlines()
     assert lines[0].startswith("The model trains ") and "Expected time: about " in lines[0]
     beats = [line for line in lines if line.startswith("Model training:")]
-    assert beats and all(" of " in line and "about fold " in line for line in beats)
-    assert (data / "ml_timing.json").is_file()
+    assert beats and all(" of " in line and "fold" in line for line in beats)

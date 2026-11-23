@@ -43,6 +43,13 @@ def _number(value: object) -> str:
     return f"{value:.4g}" if isinstance(value, float) else cell(value)
 
 
+# What a key number means, for the names an owner may not know.
+GLOSS = {
+    "inverted_sharpe": "Sharpe ratio of the opposite rule, as a check",
+    "inverted_sharpe_se": "the likely error of that Sharpe ratio",
+}
+
+
 def summary_lines(run: dict[str, Any]) -> list[str]:
     """What fits on one screen: the numbers, counts of checks and flags, and where to read more."""
     lines: list[str] = []
@@ -64,7 +71,9 @@ def summary_lines(run: dict[str, Any]) -> list[str]:
     if facts:
         lines.append("Key numbers:")
         lines += [
-            f"  {fact['metric'].replace('_', ' ')}: {_number(fact['value'])}" for fact in facts
+            f"  {fact['metric'].replace('_', ' ')}: {_number(fact['value'])}"
+            + (f" ({GLOSS[fact['metric']]})" if fact["metric"] in GLOSS else "")
+            for fact in facts
         ]
     audit = Counter(str(item.get("status")) for item in run.get("audit", []))
     if audit:
@@ -72,7 +81,14 @@ def summary_lines(run: dict[str, Any]) -> list[str]:
             "Checks: " + ", ".join(f"{count} {word}" for word, count in sorted(audit.items()))
         )
     flags = run.get("flags") or []
-    lines.append(f"Flags raised: {len(flags)}." if flags else "Flags raised: none.")
+    flagged = audit.get("flagged", 0)
+    apart = (
+        f" These are warnings from the diagnostic pass; the {flagged} flagged "
+        f"{'check' if flagged == 1 else 'checks'} above are counted apart."
+        if flags and flagged
+        else ""
+    )
+    lines.append(f"Flags raised: {len(flags)}.{apart}" if flags else "Flags raised: none.")
     if run.get("labels"):
         lines.extend(label_block(run["labels"], "Labels:"))
     tools = run.get("tools") or []

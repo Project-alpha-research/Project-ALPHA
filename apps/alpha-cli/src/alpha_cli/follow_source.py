@@ -68,8 +68,10 @@ def rule_test_source(home: Path, run_id: str) -> Source:
     if not isinstance(spine, dict) or not symbol or not spine.get("spec_sha256"):
         raise refuse(
             "FOLLOW_SOURCE_UNKNOWN",
-            f"There is no rule test with the run id {run_id!r}.",
-            "Use the run id that `alpha test` printed.",
+            f"There is no rule test with the run id {run_id!r}. `--test` wants a run id.",
+            "Use the id in the RUN column of the `alpha test` table, or in `alpha results`. "
+            "The id in the first line of `alpha test` is the test id, not a run id. "
+            "A setup find or trade takes --find or --trade.",
         )
     if CONFIRMATION in (spine.get("labels") or []):
         raise refuse(

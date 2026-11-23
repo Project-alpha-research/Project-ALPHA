@@ -397,7 +397,9 @@ def test_show_lists_outputs_and_cite_needs_a_choice_between_two(
     }
     assert shown["tools"][0]["reading"] == own["reading"]
     assert [item["file"] for item in shown["tools"][:2]] == [own["file"], other["file"]]
-    listing = json.loads(runner.invoke(app, ["results", "--json"]).stdout)
+    default = json.loads(runner.invoke(app, ["results", "--json"]).stdout)
+    assert default["items"] == []  # a tool reading is listed only with --tools
+    listing = json.loads(runner.invoke(app, ["results", "--tools", "--json"]).stdout)
     assert [item["kind"] for item in listing["items"]] == [
         "tool:market.changepoints",
         "tool:market.changepoints",

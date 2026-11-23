@@ -99,6 +99,18 @@ LABEL_MEANING: dict[str, str] = {
 }
 
 
+def label_block(labels: Iterable[str], head: str = "Labels on this run:") -> list[str]:
+    """The head line and one meaning line per label; nothing when there is no label."""
+    names = list(labels)
+    return [head, *label_lines(names)] if names else []
+
+
+def legend_line(labels: Iterable[str]) -> str | None:
+    """One line under a table: each distinct label that has a meaning, with that meaning."""
+    seen = [n for n in dict.fromkeys(labels) if n in LABEL_MEANING]
+    return "Labels: " + " ".join(f"{n} = {LABEL_MEANING[n]}" for n in seen) if seen else None
+
+
 def label_lines(labels: Iterable[str]) -> list[str]:
     """One line per label: its name and what it means; an unknown label has no meaning line."""
     return [

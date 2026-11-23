@@ -11,7 +11,9 @@ import math
 from collections.abc import Mapping
 from typing import Any
 
+from alpha_cli.spine.label_meaning import label_block
 from alpha_cli.spine.reading import plain, reading_word
+from alpha_cli.spine.reserve import read_labels
 
 
 def _num(value: Any) -> float | None:
@@ -155,7 +157,7 @@ def plain_report_lines(
         _folds_line(manifest),
         costs if isinstance(costs, str) else None,
     ]
-    return [line for line in lines if line]
+    return [line for line in lines if line] + label_block(read_labels(manifest))
 
 
 WARNINGS_HEAD = "Warnings recorded with this run:"

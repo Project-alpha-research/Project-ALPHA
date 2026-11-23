@@ -9,6 +9,7 @@ from typing import Any
 
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import METRIC_UNITS, require_metric
+from alpha_cli.spine.label_meaning import label_block
 
 Fact = dict[str, Any]
 Lookup = Callable[[str, str], Fact]
@@ -135,22 +136,30 @@ def _plain_number(metric: str, operation: str, value: Any) -> str:
 
 
 def render_compare(result: Fact) -> str:
+    """One column of values per run; each later run adds its change from, and ratio to, the first.
+
+    The first run compared with itself (0 and 1.00x) says nothing, so its columns stay out."""
     headers = ["metric"]
-    for run in result["runs"]:
-        headers.extend(f"{run['run_id']} {operation}" for operation in ("value", "diff", "ratio"))
+    for index, run in enumerate(result["runs"]):
+        headers.append(str(run["run_id"]))
+        if index:
+            headers.extend(("change from first", "ratio to first"))
     lines = ["\t".join(headers)]
     for metric, cells in result["metrics"].items():
         row = [metric]
-        for cell in cells:
+        for index, cell in enumerate(cells):
             row.extend(
                 _plain_number(metric, operation, f["value"])
                 if f["value"] is not None
                 else f"null ({f['reason']})"
                 for operation, f in cell.items()
+                if index or operation == "value"
             )
         lines.append("\t".join(row))
-    lines.extend(
-        f"{run['run_id']} labels: {', '.join(run['labels']) or 'none'}" for run in result["runs"]
-    )
+    for run in result["runs"]:
+        lines.extend(
+            label_block(run["labels"], f"{run['run_id']} labels:")
+            or [f"{run['run_id']} labels: none"]
+        )
     lines.extend(f"Warning: {warning}" for warning in result["warnings"])
     return "\n".join(lines)

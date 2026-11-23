@@ -30,6 +30,7 @@ from alpha_cli.spine.facts import (
     tool_fact,
     tool_outputs,
 )
+from alpha_cli.spine.label_meaning import legend_line
 from alpha_cli.spine.ledger import read_trials
 from alpha_cli.spine.reading import reading_text, stored_reading
 from alpha_cli.spine.reading_read import owner_word, run_reading
@@ -159,6 +160,9 @@ def list_results(
                 for row, found in zip(items, selected, strict=True)
             ],
         )
+        legend = legend_line(label for row in items for label in row["labels"] or [])
+        if legend:
+            lines.append(legend)
         for row, found in zip(items, selected, strict=True):
             row["reading"] = run_reading(home, row["run_id"])
             row.update(evidence=found.get("evidence"), aim_relation=found.get("aim_relation"))

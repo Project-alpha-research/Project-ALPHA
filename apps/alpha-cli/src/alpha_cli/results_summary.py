@@ -6,6 +6,8 @@ from collections import Counter
 from collections.abc import Sequence
 from typing import Any
 
+from alpha_cli.spine.label_meaning import label_block
+
 SHOWN_FACTS = 8
 
 
@@ -72,7 +74,7 @@ def summary_lines(run: dict[str, Any]) -> list[str]:
     flags = run.get("flags") or []
     lines.append(f"Flags raised: {len(flags)}." if flags else "Flags raised: none.")
     if run.get("labels"):
-        lines.append("Labels: " + cell(run["labels"]))
+        lines.extend(label_block(run["labels"], "Labels:"))
     tools = run.get("tools") or []
     lines.append(f"Investigation tools run on it: {len(tools)}.")
     if run.get("charts"):

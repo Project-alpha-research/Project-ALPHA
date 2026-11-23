@@ -13,7 +13,7 @@ import typer
 from alpha_cli._cli_json import emit
 from alpha_cli.spine.data_health import health_sentence
 from alpha_cli.spine.errors import SpineError, fail, test_error
-from alpha_cli.spine.label_meaning import label_lines
+from alpha_cli.spine.label_meaning import label_block
 from alpha_cli.spine.owner_reading import variant_lines
 from alpha_cli.spine.reading import reading_text, reading_word
 from alpha_cli.spine.recheck import MISMATCH_EXIT, recheck_idea
@@ -257,8 +257,7 @@ def test_rule(
             counted = _reading_count(settings.data_dir, result)
             lines.extend(counted or [sentence(tries(snapshot, result["symbol"]))])
         if result["labels"] and not result["error"]:
-            lines.append("Labels on this run:")
-            lines.extend(label_lines(result["labels"]))
+            lines.extend(label_block(result["labels"]))
     emit(output, json_out=json_out, fallback="\n".join(lines))
     if not json_out:
         _echo_notes(notes.getvalue())

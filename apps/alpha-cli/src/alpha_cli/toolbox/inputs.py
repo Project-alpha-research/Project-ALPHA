@@ -85,21 +85,67 @@ class Target:
     manifest: dict[str, Any]
 
     @property
+    def is_ml(self) -> bool:
+        """A model run (`alpha ml run`): stored equity, trades and periods; no single rule."""
+        return self.manifest.get("command") == "ml_replay"
+
+    @property
     def kinds(self) -> frozenset[str]:
-        return RUN_KINDS.union(
-            k for k, name in STORED_FILES.items() if (self.directory / name).is_file()
-        )
+        stored = (k for k, name in STORED_FILES.items() if (self.directory / name).is_file())
+        # A model run has no single rule's bars or settings to replay: only its stored files.
+        return frozenset(stored) if self.is_ml else RUN_KINDS.union(stored)
+
+    @property
+    def spine(self) -> dict[str, Any]:
+        """The rule-test block; a model run has none, so its fields are the few that apply."""
+        if self.is_ml:
+            return {"store": self.manifest.get("snapshot_hash"), "labels": []}
+        spine: dict[str, Any] = self.manifest["spine"]
+        return spine
+
+    @property
+    def metadata(self) -> dict[str, Any]:
+        if not self.is_ml:
+            found: dict[str, Any] = self.manifest["metadata"]
+            return found
+        return {
+            "symbol": ",".join(self.manifest["universe"]),
+            "last_ts": self.last_ts.isoformat(),
+            "starting_cash": None,  # a model run's equity is in currency, not in units of cash
+            "periods_per_year": self.manifest.get("periods_per_year"),
+        }
+
+    @property
+    def oos_metrics(self) -> dict[str, Any]:
+        """The stored out-of-sample numbers; a model run keeps them under `metrics`."""
+        found = self.manifest.get("metrics" if self.is_ml else "oos_metrics", {})
+        return found if isinstance(found, dict) else {}
+
+    def require_cash(self) -> float:
+        """The starting cash that scales a rule test's stored equity; a model run has none."""
+        if self.is_ml:
+            raise SpineError(
+                "NOT_FOR_A_MODEL_RUN",
+                f"Run {self.run_id} is a model run. Its equity is stored in currency, not in "
+                "units of starting cash, so this check does not apply.",
+                "Run this check on a rule test.",
+            )
+        cash = self.metadata.get("starting_cash")
+        if not isinstance(cash, int | float) or isinstance(cash, bool) or not cash > 0:
+            raise ValueError("manifest.json requires a positive metadata.starting_cash")
+        return float(cash)
 
     @property
     def last_ts(self) -> datetime:
+        if self.is_ml:
+            frame = self.table("stored_equity", "ts")
+            return self.dates(frame, "stored_equity", limit=False)[-1]
         return datetime.fromisoformat(self.manifest["metadata"]["last_ts"])
 
     @property
     def ppy(self) -> int:
-        annualisation = self.manifest["spine"].get("annualisation", {})
-        value = self.manifest["metadata"].get(
-            "periods_per_year", annualisation.get("periods_per_year")
-        )
+        annualisation = self.spine.get("annualisation", {}) if not self.is_ml else {}
+        value = self.metadata.get("periods_per_year", annualisation.get("periods_per_year"))
         if type(value) is not int or value < 1:
             raise ValueError("manifest.json requires a positive integer periods_per_year")
         return value
@@ -118,14 +164,14 @@ class Target:
         except pl.exceptions.PolarsError as exc:
             raise ValueError(f"Cannot read {name}: {exc}") from exc
 
-    def dates(self, frame: pl.DataFrame, kind: str) -> list[datetime]:
+    def dates(self, frame: pl.DataFrame, kind: str, *, limit: bool = True) -> list[datetime]:
         dates: list[datetime] = frame["ts"].to_list()
         name = STORED_FILES[kind]
         if not dates or any(not isinstance(ts, datetime) or ts.utcoffset() is None for ts in dates):
             raise ValueError(f"{name} requires dated observations with a timezone")
         if any(before >= after for before, after in pairwise(dates)):
             raise ValueError(f"{name} requires strictly increasing dates")
-        if dates[-1] > self.last_ts:
+        if limit and dates[-1] > self.last_ts:
             raise ValueError(f"{name} extends beyond the recorded run period")
         return dates
 
@@ -145,14 +191,14 @@ class Target:
 
     @property
     def labels(self) -> list[str]:
-        return list(self.manifest["spine"].get("labels", []))
+        return list(self.spine.get("labels", []))
 
     def ledger_fields(self) -> dict[str, Any]:
-        spine = self.manifest["spine"]
+        spine = self.spine
         return {
             "test_id": spine.get("test_id"),
             "name": spine.get("name"),
-            "symbol": self.manifest["metadata"]["symbol"],
+            "symbol": self.metadata["symbol"],
             "store": spine.get("store"),
         }
 
@@ -161,6 +207,13 @@ class Target:
     ) -> tuple[Market | None, dict[str, Any]]:
         from alpha_cli.ml_contract import sha256_file
 
+        if self.is_ml and not self.kinds.issuperset(needs):
+            raise SpineError(
+                "NOT_FOR_A_MODEL_RUN",
+                f"Run {self.run_id} is a model run. This check needs a single rule's bars or "
+                "settings (or a stored buy-and-hold file), and a model run has none.",
+                "Use a check that needs only equity, returns or trades, or run it on a rule test.",
+            )
         files = [STORED_FILES[kind] for kind in needs if kind in STORED_FILES]
         for name in files:
             if not (self.directory / name).is_file():
@@ -197,11 +250,13 @@ def resolve(home: Path, run_id: str) -> Target:
             "Run alpha results --json to list recorded runs.",
         )
     manifest = read_manifest(rdir)
-    if not isinstance(manifest.get("spine"), dict) or not (rdir / "spec.json").is_file():
+    rule_test = isinstance(manifest.get("spine"), dict) and (rdir / "spec.json").is_file()
+    model_run = manifest.get("command") == "ml_replay" and (rdir / "equity_curve.parquet").is_file()
+    if not rule_test and not model_run:
         raise SpineError(
             "NOT_A_RULE_TEST",
-            f"Run {run_id} was not made by alpha test.",
-            "Run alpha results --json to list rule-test runs.",
+            f"Run {run_id} was not made by alpha test or alpha ml run.",
+            "Run alpha results --json to list rule-test and model runs.",
         )
     return Target(run_id, rdir, manifest)
 
@@ -351,8 +406,8 @@ def comparison(
         return None
     resolved = resolve_asset(asset, data_dir=home)
     name = f"{resolved.symbol}@{resolved.store_name}"
-    meta = target.manifest["metadata"]
-    if name == f"{meta['symbol']}@{target.manifest['spine']['store']}":
+    meta = target.metadata
+    if name == f"{meta['symbol']}@{target.spine['store']}":
         return None
     last = datetime.fromisoformat(meta["last_ts"])
     bars, _ = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir, as_of=last)

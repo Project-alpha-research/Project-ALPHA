@@ -136,7 +136,7 @@ def report(
 
     metadata = manifest.get("metadata", {})
     symbol = metadata.get("symbol") or manifest.get("symbol")
-    symbols = manifest.get("symbols")
+    symbols = manifest.get("symbols") or manifest.get("universe")
     label = symbol or (", ".join(symbols) if symbols else "?")
     version = manifest.get("schema_version")
     typer.echo(
@@ -254,6 +254,12 @@ def report(
     if manifest.get("command") in {"monte_carlo_classical", "monte_carlo_kronos"}:
         for text in monte_carlo_lines(manifest):
             typer.echo(text)
+    if manifest.get("command") == "ml_replay":  # a stored model run: the reading in plain words
+        from alpha_cli.ml_reading import fold_table, ml_reading, read_folds
+
+        rdir = Path(manifest["__dir"])
+        typer.echo(ml_reading(settings.data_dir, rdir, manifest)["sentence"])
+        typer.echo("\n".join(fold_table(read_folds(rdir))))
     plain = isinstance(manifest.get("verdict"), dict)
     _echo_reading(manifest, plain)
     if "oos_metrics" in manifest and not plain:

@@ -102,7 +102,7 @@ def publish(
         "reserve_start": RESERVED_START,
         "elapsed_seconds": elapsed,
         "run_id": target.run_id,
-        "test_id": target.manifest["spine"].get("test_id"),
+        "test_id": target.spine.get("test_id"),
         "recorded_at": written_at.isoformat(),
         "labels": labels,
         "basis": result.basis,

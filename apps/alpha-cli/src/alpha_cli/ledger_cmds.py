@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from collections import Counter
 from collections.abc import Callable
 from dataclasses import asdict
@@ -38,15 +39,25 @@ OUTCOME = Annotated[
         "inconclusive, error, 'not supported'); both match, so old scripts keep working."
     ),
 ]
+# The group callback keeps a flag given before the subcommand; the command runs in one process.
+_BEFORE_SUBCOMMAND: dict[str, Path | None] = {}
 NOTICE = "Read-only view; the ledgers themselves are unchanged."
 # Where the RD-Agent factor loop's shared ledger lives beside the data directory (the
 # `--trial-ledger` path every real run has used): read when `ledger/sources.toml` is absent.
 DEFAULT_RDAGENT_LEDGER = Path("runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl")
 
 
+def _default_rdagent_ledger(home: Path) -> Path:
+    """The Workstation's rule: `ALPHA_RDAGENT_RUNS_DIR`, else `runs/` beside the data home."""
+    runs = os.environ.get("ALPHA_RDAGENT_RUNS_DIR")
+    if runs:
+        return Path(runs) / DEFAULT_RDAGENT_LEDGER.relative_to("runs")
+    return home.resolve().parent / DEFAULT_RDAGENT_LEDGER
+
+
 def _rdagent_ledger(home: Path, rdagent: Path | None) -> Path | None:
     if rdagent is None and not (home / "ledger/sources.toml").exists():
-        return home.resolve().parent / DEFAULT_RDAGENT_LEDGER
+        return _default_rdagent_ledger(home)
     return rdagent
 
 
@@ -162,6 +173,7 @@ def _run(
     action: Callable[[LedgerSnapshot, Path], dict[str, Any]],
     text: Callable[[dict[str, Any]], str] = _render,
 ) -> None:
+    rdagent = rdagent or _BEFORE_SUBCOMMAND.get("rdagent_ledger")
     try:
         home = AlphaSettings().data_dir
         snapshot = read_ledgers(
@@ -239,6 +251,7 @@ def _share_per_kind(records: list[TrialRecord], limit: int) -> list[TrialRecord]
 @ledger_app.callback(invoke_without_command=True)
 def default_view(ctx: typer.Context, rdagent_ledger: RD = None, json_out: JSON = False) -> None:
     """With no subcommand, list the newest trials of every kind (same as `ledger list`)."""
+    _BEFORE_SUBCOMMAND["rdagent_ledger"] = rdagent_ledger
     if ctx.invoked_subcommand is None:
         list_trials(rdagent_ledger=rdagent_ledger, json_out=json_out)
 

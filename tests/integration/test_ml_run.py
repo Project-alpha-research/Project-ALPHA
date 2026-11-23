@@ -246,7 +246,7 @@ def test_results_show_reads_an_ml_run_in_plain_words(home: Path, tmp_path: Path)
     assert "refit" in text and "No model saw its own test days" in text
     assert "20 assets" in text and "lightgbm" in text.lower()
     assert "bp fee" in text and "slippage" in text
-    assert "buy-and-hold" in text and "Sharpe" in text
+    assert "equal-weight basket" in text and "Sharpe" in text
     assert "1 try" in text or "tries" in text
     shown = json.loads(CliRunner().invoke(app, ["results", "show", run_id, "--json"]).output)
     assert shown["runs"][0]["reading"]["kind"] == "ml_run"
@@ -258,7 +258,7 @@ def test_report_names_the_assets_and_gives_the_reading(home: Path, tmp_path: Pat
     out = CliRunner().invoke(app, ["report", run_id]).output
 
     assert "[?]" not in out and "S00" in out
-    assert "buy-and-hold" in out and "No model saw its own test days" in out
+    assert "equal-weight basket" in out and "No model saw its own test days" in out
 
 
 def test_run_prints_a_fold_table_not_raw_dict_lines(home: Path, tmp_path: Path) -> None:
@@ -266,7 +266,7 @@ def test_run_prints_a_fold_table_not_raw_dict_lines(home: Path, tmp_path: Path) 
 
     assert "train_start" not in out and "{'" not in out
     assert "FOLD\tTRAIN" in out
-    assert "buy-and-hold" in out
+    assert "equal-weight basket" in out
 
 
 def test_a_check_that_needs_only_stored_equity_accepts_an_ml_run(

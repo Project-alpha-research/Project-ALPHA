@@ -5,7 +5,7 @@ Branch `fix/m123-tools-sweep-leftovers`. Each item: cause, change, test. Tests w
 ## 1. ML runs can be read back
 - Cause: `results show`, `report` and the toolbox only knew rule-test manifests (`spine`, `diagnostics.json`, `metadata`).
 - Change: new `ml_reading.py` builds the reading from the stored manifest and files: split sentence, assets, model, costs,
-  out-of-sample Sharpe against buy-and-hold of the same basket (from `ml_periods.parquet`), try count. `results show`, `report` and
+  out-of-sample Sharpe against the equal-weight basket of the same assets over the same days (from `ml_periods.parquet`). The engine rebalances that basket every period, so it is not true buy-and-hold; the words say so (review finding), try count. `results show`, `report` and
   `alpha ml run` print it and a fold table (`FOLD / TRAIN / TEST`). Nothing stored was changed.
 - One place for "was made by alpha test": `toolbox/inputs.py` `resolve()`. It now accepts a model run. `Target` gives `spine`,
   `metadata`, `last_ts`, `ppy`, `oos_metrics` for a model run. `kinds` of a model run are its stored files only, so each check is

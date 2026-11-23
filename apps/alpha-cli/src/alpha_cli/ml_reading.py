@@ -2,8 +2,8 @@
 
 A model run stores no rule-test reading. This module builds the reading from the stored manifest
 and files only: the split sentence, assets, model, costs, the out-of-sample Sharpe against
-buy-and-hold of the same basket over the same days, and the try count. It states numbers in
-context. It gives no verdict, no grade and no advice.
+an equal-weight basket of the same assets over the same days, and the try count. It states
+numbers in context. It gives no verdict, no grade and no advice.
 """
 
 from __future__ import annotations
@@ -62,7 +62,7 @@ def _sharpe(values: Any, periods_per_year: int) -> float | None:
 
 
 def benchmark_sharpe(rdir: Path, periods_per_year: int) -> float | None:
-    """Sharpe of buy-and-hold of the same basket over the same days, from the stored periods."""
+    """Sharpe of the equal-weight basket of the same assets, rebalanced each period, same days."""
     import polars as pl
 
     column = pl.read_parquet(rdir / "ml_periods.parquet", columns=["benchmark_return"])
@@ -102,8 +102,8 @@ def ml_reading(home: Path, rdir: Path, manifest: Mapping[str, Any]) -> dict[str,
         f"Assets: {len(universe)} assets ({', '.join(universe)}).",
         f"Model: {MODEL}.",
         f"Costs: {costs['fee_bps']} bp fee and {costs['slippage_bps']} bp slippage per trade.",
-        f"Out-of-sample Sharpe {_number(sharpe, reason)}; buy-and-hold of the same basket over "
-        f"the same days {_number(held, reason)}.",
+        f"Out-of-sample Sharpe {_number(sharpe, reason)}; the equal-weight basket of the same "
+        f"assets (rebalanced each day) over the same days {_number(held, reason)}.",
         tries_sentence(home),
     ]
     block = manifest.get("reserve")
@@ -117,7 +117,7 @@ def ml_reading(home: Path, rdir: Path, manifest: Mapping[str, Any]) -> dict[str,
         "model": MODEL,
         "costs": costs,
         "out_of_sample_sharpe": sharpe,
-        "buy_and_hold_sharpe": held,
+        "equal_weight_basket_sharpe": held,
         "folds": folds,
     }
 
@@ -137,7 +137,7 @@ def ml_facts(run_id: str, reading: Mapping[str, Any]) -> list[dict[str, Any]]:
         }
         for metric, key in (
             ("out_of_sample_sharpe", "out_of_sample_sharpe"),
-            ("buy_and_hold_sharpe", "buy_and_hold_sharpe"),
+            ("equal_weight_basket_sharpe", "equal_weight_basket_sharpe"),
         )
     ]
 

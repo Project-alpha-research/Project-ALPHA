@@ -154,7 +154,7 @@ def _paths(smallest: str | None) -> dict[str, dict[str, str]]:
         },
         "own_chart_setup": {
             "say": "Find every time my chart setup happened. Here is how I describe it.",
-            "command": f'alpha setup new "my setup" --asset {asset} --when "<condition>"',
+            "command": f'alpha setup new my-setup --asset {asset} --when "<condition>"',
             "example_spec": EXAMPLE_SPEC,
         },
         "rdagent_idea": {

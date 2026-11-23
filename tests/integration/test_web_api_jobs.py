@@ -171,17 +171,10 @@ def test_standalone_empirical_job_passes_canonical_context_to_child(
     ]
 
 
-def test_open_governed_project_blocks_empirical_child_before_launch(
+def test_governed_project_context_is_refused_before_launch(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     launched: list[list[str]] = []
-    monkeypatch.setattr(
-        "alpha_web.run_authority._development.project_detail",
-        lambda project_id, *, data_dir, lineage_limit: {
-            "project_id": project_id,
-            "research_gate_state": "open",
-        },
-    )
     monkeypatch.setattr(
         _invoke,
         "launch",
@@ -201,21 +194,12 @@ def test_open_governed_project_blocks_empirical_child_before_launch(
         },
     )
 
-    assert response.status_code == 409, response.text
-    assert "research gate is open" in response.json()["message"]
+    assert response.status_code == 422, response.text
+    assert "no longer available" in response.json()["message"]
     assert launched == []
 
 
-def test_unknown_free_form_command_fails_closed_with_project_context(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(
-        "alpha_web.run_authority._development.project_detail",
-        lambda project_id, *, data_dir, lineage_limit: {
-            "project_id": project_id,
-            "research_gate_state": "passed",
-        },
-    )
+def test_unknown_free_form_command_fails_closed_with_project_context() -> None:
     response = TestClient(create_app()).post(
         "/api/jobs",
         json={

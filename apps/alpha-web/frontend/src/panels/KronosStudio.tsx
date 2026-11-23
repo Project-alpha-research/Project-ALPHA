@@ -8,7 +8,6 @@ import type {
   ForecastOrigins,
   ForecastPaths,
   ForecastSeries,
-  ProjectDetail,
   RunDetail,
 } from '../api/types'
 import { FigureCard } from '../components/FigureCard'
@@ -29,38 +28,12 @@ function commandOf(detail: RunDetail): string | null {
   return asStr((detail.manifest as Dict).command)
 }
 
-async function resolveKronosLineage(
+function resolveKronosLineage(
   active: RunDetail,
-  projectId: string | null,
-): Promise<{ scenario: RunDetail | null; evaluation: RunDetail | null }> {
-  const collected = new Map<string, RunDetail>([[active.run_id, active]])
-  if (projectId) {
-    const project: ProjectDetail = await api.project(projectId, 200)
-    const activeLink = project.stage_run_links.find(
-      (link) => link.stage === 'kronos' && link.run_id === active.run_id,
-    )
-    if (activeLink) {
-      const candidateIds = project.stage_run_links
-        .filter(
-          (link) =>
-            link.stage === 'kronos' &&
-            link.experiment_id === activeLink.experiment_id &&
-            (link.state === 'pass' || link.state === 'warning'),
-        )
-        .sort((left, right) => right.linked_at.localeCompare(left.linked_at))
-        .map((link) => link.run_id)
-        .filter((runId, index, values) => values.indexOf(runId) === index)
-        .slice(0, 12)
-      const details = await Promise.all(
-        candidateIds.filter((runId) => runId !== active.run_id).map((runId) => api.run(runId)),
-      )
-      for (const detail of details) collected.set(detail.run_id, detail)
-    }
-  }
-  const values = [...collected.values()]
+): { scenario: RunDetail | null; evaluation: RunDetail | null } {
   return {
-    scenario: values.find((candidate) => commandOf(candidate) === 'forecast_run') ?? null,
-    evaluation: values.find((candidate) => commandOf(candidate) === 'forecast_eval') ?? null,
+    scenario: commandOf(active) === 'forecast_run' ? active : null,
+    evaluation: commandOf(active) === 'forecast_eval' ? active : null,
   }
 }
 
@@ -201,7 +174,7 @@ export function KronosStudio(props: PanelHandleProps) {
     api.run(runId).then(async (next) => {
       if (!live) return
       setDetail(next)
-      const lineage = await resolveKronosLineage(next, linked.projectId)
+      const lineage = resolveKronosLineage(next)
       if (!live) return
       setScenarioDetail(lineage.scenario)
       setEvaluationDetail(lineage.evaluation)
@@ -217,7 +190,7 @@ export function KronosStudio(props: PanelHandleProps) {
       setSampleId(nextPaths.samples[0]?.sample ?? 0)
     }).catch((reason: unknown) => live && setError(String(reason)))
     return () => { live = false }
-  }, [linked.projectId, pathLimit, runId])
+  }, [pathLimit, runId])
 
   const manifest = (scenarioDetail?.manifest ?? detail?.manifest ?? {}) as Dict
   const command = detail ? commandOf(detail) : null

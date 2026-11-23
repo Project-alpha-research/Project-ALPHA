@@ -12,9 +12,9 @@ import { api } from '../api/client'
 import { useAreaVersion } from '../state/activity'
 import type { CryptoCoverage, CryptoStorage, DataSnapshots, DataSourceStatus, ProviderDefinition } from '../api/types'
 import { JobConsole } from '../components/JobConsole'
+import { CryptoDataCenter } from './CryptoDataCenter'
 import { Placeholder } from '../components/Placeholder'
 import { setLinked, useLinked } from '../context/linked'
-import type { PanelHandleProps } from '../context/panelHandle'
 import { dockOf } from '../shell/documents'
 import { profile as marketProfile, symbolFitsProfile } from '../shell/profiles'
 import type { Profile } from '../state/settings'
@@ -28,7 +28,6 @@ import {
   storageRow,
   validateDates,
 } from './dataManagerModel'
-import { ResearchDataExplorer } from './ResearchDataExplorer'
 
 type Tab = 'Pull' | 'Snapshots' | 'Quality' | 'Storage'
 const TAB_HELP: Readonly<Record<Tab, string>> = {
@@ -41,7 +40,7 @@ function today(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
-export function DataManager(props: PanelHandleProps) {
+export function DataManager() {
   const { profile } = useSettings()
   const [tab, setTab] = useState<Tab>('Pull')
   // Read inside the component: this module is itself imported by the registry.
@@ -51,7 +50,9 @@ export function DataManager(props: PanelHandleProps) {
       {tab === 'Quality' ? (
         <>
           <SourceStatusCard />
-          <ResearchDataExplorer {...props} embedded />
+          <div className="panel-body panel-pad workbench research-data-explorer" tabIndex={0}>
+            <CryptoDataCenter />
+          </div>
         </>
       ) : tab === 'Snapshots' ? (
         <SnapshotsTab profile={profile} />

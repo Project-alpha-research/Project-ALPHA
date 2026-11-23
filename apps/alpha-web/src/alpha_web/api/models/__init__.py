@@ -1,7 +1,6 @@
 """Strict response contracts for the workstation API.
 
 _base: shared strict bases, regexes and validators.
-semantic_reads: verified and blind semantic reads.
 errors: api error responses.
 runs: run contexts, listings, details and job status.
 rules: rules and daily rule evidence.
@@ -11,11 +10,8 @@ scans_strategies: strategy definitions.
 data_sources: data sources, providers and kronos.
 system: command definitions.
 crypto_data: crypto data contracts.
-projects: projects, control-plane jobs, suites and evidence.
 risk: risk reports and their nested contracts.
-research_cases: research cases, proposals and study status.
-research_hub: research reports and evidence hub.
-research_gates: research gate packets and decisions.
+research_hub: the research compare report shape.
 figures: figure catalogue and metadata.
 market: the stored-bars Market overview.
 follow: the Today screen's reads of followed ideas.
@@ -107,8 +103,6 @@ from .crypto_data import CryptoQualityReportResponse as CryptoQualityReportRespo
 from .crypto_data import CryptoQualityResponse as CryptoQualityResponse
 from .crypto_data import CryptoSnapshotCreateRequest as CryptoSnapshotCreateRequest
 from .crypto_data import CryptoSnapshotCreateResponse as CryptoSnapshotCreateResponse
-from .crypto_data import CryptoSnapshotRegisterRequest as CryptoSnapshotRegisterRequest
-from .crypto_data import CryptoSnapshotRegisterResponse as CryptoSnapshotRegisterResponse
 from .crypto_data import CryptoSnapshotVerifyRequest as CryptoSnapshotVerifyRequest
 from .crypto_data import CryptoSnapshotVerifyResponse as CryptoSnapshotVerifyResponse
 from .crypto_data import CryptoStorageInventoryResponse as CryptoStorageInventoryResponse
@@ -170,170 +164,6 @@ from .market import MarketAsset as MarketAsset
 from .market import MarketOverview as MarketOverview
 from .market import MarketTooFewBars as MarketTooFewBars
 from .market import MarketUnreadable as MarketUnreadable
-from .projects import AgentBrief as AgentBrief
-from .projects import AgentScope as AgentScope
-from .projects import AgentStageStatus as AgentStageStatus
-from .projects import AttemptCreateRequest as AttemptCreateRequest
-from .projects import AttemptRecord as AttemptRecord
-from .projects import AttemptStatusValue as AttemptStatusValue
-from .projects import AuthorKindValue as AuthorKindValue
-from .projects import ControlJob as ControlJob
-from .projects import ControlJobCreateRequest as ControlJobCreateRequest
-from .projects import ControlJobDetail as ControlJobDetail
-from .projects import ControlJobEvent as ControlJobEvent
-from .projects import ControlJobPage as ControlJobPage
-from .projects import ControlJobStatusValue as ControlJobStatusValue
-from .projects import DecisionPacket as DecisionPacket
-from .projects import DecisionRequest as DecisionRequest
-from .projects import DevelopmentStageValue as DevelopmentStageValue
-from .projects import EvidenceDetail as EvidenceDetail
-from .projects import EvidenceDraftRequest as EvidenceDraftRequest
-from .projects import EvidencePage as EvidencePage
-from .projects import EvidenceRecord as EvidenceRecord
-from .projects import EvidenceReviewRequest as EvidenceReviewRequest
-from .projects import EvidenceStatusValue as EvidenceStatusValue
-from .projects import ExperimentCreateRequest as ExperimentCreateRequest
-from .projects import ExperimentSpec as ExperimentSpec
-from .projects import ExperimentStageState as ExperimentStageState
-from .projects import ExperimentStageTransitionRequest as ExperimentStageTransitionRequest
-from .projects import HoldoutAuditEvent as HoldoutAuditEvent
-from .projects import HoldoutSealRequest as HoldoutSealRequest
-from .projects import HoldoutState as HoldoutState
-from .projects import JobReconcileResponse as JobReconcileResponse
-from .projects import JsonObject as JsonObject
-from .projects import JsonScalar as JsonScalar
-from .projects import MonteCarloReview as MonteCarloReview
-from .projects import ProjectCreateRequest as ProjectCreateRequest
-from .projects import ProjectDetail as ProjectDetail
-from .projects import ProjectPage as ProjectPage
-from .projects import ProjectStatusValue as ProjectStatusValue
-from .projects import ProjectSummary as ProjectSummary
-from .projects import ProjectTruncation as ProjectTruncation
-from .projects import PublicStageStateValue as PublicStageStateValue
-from .projects import ResearchGateOverride as ResearchGateOverride
-from .projects import ResearchGateStateValue as ResearchGateStateValue
-from .projects import ResearchPromotionReference as ResearchPromotionReference
-from .projects import StageLinkCreateRequest as StageLinkCreateRequest
-from .projects import StageRunLink as StageRunLink
-from .projects import StageStateEvent as StageStateEvent
-from .projects import StageStateRequest as StageStateRequest
-from .projects import StageStateValue as StageStateValue
-from .projects import StrategyProjectWorkspace as StrategyProjectWorkspace
-from .projects import StrategyProjectWorkspaceCategory as StrategyProjectWorkspaceCategory
-from .projects import (
-    StrategyProjectWorkspaceIndexDescriptor as StrategyProjectWorkspaceIndexDescriptor,
-)
-from .projects import StrategyProjectWorkspaceProjection as StrategyProjectWorkspaceProjection
-from .projects import StrategyVersion as StrategyVersion
-from .projects import StrategyVersionCreateRequest as StrategyVersionCreateRequest
-from .projects import SuiteActionValue as SuiteActionValue
-from .projects import SuiteCancelResponse as SuiteCancelResponse
-from .projects import SuiteLaunch as SuiteLaunch
-from .projects import SuitePlan as SuitePlan
-from .projects import SuiteRunRequest as SuiteRunRequest
-from .projects import SuiteStep as SuiteStep
-from .research_cases import HypothesisCard as HypothesisCard
-from .research_cases import HypothesisCardField as HypothesisCardField
-from .research_cases import HypothesisCardPlan as HypothesisCardPlan
-from .research_cases import HypothesisCardPlanFamily as HypothesisCardPlanFamily
-from .research_cases import ResearchAnswerBundleV1 as ResearchAnswerBundleV1
-from .research_cases import ResearchAttempt as ResearchAttempt
-from .research_cases import ResearchBudgetProjection as ResearchBudgetProjection
-from .research_cases import ResearchCaptureRequest as ResearchCaptureRequest
-from .research_cases import ResearchCaptureResponse as ResearchCaptureResponse
-from .research_cases import ResearchCase as ResearchCase
-from .research_cases import ResearchCasePage as ResearchCasePage
-from .research_cases import ResearchCaseSummaryRow as ResearchCaseSummaryRow
-from .research_cases import ResearchChartConstructionValue as ResearchChartConstructionValue
-from .research_cases import ResearchClaimAddRequest as ResearchClaimAddRequest
-from .research_cases import ResearchContextPacket as ResearchContextPacket
-from .research_cases import ResearchContextPacketPage as ResearchContextPacketPage
-from .research_cases import ResearchContract as ResearchContract
-from .research_cases import ResearchD1AttemptViewV1 as ResearchD1AttemptViewV1
-from .research_cases import ResearchD1StateV1 as ResearchD1StateV1
-from .research_cases import ResearchD2Event as ResearchD2Event
-from .research_cases import ResearchD2StateValue as ResearchD2StateValue
-from .research_cases import ResearchD3StateValue as ResearchD3StateValue
-from .research_cases import ResearchDatasetPage as ResearchDatasetPage
-from .research_cases import ResearchDatasetRefRow as ResearchDatasetRefRow
-from .research_cases import ResearchDecisionEvent as ResearchDecisionEvent
-from .research_cases import ResearchEventAvailabilityValue as ResearchEventAvailabilityValue
-from .research_cases import ResearchExecutionStateValue as ResearchExecutionStateValue
-from .research_cases import ResearchLaunchRequest as ResearchLaunchRequest
-from .research_cases import ResearchLaunchResponse as ResearchLaunchResponse
-from .research_cases import ResearchMaterialAnswers as ResearchMaterialAnswers
-from .research_cases import ResearchMaterialChoiceV1 as ResearchMaterialChoiceV1
-from .research_cases import ResearchMaterialQuestionV1 as ResearchMaterialQuestionV1
-from .research_cases import ResearchMilestone as ResearchMilestone
-from .research_cases import ResearchNote as ResearchNote
-from .research_cases import ResearchNoteAddRequest as ResearchNoteAddRequest
-from .research_cases import ResearchNotePage as ResearchNotePage
-from .research_cases import ResearchPhaseValue as ResearchPhaseValue
-from .research_cases import ResearchPrimaryOutcomeValue as ResearchPrimaryOutcomeValue
-from .research_cases import ResearchPriority as ResearchPriority
-from .research_cases import ResearchPromotionStateV1 as ResearchPromotionStateV1
-from .research_cases import ResearchProposalBlockerV1 as ResearchProposalBlockerV1
-from .research_cases import ResearchProposalOptionsV1 as ResearchProposalOptionsV1
-from .research_cases import ResearchProposalRequest as ResearchProposalRequest
-from .research_cases import ResearchProposalResponse as ResearchProposalResponse
-from .research_cases import ResearchProtocolEntry as ResearchProtocolEntry
-from .research_cases import ResearchProtocolLibrary as ResearchProtocolLibrary
-from .research_cases import ResearchReadinessBlocker as ResearchReadinessBlocker
-from .research_cases import ResearchReadinessProjection as ResearchReadinessProjection
-from .research_cases import ResearchReviewEvent as ResearchReviewEvent
-from .research_cases import ResearchReviewSummary as ResearchReviewSummary
-from .research_cases import ResearchScorecard as ResearchScorecard
-from .research_cases import ResearchScorecardDimension as ResearchScorecardDimension
-from .research_cases import ResearchScorecardQuestions as ResearchScorecardQuestions
-from .research_cases import ResearchScorecardRecommendation as ResearchScorecardRecommendation
-from .research_cases import ResearchSemanticEventViewV1 as ResearchSemanticEventViewV1
-from .research_cases import ResearchSemanticStateV1 as ResearchSemanticStateV1
-from .research_cases import ResearchSourceAddRequest as ResearchSourceAddRequest
-from .research_cases import ResearchSourcePackOptionV1 as ResearchSourcePackOptionV1
-from .research_cases import ResearchStudyStatusV1 as ResearchStudyStatusV1
-from .research_gates import ResearchCaseReport as ResearchCaseReport
-from .research_gates import ResearchChecklistQuestion as ResearchChecklistQuestion
-from .research_gates import ResearchDecisionHistoryEvent as ResearchDecisionHistoryEvent
-from .research_gates import ResearchDecisionView as ResearchDecisionView
-from .research_gates import ResearchEdgeChecklist as ResearchEdgeChecklist
-from .research_gates import ResearchGateAuditLedgers as ResearchGateAuditLedgers
-from .research_gates import ResearchGateAuthority as ResearchGateAuthority
-from .research_gates import ResearchGateConclusion as ResearchGateConclusion
-from .research_gates import ResearchGateConfirmationChecks as ResearchGateConfirmationChecks
-from .research_gates import ResearchGateConfounders as ResearchGateConfounders
-from .research_gates import ResearchGateFinding as ResearchGateFinding
-from .research_gates import ResearchGateGuidedEvidence as ResearchGateGuidedEvidence
-from .research_gates import ResearchGateLayers as ResearchGateLayers
-from .research_gates import ResearchGateLedgerBounds as ResearchGateLedgerBounds
-from .research_gates import ResearchGateLedgerCounts as ResearchGateLedgerCounts
-from .research_gates import ResearchGatePacket as ResearchGatePacket
-from .research_gates import ResearchGatePracticalMagnitude as ResearchGatePracticalMagnitude
-from .research_gates import ResearchGatePrimaryResult as ResearchGatePrimaryResult
-from .research_gates import ResearchGateStability as ResearchGateStability
-from .research_gates import ResearchGateTechnicalAppendix as ResearchGateTechnicalAppendix
-from .research_gates import ResearchGateUncertainty as ResearchGateUncertainty
-from .research_gates import ResearchProgressReport as ResearchProgressReport
-from .research_hub import HubAttempt as HubAttempt
-from .research_hub import HubConfounder as HubConfounder
-from .research_hub import HubData as HubData
-from .research_hub import HubDecision as HubDecision
-from .research_hub import HubExperiments as HubExperiments
-from .research_hub import HubExploration as HubExploration
-from .research_hub import HubFalsification as HubFalsification
-from .research_hub import HubFalsifier as HubFalsifier
-from .research_hub import HubFinding as HubFinding
-from .research_hub import HubFindings as HubFindings
-from .research_hub import HubLiterature as HubLiterature
-from .research_hub import HubMechanism as HubMechanism
-from .research_hub import HubOverview as HubOverview
-from .research_hub import HubRobustness as HubRobustness
-from .research_hub import HubSource as HubSource
-from .research_hub import LiteratureAcquisitionRequest as LiteratureAcquisitionRequest
-from .research_hub import LiteratureDiscoveryRequest as LiteratureDiscoveryRequest
-from .research_hub import ResearchEvidenceHub as ResearchEvidenceHub
-from .research_hub import ResearchEvidenceHubSections as ResearchEvidenceHubSections
-from .research_hub import ResearchReport as ResearchReport
-from .research_hub import ResearchRow as ResearchRow
 from .risk import RiskMetricBasis as RiskMetricBasis
 from .risk import RiskProvenance as RiskProvenance
 from .risk import RiskReport as RiskReport
@@ -376,9 +206,6 @@ from .runs import RunListItem as RunListItem
 from .runs import StandaloneRunContextV1 as StandaloneRunContextV1
 from .scans_strategies import ParamDefinition as ParamDefinition
 from .scans_strategies import StrategyDefinition as StrategyDefinition
-from .semantic_reads import BlindSemanticProjectionV1 as BlindSemanticProjectionV1
-from .semantic_reads import SemanticPointV1 as SemanticPointV1
-from .semantic_reads import VerifiedBlindSemanticReadV1 as VerifiedBlindSemanticReadV1
 from .series import RunSeries as RunSeries
 from .setup_runs import SetupRun as SetupRun
 from .setup_runs import SetupRunDetail as SetupRunDetail

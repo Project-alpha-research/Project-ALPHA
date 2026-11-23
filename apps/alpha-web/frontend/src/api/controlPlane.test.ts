@@ -133,30 +133,6 @@ describe('control-plane API client', () => {
     )
   })
 
-  it('reads project lineage and keeps ML behind its explicit capability service', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(jsonResponse({ items: [], limit: 50, offset: 0, has_more: false }))
-      .mockResolvedValueOnce(jsonResponse({ available: false }))
-      .mockResolvedValueOnce(jsonResponse({ job_id: 'job-1', status: 'queued' }))
-      .mockResolvedValueOnce(jsonResponse({ job_id: 'job-1', status: 'running' }))
-    vi.stubGlobal('fetch', fetchMock)
-
-    await api.projects()
-    await api.mlStatus()
-    const accepted = await api.createMlExperiment({ snapshot_id: 'snap' })
-    await api.developmentJob(accepted.job_id)
-
-    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/projects?limit=50&offset=0')
-    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/ml/status')
-    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/ml/experiments', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ spec: { snapshot_id: 'snap' } }),
-    })
-    expect(fetchMock).toHaveBeenNthCalledWith(4, '/api/development/jobs/job-1?event_tail=true')
-  })
-
   it('relays worker capabilities and selected model parameters without inferring readiness', async () => {
     const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(jsonResponse({})))
     vi.stubGlobal('fetch', fetchMock)
@@ -180,79 +156,6 @@ describe('control-plane API client', () => {
     )
     expect(() => api.mlTearsheet('exchange', 1_000_001)).toThrow(RangeError)
     expect(fetchMock).toHaveBeenCalledOnce()
-  })
-
-  it('uses typed immutable setup, AgentBrief, and bounded evidence ledger endpoints', async () => {
-    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(jsonResponse({})))
-    vi.stubGlobal('fetch', fetchMock)
-
-    await api.createStrategyVersion('project/id', {
-      strategy_name: 'ts_momentum',
-      source_fingerprint: 'git:abc',
-      definition: { lookback: 252 },
-      parameter_space: { lookback: [126, 252] },
-    })
-    await api.createExperiment('project/id', {
-      version_id: 'sv/id',
-      snapshot_id: 'snapshot-1',
-      universe: ['AAPL', 'MSFT'],
-      split_policy: { train: 504, test: 63 },
-      costs: { fee_bps: 1 },
-      seeds: { master: 7 },
-      stage_config: { tier1_paths: 1000 },
-    })
-    await api.agentBrief('project/id', 25)
-    await api.evidence({
-      asset: 'BRK/B',
-      projectId: 'project/id',
-      status: 'corroborated',
-      asOf: '2026-07-19',
-      limit: 25,
-      offset: 5,
-    })
-
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      1,
-      '/api/projects/project%2Fid/versions',
-      expect.objectContaining({ method: 'POST' }),
-    )
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      '/api/projects/project%2Fid/experiments',
-      expect.objectContaining({ method: 'POST' }),
-    )
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
-      '/api/projects/project%2Fid/agent-brief?evidence_limit=25',
-    )
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      4,
-      '/api/evidence?asset=BRK%2FB&project_id=project%2Fid&status=corroborated&as_of=2026-07-19&limit=25&offset=5',
-    )
-  })
-
-  it('previews and launches only a typed strategy-development suite action', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(jsonResponse({ ready: true }))
-      .mockResolvedValueOnce(jsonResponse({ job_id: 'suite-1', status: 'starting' }))
-      .mockResolvedValueOnce(jsonResponse({ job_id: 'suite-1', status: 'cancellation_requested' }))
-    vi.stubGlobal('fetch', fetchMock)
-
-    await api.suitePlan('project/id', 'experiment/id', 'three_null_families')
-    await api.runSuite('project/id', 'experiment/id', 'three_null_families')
-    await api.cancelDevelopmentJob('suite/id')
-
-    const prefix = '/api/projects/project%2Fid/experiments/experiment%2Fid/suite/three_null_families'
-    expect(fetchMock).toHaveBeenNthCalledWith(1, `${prefix}/plan`)
-    expect(fetchMock).toHaveBeenNthCalledWith(2, `${prefix}/run`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: '{}',
-    })
-    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/development/jobs/suite%2Fid', {
-      method: 'DELETE',
-    })
   })
 
   it('does not expose caller-asserted owner actions', () => {

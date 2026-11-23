@@ -22,19 +22,19 @@ where an item names them. Done = pull request ready (not draft) with a green `ci
    sentence. Then run every toolbox check against a synthetic ML run in one parametrised test: each must give a reading or a
    one-sentence true refusal; none may crash or give a message about rule tests.
 3. ML reading. `alpha results show <ml run>` has no reading word and says "Flags raised: none" when the model trails the basket;
-   `alpha report` prints raw names (`costed_excess_total_return=-0.5000`, `dsr=0.9784`); "Held back 14468 bars" is a sum over all
+   `alpha report` prints raw names (`costed_excess_total_return=...`, `dsr=...`); "Held back N bars" is a sum over all
    assets. Give the ML run a plain reading in the same words the rule test uses (no pass/fail: a reading), state "the model
    returned less than holding the basket" when it did, gloss each printed number in a few words, and say held-back bars per asset
-   ("about 723 bars for each of 20 assets"). Chart titles of ML runs must not paste "OOS replay validated — model not recomputed
+   ("about N bars for each of the assets"). Chart titles of ML runs must not paste "OOS replay validated — model not recomputed
    under counterfactual": use a short plain title.
 4. `alpha ml run` prints no time estimate and no progress for over 6 minutes. Print the expected time first and a line about every
    10 seconds (fold k of n), reusing the progress helper the Kronos commands use.
-5. Kronos time estimates are too low (Monte Carlo 105 s said, 301 s real; forecast run 198 vs 290; eval 238 vs 304). Calibrate the
+5. Kronos time estimates are too low (by a factor of up to three). Calibrate the
    estimate from a short timed warm-up step on the machine instead of a fixed constant, round up, and when the run passes the
    estimate say "taking longer than expected; still running". The estimate must be within about 30% on a busy desktop CPU.
 6. `alpha monte-carlo kronos` prints no result numbers, only a manifest path, and does not say which dates its replay window
    covers; `alpha results show` on that run says "Fault: out-of-sample Sharpe could not be computed. No reading." Print the reading
-   the classical Monte Carlo prints (where the real result sits among the simulated paths, with units: "median end value +4.15%"),
+   the classical Monte Carlo prints (where the real result sits among the simulated paths, with units: "median end value +N%"),
    the window's first and last date in plain words, and make `results show` and `report` read a Monte Carlo run without a fault.
    Legend and note use one word for the real run's line ("Real run"), not "Observed OOS" in one place and "Original" in another.
    "Regime window cut from 63 to 49 sessions: the run trains on 100 bars" becomes a plain sentence.

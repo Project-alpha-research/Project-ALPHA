@@ -20,7 +20,7 @@ that already does the job. Done = pull request ready (not draft) with a green `c
    when the span is over five years. Keep the approved look: white, standard matplotlib, plain + annotated pair.
 4. The tries paragraph shows three counts (ideas on this asset, across all assets, the adjustment count) with no reason, and a
    two-asset test shows different numbers per asset block. Keep the numbers; add half a sentence to each that says what it counts
-   and why it differs ("5 on SPY; 7 on all assets, which the luck adjustment uses plus 5 for settings tried inside this test").
+   and why it differs ("N on this asset; M on all assets, which the luck adjustment uses plus the settings tried inside this test").
    One helper, used everywhere the paragraph is printed.
 5. Bridge sentence. `alpha report` shows a luck-adjusted number near 1 beside "not clear of chance", and the toolbox shows
    "probabilistic Sharpe 99.9%" beside the same reading. Under the reading print ONE sentence that names what decided it (for

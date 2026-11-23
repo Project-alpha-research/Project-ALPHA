@@ -188,3 +188,27 @@ def test_the_model_run_reads_in_plain_words(ml_home: tuple[Path, str]) -> None:
     assert "Reading: " in report and "(the chance" in report
     assert "bars for each of 20 assets" in report
     assert "Held back 2160 bars" not in report
+
+
+def test_ml_run_prints_the_expected_time_and_fold_progress(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import time
+
+    from alpha_cli import ml_progress
+
+    def slow_worker(exchange: Path, **kwargs: object) -> object:
+        time.sleep(0.5)
+        return _fake_worker(exchange, **kwargs)
+
+    monkeypatch.setattr(ml_cmds, "train_exchange", slow_worker)
+    monkeypatch.setattr(ml_run, "_require_worker", lambda project: REPO / "workers/qlib")
+    monkeypatch.setattr(ml_progress, "PROGRESS_EVERY", 0.1)
+    data = tmp_path / "alpha-data"
+    _seed_store(data)
+    ml_run.run_spec(_spec(tmp_path), data_dir=data)
+    lines = capsys.readouterr().err.splitlines()
+    assert lines[0].startswith("The model trains ") and "Expected time: about " in lines[0]
+    beats = [line for line in lines if line.startswith("Model training:")]
+    assert beats and all(" of " in line and "about fold " in line for line in beats)
+    assert (data / "ml_timing.json").is_file()

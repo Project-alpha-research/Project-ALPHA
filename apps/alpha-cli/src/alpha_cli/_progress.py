@@ -16,12 +16,17 @@ EVERY_SECONDS = 10.0
 
 @contextmanager
 def heartbeat(
-    label: str, every: float = EVERY_SECONDS, expected: float | None = None
+    label: str,
+    every: float = EVERY_SECONDS,
+    expected: float | None = None,
+    detail: Callable[[float], str] | None = None,
 ) -> Iterator[None]:
     """Print `label: still running, N seconds so far` to stderr every `every` seconds.
 
     With ``expected`` (a rough estimate in seconds) the line also says how long the run should
-    take. A run shorter than `every` prints nothing. stderr keeps `--json` output on stdout clean.
+    take; once the run passes it, the line says "taking longer than expected; still running".
+    ``detail`` maps the seconds so far to a short phrase added to each line (such as "fold 3 of 8").
+    A run shorter than `every` prints nothing. stderr keeps `--json` output on stdout clean.
     """
     of = f" of about {round(expected)} expected" if expected is not None else ""
     stop = threading.Event()
@@ -29,8 +34,14 @@ def heartbeat(
 
     def beat() -> None:
         while not stop.wait(every):
-            seconds = round(time.monotonic() - started)
-            typer.echo(f"{label}: still running, {seconds} seconds so far{of}.", err=True)
+            elapsed = time.monotonic() - started
+            seconds = round(elapsed)
+            late = expected is not None and elapsed > expected
+            state = "taking longer than expected; still running" if late else "still running"
+            extra = f", {detail(elapsed)}" if detail is not None else ""
+            typer.echo(
+                f"{label}: {state}, {seconds} seconds so far{'' if late else of}{extra}.", err=True
+            )
 
     thread = threading.Thread(target=beat, daemon=True)
     thread.start()

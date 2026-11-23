@@ -108,7 +108,7 @@ def fold_sharpe(ctx: BuildContext) -> FigureSpec:
     sharpe: list[float] = []
     degenerate: list[float] = []
     returns: list[float] = []
-    for position, fold in enumerate(folds):
+    for position, fold in enumerate(folds, start=1):  # folds are numbered 1 to n, like the text
         if not isinstance(fold, dict):
             continue
         raw = fold.get("oos_sharpe")
@@ -122,7 +122,9 @@ def fold_sharpe(ctx: BuildContext) -> FigureSpec:
             sharpe.append(value)
     if not index:
         raise DataError("fold records are malformed")
-    defined = [value for position, value in enumerate(sharpe) if float(position) not in degenerate]
+    defined = [
+        value for value, shown in zip(sharpe, index, strict=True) if shown not in degenerate
+    ]
     mean = sum(defined) / len(defined) if defined else 0.0
     positive = sum(1 for value in defined if value > 0)
     marks: list[Mark] = [

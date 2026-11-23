@@ -35,6 +35,20 @@ def _day(epoch: float) -> str:
     return datetime.fromtimestamp(epoch, tz=UTC).strftime("%Y-%m-%d")
 
 
+_PLAIN_NAMES = {
+    "forecast_run": "price forecast",
+    "forecast_eval": "forecast check",
+    "monte_carlo_classical": "Monte Carlo",
+    "monte_carlo_kronos": "Monte Carlo (Kronos)",
+    "ma_crossover": "moving-average crossover",
+}
+
+
+def plain_name(name: str) -> str:
+    """A run's engine name in plain words for a figure title: no code names, no underscores."""
+    return _PLAIN_NAMES.get(name, name.replace("_", " "))
+
+
 class BuildContext:
     """Everything a builder is allowed to read."""
 
@@ -87,7 +101,7 @@ class BuildContext:
         if self.command == "ml_replay":
             return "model run"
         value = self.field("strategy", "strategy_name")
-        return value if isinstance(value, str) else self.command
+        return plain_name(value if isinstance(value, str) else self.command)
 
     def subtitle(self, extra: str = "") -> str:
         parts = [self.symbol, self.strategy]

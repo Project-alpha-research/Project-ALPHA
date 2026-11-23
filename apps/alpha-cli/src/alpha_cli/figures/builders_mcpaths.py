@@ -50,6 +50,11 @@ def monte_carlo_equity_fans(ctx: BuildContext) -> FigureSpec:
     observed = src.require(ctx.rdir, "observed_oos.parquet", "step")
     observed_x = tuple(float(value) for value in observed["step"].to_list())
     observed_equity = src.floats(observed["equity"], name="observed equity")
+    # The axis is dates when the real run's dates are stored and cover every simulated step.
+    days = src.epochs(observed["ts"]) if "ts" in observed.columns else ()
+    dated = len(days) == len(observed_x) and len(days) >= int(frame["step"].n_unique()) + 1
+    if dated:
+        observed_x = tuple(days)
     panels: list[Panel] = []
     total_paths = 0
     for family in _mc_families(frame):
@@ -60,7 +65,7 @@ def monte_carlo_equity_fans(ctx: BuildContext) -> FigureSpec:
             n_paths, horizon
         )
         equity = np.concatenate((np.ones((n_paths, 1)), np.cumprod(1.0 + matrix, axis=1)), axis=1)
-        x = tuple(float(value) for value in range(horizon + 1))
+        x = tuple(days[: horizon + 1]) if dated else tuple(float(v) for v in range(horizon + 1))
         q05, q25, q50, q75, q95 = np.quantile(equity, (0.05, 0.25, 0.5, 0.75, 0.95), axis=0)
         panels.append(
             Panel(
@@ -102,8 +107,8 @@ def monte_carlo_equity_fans(ctx: BuildContext) -> FigureSpec:
         total_paths += n_paths
     return ctx.spec(
         "monte_carlo_equity_fans",
-        x_label="OOS account-return step",
-        x_kind="numeric",
+        x_label="Date (UTC)" if dated else "OOS account-return step",
+        x_kind="time" if dated else "numeric",
         artifacts=("paths.parquet", "observed_oos.parquet"),
         answer=(
             f"This run contributes {len(panels)} of four required family panels and "

@@ -12,6 +12,7 @@ import polars as pl
 import pytest
 
 from alpha_cli.figures import build_figure_spec
+from alpha_cli.figures._common import BuildContext
 from alpha_cli.spine.run import run_idea
 from alpha_cli.spine.spec import load_spec
 from alpha_core import DataError
@@ -856,3 +857,44 @@ def test_trade_pnl_says_the_account_size_the_money_axis_assumes(tmp_path: Path) 
     unknown = spec_for(tmp_path / "b")
     assert "account size not stored in this run" in unknown.caption
     assert "account size not stored in this run" in unknown.panels[0].y_label
+
+
+def test_the_fold_picture_numbers_folds_from_one(tmp_path: Path) -> None:
+    rdir = _synthetic(tmp_path / "folds")
+    manifest = json.loads((rdir / "manifest.json").read_text())
+    manifest["folds"] = [
+        {"oos_sharpe": 0.5, "oos_return": 0.02},
+        {"oos_sharpe": -0.2, "oos_return": -0.01},
+        {"oos_sharpe": 1.0, "oos_return": 0.03},
+    ]
+    (rdir / "manifest.json").write_text(json.dumps(manifest))
+    spec = _build(rdir, "fold_sharpe")
+    bars = spec.panels[0].marks[0]
+    assert list(bars.x) == [1.0, 2.0, 3.0]
+
+
+def test_the_fan_axis_is_dates_when_the_real_runs_dates_are_stored(mc_run: Path) -> None:
+    assert _build(mc_run, "monte_carlo_equity_fans").x_kind == "numeric"
+    start = datetime(2024, 1, 1, tzinfo=UTC)
+    pl.DataFrame(
+        {
+            "step": list(range(21)),
+            "ts": [start + timedelta(days=i) for i in range(21)],
+            "equity": [1.0 + 0.002 * i for i in range(21)],
+        }
+    ).write_parquet(mc_run / "observed_oos.parquet")
+    spec = _build(mc_run, "monte_carlo_equity_fans")
+    assert spec.x_kind == "time" and spec.x_label == "Date (UTC)"
+    assert spec.panels[0].marks[0].x[0] == start.timestamp()
+
+
+def test_titles_use_plain_names_not_code_names(tmp_path: Path) -> None:
+    rdir = _synthetic(tmp_path / "plain", "forecast_run", strategy_name="forecast_run")
+    ctx = BuildContext(
+        run_id=_RUN,
+        rdir=rdir,
+        manifest=json.loads((rdir / "manifest.json").read_text()),
+        data_dir=tmp_path,
+    )
+    assert ctx.strategy == "price forecast"
+    assert "forecast_run" not in ctx.subtitle()

@@ -181,3 +181,37 @@ def test_accept_bad_data_reaches_the_first_find(
             setup_cmds.setup_app, [kind, "--when", "volume == 1", "--accept-bad-data", "why"]
         )
     assert seen == ["why", "why"]
+
+
+def test_context_option_writes_the_context_section_into_the_spec(home: Path) -> None:
+    result = RUNNER.invoke(
+        setup_cmds.setup_app,
+        [
+            "new",
+            "pos",
+            "--context",
+            "es_pos=cot_nc_net_pct_156w@13874A",
+            "--when",
+            "es_pos > 0.9",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    path = home / "specs" / "pos.toml"
+    assert tomllib.loads(path.read_text())["context"] == {"es_pos": "cot_nc_net_pct_156w@13874A"}
+    spec = load_setup_spec(path)
+    assert spec.context and spec.setup.event == "es_pos > 0.9"
+
+
+def test_a_bad_context_is_one_plain_sentence_naming_the_option(home: Path) -> None:
+    result = RUNNER.invoke(setup_cmds.setup_app, ["new", "pos", "--context", "no-equals-sign"])
+
+    assert result.exit_code == 1
+    assert "--context" in result.output and "alias=series@key" in result.output
+    assert not (home / "specs" / "pos.toml").exists()
+
+
+def test_find_study_and_trade_accept_context(home: Path) -> None:
+    for command in ("find", "study", "trade"):
+        result = RUNNER.invoke(setup_cmds.setup_app, [command, "--help"])
+        assert "--context" in result.output, command

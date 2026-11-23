@@ -8,6 +8,7 @@ from typing import Annotated, Any
 import typer
 
 from alpha_cli._cli_json import emit
+from alpha_cli.ml_reading import fold_table
 from alpha_cli.results_summary import summary_lines, table
 from alpha_cli.run_store import RUN_DIRS, find_run_dir, read_manifest, valid_run_id
 from alpha_cli.spine import book, reserve
@@ -204,6 +205,10 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
         from alpha_cli.spine.facts import read_study
 
         return dict(run_id=run_id, **read_study(rdir))
+    from alpha_cli.ml_reading import is_ml_manifest
+
+    if is_ml_manifest(manifest):
+        return _show_ml(home, rdir, manifest, run_id)
     from alpha_cli.toolbox import declarations
     from alpha_cli.toolbox.store import history
 
@@ -283,6 +288,49 @@ def _count_text(home: Path, row: dict[str, Any]) -> str:
         return ""
     said = reading_count_sentence(family, symbol)
     return f"\n{said}" if said else ""
+
+
+def _show_ml(home: Path, rdir: Path, manifest: dict[str, Any], run_id: str) -> dict[str, Any]:
+    """A stored model run: its reading in plain words, its numbers and the tools run on it."""
+    from alpha_cli.figures import available_figures
+    from alpha_cli.ml_reading import ml_facts, ml_reading
+    from alpha_cli.toolbox import declarations
+    from alpha_cli.toolbox.store import history
+
+    reading = ml_reading(home, rdir, manifest)
+    stored_tools = tool_outputs(home, run_id)
+    return {
+        **(
+            {"reserve_sentence": reserve.SEEN_SENTENCE}
+            if reserve.SEEN in reserve.read_labels(manifest)
+            else {}
+        ),
+        "run_id": run_id,
+        "reading": reading,
+        "data_health": None,
+        "facts": ml_facts(run_id, reading),
+        "labels": [manifest["label"]],
+        "flags": [],
+        "audit": [],
+        "diagnostics_reason": _no_diagnostics_reason(manifest),
+        "tool_history": history(home, run_id),
+        "tools": [
+            {
+                **{
+                    key: item[key]
+                    for key in ("tool", "id", "params", "recorded_at", "file", "labels", "reading")
+                },
+                "status": declarations.word_of(item["labels"] or []),
+            }
+            for item in stored_tools
+        ],
+        "tool_counts": declarations.counts(item["labels"] or [] for item in stored_tools),
+        "charts": [
+            entry.definition.figure_id
+            for entry in available_figures(rdir, manifest)
+            if entry.available
+        ],
+    }
 
 
 def _show_text_fields(row: dict[str, Any]) -> dict[str, Any]:
@@ -367,6 +415,11 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
             + row["data_health_sentence"]
             + (f"\n{reading_text(row['reading'])}" if isinstance(row.get("reading"), dict) else "")
             + _count_text(home, row)
+            + (
+                "\n" + "\n".join(fold_table(row["reading"]["folds"]))
+                if isinstance(row.get("reading"), dict) and row["reading"].get("kind") == "ml_run"
+                else ""
+            )
             for row in runs
         ]
         for row in runs:

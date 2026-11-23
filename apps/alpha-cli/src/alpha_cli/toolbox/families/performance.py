@@ -27,9 +27,9 @@ def downside_ratios(inputs: Inputs, params: dict[str, Any], rng: Generator | Non
     run.dates(frame, "stored_equity")
     equity = frame["equity"].to_numpy()
     returns = to_returns(equity)
-    if "sharpe" not in run.manifest.get("oos_metrics", {}):
+    if "sharpe" not in run.oos_metrics:
         raise ValueError("manifest.json is missing oos_metrics.sharpe")
-    sharpe = run.manifest["oos_metrics"]["sharpe"]
+    sharpe = run.oos_metrics["sharpe"]
     reasons = {"sharpe": "Stored out-of-sample Sharpe is undefined."} if sharpe is None else {}
     values: dict[str, Value] = {"sharpe": sharpe}
     ratios = ("sortino", "calmar", "omega", "tail_ratio")

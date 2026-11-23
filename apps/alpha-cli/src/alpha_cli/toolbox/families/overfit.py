@@ -89,10 +89,9 @@ DEFLATED_SHARPE = ToolSpec(
     reading=(
         "Deflated Sharpe probability: {dsr:.1%}. That is the chance this run's Sharpe ratio beats"
         " the best that luck alone would give across the {trials} tries recorded in its family"
-        " when the run was made. It uses the run's after-cost scored returns and the same count"
-        ' and formula as the test, so it can be high while the test reads "not clear of chance":'
-        " this is one check, and the test's reading also needs the whole Sharpe interval to be"
-        " positive and every null test to hold."
+        " when the run was made. It counts only those recorded tries of the same rule family."
+        ' The test can still read "not clear of chance": it also weighs the random price tests'
+        " and the number of trades, and this number uses neither."
     ),
     caveats=(
         "It uses the count frozen when the run was recorded. Tries made later, or never recorded"

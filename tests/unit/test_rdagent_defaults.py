@@ -178,3 +178,15 @@ def test_a_data_home_inside_a_git_folder_is_refused_in_one_sentence(
     assert "ALPHA_DATA_DIR" in result.output
     assert len([x for x in result.output.splitlines() if "does not exist" in x or "git" in x]) == 1
     assert m.home.is_dir()
+
+
+def test_init_gives_the_install_command_on_each_missing_worker_line(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    machine(tmp_path, monkeypatch, installed=False)
+    result = RUNNER.invoke(rdagent_app, ["init"])
+
+    lines = [ln for ln in result.output.splitlines() if ln.startswith("Not found:")]
+    worker = [ln for ln in lines if "rdagent_source" in ln or "factor_python" in ln]
+    assert len(worker) == 2
+    assert all("bash scripts/setup_rdagent.sh --with-factor-runtime" in ln for ln in worker)

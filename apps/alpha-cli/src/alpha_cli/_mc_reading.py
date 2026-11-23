@@ -129,6 +129,19 @@ def classical_report(
     )
 
 
+_SECONDS_PER_PATH = 0.042  # measured on real data: 10000 paths take about 7 minutes
+
+
+def time_estimate(paths: int) -> str:
+    """The sentence printed before the run starts: how long this many paths take."""
+    minutes = max(1, round(paths * _SECONDS_PER_PATH / 60))
+    unit = "minute" if minutes == 1 else "minutes"
+    return (
+        f"Running {paths} paths: this takes about {minutes} {unit}. "
+        "Use --paths 10000 for a finer result; that takes about 7 minutes."
+    )
+
+
 def echo_family_lines(
     source: dict[str, Any],
     summaries: Sequence[MonteCarloFamilySummaryV1],

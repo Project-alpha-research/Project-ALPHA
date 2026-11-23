@@ -19,9 +19,12 @@ es_pos = "cot_nc_net_pct_156w@13874A"   # alias = "series@key"; the key is decla
 very_long = "es_pos > 0.9"
 ```
 ```text
+alpha setup new pos --context "es_pos=cot_nc_net_pct_156w@13874A" --when "es_pos > 0.9"   # writes the spec
 alpha setup find <spec.toml> --json
 alpha setup study <find_id> --json
 ```
+`--context "alias=series@key"` also works on `find`, `study` and `trade`; repeat it for more series.
+
 **How to read it**
 
 - Series and keys: [positioning and short volume](positioning-short-volume-context.md). Aliases work in `event`, `filters`, `trigger`

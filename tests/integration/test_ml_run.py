@@ -229,3 +229,83 @@ def test_result_readers_say_an_ml_run_has_no_diagnostics(home: Path, tmp_path: P
     assert diagnosed.exit_code != 0
     assert "ML replay" in diagnosed.output
     assert "alpha report" in diagnosed.output
+
+
+def _show(run_id: str) -> str:
+    out = CliRunner().invoke(app, ["results", "show", run_id])
+    assert out.exit_code == 0, out.output
+    return out.output
+
+
+def test_results_show_reads_an_ml_run_in_plain_words(home: Path, tmp_path: Path) -> None:
+    run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
+
+    text = _show(run_id)
+
+    assert "Fault" not in text and "No reading" not in text
+    assert "refit" in text and "No model saw its own test days" in text
+    assert "20 assets" in text and "lightgbm" in text.lower()
+    assert "bp fee" in text and "slippage" in text
+    assert "equal-weight basket" in text and "Sharpe" in text
+    assert "1 try" in text or "tries" in text
+    shown = json.loads(CliRunner().invoke(app, ["results", "show", run_id, "--json"]).output)
+    assert shown["runs"][0]["reading"]["kind"] == "ml_run"
+
+
+def test_report_names_the_assets_and_gives_the_reading(home: Path, tmp_path: Path) -> None:
+    run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
+
+    out = CliRunner().invoke(app, ["report", run_id]).output
+
+    assert "[?]" not in out and "S00" in out
+    assert "equal-weight basket" in out and "No model saw its own test days" in out
+
+
+def test_run_prints_a_fold_table_not_raw_dict_lines(home: Path, tmp_path: Path) -> None:
+    out = CliRunner().invoke(app, ["ml", "run", str(_spec(tmp_path))]).output
+
+    assert "train_start" not in out and "{'" not in out
+    assert "FOLD\tTRAIN" in out
+    assert "equal-weight basket" in out
+
+
+def test_a_check_that_needs_only_stored_equity_accepts_an_ml_run(
+    home: Path, tmp_path: Path
+) -> None:
+    run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
+
+    out = CliRunner().invoke(app, ["tool", "run", "performance.ulcer", run_id, "--json"])
+
+    assert out.exit_code == 0, out.output
+    assert "not made by alpha test" not in out.output
+
+
+def test_a_check_that_needs_one_rules_bars_says_why_it_does_not_apply(
+    home: Path, tmp_path: Path
+) -> None:
+    run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
+
+    out = CliRunner().invoke(app, ["tool", "run", "parameters.price_noise", run_id])
+
+    assert out.exit_code != 0
+    assert "model run" in out.output and "single rule" in out.output
+
+
+def test_every_check_either_runs_or_says_why_on_an_ml_run(home: Path, tmp_path: Path) -> None:
+    """No check may crash or say the run is not a rule test; each runs or gives one reason."""
+    from alpha_cli.toolbox.registry import SPECS
+
+    run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
+    stored = {"stored_equity", "run_trades"}
+    ran: list[str] = []
+    refused: list[str] = []
+    for spec in SPECS:
+        if spec.compute is None or not set(spec.needs) <= stored:
+            continue
+        out = CliRunner().invoke(app, ["tool", "run", spec.id, run_id, "--json"])
+        assert "not made by alpha test" not in out.output, spec.id
+        assert "Traceback" not in out.output and "KeyError" not in out.output, (spec.id, out.output)
+        (ran if out.exit_code == 0 else refused).append(spec.id)
+        if out.exit_code != 0:
+            assert "model run" in out.output or "at least" in out.output, (spec.id, out.output)
+    assert len(ran) > 20

@@ -90,7 +90,12 @@ def _style_axes(axes: Axes, spec: FigureSpec, panel: Panel, last: bool, drawn: b
 
     heat = any(isinstance(m, HeatmapMark | TableMark) for m in panel.marks)
     if panel.y_scale != "linear":
+        from matplotlib.ticker import FuncFormatter
+
         axes.set_yscale(panel.y_scale)
+        plain = FuncFormatter(lambda value, _: f"{value:,.10g}")  # 400, not 4 x 10^2
+        axes.yaxis.set_major_formatter(plain)
+        axes.yaxis.set_minor_formatter(plain)
     if panel.y_limits is not None:
         axes.set_ylim(*panel.y_limits)
     else:

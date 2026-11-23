@@ -22,7 +22,6 @@ const DOCUMENTS = [
 export async function openDocument(page: Page, title: string): Promise<void> {
   const routes: Record<string, [string, string]> = {
     'Chart': ['Data & Assets', 'Price'], 'Research': ['Research', 'Research Case'],
-    'Build': ['Strategies & Tests', 'Strategy Development'],
     'Strategy Performance Report': ['Results', 'Report'],
     'Compare': ['Results', 'Compare'], 'Forecast': ['Results', 'Forecast'], 'Machine learning': ['Results', 'ML lab'],
     'Jobs': ['Operations', 'Jobs'],
@@ -37,7 +36,7 @@ export async function openDocument(page: Page, title: string): Promise<void> {
 }
 
 function documentTab(page: Page, title: string) {
-  const titles: Record<string, string> = { Research: 'Research Case', Chart: 'Price', Build: 'Strategy Development', Jobs: 'Jobs', Governance: 'Governance' }
+  const titles: Record<string, string> = { Research: 'Research Case', Chart: 'Price', Jobs: 'Jobs', Governance: 'Governance' }
   return page.locator('.document-tabs').getByRole('tab', { name: titles[title] ?? /^Report(?: ·|$)/, exact: true })
 }
 
@@ -3129,32 +3128,6 @@ test('the Governance document holds the hazard sentences the working documents n
 
 }
 
-export async function sandboxCandidateJourney(page: Page): Promise<void> {
-  await preparePage(page, { candidateProject: true })
-  await openDocument(page, 'Build')
-  await openTask(page, 'Strategies & Tests', 'Development Center')
-
-  const candidate = page.getByRole('region', { name: 'Sandbox hedged basis candidate' })
-  await expect(candidate.getByText('Hedged basis candidate', { exact: true })).toBeVisible()
-  await expect(candidate.getByText('SHORT BYBIT LINEAR PERPETUAL', { exact: true })).toBeVisible()
-  await expect(candidate.getByText('LONG BINANCE SPOT', { exact: true })).toBeVisible()
-  await expect(candidate.getByText('40 bp total round trip', { exact: true })).toBeVisible()
-  await expect(candidate.getByText('365-DAY CRYPTO / 1,095 PERIODS', { exact: true })).toBeVisible()
-  await expect(candidate.getByText('two_leg_return_replay', { exact: true })).toBeVisible()
-  await expect(candidate.getByText('UNSUPPORTED_MULTI_VENUE_PAPER', { exact: true })).toBeVisible()
-  await expect(
-    candidate.getByText('Promoted contract and exact snapshot are reverified by the server for every run.'),
-  ).toBeVisible()
-
-  await expect(page.getByText('Owner checkpoints · trusted CLI only', { exact: true })).toBeVisible()
-  await expect(page.getByRole('textbox', { name: /owner/i })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: /freeze candidate/i })).toHaveCount(0)
-
-  await page.getByRole('button', { name: 'Holdout reveal · trusted CLI' }).click()
-  await expect(page.getByText('TRUSTED CLI OWNER CHECKPOINT', { exact: true })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Trusted CLI required' })).toBeDisabled()
-  await expectReleaseAccessibility(page)
-}
 
 export function registerReferenceTests(): void {
 test('@reference-only @perf-budget cold shell and document switch meet workstation latency budgets', async ({ page }) => {

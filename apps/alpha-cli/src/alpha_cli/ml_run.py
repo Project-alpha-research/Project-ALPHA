@@ -94,6 +94,19 @@ def _require_worker(project: Path | None) -> Path:
     return root
 
 
+def _require_stored(store: ParquetStore, symbols: list[str]) -> None:
+    """Name every symbol with no stored bars at once, each with the line that pulls it."""
+    missing = [symbol for symbol in symbols if not store._bars_path(symbol).is_file()]
+    if missing:
+        pulls = "\n".join(
+            f"  alpha data pull {symbol} --start <date> --end <date>" for symbol in missing
+        )
+        raise MlRunError(
+            f"No stored bars for {', '.join(missing)}. Pull each one first:\n{pulls}\n"
+            "Or edit the `assets` list in the spec and leave these symbols out."
+        )
+
+
 def _content_key(store: ParquetStore, symbols: list[str]) -> str:
     """Hash the bars, actions and pull record of each symbol; the same for a store or snapshot."""
     digest = hashlib.sha256()
@@ -117,6 +130,7 @@ def _freeze(data_dir: Path, assets: list[str]) -> str:
     """
     symbols = sorted(assets)
     store = ParquetStore(store_dir(data_dir, DAILY))
+    _require_stored(store, symbols)
     snapshot_id = _content_key(store, symbols)
     source: dict[str, object] | None = None
     for symbol in symbols:

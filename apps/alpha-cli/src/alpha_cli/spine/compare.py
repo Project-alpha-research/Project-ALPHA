@@ -8,7 +8,7 @@ from collections.abc import Callable, Collection, Sequence
 from typing import Any
 
 from alpha_cli.spine.errors import SpineError
-from alpha_cli.spine.facts import require_metric
+from alpha_cli.spine.facts import METRIC_UNITS, require_metric
 
 Fact = dict[str, Any]
 Lookup = Callable[[str, str], Fact]
@@ -116,6 +116,24 @@ def compare_runs(
     return {"runs": runs, "metrics": rows, "warnings": warnings}
 
 
+def _plain_number(metric: str, operation: str, value: Any) -> str:
+    """A stored number for the screen, in the unit the metric declares (`METRIC_UNITS`)."""
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        return str(value)
+    if operation == "ratio":
+        return f"{value:.2f}x"
+    if isinstance(value, int):
+        return f"{value:,}"
+    unit = METRIC_UNITS.get(metric)
+    if unit == "fraction":
+        return f"{value * 100:.1f} pts" if operation == "diff" else f"{value * 100:.1f}%"
+    if unit == "bps":
+        return f"{value:.1f} bps"
+    if unit == "currency":
+        return f"{value:,.2f}"
+    return f"{value:.2f}"
+
+
 def render_compare(result: Fact) -> str:
     headers = ["metric"]
     for run in result["runs"]:
@@ -125,8 +143,10 @@ def render_compare(result: Fact) -> str:
         row = [metric]
         for cell in cells:
             row.extend(
-                str(f["value"]) if f["value"] is not None else f"null ({f['reason']})"
-                for f in cell.values()
+                _plain_number(metric, operation, f["value"])
+                if f["value"] is not None
+                else f"null ({f['reason']})"
+                for operation, f in cell.items()
             )
         lines.append("\t".join(row))
     lines.extend(

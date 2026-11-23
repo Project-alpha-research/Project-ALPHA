@@ -129,9 +129,9 @@ Moved: [command line idea file](cli-idea-file.md).
 
 ## Report, cite and the gates
 
-- `alpha report <run>` prints `reading: <word> (old grade: X)` for a gauntlet run: the stored reading's word, or one derived from the stored
-  numbers, with the old letter muted after it. A manifest with a grade but no numbers prints `reading: not recorded (old grade: X)`.
-  The lines `verdict: PASS/FAIL`, `grade:`, `null[...] -> PASS/FAIL` and `gate[...]: PASS/FAIL` are gone. Manifest and `--json` keep every field.
+- `alpha report <run>` prints a plain one-screen summary for a gauntlet run: `Reading: <word>.` and one sentence per check (result, random-data check,
+  range, luck adjustment, the one count paragraph, splits, costs). It names no letter grade, raw field or `None`. A manifest with a grade but no numbers prints
+  `Reading: not recorded.` and its caveat sentence. `alpha diagnose` prints the same style. Manifest and `--json` keep every field.
 - A Monte Carlo family prints its stored percentiles and the share of paths below zero: no risk grade, no stage status word.
 - `alpha results cite <run> verdict` prints the evidence word, then `(old grade: X)`, on one line. `--json` keeps the letter.
   `cite <run> evidence` gives the word alone (`fault` for a fault; derived for an old run). Both are in `spine/facts.py`.

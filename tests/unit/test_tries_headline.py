@@ -22,7 +22,7 @@ from alpha_cli.spine.spec import load_spec
 from alpha_data.store import ParquetStore
 from tests.fixtures.cli_fixtures import seed_store
 
-HEADLINE = "Tries on SPY: 2 tries (spine:ma_cross 1, spine:tsmom 1)."
+HEADLINE = "You have tested 2 ideas on SPY (by rule shape: spine:ma_cross 1, spine:tsmom 1)."
 
 
 @pytest.fixture(scope="module")
@@ -68,14 +68,14 @@ def test_every_count_states_the_same_headline(home: Path) -> None:
     code, text = _cli(home, "ledger", "tries", "SPY")
     assert code == 0 and text.strip() == HEADLINE
     _, summary = _cli(home, "ledger", "summary")
-    assert "Tries on all assets: 2 tries" in summary and "By kind:" in summary
+    assert "You have tested 2 ideas on all assets" in summary and "By kind:" in summary
     assert "by_outcome" not in summary and " trials" not in summary
     _, families = _cli(home, "ledger", "families")
-    assert "Tries on all assets: 2 tries" in families and " trials" not in families
+    assert "You have tested 2 ideas on all assets" in families and " trials" not in families
     # No second count beside the headline: the per-family row counts stay in the JSON.
     assert "reader_trials" not in families and "\trows" not in families
     _, results = _cli(home, "results")
-    assert "Total trials" not in results and "Tries on all assets: 2 tries" in results
+    assert "Total trials" not in results and "You have tested 2 ideas on all assets" in results
     _, only = _cli(home, "results", "--symbol", "SPY")
     assert HEADLINE in only
 
@@ -131,6 +131,29 @@ def test_alpha_test_ties_the_headline_to_the_deflated_sharpe_count(home: Path) -
     last = read_trials(home)[-1]
     family = read_json(home / "runs" / last["run_id"] / "diagnostics.json")["trials"]["family"]
     used = family["n_trials_used"]
-    line = next(x for x in text.splitlines() if x.startswith("This reading's deflated Sharpe"))
-    assert line.startswith(f"This reading's deflated Sharpe counts {used} tries: ")
-    assert f"{family['variants_scored']} nearby settings" in line
+    line = next(x for x in text.splitlines() if x.startswith("You have tested"))
+    assert line.endswith(f"plus the nearby settings: {used}.")
+    assert f"plus {family['variants_scored']} nearby settings" in line
+    assert "family counted as" not in text and "Ledger entry" not in text
+
+
+def test_ledger_query_tries_gives_the_count_per_asset(home: Path) -> None:
+    code, text = _cli(home, "ledger", "query", "tries", "--json")
+    assert code == 0, text
+    assert json.loads(text)["rows"] == [{"asset": "SPY", "tries": 2}]
+    code, text = _cli(home, "ledger", "query", "tries", "--asset", "SPY")
+    assert code == 1 and "ledger tries" in text
+
+
+def test_ledger_query_tries_prints_the_count_column(home: Path) -> None:
+    code, text = _cli(home, "ledger", "query", "tries")
+    assert code == 0, text
+    assert text.splitlines()[:2] == ["asset\ttries", "SPY\t2"]
+
+
+def test_results_show_prints_the_count_paragraph_under_the_reading(home: Path) -> None:
+    last = read_trials(home)[-1]
+    code, text = _cli(home, "results", "show", last["run_id"])
+    assert code == 0, text
+    assert "You have tested" in text and "The luck adjustment uses" in text
+    assert "family counted as" not in text and "Ledger entry" not in text

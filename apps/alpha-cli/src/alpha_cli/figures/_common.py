@@ -102,10 +102,12 @@ class BuildContext:
 
     def caption(self, *artifacts: str) -> str:
         snapshot = self.field("snapshot_hash")
-        short = snapshot[:8] if isinstance(snapshot, str) and snapshot else "no snapshot"
         version = self.manifest.get("artifact_contract_version", "-")
         sources = " ".join(sorted(artifacts))
-        return f"run {self.run_id} · snapshot {short} · contract v{version} · UTC · {sources}"
+        parts = [f"run {self.run_id}"]
+        if isinstance(snapshot, str) and snapshot:
+            parts.append(f"snapshot {snapshot[:8]}")
+        return " · ".join([*parts, f"contract v{version}", "UTC", sources])
 
     def spec(
         self,

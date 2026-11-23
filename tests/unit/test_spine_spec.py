@@ -46,7 +46,7 @@ def test_invalid_rules(rule: dict[str, object], message: str) -> None:
 def test_flags_conflicts_and_defaults(tmp_path: Path) -> None:
     spec = load_spec(None, rule="tsmom", param=["lookback=20"], asset=["BTC/USDT"])
     assert spec.rule.params == {"lookback": 20, "skip": 0}
-    with pytest.raises(ValueError, match="together"):
+    with pytest.raises(ValueError, match="spec file"):
         load_spec(tmp_path / "spec.toml", rule="tsmom")
     with pytest.raises(ValueError, match="duplicate"):
         load_spec(None, rule="tsmom", param=["lookback=20", "lookback=30"], asset=["SPY"])

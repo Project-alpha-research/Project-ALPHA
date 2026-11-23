@@ -99,13 +99,13 @@ def test_validate_writes_manifest_and_tearsheet(
     assert set(manifest["verdict"]) >= {"edge", "robustness", "risk", "sample", "overall", "detail"}
     assert {"value_at_risk", "expected_shortfall", "risk_of_ruin"} <= set(manifest["oos_metrics"])
 
-    # `report` on a gauntlet run renders the DSR block, not a spurious/contradictory `dsr: n/a`.
+    # `report` on a gauntlet run prints the plain luck-adjustment sentence, not raw `dsr:` fields.
     report_out = runner.invoke(app, ["report", manifest["run_id"]])
     assert report_out.exit_code == 0, report_out.output
-    assert "dsr: n/a" not in report_out.output
-    assert "dsr: dsr=" in report_out.output
-    assert "reading: " in report_out.output  # the reading, with the old grade beside it
-    assert "(old grade: " in report_out.output
+    assert "dsr:" not in report_out.output and "reason=" not in report_out.output
+    assert "Luck adjustment:" in report_out.output
+    assert "Reading: " in report_out.output
+    assert "old grade" not in report_out.output
 
 
 def test_validate_rejects_unknown_null_model(

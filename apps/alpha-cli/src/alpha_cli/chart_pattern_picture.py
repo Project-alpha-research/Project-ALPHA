@@ -24,6 +24,10 @@ if TYPE_CHECKING:
     from alpha_patterns import OHLCV
 
 DEFAULT_DAYS = 730
+HELD_BACK_NOTE = (
+    "This picture shows data from the held-back period. Looking at a chart is not a test; "
+    "pattern tests in Setup Lab do not use this period."
+)
 NOTES = 3  # the most recent events that get a note in the annotated picture
 GAP_DAYS = 15  # drawn lines and outlines are known at least this many days apart
 MAX_DRAWN = 5  # lines and outlines: only the most recent are drawn, or the picture is a tangle
@@ -174,6 +178,13 @@ def _summary(shapes: list[_Shape], pattern: str, start: date, end: date) -> tupl
     return f"{head}\nMost recent: {last.label}, known on {last.known.date()}.", n
 
 
+def reaches_held_back(end: date) -> bool:
+    """True when the picture's last day is inside the held-back period."""
+    from alpha_cli.spine.reserve import CUTOFF_DAY
+
+    return end > CUTOFF_DAY
+
+
 def _figure(
     series: OHLCV, shapes: list[_Shape], pattern: str, window: tuple[date, date], annotated: bool
 ) -> Any:
@@ -195,6 +206,8 @@ def _figure(
         "day in its note.",
         "A pattern is a reading about the past; it does not say what comes next.",
     ]
+    if reaches_held_back(end):
+        sentences.insert(-1, HELD_BACK_NOTE)
     if len(shapes) > len(drawn):
         sentences.insert(
             -1,
@@ -271,5 +284,7 @@ def draw_pattern_pictures(
         path = out_dir / f"{series.symbol}-{pattern}-{start}-{end}-{kind}-{tag}.png"
         publish_artifact(path, _writer(data))
         files[kind] = path
+    if reaches_held_back(end):
+        summary += f"\n{HELD_BACK_NOTE}"
     summary += f"\nPictures: {files['plain']} and {files['annotated']}"
     return PatternPicture(files["plain"], files["annotated"], count, start, end, summary)

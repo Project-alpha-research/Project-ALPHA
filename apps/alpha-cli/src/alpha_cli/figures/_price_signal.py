@@ -122,19 +122,21 @@ def _annotation_marks(
 
 
 def _fill_marks(ctx: BuildContext, span: tuple[float, float] | None) -> tuple[list[Mark], str, int]:
-    """Fill markers, or shaded held periods when there are too many fills to read."""
+    """Buy and sell markers from the stored fills, small when many; held periods are shaded too."""
     trace = src.frame(ctx.rdir, "execution_trace.parquet", "sequence_id")
-    if trace is None or trace.is_empty():
-        return [], "", 0
-    all_fills = trace.filter(trace["event_type"] == "fill")
+    if trace is not None and not trace.is_empty():
+        all_fills = trace.filter(trace["event_type"] == "fill")
+    else:  # a run with no trace still stores its fills
+        stored = src.frame(ctx.rdir, "fills.parquet", "sequence_id")
+        if stored is None or stored.is_empty():
+            return [], "", 0
+        all_fills = stored
     fills = _clip(all_fills, "ts", span)
-    # Held periods are always shaded, as in the approved sample; markers too when few enough.
+    # Held periods are shaded; the buy and sell markers are always drawn.
     zones = held_zones(ctx, span)
     open_zone = open_position_zone(all_fills, span)
     if open_zone is not None:
         zones.append(open_zone)
-    if len(fills) > _MAX_FILL_MARKERS and zones:
-        return zones, f"{len(fills):,} fills shown as shaded held periods", len(all_fills)
     size = 26.0 if len(fills) <= _MAX_FILL_MARKERS else 9.0
     marks: list[Mark] = list(zones)
     sides: tuple[tuple[str, Literal["^", "v"], Role, str], ...] = (
@@ -154,7 +156,8 @@ def _fill_marks(ctx: BuildContext, span: tuple[float, float] | None) -> tuple[li
                     label=label,
                 )
             )
-    return marks, "", len(all_fills)
+    many = f"{len(fills):,} fills drawn as small triangles" if size < 26.0 else ""
+    return marks, many, len(all_fills)
 
 
 def _indicator_marks(indicators: Any, names: tuple[str, ...], role: Role) -> tuple[Mark, ...]:
@@ -270,8 +273,13 @@ def price_signal(ctx: BuildContext) -> FigureSpec:
         ),
         truncation=_truncation(total, drawn, "annotations") if total else None,
         answer=(
-            f"{fills_count:,} fills over {len(rows):,} sessions, with {drawn} strategy-authored "
-            f"annotation{'s' if drawn != 1 else ''} drawn on price."
+            f"{fills_count:,} fills over {len(rows):,} sessions"
+            + (
+                f", with {drawn} strategy-authored annotation{'s' if drawn != 1 else ''} "
+                "drawn on price."
+                if drawn
+                else "."
+            )
         ),
         panels=(price, *indicator_panels),
     )
@@ -279,6 +287,4 @@ def price_signal(ctx: BuildContext) -> FigureSpec:
         spec = replace(spec, x_limits=span)
     # A note inside the axes covers data, so what it says goes in the caption instead.
     notes = [held_note] if held_note else []
-    if not drawn:
-        notes.append("the strategy emitted no chart annotations")
     return replace(spec, caption=f"{spec.caption} · {' · '.join(notes)}") if notes else spec

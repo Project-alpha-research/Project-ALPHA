@@ -97,7 +97,8 @@ _PRICE: Final[Text] = (
     ),
     (
         "Candles or the closing-price line show the market; up triangles are buys, down "
-        "triangles are sells, and coloured lines and shaded spans are the strategy's own."
+        "triangles are sells, and shaded spans are the periods the position was held. Any "
+        "coloured lines are the strategy's own."
     ),
     (
         "Look at whether the fills sit where the rule says they should, and whether "

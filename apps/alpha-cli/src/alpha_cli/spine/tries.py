@@ -79,35 +79,43 @@ def tries(snapshot: LedgerSnapshot, symbol: str | None = None) -> dict[str, Any]
     }
 
 
+def _ideas(total: int) -> str:
+    return f"{total} {'idea' if total == 1 else 'ideas'}"
+
+
 def sentence(found: dict[str, Any]) -> str:
-    """One plain sentence: how many tries, on what, and of which kinds."""
+    """One plain sentence: how many ideas were tested on the asset, and under which rule shapes."""
     where = f"on {found['asset']}" if found["asset"] else "on all assets"
-    total = found["total"]
-    noun = "try" if total == 1 else "tries"
     parts = ", ".join(f"{name} {n}" for name, n in found["by_family"].items())
-    return f"Tries {where}: {total} {noun}" + (f" ({parts})." if parts else ".")
+    by_shape = f" (by rule shape: {parts})" if parts else ""
+    return f"You have tested {_ideas(found['total'])} {where}{by_shape}."
 
 
 def reading_count_sentence(family: dict[str, Any], symbol: str) -> str | None:
-    """How one stored reading's deflated-Sharpe count relates to the headline on ``symbol``.
+    """The one paragraph that states the three counts of a stored reading and how they relate.
 
-    The deflated Sharpe counts the larger of its rule family's tests on any asset and the tries on
-    the asset, plus the nearby settings it scored. ``family`` is `diagnostics.trials.family`."""
+    The deflated Sharpe counts the larger of its rule shape's tests on any asset and the tests on
+    the asset, plus the nearby settings it scored. ``family`` is `diagnostics.trials.family`.
+    Printed the same wherever a count is shown; the numbers are the stored ones."""
     used = family.get("n_trials_used")
     if not isinstance(used, int) or isinstance(used, bool):
         return None
     this_run = int(family.get("this_run") or 0)
     variants = int(family.get("variants_scored") or 0)
     unknown = int(family.get("unknown_rows") or 0)
-    on_family = int(family.get("prior_trials") or 0) + this_run + unknown
+    on_shape = int(family.get("prior_trials") or 0) + this_run + unknown
     on_asset = int(family.get("same_asset_tests") or 0) + this_run
-    head = f"This reading's deflated Sharpe counts {used} tries: "
-    settings = f"plus {variants} nearby settings."
-    if on_family >= on_asset and used == on_family + variants:
-        return f"{head}{on_family} tests of {family.get('family_id')} on any asset, {settings}"
-    if used == on_asset + variants:
-        return f"{head}the {on_asset} tries on {symbol}, {settings}"
-    return f"{head}see alpha ledger families for its parts."
+    shape = f"This rule shape [{family.get('family_id')}]"
+    first = f"You have tested {_ideas(on_asset)} on {symbol}."
+    if used != max(on_shape, on_asset) + variants:
+        return f"{first} The luck adjustment counts {used} tries in all."
+    times = "time" if on_shape == 1 else "times"
+    settings = "setting" if variants == 1 else "settings"
+    return (
+        f"{first} {shape} has been tried {on_shape} {times} across all assets, "
+        f"plus {variants} nearby {settings}. The luck adjustment uses the larger of the first "
+        f"two counts, plus the nearby settings: {used}."
+    )
 
 
 __all__ = ["DEFINITION", "reading_count_sentence", "sentence", "tries"]

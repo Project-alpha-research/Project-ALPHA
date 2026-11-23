@@ -9,6 +9,7 @@ Design: owner decision 2026-11-19, readings not verdicts.
 from __future__ import annotations
 
 import math
+import re
 from collections.abc import Mapping
 from typing import Any
 
@@ -86,8 +87,18 @@ def relation_text(relation: str) -> str:
     }[relation]
 
 
+_COUNT_TAIL = re.compile(
+    r" (?:Ledger entry \d+|Family counted as \d+ tries|Best of \d+ variants)"
+    r"(?:; (?:family counted as \d+ tries|best of \d+ variants))*\.$"
+)
+
+
 def plain(sentence: str) -> str:
-    """A stored reading sentence with its relation words in plain words, for the screen."""
+    """A stored reading sentence in plain words, for the screen.
+
+    The relation words are reworked. The stored count words (ledger entry, family count, variant
+    count) are left out: one paragraph states the counts (`tries.reading_count_sentence`)."""
+    sentence = _COUNT_TAIL.sub("", sentence)
     for relation in RELATIONS:
         sentence = sentence.replace(f"this reading is {relation}.", f"{relation_text(relation)}.")
     return sentence

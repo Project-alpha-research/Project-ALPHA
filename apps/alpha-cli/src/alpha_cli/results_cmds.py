@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -275,6 +274,22 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
     }
 
 
+def _count_text(home: Path, row: dict[str, Any]) -> str:
+    """The one count paragraph under a rule test's reading; nothing for a run without counts."""
+    from alpha_cli.spine.report_plain import run_symbol
+    from alpha_cli.spine.tries import reading_count_sentence
+
+    folder = find_run_dir(home, str(row.get("run_id") or ""))
+    if folder is None or not isinstance(row.get("reading"), dict):
+        return ""
+    symbol = run_symbol(read_manifest(folder))
+    family = (read_json(folder / "diagnostics.json").get("trials") or {}).get("family")
+    if symbol is None or not isinstance(family, dict):
+        return ""
+    said = reading_count_sentence(family, symbol)
+    return f"\n{said}" if said else ""
+
+
 def _show_ml(home: Path, rdir: Path, manifest: dict[str, Any], run_id: str) -> dict[str, Any]:
     """A stored model run: its reading in plain words, its numbers and the tools run on it."""
     from alpha_cli.figures import available_figures
@@ -399,6 +414,7 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
             (f"{row['run_id']} — " if len(runs) > 1 else "")
             + row["data_health_sentence"]
             + (f"\n{reading_text(row['reading'])}" if isinstance(row.get("reading"), dict) else "")
+            + _count_text(home, row)
             + (
                 "\n" + "\n".join(fold_table(row["reading"]["folds"]))
                 if isinstance(row.get("reading"), dict) and row["reading"].get("kind") == "ml_run"
@@ -483,11 +499,12 @@ def diagnose_run(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
             )
         output = read_json(rdir / "diagnostics.json")
         found = stored_reading(manifest, output)
-        text = json.dumps(_plain_audit(output), indent=2, allow_nan=False)
+        from alpha_cli.spine.report_plain import plain_diagnose_lines, run_symbol
+
         emit(
             {**output, "reading": found},
             json_out=json_out,
-            fallback=f"{found['sentence']}\n{text}",
+            fallback="\n".join(plain_diagnose_lines(output, found, run_symbol(manifest))),
         )
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)

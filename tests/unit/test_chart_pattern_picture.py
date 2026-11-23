@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import pytest
 from typer.testing import CliRunner
@@ -134,3 +135,51 @@ def test_help_lists_every_pattern() -> None:
     flat = " ".join(result.output.split())
     for name in ALL_PATTERNS:
         assert name in flat
+
+
+def _late_bars() -> list[Bar]:
+    s = geometric_brownian_series(900, start=100.0, vol_per_bar=0.02, seed=11, symbol="ZZ")
+    start = datetime(2023, 6, 1, tzinfo=UTC)  # the last bar is in 2025
+    return [
+        Bar(
+            symbol="ZZ",
+            ts=start + timedelta(days=i),
+            open=float(s.open[i]),
+            high=float(s.high[i]),
+            low=float(s.low[i]),
+            close=float(s.close[i]),
+            volume=1000.0,
+        )
+        for i in range(900)
+    ]
+
+
+def test_a_picture_in_the_held_back_period_says_so(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli.chart_pattern_picture import HELD_BACK_NOTE
+    from alpha_cli.figures import plain_style
+
+    boxes: list[list[str]] = []
+    real = plain_style.how_to_read
+
+    def spy(fig: Any, sentences: list[str], y: float) -> Any:
+        boxes.append(sentences)
+        return real(fig, sentences, y)
+
+    monkeypatch.setattr(plain_style, "how_to_read", spy)
+    out = draw_pattern_pictures(_late_bars(), "swings", since=None, out_dir=tmp_path)
+    assert HELD_BACK_NOTE in out.summary
+    assert HELD_BACK_NOTE.startswith("This picture shows data from the held-back period.")
+    assert any(HELD_BACK_NOTE in box for box in boxes)
+
+
+def test_a_picture_before_the_held_back_period_has_no_note(tmp_path: Path) -> None:
+    out = draw_pattern_pictures(_bars(), "swings", since=None, out_dir=tmp_path)
+    assert "held-back" not in out.summary
+
+
+def test_the_first_held_back_day_counts_as_held_back() -> None:
+    from alpha_cli.chart_pattern_picture import reaches_held_back
+
+    assert reaches_held_back(date(2024, 1, 1)) and not reaches_held_back(date(2023, 12, 31))

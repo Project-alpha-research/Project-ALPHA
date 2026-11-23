@@ -68,6 +68,8 @@ def test_synthetic_home_lists_stores_and_trials_in_plain_words(tmp_path: Path) -
     code, output = _run(tmp_path)
     assert code == 0
     assert "home: 1 asset" in output
+    assert "1 not checked" in output and "unchecked" not in output
+    assert "no data health report" in output and "alpha data health " in output
     assert "2026-11-17" in output and "Breakout idea" in output
     assert "rule test" in output
     assert "graded D under the old rules" in output

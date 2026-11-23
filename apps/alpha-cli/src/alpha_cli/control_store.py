@@ -83,7 +83,20 @@ from alpha_cli.artifact_contract import (
     sha256_file,
     verify_manifest_artifacts,
 )
-from alpha_cli.job_capacity import HEAVYWEIGHT_JOB_CAPACITY, HEAVYWEIGHT_JOB_KINDS
+from alpha_cli.job_rows import (
+    JOB_EVENT_TYPES,
+    JOB_STATUSES,
+    RESERVED_JOB_PREFIXES,
+    JobStatus,
+    active_job_cancellation,
+    has_native_claim,
+    insert_job,
+    job_event_view,
+    job_view,
+    require_job,
+    require_monotonic,
+)
+from alpha_cli.job_store import JobStore
 from alpha_cli.paper_resources import (
     bind_paper_resource_link,
     parse_paper_resources,
@@ -109,7 +122,6 @@ type AttemptStatus = Literal[
     "cancelled",
 ]
 type MonteCarloReviewDecision = Literal["continue", "revise", "reject"]
-type JobStatus = Literal["queued", "running", "succeeded", "failed", "cancelled"]
 type EvidenceStatus = Literal["draft", "corroborated", "rejected", "superseded"]
 type AuthorKind = Literal["human", "agent"]
 type DecisionVerdict = Literal["accept", "reject", "revise"]
@@ -194,18 +206,6 @@ ATTEMPT_STATUSES: Final = frozenset(
         "pruned",
         "rejected",
         "cancelled",
-    }
-)
-JOB_STATUSES: Final = frozenset({"queued", "running", "succeeded", "failed", "cancelled"})
-JOB_EVENT_TYPES: Final = frozenset(
-    {
-        "created",
-        "status",
-        "heartbeat",
-        "progress",
-        "log",
-        "result",
-        "cancel_requested",
     }
 )
 EVIDENCE_STATUSES: Final = frozenset({"draft", "corroborated", "rejected", "superseded"})
@@ -307,9 +307,7 @@ _GENERIC_EVIDENCE_RESEARCH_MARKERS: Final = frozenset(
     }
 )
 
-_TERMINAL_JOB_STATUSES = frozenset({"succeeded", "failed", "cancelled"})
 _TERMINAL_STAGE_STATES = frozenset({"pass", "warning", "fail"})
-_RESERVED_JOB_PREFIXES = ("suite:", "research:")
 _SUITE_JOB_KINDS: Final = frozenset(
     {
         "suite:baseline",
@@ -384,13 +382,6 @@ _PRE_REVEAL_RESEARCH_JOB_KINDS: Final = frozenset(
         "suite:kronos",
     }
 )
-_JOB_TRANSITIONS: Final[dict[str, frozenset[str]]] = {
-    "queued": frozenset({"running", "failed", "cancelled"}),
-    "running": frozenset({"succeeded", "failed", "cancelled"}),
-    "succeeded": frozenset(),
-    "failed": frozenset(),
-    "cancelled": frozenset(),
-}
 _EVIDENCE_TRANSITIONS: Final[dict[str, frozenset[str]]] = {
     "draft": frozenset({"draft", "corroborated", "rejected"}),
     "corroborated": frozenset({"corroborated", "superseded"}),
@@ -12108,17 +12099,13 @@ class ControlStore:
             raise DataError("control store failed to persist decision packet")
         return self._decision_packet_view(row)
 
-    @staticmethod
-    def _job_view(row: sqlite3.Row) -> dict[str, object]:
-        result = dict(row)
-        result["request"] = _decode_json(result.pop("request_json"), "job request")
-        return result
-
-    @staticmethod
-    def _job_event_view(row: sqlite3.Row) -> dict[str, object]:
-        result = dict(row)
-        result["payload"] = _decode_json(result.pop("payload_json"), "job event payload")
-        return result
+    # The job row rules live in `job_rows`; the old research-case code still calls them here.
+    _job_view = staticmethod(job_view)
+    _job_event_view = staticmethod(job_event_view)
+    _require_job = staticmethod(require_job)
+    _has_native_claim = staticmethod(has_native_claim)
+    _require_monotonic = staticmethod(require_monotonic)
+    _active_job_cancellation = staticmethod(active_job_cancellation)
 
     def create_job(
         self,
@@ -12224,7 +12211,7 @@ class ControlStore:
         clean_request = _json_object(request, "job request")
         clean_kind = _required_text(kind, "job kind", max_length=100)
         request_json = _canonical_json(clean_request, "job request")
-        if not allow_reserved and clean_kind.startswith(_RESERVED_JOB_PREFIXES):
+        if not allow_reserved and clean_kind.startswith(RESERVED_JOB_PREFIXES):
             raise DataError("reserved job kinds require their governed internal executor")
         if experiment_id is not None and project_id is None:
             raise DataError("job experiment_id requires project_id")
@@ -12294,80 +12281,18 @@ class ControlStore:
                         raise DataError("control store failed to resume holdout job")
                     return self._job_view(resumed)
                 raise DataError(f"job {jid!r} already exists")
-            if clean_kind in HEAVYWEIGHT_JOB_KINDS:
-                heavyweight_kinds = sorted(HEAVYWEIGHT_JOB_KINDS)
-                placeholders = ",".join("?" for _ in heavyweight_kinds)
-                active_rows = connection.execute(
-                    f"""SELECT job_id, kind FROM jobs
-                    WHERE status IN ('queued', 'running') AND kind IN ({placeholders})
-                    ORDER BY created_at LIMIT ?""",
-                    [*heavyweight_kinds, HEAVYWEIGHT_JOB_CAPACITY],
-                ).fetchall()
-                if len(active_rows) >= HEAVYWEIGHT_JOB_CAPACITY:
-                    active = active_rows[0]
-                    raise DataError(
-                        "heavyweight job capacity is occupied by "
-                        f"{active['kind']} job {active['job_id']}"
-                    )
-            connection.execute(
-                """INSERT INTO jobs VALUES (?, ?, 'queued', ?, ?, ?, ?, ?, ?, NULL, NULL, 1)""",
-                (
-                    jid,
-                    clean_kind,
-                    project_id,
-                    experiment_id,
-                    request_json,
-                    timestamp,
-                    timestamp,
-                    timestamp,
-                ),
+            return insert_job(
+                connection,
+                job_id=jid,
+                kind=clean_kind,
+                project_id=project_id,
+                experiment_id=experiment_id,
+                request_json=request_json,
+                timestamp=timestamp,
             )
-            connection.execute(
-                "INSERT INTO job_events VALUES (?, 1, 'created', ?, ?)",
-                (jid, timestamp, _canonical_json({"status": "queued"}, "job event")),
-            )
-            row = connection.execute("SELECT * FROM jobs WHERE job_id = ?", (jid,)).fetchone()
-        if row is None:  # pragma: no cover
-            raise DataError("control store failed to persist job")
-        return self._job_view(row)
 
     def heavyweight_job_capacity(self) -> dict[str, object]:
-        """Return exact shared heavyweight occupancy without a paginated job scan."""
-        heavyweight_kinds = sorted(HEAVYWEIGHT_JOB_KINDS)
-        placeholders = ",".join("?" for _ in heavyweight_kinds)
-        with self._transaction(write=False) as connection:
-            rows = connection.execute(
-                f"""SELECT job_id, kind, status, created_at FROM jobs
-                WHERE status IN ('queued', 'running') AND kind IN ({placeholders})
-                ORDER BY created_at, job_id""",
-                heavyweight_kinds,
-            ).fetchall()
-        active = [dict(row) for row in rows]
-        return {
-            "capacity_class": "heavyweight",
-            "limit": HEAVYWEIGHT_JOB_CAPACITY,
-            "active_count": len(active),
-            "busy": len(active) >= HEAVYWEIGHT_JOB_CAPACITY,
-            "active_jobs": active,
-        }
-
-    @staticmethod
-    def _require_job(connection: sqlite3.Connection, job_id: str) -> sqlite3.Row:
-        jid = _canonical_uuid(job_id, "job_id")
-        row = connection.execute("SELECT * FROM jobs WHERE job_id = ?", (jid,)).fetchone()
-        if row is None:
-            raise DataError(f"unknown control job {jid!r}")
-        return cast(sqlite3.Row, row)
-
-    @staticmethod
-    def _has_native_claim(connection: sqlite3.Connection, job_id: str) -> bool:
-        return (
-            connection.execute(
-                "SELECT 1 FROM job_events WHERE job_id=? AND event_type='native_claim' LIMIT 1",
-                (job_id,),
-            ).fetchone()
-            is not None
-        )
+        return JobStore(self._data_dir).heavyweight_job_capacity()
 
     @staticmethod
     def _require_no_native_owner(
@@ -12450,74 +12375,16 @@ class ControlStore:
 
         return cancel(self, job_id, reason)
 
-    @staticmethod
-    def _require_monotonic(prior: object, current: str, field: str) -> None:
-        if not isinstance(prior, str) or current < prior:
-            raise DataError(f"control {field} precedes prior job update")
-
+    # The generic job lifecycle lives in `job_store`; these keep the old callers working.
     def request_job_cancellation(
-        self,
-        job_id: str,
-        *,
-        actor: str,
-        reason: str,
-        at: datetime | None = None,
+        self, job_id: str, *, actor: str, reason: str, at: datetime | None = None
     ) -> dict[str, str]:
-        """Persist an idempotent cancellation request without signalling an unresolved PID."""
-        clean_actor = _required_text(actor, "job cancellation actor", max_length=200)
-        clean_reason = _required_text(reason, "job cancellation reason")
-        timestamp = _at(at)
-        with self._transaction(write=True) as connection:
-            job = self._require_job(connection, job_id)
-            if str(job["status"]) in _TERMINAL_JOB_STATUSES:
-                return {"job_id": str(job["job_id"]), "status": "already_terminal"}
-            if self._active_job_cancellation(connection, job_id):
-                return {"job_id": str(job["job_id"]), "status": "cancellation_requested"}
-            self._require_monotonic(job["updated_at"], timestamp, "cancellation timestamp")
-            sequence = int(job["last_sequence"]) + 1
-            payload = {"actor": clean_actor, "reason": clean_reason}
-            connection.execute(
-                "INSERT INTO job_events VALUES (?, ?, 'cancel_requested', ?, ?)",
-                (
-                    job_id,
-                    sequence,
-                    timestamp,
-                    _canonical_json(payload, "job cancellation event"),
-                ),
-            )
-            connection.execute(
-                "UPDATE jobs SET updated_at = ?, last_sequence = ? WHERE job_id = ?",
-                (timestamp, sequence, job_id),
-            )
-        return {"job_id": job_id, "status": "cancellation_requested"}
-
-    @staticmethod
-    def _active_job_cancellation(connection: sqlite3.Connection, job_id: str) -> bool:
-        """Return whether the latest cancellation has not been superseded by a resume."""
-        rows = connection.execute(
-            """SELECT sequence, event_type, payload_json FROM job_events
-            WHERE job_id = ? AND event_type IN ('cancel_requested', 'status')
-            ORDER BY sequence""",
-            (job_id,),
-        ).fetchall()
-        last_cancel = 0
-        last_resume = 0
-        for row in rows:
-            if row["event_type"] == "cancel_requested":
-                last_cancel = int(row["sequence"])
-                continue
-            payload = _decode_json(row["payload_json"], "job status event")
-            if isinstance(payload, dict) and payload.get("resume") is True:
-                last_resume = int(row["sequence"])
-        return last_cancel > last_resume
+        return JobStore(self._data_dir).request_job_cancellation(
+            job_id, actor=actor, reason=reason, at=at
+        )
 
     def job_cancellation_requested(self, job_id: str) -> bool:
-        """Return whether a durable cancellation request exists for a nonterminal job."""
-        with self._transaction(write=False) as connection:
-            job = self._require_job(connection, job_id)
-            if str(job["status"]) in _TERMINAL_JOB_STATUSES:
-                return False
-            return self._active_job_cancellation(connection, job_id)
+        return JobStore(self._data_dir).job_cancellation_requested(job_id)
 
     def append_job_event(
         self,
@@ -12527,80 +12394,14 @@ class ControlStore:
         payload: Mapping[str, object],
         at: datetime | None = None,
     ) -> dict[str, object]:
-        """Append a bounded non-status job event and advance the durable cursor."""
-        clean_type = _required_text(event_type, "job event type", max_length=20)
-        if clean_type not in JOB_EVENT_TYPES - {
-            "created",
-            "status",
-            "result",
-            "cancel_requested",
-        }:
-            raise DataError(f"unsupported append-only job event type {event_type!r}")
-        clean_payload = _json_object(payload, "job event payload")
-        timestamp = _at(at)
-        with self._transaction(write=True) as connection:
-            self._require_no_native_owner(connection, job_id=job_id)
-            job = self._require_job(connection, job_id)
-            if job["status"] in _TERMINAL_JOB_STATUSES:
-                raise DataError(f"cannot append to terminal job {job_id!r}")
-            self._require_monotonic(job["updated_at"], timestamp, "event timestamp")
-            sequence = int(job["last_sequence"]) + 1
-            connection.execute(
-                "INSERT INTO job_events VALUES (?, ?, ?, ?, ?)",
-                (
-                    job_id,
-                    sequence,
-                    clean_type,
-                    timestamp,
-                    _canonical_json(clean_payload, "job event payload"),
-                ),
-            )
-            heartbeat = timestamp if clean_type == "heartbeat" else job["heartbeat_at"]
-            connection.execute(
-                """UPDATE jobs SET updated_at = ?, heartbeat_at = ?, last_sequence = ?
-                WHERE job_id = ?""",
-                (timestamp, heartbeat, sequence, job_id),
-            )
-            row = connection.execute(
-                "SELECT * FROM job_events WHERE job_id = ? AND sequence = ?",
-                (job_id, sequence),
-            ).fetchone()
-        if row is None:  # pragma: no cover
-            raise DataError("control store failed to persist job event")
-        return self._job_event_view(row)
+        return JobStore(self._data_dir).append_job_event(
+            job_id, event_type=event_type, payload=payload, at=at
+        )
 
     def append_job_result(
-        self,
-        job_id: str,
-        payload: Mapping[str, object],
-        *,
-        at: datetime | None = None,
+        self, job_id: str, payload: Mapping[str, object], *, at: datetime | None = None
     ) -> dict[str, object]:
-        """Append the typed result payload before a job enters its terminal state."""
-        clean_payload = _json_object(payload, "job result")
-        timestamp = _at(at)
-        with self._transaction(write=True) as connection:
-            self._require_no_native_owner(connection, job_id=job_id)
-            job = self._require_job(connection, job_id)
-            if job["status"] in _TERMINAL_JOB_STATUSES:
-                raise DataError(f"cannot append to terminal job {job_id!r}")
-            self._require_monotonic(job["updated_at"], timestamp, "result timestamp")
-            sequence = int(job["last_sequence"]) + 1
-            connection.execute(
-                "INSERT INTO job_events VALUES (?, ?, 'result', ?, ?)",
-                (job_id, sequence, timestamp, _canonical_json(clean_payload, "job result")),
-            )
-            connection.execute(
-                "UPDATE jobs SET updated_at = ?, last_sequence = ? WHERE job_id = ?",
-                (timestamp, sequence, job_id),
-            )
-            row = connection.execute(
-                "SELECT * FROM job_events WHERE job_id = ? AND sequence = ?",
-                (job_id, sequence),
-            ).fetchone()
-        if row is None:  # pragma: no cover
-            raise DataError("control store failed to persist job result")
-        return self._job_event_view(row)
+        return JobStore(self._data_dir).append_job_result(job_id, payload, at=at)
 
     def set_job_status(
         self,
@@ -12611,51 +12412,9 @@ class ControlStore:
         terminal_error: str | None = None,
         at: datetime | None = None,
     ) -> dict[str, object]:
-        """Transition a job and append the transition to its event journal atomically."""
-        clean_status = _required_text(status, "job status", max_length=16)
-        if clean_status not in JOB_STATUSES:
-            raise DataError(f"unsupported job status {status!r}")
-        clean_result = None if result_run_id is None else self._require_run(result_run_id)
-        clean_error = _optional_text(terminal_error, "job terminal error")
-        if clean_status == "failed" and clean_error is None:
-            raise DataError("failed job requires terminal_error")
-        if clean_status != "failed" and clean_error is not None:
-            raise DataError("terminal_error is only valid for failed jobs")
-        if clean_status != "succeeded" and clean_result is not None:
-            raise DataError("result_run_id is only valid for succeeded jobs")
-        timestamp = _at(at)
-        with self._transaction(write=True) as connection:
-            self._require_no_native_owner(connection, job_id=job_id)
-            job = self._require_job(connection, job_id)
-            prior_status = str(job["status"])
-            if prior_status in _TERMINAL_JOB_STATUSES:
-                raise DataError(f"cannot transition terminal job {job_id!r}")
-            if clean_status not in _JOB_TRANSITIONS[prior_status]:
-                raise DataError(f"invalid job transition {prior_status!r} -> {clean_status!r}")
-            self._require_monotonic(job["updated_at"], timestamp, "status timestamp")
-            sequence = int(job["last_sequence"]) + 1
-            payload = {"from": prior_status, "to": clean_status}
-            connection.execute(
-                "INSERT INTO job_events VALUES (?, ?, 'status', ?, ?)",
-                (job_id, sequence, timestamp, _canonical_json(payload, "job status event")),
-            )
-            connection.execute(
-                """UPDATE jobs SET status = ?, updated_at = ?, heartbeat_at = ?,
-                result_run_id = ?, terminal_error = ?, last_sequence = ? WHERE job_id = ?""",
-                (
-                    clean_status,
-                    timestamp,
-                    timestamp,
-                    clean_result,
-                    clean_error,
-                    sequence,
-                    job_id,
-                ),
-            )
-            row = connection.execute("SELECT * FROM jobs WHERE job_id = ?", (job_id,)).fetchone()
-        if row is None:  # pragma: no cover
-            raise DataError("control store failed to persist job status")
-        return self._job_view(row)
+        return JobStore(self._data_dir).set_job_status(
+            job_id, status, result_run_id=result_run_id, terminal_error=terminal_error, at=at
+        )
 
     def get_job(
         self,
@@ -12665,47 +12424,12 @@ class ControlStore:
         event_offset: int = 0,
         event_tail: bool = False,
     ) -> dict[str, object]:
-        """Read one job and a SQL-bounded chronological window of its event journal."""
-        event_limit, event_offset = _page(event_limit, event_offset)
-        if not isinstance(event_tail, bool):
-            raise DataError("control event_tail must be a boolean")
-        query = (
-            """SELECT * FROM job_events WHERE job_id = ?
-            ORDER BY sequence DESC LIMIT ? OFFSET ?"""
-            if event_tail
-            else """SELECT * FROM job_events WHERE job_id = ?
-            ORDER BY sequence ASC LIMIT ? OFFSET ?"""
+        return JobStore(self._data_dir).get_job(
+            job_id, event_limit=event_limit, event_offset=event_offset, event_tail=event_tail
         )
-        with self._transaction(write=False) as connection:
-            job = self._job_view(self._require_job(connection, job_id))
-            events = connection.execute(
-                query,
-                (job["job_id"], event_limit, event_offset),
-            ).fetchall()
-        if event_tail:
-            events.reverse()
-        event_total = job["last_sequence"]
-        if isinstance(event_total, bool) or not isinstance(event_total, int) or event_total < 0:
-            raise DataError("control job has an invalid last_sequence invariant")
-        events_has_more = event_offset + len(events) < event_total
-        job["events"] = [self._job_event_view(row) for row in events]
-        job["event_total"] = event_total
-        job["event_limit"] = event_limit
-        job["event_offset"] = event_offset
-        job["event_tail"] = event_tail
-        job["events_has_more"] = events_has_more
-        job["events_truncated"] = events_has_more
-        return job
 
     def list_jobs(self, *, limit: int = 100, offset: int = 0) -> list[dict[str, object]]:
-        """Return bounded durable job summaries, newest first."""
-        limit, offset = _page(limit, offset)
-        with self._transaction(write=False) as connection:
-            rows = connection.execute(
-                "SELECT * FROM jobs ORDER BY updated_at DESC, job_id LIMIT ? OFFSET ?",
-                (limit, offset),
-            ).fetchall()
-        return [self._job_view(row) for row in rows]
+        return JobStore(self._data_dir).list_jobs(limit=limit, offset=offset)
 
     def list_failed_d1_recovery_journals(
         self,
@@ -12773,55 +12497,9 @@ class ControlStore:
         stale_after_seconds: int = 60,
         at: datetime | None = None,
     ) -> list[dict[str, object]]:
-        """Fail stale non-research journals; research needs a trustworthy owner-host binding."""
-        clean_reason = _required_text(reason, "job reconciliation reason")
-        if isinstance(stale_after_seconds, bool) or not 30 <= stale_after_seconds <= 86_400:
-            raise DataError("job stale_after_seconds must be in 30..86400")
-        current = datetime.now(UTC) if at is None else at
-        timestamp = _at(current)
-        stale_before = _format_timestamp(current - timedelta(seconds=stale_after_seconds))
-        reconciled: list[dict[str, object]] = []
-        with self._transaction(write=True) as connection:
-            rows = connection.execute(
-                """SELECT * FROM jobs
-                WHERE status IN ('queued', 'running') AND heartbeat_at <= ?
-                ORDER BY created_at""",
-                (stale_before,),
-            ).fetchall()
-            for job in rows:
-                if self._has_native_claim(connection, str(job["job_id"])):
-                    # Lease age proves no process termination. Keep capacity and the full
-                    # reservation occupied until the protected owner records cleanup.
-                    continue
-                if job["kind"] == "research:event-study":
-                    # A PID is local to the probing host, while ALPHA_DATA_DIR is configurable
-                    # and may be shared. No trusted owner-host identity exists in this contract,
-                    # so a local PID miss cannot prove a remote D1 or D2 owner stopped.
-                    continue
-                self._require_monotonic(job["updated_at"], timestamp, "reconciliation timestamp")
-                sequence = int(job["last_sequence"]) + 1
-                payload = {"from": job["status"], "to": "failed", "reason": clean_reason}
-                connection.execute(
-                    "INSERT INTO job_events VALUES (?, ?, 'status', ?, ?)",
-                    (
-                        job["job_id"],
-                        sequence,
-                        timestamp,
-                        _canonical_json(payload, "job reconciliation event"),
-                    ),
-                )
-                connection.execute(
-                    """UPDATE jobs SET status = 'failed', updated_at = ?, heartbeat_at = ?,
-                    terminal_error = ?, last_sequence = ? WHERE job_id = ?""",
-                    (timestamp, timestamp, clean_reason, sequence, job["job_id"]),
-                )
-                current = connection.execute(
-                    "SELECT * FROM jobs WHERE job_id = ?", (job["job_id"],)
-                ).fetchone()
-                if current is None:  # pragma: no cover
-                    raise DataError("control store lost a job during reconciliation")
-                reconciled.append(self._job_view(current))
-        return reconciled
+        return JobStore(self._data_dir).reconcile_interrupted_jobs(
+            reason=reason, stale_after_seconds=stale_after_seconds, at=at
+        )
 
     def _validate_evidence_links(
         self,

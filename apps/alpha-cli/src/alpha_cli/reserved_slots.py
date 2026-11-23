@@ -1,9 +1,10 @@
 """The ten reserved-period slots: one insert-only receipt per confirmation, and its result.
 
-The rows live in the control store in two tables (`_SCHEMA_RESERVED_CONFIRMATION`). This module
-is their only writer. The rules are enforced in code and by the store's constraints: ten slots,
-taken in order; one receipt per test key, per rule family on one asset and per run, ever. Each
-write runs in one `BEGIN IMMEDIATE` transaction, so two processes cannot both take the last slot.
+The rows live in two tables of the home's SQLite file (`_SCHEMA`, opened through `home_db`, never
+through the old control store). This module is their only writer. The rules are enforced in
+code and by the table constraints: ten slots, taken in order; one receipt per test key, per rule
+family on one asset and per run, ever. Each write runs in one `BEGIN IMMEDIATE` transaction,
+so two processes cannot both take the last slot.
 """
 
 from __future__ import annotations
@@ -13,24 +14,40 @@ import json
 import sqlite3
 import uuid
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager
-from datetime import UTC, datetime
+from contextlib import AbstractContextManager, contextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Final
 
-from alpha_cli._control_schema import _SCHEMA_RESERVED_CONFIRMATION
-from alpha_cli.control_store import DATABASE_NAME, ControlStore
+from alpha_cli import home_db
+from alpha_cli.home_db import stamp as _stamp
 from alpha_core import DataError
 
 SLOTS: Final = 10
 TABLES: Final = ("reserved_slot_receipts", "reserved_slot_results")
+# Additive only: two insert-only tables, created here inside the write transaction, so a home of
+# any age accepts them without a rebuild or a version change. No trigger; the rules are
+# constraints: slots 1 to 10, one receipt per slot, per test key, per rule family on one asset
+# and per run.
+_SCHEMA: Final = """
+CREATE TABLE IF NOT EXISTS reserved_slot_receipts (
+    receipt_id TEXT PRIMARY KEY,
+    slot INTEGER NOT NULL UNIQUE CHECK (slot BETWEEN 1 AND 10),
+    test_key_sha256 TEXT NOT NULL UNIQUE CHECK (length(test_key_sha256) = 64),
+    family_asset TEXT NOT NULL UNIQUE,
+    run_id TEXT NOT NULL UNIQUE,
+    spec_sha256 TEXT NOT NULL CHECK (length(spec_sha256) = 64),
+    frozen_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+) STRICT;
 
-
-def _stamp(value: datetime) -> str:
-    """The control store's timestamp form (UTC, microseconds, `Z`)."""
-    if value.tzinfo is None or value.utcoffset() is None:
-        raise DataError("control timestamps must be timezone-aware")
-    return value.astimezone(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
+CREATE TABLE IF NOT EXISTS reserved_slot_results (
+    receipt_id TEXT PRIMARY KEY REFERENCES reserved_slot_receipts(receipt_id),
+    confirmation_run_id TEXT NOT NULL UNIQUE,
+    result_json TEXT NOT NULL,
+    completed_at TEXT NOT NULL
+) STRICT;
+"""
 
 
 def canonical(value: object) -> str:
@@ -41,26 +58,18 @@ def sha256(value: object) -> str:
     return hashlib.sha256(canonical(value).encode()).hexdigest()
 
 
-@contextmanager
-def _write(data_dir: Path) -> Iterator[sqlite3.Connection]:
-    with ControlStore(data_dir)._transaction(write=True) as connection:
-        pending = ""
-        for line in _SCHEMA_RESERVED_CONFIRMATION.splitlines(keepends=True):
-            pending += line
-            if sqlite3.complete_statement(pending):
-                connection.execute(pending)
-                pending = ""
-        yield connection
+def _write(data_dir: Path) -> AbstractContextManager[sqlite3.Connection]:
+    return home_db.transaction(data_dir, _SCHEMA, TABLES, write=True)
 
 
 @contextmanager
 def _read(data_dir: Path) -> Iterator[sqlite3.Connection | None]:
     """A read snapshot, or None when no store or no slot table exists yet (nothing used)."""
-    if not (data_dir / "control" / DATABASE_NAME).is_file():
-        yield None
-        return
-    # The read-only seam: it never migrates, heals or writes (an `alpha test` reads here too).
-    with ControlStore(data_dir)._readonly_transaction() as connection:
+    # The read-only seam: it never creates, migrates or writes (an `alpha test` reads here too).
+    with home_db.read_only(data_dir) as connection:
+        if connection is None:
+            yield None
+            return
         names = {
             str(row[0])
             for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'")

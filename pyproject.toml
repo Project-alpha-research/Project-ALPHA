@@ -291,3 +291,46 @@ name = "alpha_study composes only research-plane primitives"
 type = "forbidden"
 source_modules = ["alpha_study"]
 forbidden_modules = ["alpha_strategies", "alpha_backtest", "alpha_validation", "alpha_forecast", "alpha_cli", "alpha_mcp", "alpha_web"]
+
+[[tool.importlinter.contracts]]
+# The kept features (final check, `alpha test`, `alpha setup`, the trial ledger, durable jobs) stand
+# on `home_db` and never reach the old research-case machinery, so it can be deleted without
+# touching them. A step that deletes one of the forbidden modules drops its name from this list.
+name = "kept features stand off the old research-case machinery"
+type = "forbidden"
+source_modules = [
+    "alpha_cli.confirm_cmds", "alpha_cli.test_cmds", "alpha_cli.setup_cmds", "alpha_cli.ledger_cmds",
+    "alpha_cli.next_cmds", "alpha_cli.reserved_slots", "alpha_cli.spine", "alpha_cli._rdagent_ledger",
+    "alpha_cli.home_db", "alpha_cli.job_store", "alpha_cli.job_rows", "alpha_cli.durable_lease",
+    "alpha_cli.job_capacity",
+]
+forbidden_modules = [
+    "alpha_cli.suite_cmds", "alpha_cli._suite", "alpha_cli._suite_actions",
+    "alpha_cli._suite_types", "alpha_cli.suite_catalog", "alpha_cli.project_cmds",
+    "alpha_cli.project_workspace", "alpha_cli.evidence_cmds", "alpha_cli.native_supervisor",
+    "alpha_cli._native_fixture_store", "alpha_cli._native_daily_rule_artifacts",
+    "alpha_cli._native_daily_rule_container", "alpha_cli._native_daily_rule_projection",
+    "alpha_cli._native_daily_rule_restore", "alpha_cli._native_daily_rule_history",
+    "alpha_cli._native_loop_admission", "alpha_cli._native_rule_artifacts",
+    "alpha_cli._native_rule_completion", "alpha_cli._native_rule_projection",
+    "alpha_cli._native_rule_environment", "alpha_cli._native_rule_authority",
+    "alpha_cli._native_stock_launch", "alpha_cli.native_stock_fixture",
+    "alpha_cli.native_stock_inspect", "alpha_cli.native_stock_profile",
+    "alpha_cli.native_stock_cmds", "alpha_cli.daily_native_cmds", "alpha_cli.daily_rule_report",
+    "alpha_cli._native_rule_protocol", "alpha_cli._native_daily_rule_protocol",
+    "alpha_cli._native_daily_rule_study", "alpha_cli._native_rule_study",
+    "alpha_cli._native_rule_economics", "alpha_cli._native_daily_rule_identity",
+    "alpha_cli.owner_auth", "alpha_cli.owner_auth_cmds", "alpha_cli.research_cmds",
+    "alpha_cli._research_cmd_parts", "alpha_cli.research_intake", "alpha_cli.research_execution",
+    "alpha_cli.research_execution_digest", "alpha_cli.research_diagnostic_cmds",
+    "alpha_cli.research_dossier", "alpha_cli.research_suggestions",
+    "alpha_cli.research_study_status", "alpha_cli.research_workflow_contract",
+    "alpha_cli.research_compare", "alpha_cli.local_pdf_cmds", "alpha_cli.research_d1",
+    "alpha_cli.research_d2", "alpha_cli.research_runtime", "alpha_cli.research_crypto_runtime",
+    "alpha_cli.research_crypto_d2", "alpha_cli.research_crypto_binding",
+    "alpha_cli.research_readiness", "alpha_cli.research_data_audit",
+    "alpha_cli.research_gate_packet", "alpha_cli.study_semantic",
+    "alpha_cli._research_artifact_io", "alpha_cli.paper_resources", "alpha_cli.control_store",
+    "alpha_cli._control_schema", "alpha_cli._control_json", "alpha_cli._ml_observation_store",
+    "alpha_cli.ml_native_plan", "alpha_cli._structural_digest",
+]

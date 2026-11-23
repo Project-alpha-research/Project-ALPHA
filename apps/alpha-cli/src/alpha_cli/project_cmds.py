@@ -13,11 +13,12 @@ from alpha_cli.control_store import (
     AttemptStatus,
     ControlStore,
     DecisionVerdict,
-    JobStatus,
     MonteCarloReviewDecision,
     StageState,
     parse_timestamp,
 )
+from alpha_cli.job_rows import JobStatus
+from alpha_cli.job_store import JobStore
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 
@@ -32,6 +33,11 @@ project_app.add_typer(workspace_app, name="workspace")
 
 def _store() -> ControlStore:
     return ControlStore(AlphaSettings().data_dir)
+
+
+def _jobs() -> JobStore:
+    """The generic job commands (used by the ML lab and the job monitor) skip the old store."""
+    return JobStore(AlphaSettings().data_dir)
 
 
 @project_app.command("review-monte-carlo")
@@ -710,12 +716,13 @@ def job_create(
 ) -> None:
     """Create a durable queued development job."""
     try:
-        row = _store().create_job(
-            kind=kind,
-            request=_object(request_json, "--request-json"),
-            project_id=project_id,
-            experiment_id=experiment_id,
-        )
+        request = _object(request_json, "--request-json")
+        if project_id is None and experiment_id is None:
+            row = _jobs().create_job(kind=kind, request=request)
+        else:  # A job bound to a research-case project stays on the old store.
+            row = _store().create_job(
+                kind=kind, request=request, project_id=project_id, experiment_id=experiment_id
+            )
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc
     _emit(row, json_out=json_out, fallback=f"queued job {row['job_id']}")
@@ -731,7 +738,7 @@ def job_status(
 ) -> None:
     """Advance a generic durable job lifecycle."""
     try:
-        store = _store()
+        store = _jobs()
         if status in {"succeeded", "failed", "cancelled"}:
             job = store.get_job(job_id, event_limit=1)
             if job["kind"] == "research:event-study":
@@ -755,7 +762,7 @@ def job_capacity(
     json_out: bool = typer.Option(False, "--json", help="emit JSON"),
 ) -> None:
     """Show exact occupancy of the shared Qlib/Kronos heavyweight class."""
-    row = _store().heavyweight_job_capacity()
+    row = _jobs().heavyweight_job_capacity()
     _emit(
         row,
         json_out=json_out,
@@ -772,7 +779,7 @@ def job_event(
 ) -> None:
     """Append a heartbeat, progress, or log event to a live job."""
     try:
-        row = _store().append_job_event(
+        row = _jobs().append_job_event(
             job_id,
             event_type=event_type,
             payload=_object(payload_json, "--payload-json"),
@@ -780,7 +787,7 @@ def job_event(
         if event_type == "heartbeat":
             row = {
                 **row,
-                "cancel_requested": _store().job_cancellation_requested(job_id),
+                "cancel_requested": _jobs().job_cancellation_requested(job_id),
             }
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc
@@ -801,7 +808,7 @@ def job_show(
 ) -> None:
     """Show a durable job and a bounded window of its append-only event journal."""
     try:
-        row = _store().get_job(
+        row = _jobs().get_job(
             job_id,
             event_limit=event_limit,
             event_offset=event_offset,
@@ -821,7 +828,7 @@ def job_cancel(
 ) -> None:
     """Persist an idempotent cancellation request for the owning durable worker to observe."""
     try:
-        row = _store().request_job_cancellation(job_id, actor=actor, reason=reason)
+        row = _jobs().request_job_cancellation(job_id, actor=actor, reason=reason)
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc
     _emit(row, json_out=json_out, fallback=f"job {job_id} {row['status']}")
@@ -834,7 +841,7 @@ def job_cancel_requested(
 ) -> None:
     """Project whether the owning worker must honour an audited cancellation request."""
     try:
-        requested = _store().job_cancellation_requested(job_id)
+        requested = _jobs().job_cancellation_requested(job_id)
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc
     row = {"job_id": job_id, "cancel_requested": requested}
@@ -853,7 +860,7 @@ def job_list(
 ) -> None:
     """List durable development jobs."""
     try:
-        rows = _store().list_jobs(limit=limit, offset=offset)
+        rows = _jobs().list_jobs(limit=limit, offset=offset)
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc
     if json_out:
@@ -874,7 +881,7 @@ def job_reconcile(
 ) -> None:
     """Mark only stale-heartbeat queued/running journals failed after confirmed interruption."""
     try:
-        rows = _store().reconcile_interrupted_jobs(
+        rows = _jobs().reconcile_interrupted_jobs(
             reason=reason,
             stale_after_seconds=stale_after_seconds,
         )

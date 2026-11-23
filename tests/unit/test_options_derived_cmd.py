@@ -60,6 +60,7 @@ def test_unknown_underlying_and_series_fail_loud(tmp_path: Path) -> None:
     assert code != 0 and "No options data is stored yet" in out
     flat = " ".join(out.replace("│", " ").split())
     assert "option-chain history" in flat
+    assert "Invalid value" not in out
     assert ".." not in flat and "check the underlying" not in flat
     other = RUNNER.invoke(
         app, ["options", "derived", "ZZZ"], env={"ALPHA_DATA_DIR": str(_home(tmp_path / "g"))}

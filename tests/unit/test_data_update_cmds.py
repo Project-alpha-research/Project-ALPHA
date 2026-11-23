@@ -66,6 +66,7 @@ def test_update_dry_run_prints_the_pull_and_pulls_nothing(tmp_path: Path) -> Non
     code, out = _run(home, "update", "--dry-run")
     assert code == 0
     assert "AAA: would run alpha data pull AAA --source yfinance --start 2023-12-20 --end " in out
+    assert "re-pulls every day from the first stored bar" in out
     assert (home / "store" / "bars" / "AAA.parquet").read_bytes() == before
 
 
@@ -137,3 +138,13 @@ def test_coverage_says_the_dates_stop_at_the_held_back_boundary(tmp_path: Path) 
     code, out = _run(_home(tmp_path), "coverage")
     assert code == 0
     assert out.splitlines()[0].startswith("Dates and bars stop before 2024-01-01")
+
+
+def test_out_of_date_health_says_why() -> None:
+    from datetime import date
+
+    from alpha_cli.data_update_cmds import out_of_date_reason
+
+    said = out_of_date_reason({"symbol": "AAA", "last": "2024-01-05"}, date(2024, 1, 9))
+    assert "stored bars changed after it was written" in said
+    assert "newest stored bar 2024-01-05; today is 2024-01-09" in said

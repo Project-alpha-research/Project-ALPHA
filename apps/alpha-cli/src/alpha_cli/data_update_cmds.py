@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import subprocess
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import typer
@@ -65,6 +65,15 @@ def coverage_rows(data_dir: Path) -> list[dict[str, object]]:
     return rows
 
 
+def out_of_date_reason(row: dict[str, object], today: date) -> str:
+    """Why a health report is "out of date": the bars changed after it was written."""
+    return (
+        "the health report is out of date: the stored bars changed after it was written "
+        f"(newest stored bar {row['last'] or 'unknown'}; today is {today.isoformat()}). "
+        f"Run alpha data health {row['symbol']} to check it again."
+    )
+
+
 def run_coverage(json_out: bool) -> None:
     rows = coverage_rows(AlphaSettings().data_dir)
     if json_out:
@@ -90,6 +99,8 @@ def run_coverage(json_out: bool) -> None:
         )
         if row["note"]:
             typer.echo(f"  {row['symbol']}: {row['note']}")
+        if row["health"] == "out of date":
+            typer.echo(f"  {row['symbol']}: {out_of_date_reason(row, datetime.now(UTC).date())}")
 
 
 def run_update(dry_run: bool) -> None:
@@ -111,7 +122,11 @@ def run_update(dry_run: bool) -> None:
             continue
         line = "alpha " + " ".join(tail)
         if dry_run:
-            typer.echo(f"{symbol}: would run {line}")
+            typer.echo(
+                f"{symbol}: would run {line}\n"
+                "  A pull replaces the whole stored series (after freezing it), so this "
+                "re-pulls every day from the first stored bar, not only the new days."
+            )
             continue
         done = subprocess.run(alpha_argv(tail), capture_output=True, text=True, check=False)
         if done.returncode == 0:

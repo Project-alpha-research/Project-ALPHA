@@ -138,8 +138,10 @@ def derived(
     except (DataError, OSError, pl.exceptions.PolarsError) as exc:
         said = str(exc).rstrip(".")
         if said.startswith("No options data is stored yet"):
-            raise typer.BadParameter(f"{said}.") from None
-        raise typer.BadParameter(f"{said}. Next: check the underlying and --series.") from None
+            typer.echo(f"{said}.", err=True)
+        else:
+            typer.echo(f"{said}. Next: check the underlying and --series.", err=True)
+        raise typer.Exit(2) from None
     shown = {n: (pts[-rows:] if rows > 0 else pts) for n, pts in result.series.items()}
     coverage = {n: _counts(pts) for n, pts in result.series.items()}
     payload = dict(

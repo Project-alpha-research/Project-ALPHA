@@ -25,9 +25,15 @@ def test_many_paths_still_give_a_percentage() -> None:
 
 def _family(n_paths: int, loss: float) -> dict[str, object]:
     return {
-        "family": "kronos", "status": "ok", "n_paths": n_paths, "terminal_return_q50": 0.0,
-        "terminal_return_q05": -0.1, "terminal_return_q95": 0.1, "maximum_drawdown_q50": -0.05,
-        "maximum_drawdown_q95": -0.2, "loss_probability": {"point": loss},
+        "family": "kronos",
+        "status": "ok",
+        "n_paths": n_paths,
+        "terminal_return_q50": 0.0,
+        "terminal_return_q05": -0.1,
+        "terminal_return_q95": 0.1,
+        "maximum_drawdown_q50": -0.05,
+        "maximum_drawdown_q95": -0.2,
+        "loss_probability": {"point": loss},
     }
 
 

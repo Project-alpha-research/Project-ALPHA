@@ -113,6 +113,7 @@ def run_update(dry_run: bool) -> None:
         typer.echo("No data is stored yet, so there is nothing to update.")
         return
     failed = 0
+    planned = 0
     for symbol in symbols:
         try:
             tail, _ = _plan(home, symbol, today)
@@ -122,11 +123,8 @@ def run_update(dry_run: bool) -> None:
             continue
         line = "alpha " + " ".join(tail)
         if dry_run:
-            typer.echo(
-                f"{symbol}: would run {line}\n"
-                "  A pull replaces the whole stored series (after freezing it), so this "
-                "re-pulls every day from the first stored bar, not only the new days."
-            )
+            typer.echo(f"{symbol}: would run {line}")
+            planned += 1
             continue
         done = subprocess.run(alpha_argv(tail), capture_output=True, text=True, check=False)
         if done.returncode == 0:
@@ -138,5 +136,10 @@ def run_update(dry_run: bool) -> None:
             failed += 1
             last = (done.stderr.strip().splitlines() or ["no message"])[-1]
             typer.echo(f"{symbol}: failed (exit {done.returncode}). {last}")
+    if planned:
+        typer.echo(
+            "A pull replaces the whole stored series (after freezing it), so each of these "
+            "re-pulls every day from the first stored bar, not only the new days."
+        )
     if failed:
         raise typer.Exit(1)

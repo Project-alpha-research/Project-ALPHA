@@ -40,3 +40,8 @@ Decisions and results per item. No numbers from a real run are written here.
 ## 10a. The tries paragraph
 - Cause: the last sentence ended "plus these: N." with no word for what N counts.
 - Change: "The luck adjustment adds those nearby settings to the larger of the first two counts, which makes N tries in all." The two older tests that pinned the old ending now pin the new one.
+
+## 11. `alpha data update --dry-run` note
+- Cause: the "re-pulls every day" note was part of each symbol's line.
+- Change: one line per symbol, then the note once at the end.
+- Test: `tests/unit/test_data_update_cmds.py` (failed first, checked by stashing the change).

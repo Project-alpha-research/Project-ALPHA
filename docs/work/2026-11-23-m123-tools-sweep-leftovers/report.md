@@ -42,13 +42,11 @@ Branch `fix/m123-tools-sweep-leftovers`. Each item: cause, change, test. Tests w
 ## 7. Monte Carlo default 2,000 paths; the time estimate prints first (about 7 minutes for 10,000, 0.042 s a path measured by the tester).
   A run with the default now has a different run id than before (paths is part of its identity). Test: `test_monte_carlo_cmds.py`.
 
-## 8. Forward-use lookalike
-- Made as `alpha lookalike --asset SPY --today` (the command is a single command, so a subcommand would break `--asset`).
-  Code in `follow_lookalike.py`, reads through `follow_source.forward_bars`. Compares with bars up to the boundary and before the
-  query only; its "what followed" never reaches past that history. Writes no run, no folder, no try. Label: "forward use: a look at today, not a test".
-- Guards: both pass unweakened. `test_follow_separation.py` needed one new line in its reader list (`follow_lookalike.py` with its reason);
-  that is the documented way to add a reader. No check was loosened. `test_research_reads_are_cut.py` is unchanged.
-- Test: `tests/unit/test_lookalike_today.py`.
+## 8. Forward-use lookalike: left out
+- Not built. The look reads bars after 2024-01-01, so its module must be on a guard's allow-list:
+  the reader list of `test_follow_separation.py`, or the allowed reads of `test_research_reads_are_cut.py`.
+  The brief says to leave it out if the guards need a change. The build added a reader line; review removed it and the feature.
+- Owner decision: allow one reviewed reader line (`follow_lookalike.py`) to add `alpha lookalike --today`.
 
 ## 9. Deflated Sharpe sentence
 - The reading now says it counts only the recorded tries of the same rule family, and that the test also weighs the random price tests

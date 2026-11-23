@@ -340,22 +340,6 @@ def _lookalike_text(
     return "\n".join(lines)
 
 
-def _look_today(asset: str, last: int, top: int, horizons: str, json_out: bool) -> None:
-    from alpha_cli.follow_lookalike import look_text, look_today
-
-    try:
-        out = look_today(
-            AlphaSettings().data_dir,
-            asset,
-            last=last,
-            top=top,
-            horizons=_parse_horizons(horizons),
-        )
-    except (ValueError, OSError, DataError) as exc:
-        fail(_error(exc, "lookalike"), json_out)
-    emit(out, json_out=json_out, fallback=look_text(out))
-
-
 def lookalike(
     asset: str = typer.Option(..., help="Symbol or symbol@store, e.g. SPY@alpaca."),
     last: int = typer.Option(30, min=5, help="The query: the latest N bars."),
@@ -367,18 +351,9 @@ def lookalike(
         help="Fixed shape distance a match may not exceed. Default: the distance equal to "
         "shape correlation 0.80 for this window length.",
     ),
-    today: bool = typer.Option(
-        False,
-        "--today",
-        help="Forward use: compare the newest bars with history before the held-back boundary. "
-        "A look, not a test: it writes no run and counts no try.",
-    ),
     json_out: bool = typer.Option(False, "--json", help="Emit one JSON result object."),
 ) -> None:
     """Has price action like the latest N bars happened before? (descriptive, not a forecast)"""
-    if today:
-        _look_today(asset, last, top, horizons, json_out)
-        return
     from alpha_cli._lookalike_figures import lookalike_figure
     from alpha_cli.spine.ledger import append_trial, read_trials
     from alpha_patterns.lookalike import (

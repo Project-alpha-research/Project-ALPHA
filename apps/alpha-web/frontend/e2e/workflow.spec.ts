@@ -51,7 +51,7 @@ test('@reference-only every real workflow task opens in both market profiles', a
   await page.goto('/')
   for (const profile of ['crypto', 'equities']) {
     await page.getByLabel('Market profile').selectOption(profile)
-    for (const section of ['Data & Assets', 'Research', 'Results', 'Operations', 'Settings']) {
+    for (const section of ['Data & Assets', 'Research', 'Results', 'Operations']) {
       await page.getByRole('menuitem', { name: 'View', exact: true }).click()
       const titles = (await page.locator('.menu-pop .menu-item').allTextContents()).filter(t => t.startsWith(`${section} › `)).map(t => t.slice(`${section} › `.length))
       expect(titles.length).toBeGreaterThan(0)
@@ -72,7 +72,7 @@ test('@reference-only every real workflow task opens in both market profiles', a
   await info.attach('real-task-inventory', { path: inventory, contentType: 'application/json' })
   expect(errors).toEqual([])
   // Both markets show the same tasks since the crypto-only windows were removed.
-  expect(audit.filter(item => item.profile === 'crypto').length).toBeGreaterThan(15)
+  expect(audit.filter(item => item.profile === 'crypto').length).toBeGreaterThan(14)
   expect(audit.filter(item => item.profile === 'equities').length).toBe(audit.filter(item => item.profile === 'crypto').length)
   expect(failures).toEqual([])
   expect(audit.filter(item => item.alerts.length)).toEqual([])

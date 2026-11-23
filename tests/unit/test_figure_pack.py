@@ -852,5 +852,7 @@ def test_trade_pnl_says_the_account_size_the_money_axis_assumes(tmp_path: Path) 
 
     known = spec_for(tmp_path / "a", 1_000_000.0)
     assert "account size assumed: 1,000,000" in known.caption
+    assert "account size assumed: 1,000,000" in known.panels[0].y_label
     unknown = spec_for(tmp_path / "b")
     assert "account size not stored in this run" in unknown.caption
+    assert "account size not stored in this run" in unknown.panels[0].y_label

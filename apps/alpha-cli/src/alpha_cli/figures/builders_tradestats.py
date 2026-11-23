@@ -60,7 +60,7 @@ def trade_pnl(ctx: BuildContext) -> FigureSpec:
         panels=(
             Panel(
                 panel_id="pnl",
-                y_label=f"Profit or loss ({suffix})",
+                y_label=f"Profit or loss ({suffix})\n{account}",
                 y_unit="account_currency",
                 y_zero_rule=True,
                 legend=False,

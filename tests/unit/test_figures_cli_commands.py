@@ -92,6 +92,12 @@ class TestList:
             == "artifact_missing:execution_trace.parquet"
         )
 
+    def test_the_run_can_be_the_argument(self, run: CliRunner, data_dir: Path) -> None:
+        shown = run.invoke(figures_app, ["list", _RUN, "--json"])
+        assert shown.exit_code == 0, shown.output
+        assert _json(shown) == _json(run.invoke(figures_app, ["list", "--run", _RUN, "--json"]))
+        assert run.invoke(figures_app, ["list", _RUN, "--run", "other"]).exit_code != 0
+
     def test_the_human_rendering_names_every_figure(self, run: CliRunner, data_dir: Path) -> None:
         result = run.invoke(figures_app, ["list"])
         assert result.exit_code == 0
@@ -107,10 +113,14 @@ class TestRender:
         )
         assert result.exit_code == 0, result.output
         entry = _json(result)["figures"][0]
-        image = Path(entry["path"])
+        image = Path(entry["cache_path"])
         assert image.is_file()
         assert image.with_suffix(".json").is_file()
         assert entry["cached"] is False
+        plain = Path(entry["path"])
+        assert plain.name == "equity_underwater.svg"
+        assert plain.parent == image.parent
+        assert plain.read_bytes() == image.read_bytes()
 
     def test_an_inapplicable_figure_is_rejected_rather_than_silently_skipped(
         self, run: CliRunner, data_dir: Path
@@ -155,7 +165,7 @@ class TestPathAndTheme:
         rendered = _json(
             run.invoke(figures_app, ["render", _RUN, "--figure", "equity_underwater", "--json"])
         )["figures"][0]
-        assert predicted["path"] == rendered["path"]
+        assert predicted["path"] == rendered["cache_path"]
         assert predicted["cache_key"] == rendered["cache_key"]
 
     def test_theme_emits_the_shared_token_document(self, run: CliRunner, data_dir: Path) -> None:

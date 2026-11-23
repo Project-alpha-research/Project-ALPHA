@@ -133,7 +133,7 @@ def test_alpha_test_prints_the_expected_time_first(tmp_path: Path) -> None:
         env={"ALPHA_DATA_DIR": str(tmp_path)},
     )
     assert out.exit_code == 0, out.output
-    assert "alpha test: this takes about 1 minute" in out.output
+    assert "alpha test: no time estimate yet" in out.output  # nothing timed on this computer yet
 
 
 def test_the_deciding_sentence_has_one_heading_for_every_reading() -> None:

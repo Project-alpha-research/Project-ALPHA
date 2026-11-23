@@ -227,7 +227,9 @@ def _train(base: Path, experiment: dict[str, Any], project: Path, data_dir: Path
         "Model training",
         every=ml_progress.PROGRESS_EVERY,
         expected=expected,
-        detail=lambda elapsed: ml_progress.fold_phrase(elapsed, each, folds),
+        detail=(lambda elapsed: ml_progress.fold_phrase(elapsed, each, folds))
+        if each is not None
+        else None,
     ):
         ml_cmds.train_exchange(
             base / "exchange",

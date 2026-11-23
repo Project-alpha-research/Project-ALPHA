@@ -122,9 +122,7 @@ def fold_sharpe(ctx: BuildContext) -> FigureSpec:
             sharpe.append(value)
     if not index:
         raise DataError("fold records are malformed")
-    defined = [
-        value for value, shown in zip(sharpe, index, strict=True) if shown not in degenerate
-    ]
+    defined = [value for value, shown in zip(sharpe, index, strict=True) if shown not in degenerate]
     mean = sum(defined) / len(defined) if defined else 0.0
     positive = sum(1 for value in defined if value > 0)
     marks: list[Mark] = [

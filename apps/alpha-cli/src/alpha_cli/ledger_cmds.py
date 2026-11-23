@@ -231,9 +231,7 @@ def _summary(snapshot: LedgerSnapshot, home: Path) -> dict[str, Any]:
             sorted(Counter(r.kind for r in snapshot.records if r.source == "rdagent").items())
         ),
         "family_count": len(family_counts(snapshot)),
-        "ml_tries": sum(
-            1 for r in snapshot.records if r.kind == "other" and r.subkind == "ml_run"
-        ),
+        "ml_tries": sum(1 for r in snapshot.records if r.kind == "other" and r.subkind == "ml_run"),
         **_totals(snapshot),
         "newest_created_at": max(
             (r.created_at for r in snapshot.records if r.created_at), default=None

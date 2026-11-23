@@ -276,9 +276,10 @@ def run_spec(
     with base.with_suffix(".lock").open("a+b") as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)  # one build per key; a second waits, then reuses
         _build(base, experiment, project, as_of)
-    replayed = run_ml_replay(
-        base / "exchange", data_dir=data_dir, research_cutoff=parse_as_of(as_of)
-    )
+    with heartbeat("Scoring the model run and writing the run", every=ml_progress.PROGRESS_EVERY):
+        replayed = run_ml_replay(
+            base / "exchange", data_dir=data_dir, research_cutoff=parse_as_of(as_of)
+        )
     manifest = replayed.manifest
     folds = _folds(base)
     return {

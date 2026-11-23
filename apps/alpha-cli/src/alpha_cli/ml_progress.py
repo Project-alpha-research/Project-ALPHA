@@ -51,8 +51,16 @@ def expected_sentence(expected: float, folds: int) -> str:
 
 
 def fold_phrase(elapsed: float, per_fold: float, folds: int) -> str:
-    """The fold in progress, estimated from the time so far (the worker reports none)."""
-    return f"about fold {min(folds, int(elapsed // per_fold) + 1)} of {folds}"
+    """The fold in progress, estimated from the time so far (the worker reports none).
+
+    The count runs to the last fold. Past the estimate the run is in its last fold or in the
+    closing stages, and the line says so instead of freezing on one fold."""
+    if elapsed >= per_fold * folds:
+        return (
+            f"past the estimate for {folds} folds: in the last fold, or in the closing stages "
+            "(scoring, writing the run)"
+        )
+    return f"about fold {int(elapsed // per_fold) + 1} of {folds}"
 
 
 def announce(data_dir: Path, assets: int, folds: int) -> tuple[float, float]:

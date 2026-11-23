@@ -55,3 +55,8 @@ Decisions and results per item. No numbers from a real run are written here.
 - Cause: the pull lines held `<date>` placeholders.
 - Decision: an ML spec has no start date field (keys: name, assets, features, horizon_days, model, split). The start is the earliest first stored bar among the assets that are stored; with nothing stored, it is two calendar days per training, validation and test day of the spec's split. The end is today (UTC).
 - Test: `tests/unit/test_ml_missing_symbols.py` (failed first).
+
+## 8. `alpha diagnose` Sharpe differences
+- Cause: "Price noise" and "Opposite rule" compare with a full-sample engine re-run of the rule (`document["full_sample"]`), while the headline is the out-of-sample Sharpe.
+- Change: both lines say so in a half sentence, added when printing. The stored sentences are unchanged (a rule test's stored text is compared by `--recheck`).
+- Test: `tests/unit/test_report_readings.py`.

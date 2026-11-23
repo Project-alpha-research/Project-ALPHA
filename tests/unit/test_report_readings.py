@@ -249,3 +249,11 @@ def test_diagnose_leaves_out_the_stored_count_words() -> None:
     }
     first = plain_diagnose_lines({}, found)[0]
     assert first == "A reading." and "tries" not in first
+
+
+def test_the_delay_line_survives_an_undefined_retained_share() -> None:
+    from alpha_cli.spine.report_plain import plain_diagnose_lines
+
+    delay = {"base_sharpe": -0.5, "delayed_sharpe": 0.2, "delayed_share_of_base": None}
+    lines = plain_diagnose_lines({"delay": delay}, {"sentence": "A reading."})
+    assert "One bar later: acting one bar late moves the Sharpe ratio from -0.50 to 0.20." in lines

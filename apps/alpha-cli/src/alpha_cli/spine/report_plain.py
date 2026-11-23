@@ -199,17 +199,12 @@ def _versus_buy_and_hold(output: Mapping[str, Any]) -> str | None:
 
 def _delay_line(output: Mapping[str, Any]) -> str | None:
     block = _map(output.get("delay"))
-    base, late, kept = (
-        _x(block.get("base_sharpe")),
-        _x(block.get("delayed_sharpe")),
-        _pct(block.get("delayed_share_of_base"), 0),
-    )
-    if base is None or late is None or kept is None:
+    base, late = _x(block.get("base_sharpe")), _x(block.get("delayed_sharpe"))
+    if base is None or late is None:
         return None
-    return (
-        f"One bar later: acting one bar late moves the Sharpe ratio from {base} to {late} "
-        f"({kept} kept)."
-    )
+    kept = _pct(block.get("delayed_share_of_base"), 0)  # undefined when the base is not positive
+    tail = f" ({kept} kept)" if kept is not None else ""
+    return f"One bar later: acting one bar late moves the Sharpe ratio from {base} to {late}{tail}."
 
 
 def _concentration_line(output: Mapping[str, Any]) -> str | None:

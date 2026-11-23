@@ -14,7 +14,7 @@ from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from functools import partial
 from pathlib import Path
-from typing import Annotated, Final, Literal, NoReturn, TypedDict, cast
+from typing import Annotated, Final, Literal, TypedDict, cast
 
 import polars as pl
 import typer
@@ -23,7 +23,7 @@ from alpha_cli._crypto_acquisition import (
     AcquisitionPlan as _AcquisitionPlan,
 )
 from alpha_cli._crypto_acquisition import bybit_plan, option_quote_frame
-from alpha_cli._crypto_acquisition_errors import FixtureAccountingBlocked
+from alpha_cli._crypto_acquisition_errors import FixtureAccountingBlocked, plain_error
 from alpha_cli._crypto_analysis import (
     coverage_row as _coverage_row,
 )
@@ -2712,12 +2712,6 @@ def acquire(
     _emit(result, json_out=json_out)
 
 
-def _plain_error(exc: DataError) -> NoReturn:
-    """One plain sentence on stderr and exit code 2; no "Invalid value" box."""
-    typer.echo(str(exc).strip().splitlines()[0].rstrip(".") + ".", err=True)
-    raise typer.Exit(2)
-
-
 @crypto_data_app.command("coverage")
 def coverage(
     json_out: bool = typer.Option(False, "--json", help="emit JSON"),
@@ -2741,7 +2735,7 @@ def coverage(
         )
         return
     except DataError as exc:
-        _plain_error(exc)
+        plain_error(exc)
     try:
         if metadata_only:
             store.verify_readable()
@@ -2751,7 +2745,7 @@ def coverage(
             if manifest.get("artifact_kind") == "normalized"
         ]
     except DataError as exc:
-        _plain_error(exc)
+        plain_error(exc)
     items.sort(
         key=lambda row: (str(row["family"]), str(row["instrument"]), str(row["manifest_id"]))
     )

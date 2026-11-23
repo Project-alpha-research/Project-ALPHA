@@ -180,14 +180,9 @@ def run(
     _artifacts.write_manifest(rdir, manifest)
 
     label = symbol if symbol is not None else f"run {from_run}"
-    _report(
-        out,
-        label=label,
-        run_id=run_id,
-        manifest_path=rdir / "manifest.json",
-        horizon=horizon,
-        stock_or_etf=is_stock_or_etf(settings.data_dir, symbol),
-    )
+    path = rdir / "manifest.json"
+    equity = is_stock_or_etf(settings.data_dir, symbol)
+    _report(out, label=label, run_id=run_id, manifest_path=path, horizon=horizon, equity=equity)
 
 
 def _refuse_unknown(firm: str | None) -> None:
@@ -207,7 +202,7 @@ def _report(
     run_id: str,
     manifest_path: Path,
     horizon: int | None,
-    stock_or_etf: bool = False,
+    equity: bool = False,
 ) -> None:
     """The rules used and the evaluation length first, then the rates, in plain words."""
     res = out.result
@@ -233,7 +228,7 @@ def _report(
         f"({res.n_paths} paths)\n"
         f"  manifest at {manifest_path}"
         + (out.held.note() if out.held else "")
-        + futures_note(out.firm, stock_or_etf)
+        + futures_note(out.firm, equity)
     )
 
 

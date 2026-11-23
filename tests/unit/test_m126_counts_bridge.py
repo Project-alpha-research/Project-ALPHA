@@ -139,7 +139,9 @@ def test_alpha_test_prints_the_expected_time_first(tmp_path: Path) -> None:
 def test_the_deciding_sentence_has_one_heading_for_every_reading() -> None:
     from alpha_cli.spine.reading import deciding_sentence
 
-    found = _reading("some evidence", ["Sharpe interval 0.1 to 2.0.", "Only 3 years of data."], 1, 1, 1)
+    found = _reading(
+        "some evidence", ["Sharpe interval 0.1 to 2.0.", "Only 3 years of data."], 1, 1, 1
+    )
     text = deciding_sentence(found)
     assert text is not None and text.startswith("What decided it: ")
 

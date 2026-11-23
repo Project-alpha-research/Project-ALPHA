@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+
 from alpha_web import app
 
 

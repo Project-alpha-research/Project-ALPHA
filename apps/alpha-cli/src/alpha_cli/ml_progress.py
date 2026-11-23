@@ -70,7 +70,7 @@ def fold_phrase(elapsed: float, per_fold: float, folds: int) -> str:
 
 
 def announce(data_dir: Path, assets: int, folds: int) -> tuple[float | None, float | None]:
-    """Print the expected time first; return (expected seconds, seconds per fold), None if unknown."""
+    """Print the expected time first; return (expected, seconds per fold); None if unknown."""
     each = seconds_per_fold(data_dir, assets)
     expected = None if each is None else each * folds
     typer.echo(expected_sentence(expected, folds), err=True)

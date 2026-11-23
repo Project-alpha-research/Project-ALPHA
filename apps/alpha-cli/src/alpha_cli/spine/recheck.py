@@ -14,6 +14,7 @@ import dataclasses
 import io
 import tempfile
 import time
+from collections.abc import Callable
 from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
@@ -272,13 +273,18 @@ def recheck_idea(
     no_diagnose: bool = False,
     accept_bad_data: str | None = None,
     report_time: datetime | None = None,
+    stage: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
-    """One recheck per asset, in the shape of a rule-test result with a `recheck` block."""
+    """One recheck per asset, in the shape of a rule-test result with a `recheck` block.
+
+    ``stage`` is told "testing X (n of N)" as each asset starts, for the progress line."""
     idea_card.require(home, idea.idea_card)
     knobs = gauntlet_knobs(seed, quick)
     rows = read_trials_readonly(home)
     results = []
-    for asset in idea.assets:
+    for number, asset in enumerate(idea.assets, start=1):
+        if stage is not None:
+            stage(f"testing {asset} ({number} of {len(idea.assets)})")
         result = new_result(asset, quick=quick, no_diagnose=no_diagnose)
         try:
             _recheck_asset(idea, asset, home, knobs, rows, result, accept_bad_data, report_time)

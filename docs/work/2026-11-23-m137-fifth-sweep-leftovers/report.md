@@ -16,3 +16,8 @@ Decisions and results per item. No numbers from a real run are written here.
 - Cause: `--forecast-eval-run` was required and its help did not say where the id comes from.
 - Change: help and the missing-option message say "run `alpha forecast eval <SYMBOL>` first (a few minutes); it prints the id". If exactly one stored forecast-eval run has the source run's symbol and snapshot, it is used and the command says so. Zero or several fitting runs fail loud with the next step. To stay under the size ceiling of `kronos`, two blocks moved into `_resolve_eval` and `_horizon_steps` (no behaviour change).
 - Test: `tests/unit/test_monte_carlo_cmds.py` (failed first).
+
+## 4. `alpha test --recheck` progress
+- Cause: `_recheck` called `recheck_idea` with no estimate and no heartbeat.
+- Change: a shared `_start_progress` (estimate line, stage, clock) serves a normal test and a recheck; `recheck_idea` takes an optional `stage` callback. A recheck keeps no rate (it writes nothing).
+- Test: `tests/unit/test_recheck_progress.py` (failed first).

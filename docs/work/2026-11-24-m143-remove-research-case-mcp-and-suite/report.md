@@ -9,3 +9,14 @@
 - Docs: `mcp.md`, `cli-research.md`. Card `ai-tools-connection`: dropped the research MCP proof. Capability matrix regenerated.
 - Decision: the commit trailer names no model, because the repository rule is to name none in pushed text.
 - Decision: the deleted test pinned the forbidden-verb tool names. The `mcp.md` rule stays; no test pins it now.
+
+## Step 5: `alpha suite` — KEPT, not deleted
+- The no-caller proof fails on main. `rg -n "_suite|suite_cmds|suite_catalog|\"suite\"" apps scripts workers --glob '!*.md'` also finds:
+  - `apps/alpha-web/src/alpha_web/_development.py:493,512` (runs `alpha suite plan` and `alpha suite reserve`);
+  - `apps/alpha-web/src/alpha_web/api/development.py:212` (runs `alpha suite run`);
+  - `apps/alpha-web/src/alpha_web/api/models/projects.py:9` (imports `alpha_cli.suite_catalog`; deleting it breaks web import).
+- The web removal is the other builder's branch `chore/m141-remove-research-case-screens-and-routes`. It is not merged.
+- The brief says to stay out of `apps/alpha-web` and to KEEP a file with another caller. So no suite file, test or card was removed:
+  `suite_cmds.py`, `_suite*.py`, `suite_catalog.py`, the 6 suite test files, `main.py:40`, `catalog.py:43`, card `strategy-development`.
+- Next: redo step 5 after m141 merges. Then the proof should return only deleted files.
+- Note: `_control.py` in `alpha_mcp` no longer imports `suite_catalog`, so MCP is already clear of it.

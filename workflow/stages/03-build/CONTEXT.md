@@ -6,7 +6,7 @@ sources:
   - scripts/gate.py
   - tests/_tiers.py
   - .codex/config.toml
-verified: 4bb90e5006d5dce5
+verified: c45d7b774047dca0
 ---
 
 # Stage 03 — build: plan to code
@@ -45,7 +45,7 @@ Make the plan true, one slice at a time, test first, in small commits on a branc
 5. Run `uv run python scripts/gate.py check`, commit (`type(scope): summary`), and mark the slice `done` in the front block. A slice that deviates is reported
    in the plan, not hidden.
 6. Hash-bound source: approvals made since ADR-0045 survive comments and formatting, older ones need exact bytes (no cosmetic edits; say in the plan that
-   approvals will need renewing). Changing a quant-tier file makes CI add the slow oracles and the mutation gate for the touched modules.
+   approvals will need renewing). Changing a quant-tier file makes CI add the slow oracles; the mutation gate runs weekly and locally.
 7. Update the one owning document of every fact you changed, in the same branch.
 8. Agents never run owner actions (approvals, decisions, D2, promotion, holdout reveal, paper or orders); stop and hand them to the owner.
 

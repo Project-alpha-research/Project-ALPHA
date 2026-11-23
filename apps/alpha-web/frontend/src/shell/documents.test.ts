@@ -52,13 +52,6 @@ describe('document registry', () => {
     }
   })
 
-  it('carries no Glossary pane — it lives on the Governance document', () => {
-    for (const definition of DOCUMENTS) {
-      expect(definition.panes.map((pane) => pane.name)).not.toContain('Glossary')
-    }
-    expect(documentOf('governance').panes.map((pane) => pane.name)).toEqual(['Governance'])
-  })
-
   it('never titles a document the same as one of its pane tabs', () => {
     // Both render as role=tab; an equal name would make the two indistinguishable.
     for (const definition of DOCUMENTS) {

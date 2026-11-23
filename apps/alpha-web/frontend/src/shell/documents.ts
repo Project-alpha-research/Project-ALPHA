@@ -13,7 +13,6 @@ import type { FunctionComponent } from 'react'
 
 import type { PanelHandleProps } from '../context/panelHandle'
 import { CompareRuns } from '../panels/CompareRuns'
-import { GovernanceDocument } from '../panels/Governance'
 import { JobMonitor } from '../panels/JobMonitor'
 import { KronosStudio } from '../panels/KronosStudio'
 import { PriceChart } from '../panels/PriceChart'
@@ -28,7 +27,6 @@ export type DocumentKind =
   | 'report'
   | 'compare'
   | 'research'
-  | 'governance'
   | 'forecast'
   | 'ml'
   | 'jobs'
@@ -39,7 +37,6 @@ export const DOCUMENT_KINDS: readonly DocumentKind[] = Object.freeze([
   'report',
   'compare',
   'research',
-  'governance',
   'forecast',
   'ml',
   'jobs',
@@ -85,12 +82,6 @@ export const DOCUMENTS: readonly DocumentDefinition[] = [
     kind: 'compare',
     title: 'Compare',
     panes: [{ name: 'CompareRuns', title: 'Compare', component: CompareRuns }],
-  },
-  {
-    id: 'governance',
-    kind: 'governance',
-    title: 'Governance',
-    panes: [{ name: 'Governance', title: 'Governance', component: GovernanceDocument }],
   },
   {
     id: 'forecast',

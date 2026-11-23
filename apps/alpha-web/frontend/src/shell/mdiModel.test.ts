@@ -6,9 +6,9 @@ describe('mdiModel', () => {
   it('opens and activates, never duplicating an open key', () => {
     let state = openDocument(EMPTY_MDI, 'chart:BTC/USDT', 'BTC/USDT')
     expect(state.active).toBe('chart:BTC/USDT')
-    state = openDocument(state, 'governance', 'Governance')
+    state = openDocument(state, 'compare', 'Compare')
     state = openDocument(state, 'chart:BTC/USDT', 'BTC/USDT')
-    expect(state.documents.map((item) => item.key)).toEqual(['chart:BTC/USDT', 'governance'])
+    expect(state.documents.map((item) => item.key)).toEqual(['chart:BTC/USDT', 'compare'])
     expect(state.active).toBe('chart:BTC/USDT')
   })
 

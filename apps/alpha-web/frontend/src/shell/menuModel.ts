@@ -1,7 +1,7 @@
 // Menu bar (spec 2026-09-01 §4.2 item 2): eleven menus in spec order, the discoverable index of
 // every command the CLI-backed API exposes. A command's group is the first word of its id
 // (`backtest run` → `backtest`); every group maps to exactly one menu and an unmapped group throws,
-// so a new CLI group can never silently vanish from the terminal. Governance is pinned under View.
+// so a new CLI group can never silently vanish from the terminal.
 
 import type { CommandDef } from '../api/types'
 import type { OpenDocument } from './mdiModel'

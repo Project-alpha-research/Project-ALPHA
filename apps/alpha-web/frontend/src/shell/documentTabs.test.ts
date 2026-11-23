@@ -10,3 +10,8 @@ it('drops saved tabs of the removed Builder, Scanner and Alerts windows without 
   const stale = [{ page: 'strategies', pane: 'StrategyBuilder' }, { page: 'strategies', pane: 'Scanner' }, { page: 'operations', pane: 'Alerts' }, { page: 'results', pane: 'RunDetail', runId: 'a'.repeat(16) }]
   expect(restoreDocumentTabs(stale, 'crypto').map(t => t.title)).toEqual(['Report'])
 })
+it('drops saved tabs of the removed Governance, Saved workspaces, Watchlist and Risk windows without an error', () => {
+  const stale = [{ page: 'settings', pane: 'Governance' }, { page: 'settings', pane: 'Workspaces' }, { page: 'data', pane: 'MarketWatch' }, { page: 'results', pane: 'RiskMonitor' }, { page: 'results', pane: 'RunDetail', runId: 'a'.repeat(16) }]
+  expect(restoreDocumentTabs(stale, 'crypto').map(t => t.title)).toEqual(['Report'])
+  expect(restoreDocumentTabs(stale, 'equities').map(t => t.title)).toEqual(['Report'])
+})

@@ -222,3 +222,13 @@ def test_diagnose_prints_a_plain_summary_and_json_keeps_the_raw_file(tmp_path: P
     assert "{" not in text and "None" not in text and "null" not in text
     raw = json.loads(RUNNER.invoke(app, ["diagnose", RUN, "--json"], env=env).output)
     assert raw["audit"][0]["check"] == "enough-trades"
+
+
+def test_diagnose_leaves_out_the_stored_count_words() -> None:
+    from alpha_cli.spine.report_plain import plain_diagnose_lines
+
+    found = {
+        "sentence": "A reading. Ledger entry 1; family counted as 6 tries; best of 6 variants."
+    }
+    first = plain_diagnose_lines({}, found)[0]
+    assert first == "A reading." and "tries" not in first

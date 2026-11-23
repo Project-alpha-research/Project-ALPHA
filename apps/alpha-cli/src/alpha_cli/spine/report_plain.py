@@ -11,7 +11,7 @@ import math
 from collections.abc import Mapping
 from typing import Any
 
-from alpha_cli.spine.reading import reading_word
+from alpha_cli.spine.reading import plain, reading_word
 
 
 def _num(value: Any) -> float | None:
@@ -255,7 +255,7 @@ def plain_diagnose_lines(output: Mapping[str, Any], found: Mapping[str, Any]) ->
         _stored_sentence(output, "walk_forward_efficiency", "Later periods against earlier ones"),
         _settings_line(output),
     ]
-    lines = [_sentence(str(found.get("sentence") or f"Reading: {reading_word(found)}"))]
+    lines = [_sentence(plain(str(found.get("sentence") or f"Reading: {reading_word(found)}")))]
     lines += [line for line in summary if line]
     audit = _audit_lines(output)
     if audit:

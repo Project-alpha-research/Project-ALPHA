@@ -177,3 +177,9 @@ def test_a_picture_in_the_held_back_period_says_so(
 def test_a_picture_before_the_held_back_period_has_no_note(tmp_path: Path) -> None:
     out = draw_pattern_pictures(_bars(), "swings", since=None, out_dir=tmp_path)
     assert "held-back" not in out.summary
+
+
+def test_the_first_held_back_day_counts_as_held_back() -> None:
+    from alpha_cli.chart_pattern_picture import reaches_held_back
+
+    assert reaches_held_back(date(2024, 1, 1)) and not reaches_held_back(date(2023, 12, 31))

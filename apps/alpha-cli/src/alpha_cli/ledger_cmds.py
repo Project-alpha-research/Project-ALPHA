@@ -131,9 +131,16 @@ def _render(output: dict[str, Any]) -> str:
     if isinstance(counted, dict):
         # One headline number; the row counts stay in the JSON for machines.
         lines.append(sentence(counted))
+        ml = int(output.get("ml_tries") or 0)
+        total = sum((output.get("rdagent_kinds") or {}).values())
+        if ml or total:
+            lines.append(
+                f"Counting {ml} ML {'try' if ml == 1 else 'tries'} and {total} RD-Agent "
+                f"{'try' if total == 1 else 'tries'}, the ledger lists "
+                f"{counted['total'] + ml + total} tries in all."
+            )
         if output.get("rdagent_kinds"):
             kinds = ", ".join(f"{name} {n}" for name, n in output["rdagent_kinds"].items())
-            total = sum(output["rdagent_kinds"].values())
             lines.append(f"The RD-Agent ledger adds {total} trials ({kinds}).")
         if output.get("breakdown"):
             lines.append(f"By kind: {json.dumps(counted['by_kind'], sort_keys=True)}")
@@ -224,6 +231,9 @@ def _summary(snapshot: LedgerSnapshot, home: Path) -> dict[str, Any]:
             sorted(Counter(r.kind for r in snapshot.records if r.source == "rdagent").items())
         ),
         "family_count": len(family_counts(snapshot)),
+        "ml_tries": sum(
+            1 for r in snapshot.records if r.kind == "other" and r.subkind == "ml_run"
+        ),
         **_totals(snapshot),
         "newest_created_at": max(
             (r.created_at for r in snapshot.records if r.created_at), default=None

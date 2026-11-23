@@ -18,7 +18,7 @@ EVERY_SECONDS = 10.0
 def heartbeat(
     label: str | Callable[[], str],
     every: float = EVERY_SECONDS,
-    expected: float | None = None,
+    expected: float | None | Callable[[], float | None] = None,
     detail: Callable[[float], str] | None = None,
 ) -> Iterator[None]:
     """Print `label: still running, N seconds so far` to stderr every `every` seconds.
@@ -29,7 +29,6 @@ def heartbeat(
     ``detail`` maps the seconds so far to a short phrase added to each line (such as "fold 3 of 8").
     A run shorter than `every` prints nothing. stderr keeps `--json` output on stdout clean.
     """
-    of = f" of about {round(expected)} expected" if expected is not None else ""
     stop = threading.Event()
     started = time.monotonic()
 
@@ -37,7 +36,9 @@ def heartbeat(
         while not stop.wait(every):
             elapsed = time.monotonic() - started
             seconds = round(elapsed)
-            late = expected is not None and elapsed > expected
+            goal = expected() if callable(expected) else expected
+            of = f" of about {round(goal)} expected" if goal is not None else ""
+            late = goal is not None and elapsed > goal
             state = "taking longer than expected; still running" if late else "still running"
             extra = f", {detail(elapsed)}" if detail is not None else ""
             name = label() if callable(label) else label

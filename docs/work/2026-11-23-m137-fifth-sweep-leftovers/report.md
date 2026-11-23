@@ -70,3 +70,11 @@ Decisions and results per item. No numbers from a real run are written here.
 - Cause: `deciding_sentence` read only rule-test readings. `alpha results show` on a forecast or forecast-eval run also printed "Fault: the out-of-sample Sharpe could not be computed" (it went down the rule-test path).
 - Change: an ML reading says "What decided it:" followed by its own stored `because` text. A forecast or Monte Carlo reading says "Nothing decides a reading for this kind of run: it is a description." New `forecast_show` gives forecast and forecast-eval runs a description reading, with the same first sentence as the list (item 1).
 - Test: `tests/unit/test_results_list_other_runs.py`.
+
+## Decisions and open points
+- The commit trailer follows the session's attribution rule, not the older "Fable" line in the common brief.
+- The brief says "draft pull request"; this run's instruction says open it ready (not draft). It is ready.
+- `docs/reference/commands.md` is not regenerated (the brief forbids it): the help text of `alpha monte-carlo kronos --forecast-eval-run` changed, so that page is now stale.
+- Forecast and forecast-eval runs have no ledger row; the list shows them from the run folders with the manifest file time. A run folder keeps no time of its own.
+- Not fixed: none of the 13 items. Item 5 stays at the honest sentence because the protected worker writes no per-fold file.
+- Local checks: `scripts/gate.py check --base origin/main` passes; the extra test list from the brief passes (350 passed, 7 skipped).

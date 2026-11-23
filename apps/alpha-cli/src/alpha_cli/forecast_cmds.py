@@ -239,19 +239,22 @@ def _say(*lines: str | None) -> None:
 
 def _cone_pictures(run_id: str, rdir: Path, data_dir: Path) -> tuple[str, str]:
     """Draw the outcome cone, plain and with notes, into the figure cache."""
-    from alpha_cli.figures_cmds import _render_one
+    from alpha_cli.figures_cmds import _render_one, _with_plain_name
 
     manifest = _artifacts.read_manifest(rdir)
     drawn = [
-        _render_one(
-            "forecast_fan",
-            run_id=run_id,
-            rdir=rdir,
-            manifest=manifest,
-            data_dir=data_dir,
-            fmt="png",
-            force=False,
-            variant=variant,
+        _with_plain_name(
+            _render_one(
+                "forecast_fan",
+                run_id=run_id,
+                rdir=rdir,
+                manifest=manifest,
+                data_dir=data_dir,
+                fmt="png",
+                force=False,
+                variant=variant,
+            ),
+            variant,
         )["path"]
         for variant in ("plain", "annotated")
     ]

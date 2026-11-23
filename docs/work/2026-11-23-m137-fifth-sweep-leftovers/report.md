@@ -60,3 +60,8 @@ Decisions and results per item. No numbers from a real run are written here.
 - Cause: "Price noise" and "Opposite rule" compare with a full-sample engine re-run of the rule (`document["full_sample"]`), while the headline is the out-of-sample Sharpe.
 - Change: both lines say so in a half sentence, added when printing. The stored sentences are unchanged (a rule test's stored text is compared by `--recheck`).
 - Test: `tests/unit/test_report_readings.py`.
+
+## 9. Forecast picture names and the fan label
+- Cause: `alpha forecast run` printed the cache path (`<figure>.<hash>.png`); the Kronos fan label was "Kronos synthetic OHLCV equity (x)".
+- Change: `_cone_pictures` copies through the existing `_with_plain_name` (as `alpha figures` does), so the printed files are `forecast_fan.png` and `forecast_fan.annotated.png`. The Kronos fan label is "Account value on simulated prices (1 = start)" (`fan_axis_label`). The other families keep their labels.
+- Test: `tests/unit/test_forecast_picture_names.py` (failed first).

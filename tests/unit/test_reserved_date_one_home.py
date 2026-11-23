@@ -22,7 +22,8 @@ def _source_files() -> Iterator[Path]:
             subdirectories[:] = [
                 name
                 for name in subdirectories
-                if name not in {"tests", "fixtures", "docs", ".venv", "__pycache__"}
+                if name not in {"tests", "fixtures", "docs", "__pycache__"}
+                and not name.startswith(".venv")
             ]
             for name in filenames:
                 source = directory / name

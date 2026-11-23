@@ -109,7 +109,6 @@ def monte_carlo_lines(manifest: Mapping[str, Any]) -> list[str]:
         loss = family.get("loss_probability")
         loss = loss if isinstance(loss, Mapping) else {}
         n_paths, point = family.get("n_paths"), _num(loss.get("point"))
-        few = isinstance(n_paths, int) and n_paths < MIN_PATHS_FOR_SHARES and point is not None
         lines.append(
             f"family[{family.get('family')}]: paths={family.get('n_paths')} "
             f"median_terminal={_f(family.get('terminal_return_q50'))} "
@@ -119,7 +118,7 @@ def monte_carlo_lines(manifest: Mapping[str, Any]) -> list[str]:
             f"drawdown_q95={_f(family.get('maximum_drawdown_q95'))} "
             + (
                 f"paths_below_zero={path_count_words(point, n_paths)} (too few paths to rank)"
-                if few
+                if isinstance(n_paths, int) and n_paths < MIN_PATHS_FOR_SHARES and point is not None
                 else f"paths_below_zero={_f(loss.get('point'))} "
                 f"[{_f(loss.get('lower'))}, {_f(loss.get('upper'))}]"
             )

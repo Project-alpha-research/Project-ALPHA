@@ -30,11 +30,26 @@ class SpecOptions:
     horizon: int = 10
     stop: str = "5 %"
     target: str = "10 %"
+    # Context series, each "alias=series@key" (the spec's [context] section); `when` may use them.
+    context: tuple[str, ...] = ()
+
+
+def context_pairs(options: SpecOptions) -> dict[str, str]:
+    """The [context] section: alias to "series@key". A malformed entry fails in plain words."""
+    pairs: dict[str, str] = {}
+    for item in options.context:
+        alias, equals, reference = item.partition("=")
+        if not equals or not alias.strip() or "@" not in reference:
+            raise _bad("--context", f"'{item}'. Write it as alias=series@key")
+        pairs[alias.strip()] = reference.strip()
+    return pairs
 
 
 def build_spec(options: SpecOptions) -> dict[str, Any]:
     """The spec as a plain dict, in the shape `load_setup_spec` reads."""
+    context = context_pairs(options)
     return {
+        **({"context": context} if context else {}),
         "setup": {
             "name": options.name,
             "idea": f"Days when: {options.when}",
@@ -67,7 +82,7 @@ def check(options: SpecOptions) -> None:
         raise _bad("The name", f"'{options.name}'. Use letters, digits, '.', '_' and '-' only.")
     if options.horizon < 1:
         raise _bad("--horizon", "give a whole number of bars, 1 or more")
-    base = SpecOptions(name=options.name)
+    base = SpecOptions(name=options.name, context=options.context)
     for flag, field in (("--when", "when"), ("--stop", "stop"), ("--target", "target")):
         try:
             load_setup_spec(build_spec(replace(base, **{field: getattr(options, field)})))
@@ -98,6 +113,7 @@ def spec_text(options: SpecOptions) -> str:
             'timeframe = "1D"          # daily bars only',
             f"event = {q(setup['event'])}   # the day the setup happens (true or false)",
             "",
+            *_context_lines(spec),
             "[exit]                   # how a traded setup ends; `alpha setup trade` reads it",
             'direction = "long"        # "long" or "short"',
             f"stop = {q(exits['stop'])}             # '5 %', '2 atr(14)' or a price rule",
@@ -110,6 +126,14 @@ def spec_text(options: SpecOptions) -> str:
             "",
         ]
     )
+
+
+def _context_lines(spec: dict[str, Any]) -> list[str]:
+    if "context" not in spec:
+        return []
+    lines = ['[context]                # alias = "series@key"; use the alias in event or filters']
+    lines += [f"{alias} = {json.dumps(ref)}" for alias, ref in spec["context"].items()]
+    return [*lines, ""]
 
 
 def _file(home: Path, name: str) -> Path:

@@ -195,3 +195,40 @@ def test_kronos_projection_rejects_bad_sequences_and_physical_values() -> None:
         _project_forecast_path(
             symbol="SPY", timestamps=(timestamp,), sample=bad_volume, path_index=3
         )
+
+
+def test_classical_default_is_2000_paths_and_help_names_10000() -> None:
+    from typer.testing import CliRunner
+
+    result = CliRunner().invoke(monte_carlo_cmds.monte_carlo_app, ["classical", "--help"])
+
+    assert "2000" in result.output
+    assert "10000" in result.output.replace(",", "").replace("_", "")
+
+
+def test_classical_prints_time_estimate_before_it_starts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    settings = SimpleNamespace(data_dir=tmp_path, random_seed=7)
+    monkeypatch.setattr(monte_carlo_cmds, "AlphaSettings", lambda: settings)
+
+    def refuse(_data_dir: Path, _run_id: str) -> None:
+        raise DataError("stop here")
+
+    monkeypatch.setattr(monte_carlo_cmds, "_verified_validation_source", refuse)
+
+    with pytest.raises(typer.BadParameter):
+        monte_carlo_cmds.classical(
+            from_run="x",
+            paths=2000,
+            regime_window=63,
+            min_state_observations=20,
+            min_state_transitions=10,
+            confidence=0.95,
+            seed=7,
+        )
+
+    out = capsys.readouterr().out
+    assert "2000 paths" in out
+    assert "about" in out
+    assert "10000" in out

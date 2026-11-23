@@ -76,15 +76,14 @@ def compound_complete_months(
 def _resolved(home: Path, target: Target) -> ResolvedAsset:
     from alpha_cli.spine.stores import resolve_asset
 
-    meta = target.manifest["metadata"]
-    return resolve_asset(f"{meta['symbol']}@{target.manifest['spine']['store']}", data_dir=home)
+    return resolve_asset(f"{target.metadata['symbol']}@{target.spine['store']}", data_dir=home)
 
 
 def bar_dates(home: Path, target: Target) -> list[date]:
     """The asset's stored daily bar dates up to the run's last timestamp; no price is read."""
     import polars as pl
 
-    path = _resolved(home, target).daily_store()._bars_path(target.manifest["metadata"]["symbol"])
+    path = _resolved(home, target).daily_store()._bars_path(target.metadata["symbol"])
     stamps = pl.scan_parquet(path).select("ts").filter(pl.col("ts") <= target.last_ts).collect()
     return [stamp.date() for stamp in stamps["ts"].sort().to_list()]
 
@@ -103,7 +102,7 @@ def us_asset_class(home: Path, target: Target) -> tuple[str | None, str]:
     from alpha_cli.spine.setup_costs import CRYPTO_PROVIDERS, EQUITY_PROVIDERS
 
     resolved = _resolved(home, target)
-    provenance = resolved.daily_store().read_provenance(target.manifest["metadata"]["symbol"])
+    provenance = resolved.daily_store().read_provenance(target.metadata["symbol"])
     dataset = provenance.get("dataset") if provenance else None
     if isinstance(dataset, dict):
         kind = dataset.get("asset_class")

@@ -296,5 +296,5 @@ def test_the_deflated_sharpe_sentence_says_what_it_is_and_why_the_test_can_diffe
     prepare_sample(tmp_path)
     doc = run(tmp_path, DSR, RUN, [], seed=19)
     text = " ".join(str(value) for value in doc.values() if isinstance(value, str))
-    assert "same count and formula as the test" in text
-    assert "not clear of chance" in text and "null test" in text
+    assert "only those recorded tries" in text
+    assert "not clear of chance" in text and "random price tests" in text

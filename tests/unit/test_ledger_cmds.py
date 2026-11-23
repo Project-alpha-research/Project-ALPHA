@@ -273,3 +273,36 @@ def test_the_default_list_never_exceeds_the_limit(
         ledger_app, ["list", "--limit", "1", "--rdagent-ledger", str(rd), "--json"]
     )
     assert len(json.loads(out.output)["records"]) == 1
+
+
+def test_rdagent_ledger_flag_works_before_and_after_the_subcommand(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = tmp_path / "data"
+    home.mkdir()
+    ledger = tmp_path / "elsewhere.jsonl"
+    ledger.write_text(json.dumps(factor(version=2, status="SPREAD_FAIL")) + "\n")
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
+    for args in (
+        ["--rdagent-ledger", str(ledger), "summary"],
+        ["summary", "--rdagent-ledger", str(ledger)],
+    ):
+        output = CliRunner().invoke(ledger_app, args).output
+        assert f"rdagent: read {ledger.resolve()}" in output, args
+
+
+def test_default_rdagent_ledger_follows_the_workstation_rule(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = tmp_path / "data"
+    home.mkdir()
+    runs = tmp_path / "custom-runs"
+    ledger = runs / "rdagent-trial-ledger/rdagent-factor-trials.jsonl"
+    ledger.parent.mkdir(parents=True)
+    ledger.write_text(json.dumps(factor(version=2, status="SPREAD_FAIL")) + "\n")
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
+    monkeypatch.setenv("ALPHA_RDAGENT_RUNS_DIR", str(runs))
+
+    output = CliRunner().invoke(ledger_app, ["summary"]).output
+
+    assert f"rdagent: read {ledger.resolve()}" in output

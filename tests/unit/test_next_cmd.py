@@ -49,8 +49,8 @@ def test_empty_home_is_helpful_and_exits_zero(tmp_path: Path) -> None:
     assert code == 0
     assert "alpha data pull" in output
     assert "alpha test" in output
-    assert "alpha setup find" in output
-    assert "alpha rdagent run --dry-run" in output
+    assert "alpha setup new" in output
+    assert "alpha rdagent init" in output and "alpha rdagent run --dry-run" in output
     assert "profit" not in output.lower()
     assert "not advice" in output
 
@@ -139,3 +139,13 @@ def test_two_recent_tests_point_to_the_correlation_command(tmp_path: Path) -> No
     _synthetic_home(tmp_path)
     _, output = _run(tmp_path)
     assert "alpha results correlate <run id> <run id>" in output
+
+
+def test_next_guidance_names_commands_that_write_the_files(tmp_path: Path) -> None:
+    _, output = _run(tmp_path)
+    paths = json.loads(_run(tmp_path, "--json")[1])["paths"]
+
+    assert "rdagent.example.toml" not in output
+    assert "alpha rdagent init" in output
+    assert paths["own_chart_setup"]["command"].startswith("alpha setup new ")
+    assert "<spec.toml>" not in output

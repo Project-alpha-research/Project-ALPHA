@@ -154,13 +154,13 @@ def _paths(smallest: str | None) -> dict[str, dict[str, str]]:
         },
         "own_chart_setup": {
             "say": "Find every time my chart setup happened. Here is how I describe it.",
-            "command": "alpha setup find <spec.toml>",
+            "command": f'alpha setup new my-setup --asset {asset} --when "<condition>"',
             "example_spec": EXAMPLE_SPEC,
         },
         "rdagent_idea": {
             "say": "Let RD-Agent propose ideas.",
-            "command": "alpha rdagent run --dry-run",
-            "note": "Copy research/examples/rdagent.example.toml to rdagent.toml first.",
+            "command": "alpha rdagent init",
+            "note": "It writes rdagent.toml. Then check it: alpha rdagent run --dry-run",
         },
     }
 
@@ -244,7 +244,8 @@ def _text(facts: dict[str, Any]) -> str:
         f"     First command: {paths['own_rule']['command']}",
         "  2. Study my own chart setup.",
         f"     Say: {paths['own_chart_setup']['say']}",
-        f"     First command: {paths['own_chart_setup']['command']} (example spec: {EXAMPLE_SPEC})",
+        f"     First command: {paths['own_chart_setup']['command']}",
+        f"     It writes the spec file and prints the command to run it (example: {EXAMPLE_SPEC}).",
         "  3. Let RD-Agent propose ideas.",
         "     Say: Let RD-Agent propose ideas.",
         f"     First command: {paths['rdagent_idea']['command']} ({paths['rdagent_idea']['note']})",

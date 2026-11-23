@@ -88,6 +88,8 @@ def _borrow(inputs: Inputs, equity: Any) -> tuple[dict[str, Value], dict[str, st
         return dict.fromkeys(keys), dict.fromkeys(keys, NO_SHORTS)
     manifest = inputs.stored.manifest
     try:
+        if inputs.stored.is_ml:
+            raise DataError("a model run trades a basket, not one asset")
         resolved = resolve_asset(
             f"{manifest['metadata']['symbol']}@{manifest['spine']['store']}",
             data_dir=inputs.data_home,

@@ -26,3 +26,8 @@ Decision: the commit trailer names the model that did the work (Sonnet 5.5), not
 - Cause: the reading word came from checks the luck-adjusted number does not show.
 - Change: `deciding_sentence` (in `spine/reading.py`) builds "What decided it: ..." from the stored reading's `evidence.because` and `measures`. `reading_text` (test, results show) and `alpha report` print it under the reading. No statistic or stored field changes. Not changed: the toolbox's own "probabilistic Sharpe" screen (no reading is stored there).
 - Test: `tests/unit/test_m126_counts_bridge.py`, `test_m126_labels_compare.py`.
+
+## 6. Progress while `alpha test` runs
+- Cause: `alpha test` had no heartbeat.
+- Change: it prints the expected time first (240 s per asset, a quarter of that with `--quick`), then the existing `heartbeat` helper prints a line about every 10 seconds naming the stage ("testing SPY (1 of 2)"). `heartbeat` now accepts a label function; `run_idea` takes an optional `stage` callback. Lines go to stderr; stored runs are unchanged.
+- Test: `tests/unit/test_m126_counts_bridge.py`.

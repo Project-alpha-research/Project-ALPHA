@@ -11,6 +11,7 @@ from typing import Any
 import typer
 
 from alpha_cli._cli_json import emit
+from alpha_cli._progress import heartbeat
 from alpha_cli.spine.data_health import health_sentence
 from alpha_cli.spine.errors import SpineError, fail, test_error
 from alpha_cli.spine.label_meaning import label_block
@@ -30,6 +31,21 @@ def _echo_notes(text: str) -> None:
     paths = [line for line in lines if "saved to:" in line or line.startswith("Figure")]
     for line in [*(line for line in lines if line not in paths), *paths]:
         typer.echo(line)
+
+
+_SECONDS_PER_ASSET = 240  # a full test on a busy machine; a quick one is a quarter of it
+
+
+def expected_seconds(assets: int, quick: bool) -> float:
+    return assets * _SECONDS_PER_ASSET / (4 if quick else 1)
+
+
+def expected_line(seconds: float) -> str:
+    minutes = max(1, round(seconds / 60))
+    return (
+        f"alpha test: this takes about {minutes} {'minute' if minutes == 1 else 'minutes'}; "
+        "a busy machine takes longer. A progress line follows about every 10 seconds."
+    )
 
 
 def _reading_count(home: Path, result: dict[str, Any]) -> list[str]:
@@ -198,7 +214,13 @@ def test_rule(
         if recheck:
             _recheck(parsed, settings, quick, accept_bad_data, check_data, json_out)
             return
-        with redirect_stdout(sys.stderr if json_out else notes):
+        expected = expected_seconds(len(parsed.assets), quick)
+        typer.echo(expected_line(expected), err=True)
+        stage = ["starting"]
+        with (
+            heartbeat(lambda: f"alpha test: {stage[0]}", expected=expected),
+            redirect_stdout(sys.stderr if json_out else notes),
+        ):
             output = run_idea(
                 parsed,
                 home=settings.data_dir,
@@ -207,6 +229,7 @@ def test_rule(
                 check_data=check_data,
                 accept_bad_data=accept_bad_data,
                 no_diagnose=no_diagnose,
+                stage=lambda text: stage.__setitem__(0, text),
             )
         if all(result["error"] is not None for result in output["results"]):
             _echo_notes(notes.getvalue())

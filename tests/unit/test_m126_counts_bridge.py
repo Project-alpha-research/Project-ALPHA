@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import pytest
+
 from alpha_cli.spine.tries import reading_count_sentence
 
 FAMILY = {
@@ -66,3 +70,64 @@ def test_the_bridge_is_absent_for_a_reading_without_evidence() -> None:
     from alpha_cli.spine.reading import deciding_sentence
 
     assert deciding_sentence({"sentence": "x."}) is None
+
+
+def test_heartbeat_names_the_stage(capsys: pytest.CaptureFixture[str]) -> None:
+    import time
+
+    from alpha_cli._progress import heartbeat
+
+    stage = ["testing SPY (1 of 2)"]
+    with heartbeat(lambda: f"alpha test: {stage[0]}", every=0.05, expected=480):
+        time.sleep(0.2)
+    err = capsys.readouterr().err
+    assert "alpha test: testing SPY (1 of 2): still running" in err and "of about 480" in err
+
+
+def test_run_idea_reports_each_asset_stage(tmp_path: Path) -> None:
+    from alpha_cli.spine.run import run_idea
+    from alpha_cli.spine.spec import load_spec
+    from alpha_data.store import ParquetStore
+    from tests.fixtures.cli_fixtures import seed_store
+
+    seed_store(tmp_path, symbol="SPY", n=300)
+    ParquetStore(tmp_path / "store").write_provenance(
+        "SPY", source="alpaca", adapter_version="1", parser_version="1"
+    )
+    seen: list[str] = []
+    spec = load_spec(None, rule="ma_cross", param=["fast=5", "slow=20"], asset=["SPY"])
+    run_idea(spec, home=tmp_path, quick=True, no_diagnose=True, stage=seen.append)
+    assert seen == ["reading the data for SPY (1 of 1)", "testing SPY (1 of 1)"]
+
+
+def test_alpha_test_prints_the_expected_time_first(tmp_path: Path) -> None:
+    from typer.testing import CliRunner
+
+    from alpha_cli.main import app
+    from alpha_data.store import ParquetStore
+    from tests.fixtures.cli_fixtures import seed_store
+
+    seed_store(tmp_path, symbol="SPY", n=300)
+    ParquetStore(tmp_path / "store").write_provenance(
+        "SPY", source="alpaca", adapter_version="1", parser_version="1"
+    )
+    out = CliRunner().invoke(
+        app,
+        [
+            "test",
+            "--rule",
+            "ma_cross",
+            "--param",
+            "fast=5",
+            "--param",
+            "slow=20",
+            "--asset",
+            "SPY",
+            "--quick",
+            "--no-diagnose",
+            "--json",
+        ],
+        env={"ALPHA_DATA_DIR": str(tmp_path)},
+    )
+    assert out.exit_code == 0, out.output
+    assert "alpha test: this takes about 1 minute" in out.output

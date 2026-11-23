@@ -15,7 +15,6 @@ const DOCUMENTS = [
   { title: 'Compare', id: 'compare' },
   { title: 'Forecast', id: 'forecast' },
   { title: 'Jobs', id: 'jobs' },
-  { title: 'Governance', id: 'governance' },
 ] as const
 
 /** Open a workflow task and wait until its task tab is active. */
@@ -25,7 +24,7 @@ export async function openDocument(page: Page, title: string): Promise<void> {
     'Strategy Performance Report': ['Results', 'Report'],
     'Compare': ['Results', 'Compare'], 'Forecast': ['Results', 'Forecast'], 'Machine learning': ['Results', 'ML lab'],
     'Jobs': ['Operations', 'Jobs'],
-    'Governance': ['Settings', 'Governance'], 'Funding': ['Data & Assets', 'Funding'],
+    'Funding': ['Data & Assets', 'Funding'],
     'Corporate actions': ['Data & Assets', 'Data downloads'],
   }
   const [section, task] = routes[title]
@@ -36,7 +35,7 @@ export async function openDocument(page: Page, title: string): Promise<void> {
 }
 
 function documentTab(page: Page, title: string) {
-  const titles: Record<string, string> = { Research: 'Research Case', Chart: 'Price', Jobs: 'Jobs', Governance: 'Governance' }
+  const titles: Record<string, string> = { Research: 'Research Case', Chart: 'Price', Jobs: 'Jobs' }
   return page.locator('.document-tabs').getByRole('tab', { name: titles[title] ?? /^Report(?: ·|$)/, exact: true })
 }
 
@@ -51,19 +50,6 @@ async function switchProfile(page: Page, profile: 'crypto' | 'equities'): Promis
 }
 
 const EMPTY_PAGE = { items: [], limit: 50, offset: 0, has_more: false }
-const SYSTEM_STATUS = {
-  counts: { symbols: 0, snapshots: 0 },
-  data_dir: {
-    path: '/deterministic-test-data',
-    exists: true,
-    readable: true,
-    writable: true,
-    free_bytes: 1_000_000_000,
-  },
-  nautilus: { installed_version: '1.228.0', pinned_version: '1.228.0', matches_pin: true },
-  kronos_cache: { configured: false, exists: false, local_only: true, path: null },
-}
-
 const RESEARCH_RAW_IDEA = 'SPY may bounce after a point-in-time double bottom.'
 const RESEARCH_QUESTIONS: components['schemas']['ResearchMaterialQuestionV1'][] = [
   {
@@ -1209,15 +1195,6 @@ const WATERMARKED_RUN_DETAIL: components['schemas']['RunDetail'] = {
   has_portfolio_analytics: false,
 }
 
-const ACTIVE_GATE_OVERRIDE: components['schemas']['ActiveResearchGateOverride'] = {
-  project_id: 'project-override-1',
-  project_name: 'SPY exploratory probe',
-  sequence: 1,
-  actor: 'owner',
-  reason: 'Owner accepted exploratory-only engine work before research completes.',
-  recorded_at: '2026-08-10T00:00:00Z',
-}
-
 const CRYPTO_MANIFEST_ID = '6'.repeat(64)
 const CRYPTO_OPTION_MANIFEST_ID = '7'.repeat(64)
 const CRYPTO_QUARANTINED_ID = '8'.repeat(64)
@@ -2070,9 +2047,6 @@ function responseFor(route: Route, options: MockOptions): unknown {
   if (options.chartBundle && url.pathname === `/api/runs/${HEAVY_RUN_ID}/trades`) {
     return options.trades ?? []
   }
-  if (url.pathname === '/api/research-gate-overrides') {
-    return options.researchGateOverride ? [ACTIVE_GATE_OVERRIDE] : []
-  }
   if (options.researchGateOverride && url.pathname === `/api/runs/${WATERMARKED_RUN_ID}`) {
     return WATERMARKED_RUN_DETAIL
   }
@@ -2228,9 +2202,7 @@ function responseFor(route: Route, options: MockOptions): unknown {
   if (url.pathname === '/api/ideas') return { cards: [], total: 0, truncated: false }
   if (url.pathname === '/api/market/overview') return { store: '1D', available_stores: ['1D'], bar_unit: 'day', window: 90, limit: 15, assets_in_store: 0, assets_scanned: 0, scan_cap: 200, bars_cap: 400, eligible_assets: 0, data_to: null, assets: [], too_few_bars: [], unreadable: [], generated_at: '2026-11-19T10:00:00+00:00' }
   if (url.pathname === '/api/follow/today') return { as_of: '2026-11-20T01:00:00+00:00', paper: true, followed: 0, behind: 0, markets: [], groups: [], rows: [], notice: 'Paper only. Forward use; not research. Not advice.' }
-  if (url.pathname === '/api/system') return SYSTEM_STATUS
   if (url.pathname === '/api/jobs') return options.jobs ?? []
-  if (url.pathname === '/api/workspaces') return []
   if (options.researchGateLock && url.pathname === '/api/projects') {
     return { items: [GATED_PROJECT, UNGATED_PROJECT], limit: 50, offset: 0, has_more: false }
   }
@@ -2654,7 +2626,7 @@ test('Market Watch reads red/green and never invents a price', async ({ page }) 
   await preparePage(page, {
     candles: { 'BTC/USDT': [bar(1_700_000_000, 100), bar(1_700_086_400, 110)], 'ETH/USDT': [bar(1_700_000_000, 50), bar(1_700_086_400, 45)] },
   })
-  await openTask(page, 'Data & Assets', 'Watchlist')
+  await openTask(page, 'Data & Assets', 'Price')
   const table = page.getByRole('table', { name: 'Market Watch' })
   // One row per stored pair on one venue, using its exact symbol and last bar date.
   const btc = table.getByRole('row').filter({ hasText: 'BTC/USDT' })
@@ -2689,7 +2661,7 @@ test('Market Watch Live is opt-in, quotes each pair from its own venue, and fall
     candles: { 'BTC/USDT': [bar(1_700_000_000, 100), bar(1_700_086_400, 110)], 'ETH/USDT': [bar(1_700_000_000, 50), bar(1_700_086_400, 45)] },
     tickers: { 'BTC/USDT@binance': { last: 112.5, ts: '2026-09-03T14:02:11+00:00' } },
   })
-  await openTask(page, 'Data & Assets', 'Watchlist')
+  await openTask(page, 'Data & Assets', 'Price')
   const table = page.getByRole('table', { name: 'Market Watch' })
   const btc = table.getByRole('row').filter({ hasText: 'BTC/USDT' })
   await expect(btc.getByRole('cell').nth(4)).toHaveAttribute('title', 'last stored bar 2023-11-15')
@@ -2950,7 +2922,7 @@ test('a figure maximises into a dialog with Save PNG, Save SVG, Copy and Esc', a
   })
   await preparePage(page, { runs: [LIBRARY_RUN], figureCatalogue: true })
   // Terse mode: the prose must still be in the DOM, only hidden from sight.
-  await openDocument(page, 'Governance')
+  await openSettings(page)
   await page.getByLabel('Explanations', { exact: true }).selectOption('terse')
   await openTask(page, 'Results', 'Run library')
   await backtestLeaf(page, LIBRARY_RUN.display_name).click()
@@ -3062,68 +3034,12 @@ test('the run report is a tree with a summary table and one watermark chip', asy
   await expectReleaseAccessibility(page)
 })
 
-test('research-gate override watermark reaches governance and run results', async ({ page }) => {
-  await preparePage(page, { researchGateOverride: true })
-
-  // Governance lists every active override with actor + recorded reason (spec §15).
-  await openDocument(page, 'Governance')
-  await page.getByRole('button', { name: /^Overrides \(1\)/ }).click()
-  await expect(page.getByText('SPY exploratory probe')).toBeVisible()
-  await expect(
-    page.getByText('Owner accepted exploratory-only engine work before research completes.'),
-  ).toBeVisible()
-
-  // Selecting the watermarked run from the Navigator opens its immutable report document.
-  await openTask(page, 'Results', 'Run library')
-  await backtestLeaf(page, WATERMARKED_RUN_ITEM.display_name).click()
-  await expect(documentTab(page, WATERMARKED_RUN_ITEM.display_name)).toHaveAttribute('aria-selected', 'true')
-  // Two surfaces: the report title-bar chip and the Governance document.
-  await expect(page.locator('.rg-watermark-chip')).toHaveText(RESEARCH_GATE_WATERMARK)
-  await expect(page.getByText(RESEARCH_GATE_WATERMARK, { exact: true })).toHaveCount(1)
-  await page.getByRole('button', { name: 'Governance' }).click()
-  // Governance is a document, so the report unmounts behind it; closing Governance brings the chip back.
-  const governance = page.getByRole('region', { name: 'Governance', exact: true })
-  await expect(governance.getByText(RESEARCH_GATE_WATERMARK, { exact: true })).toBeVisible()
-  await expectReleaseAccessibility(page)
-  await page.goBack()
-  await expect(page.locator('.rg-watermark-chip')).toHaveText(RESEARCH_GATE_WATERMARK)
-  await expect(page.getByText(RESEARCH_GATE_WATERMARK, { exact: true })).toHaveCount(1)
-  await expectReleaseAccessibility(page)
-})
-
-test('the Governance document holds the hazard sentences the working documents no longer shout', async ({ page }) => {
+test('the working documents carry no sandbox banner', async ({ page }) => {
   await preparePage(page)
   for (const title of ['Jobs']) {
     await openDocument(page, title)
     await expect(page.locator('.sandbox-banner')).toHaveCount(0)
   }
-  await expect(page.getByRole('tab', { name: 'Glossary', exact: true })).toHaveCount(0)
-
-  const opener = page.getByRole('button', { name: 'Governance' })
-  await opener.click()
-  const dialog = page.getByRole('region', { name: 'Governance', exact: true })
-  await expect(dialog).toBeVisible()
-  await expect(documentTab(page, 'Governance')).toHaveAttribute('aria-selected', 'true')
-  await expect(dialog.getByRole('tree', { name: 'Governance pages' }).getByRole('treeitem')).toHaveCount(7)
-  for (const sentence of [
-    'RESEARCH SANDBOX · SYNTHETIC D0 IS NOT REAL-MARKET EVIDENCE OR A TRADING SIGNAL',
-    'NO LIVE-CAPITAL ROUTING EXISTS',
-    'STANDALONE_UNQUALIFIED · THESE RUNS CAN NEVER COUNT AS GOVERNED RESEARCH EVIDENCE',
-    'SANDBOX · PUBLIC BINANCE DATA · REAL EXECUTION IS NOT AVAILABLE',
-    'LOCAL CONFIRMATION · NO OVERRIDE · NO LIVE TRADING',
-  ]) {
-    await expect(dialog.getByText(sentence, { exact: true })).toBeVisible()
-  }
-  await dialog.getByRole('button', { name: 'Glossary' }).click()
-  await expect(dialog.getByLabel('Metric definitions')).toBeVisible()
-  // The glossary follows the profile: crypto terms only, never the equities-only ones.
-  await expect(dialog.getByRole('heading', { name: 'Funding rate' })).toBeVisible()
-  await expect(dialog.getByRole('heading', { name: 'Ex-dividend date' })).toHaveCount(0)
-  await expectReleaseAccessibility(page)
-  // Closing the Governance tab activates its neighbour and moves focus onto that tab.
-  await page.goBack()
-  await expect(page.getByRole('region', { name: 'Governance', exact: true })).toHaveCount(0)
-  await expect(documentTab(page, 'Jobs')).toHaveAttribute('aria-selected', 'true')
 })
 
 }
@@ -3227,14 +3143,6 @@ test('@reference-only @perf-budget 25k bars and 200 annotations remain interacti
 }
 
 export function registerLifecycleTests(): void {
-test('Governance explains local confirmation without enrollment', async ({ page }) => {
-  await preparePage(page)
-  // Governance explains local confirmation without requiring enrollment.
-  await page.getByRole('button', { name: 'Governance' }).click()
-  await page.getByRole('region', { name: 'Governance' }).getByRole('button', { name: 'Owner confirmation' }).click()
-  await expect(page.getByText('Ordinary UI actions need no enrollment. Historical Touch ID receipts remain unchanged.')).toBeVisible()
-})
-
 test('a store change outside the browser refreshes the panel watching its area', async ({ page }) => {
   await preparePage(page, {
     jobs: [
@@ -3321,6 +3229,13 @@ test('Data Manager Snapshots tab lists snapshots and Verify runs a data job', as
   expect(posts).toEqual([{ path: '/api/jobs', body: { command: 'data', args: 'verify snap1' } }])
 })
 
+}
+
+/** Open the Settings page (display preferences) from the View menu. */
+export async function openSettings(page: Page): Promise<void> {
+  await page.getByRole('menuitem', { name: 'View', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Settings', exact: true }).click()
+  await expect(page.getByLabel('Explanations', { exact: true })).toBeVisible()
 }
 
 export async function openTask(page: Page, section: string, task: string): Promise<void> {

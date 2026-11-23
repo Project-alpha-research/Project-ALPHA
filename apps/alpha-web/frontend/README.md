@@ -91,7 +91,7 @@ opens Trades, Results and Run library beneath the chart. Dock selections and wid
 persist per market profile; arrow keys navigate dock tabs. Data Manager and Research tools share
 the right-hand space. Individual panel maximize fills the viewport while preserving the dock layout for restoration.
 
-Market Watch in **Data & Assets → Watchlist** includes only markets present in the stored inventory.
+Market Watch (the left dock beside the Price chart) includes only markets present in the stored inventory.
 Stored quote variants remain separate and are shown with their exact symbols; selecting a row opens
 the canonical Price chart with its date window, snapshot and run selection cleared.
 

@@ -136,7 +136,7 @@ test('watchlist picker supports keyboard sources, Escape and discovery retry', a
     reads += 1
     return reads === 1 ? route.fulfill({ status: 503, body: 'Drive unavailable' }) : route.fulfill({ json: { datasets: [], authority: 'none', state: 'unavailable' } })
   })
-  await page.goto('/#page=data&pane=MarketWatch')
+  await page.goto('/#page=data&pane=PriceChart')
   await page.getByText('Browse all available markets', { exact: true }).click()
   const input = page.getByRole('combobox', { name: 'Available market' })
   await input.click()

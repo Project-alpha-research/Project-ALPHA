@@ -17,7 +17,7 @@ test('real workflow navigation, asset selection, chart and history', async ({ pa
   page.on('pageerror', error => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByRole('menubar', { name: 'Terminal menu' })).toBeVisible()
-  for (const [section, task] of [['Data & Assets', 'Data downloads'], ['Research', 'Ideas'], ['Results', 'All tests'], ['Results', 'Run library'], ['Operations', 'Jobs'], ['Settings', 'Governance']]) {
+  for (const [section, task] of [['Data & Assets', 'Data downloads'], ['Research', 'Ideas'], ['Results', 'All tests'], ['Results', 'Run library'], ['Operations', 'Jobs']]) {
     await openTask(page, section, task)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width)
     await expect(page.getByText(/panel crashed/i)).toHaveCount(0)
@@ -39,28 +39,6 @@ test('real workflow navigation, asset selection, chart and history', async ({ pa
   const axe = await new AxeBuilder({ page }).analyze()
   expect(axe.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? '')), JSON.stringify(axe.violations)).toEqual([])
   expect(errors).toEqual([])
-})
-
-test('real workspace round trip', async ({ page }) => {
-  test.setTimeout(120_000)
-  const suffix = test.info().project.name.replaceAll('-', '_')
-  const rule = `browser_${suffix}`
-  await page.goto('/#page=settings&pane=Workspaces')
-  await page.getByRole('button', { name: 'Symbol, venue and timeframe' }).click()
-  await page.getByLabel('From', { exact: true }).fill('2020-01-01')
-  await page.getByRole('button', { name: 'Done', exact: true }).click()
-  await page.getByPlaceholder('Name this context').fill(rule)
-  await page.getByRole('button', { name: 'Save current', exact: true }).click()
-  await expect(page.getByRole('button', { name: rule, exact: true })).toBeVisible({ timeout: 30_000 })
-  await page.getByRole('button', { name: 'Symbol, venue and timeframe' }).click()
-  await page.getByRole('button', { name: 'Clear window', exact: true }).click()
-  await page.getByRole('button', { name: 'Done', exact: true }).click()
-  await page.getByRole('button', { name: rule, exact: true }).click()
-  await page.getByRole('button', { name: 'Symbol, venue and timeframe' }).click()
-  await expect(page.getByLabel('From', { exact: true })).toHaveValue('2020-01-01')
-  await page.getByRole('button', { name: 'Done', exact: true }).click()
-  await page.getByTitle(`Delete ${rule}`, { exact: true }).click()
-  await expect(page.getByRole('button', { name: rule, exact: true })).toHaveCount(0, { timeout: 30_000 })
 })
 
 test('@reference-only every real workflow task opens in both market profiles', async ({ page }, info) => {

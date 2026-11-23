@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { openDocument, preparePage } from './support/workstationHarness'
+import { openSettings, preparePage } from './support/workstationHarness'
 
 const A = 'a'.repeat(16)
 const B = 'b'.repeat(16)
@@ -28,7 +28,7 @@ test('backtest card is opt-in and its explicit units and provenance are explicit
   await page.goto(`/#run=${A}`)
   await expect(page.getByRole('table', { name: 'Summary — what this run recorded' })).toBeVisible()
   await expect(card(page)).toHaveCount(0)
-  await openDocument(page, 'Governance')
+  await openSettings(page)
   await page.getByRole('checkbox', { name: 'Backtest result card', exact: true }).check()
   await page.evaluate(id => { window.location.hash = `#run=${id}` }, A)
   await expect(card(page)).toContainText('Historical simulation')
@@ -41,7 +41,7 @@ test('backtest card is opt-in and its explicit units and provenance are explicit
   await expect(card(page).locator('img')).toHaveCount(0)
   await expect(page.getByRole('table', { name: 'Summary — what this run recorded' })).toHaveCount(0)
   // Rollback restores the existing summary immediately.
-  await openDocument(page, 'Governance')
+  await openSettings(page)
   await page.getByRole('checkbox', { name: 'Backtest result card', exact: true }).uncheck()
   await page.evaluate(id => { window.location.hash = `#run=${id}` }, A)
   await expect(card(page)).toHaveCount(0)

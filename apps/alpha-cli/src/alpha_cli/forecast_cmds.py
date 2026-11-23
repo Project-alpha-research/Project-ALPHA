@@ -105,7 +105,14 @@ def run(
         hub_cache=settings.forecast_hub_cache,
         local_files_only=settings.forecast_local_only,
     )
-    expected = _forecast.estimate_seconds(context=resolved_context, horizon=horizon, rows=samples)
+    expected = _forecast.calibrated_seconds(
+        forecaster,
+        bars,
+        context=resolved_context,
+        horizon=horizon,
+        rows=samples,
+        model=resolved_model,
+    )
     _say(_forecast.trading_day_line(as_of_dt, bars[-1].ts), lowered)
     _say(_forecast.expected_time_line(resolved_model, expected))
 
@@ -371,11 +378,20 @@ def evaluate(
     )
 
     scored = len(every) if origins == 0 else min(origins, len(every))
-    per_origin = _forecast.estimate_seconds(context=resolved_context, horizon=horizon, rows=samples)
+    expected = _forecast.calibrated_seconds(
+        forecaster,
+        bars,
+        context=resolved_context,
+        horizon=horizon,
+        rows=samples,
+        model=resolved_model,
+        scale=scored,
+    )
+    per_origin = expected / max(scored, 1)
     _say(_forecast.trading_day_line(held.as_of if as_of else None, bars[-1].ts), lowered)
-    _say(_forecast.expected_time_line(resolved_model, per_origin * scored))
+    _say(_forecast.expected_time_line(resolved_model, expected))
     try:
-        with heartbeat("Forecast evaluation", expected=per_origin * scored):
+        with heartbeat("Forecast evaluation", expected=expected):
             out = _forecast_eval.run_forecast_eval(
                 bars,
                 forecaster=forecaster,

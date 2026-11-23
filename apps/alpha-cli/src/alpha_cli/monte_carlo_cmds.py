@@ -734,7 +734,14 @@ def kronos(
                     f"Kronos generator {field} {provenance.get(field)!r} differs from "
                     f"forecast evaluation {evaluated_model.get(field)!r}"
                 )
-        expected = _forecast.estimate_seconds(context=resolved_context, horizon=steps, rows=paths)
+        expected = _forecast.calibrated_seconds(
+            forecaster,
+            training_prefix,
+            context=resolved_context,
+            horizon=steps,
+            rows=paths,
+            model=resolved_model,
+        )
         for line in (lowered, _forecast.expected_time_line(resolved_model, expected)):
             if line is not None:
                 typer.echo(line)

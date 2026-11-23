@@ -10,6 +10,8 @@ policy: warn + flag, never block). Artifacts: ``manifest.json`` (byte-stable) +
 
 from __future__ import annotations
 
+import math
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -18,6 +20,7 @@ from typing import Any
 
 import numpy as np
 import polars as pl
+import typer
 
 from alpha_cli._artifacts import publish_artifact, write_manifest
 from alpha_core import Bar, DataError
@@ -79,17 +82,59 @@ SECONDS_PER_BAR_READ = 2.3e-4
 MAX_WINDOW = 512
 
 
-def estimate_seconds(*, context: int, horizon: int, rows: int) -> float:
+def _reads(context: int, horizon: int) -> int:
+    return sum(min(context + step, MAX_WINDOW) for step in range(horizon))
+
+
+def estimate_seconds(
+    *, context: int, horizon: int, rows: int, per_read: float = SECONDS_PER_BAR_READ
+) -> float:
     """A rough CPU time for ``rows`` paths of ``horizon`` steps from a ``context``-bar window."""
-    reads = sum(min(context + step, MAX_WINDOW) for step in range(horizon))
-    return reads * rows * SECONDS_PER_BAR_READ
+    return _reads(context, horizon) * rows * per_read
+
+
+WARMUP_STEPS = 2
+WARMUP_TRIES = 2
+
+
+def calibrated_seconds(
+    forecaster: Forecaster,
+    bars: Sequence[Bar],
+    *,
+    context: int,
+    horizon: int,
+    rows: int,
+    model: str,
+    scale: int = 1,
+) -> float:
+    """The time for the run, from a short timed warm-up on this machine, rounded up.
+
+    The first warm-up call loads the model and its time is added once. The slower of two short
+    timed forecasts sets the seconds per bar read, so a busy CPU lengthens the estimate. The
+    offline double is never timed. ``scale`` repeats the run (one per scored origin).
+    """
+    if model == "fake" or len(bars) < 2:
+        return estimate_seconds(context=context, horizon=horizon, rows=rows) * scale
+    window = list(bars[-context:])
+    typer.echo("Timing a short warm-up step on this computer first.", err=True)
+
+    def timed() -> float:
+        started = time.monotonic()
+        forecaster.forecast(window, horizon=WARMUP_STEPS, sample_count=1, seed=0)
+        return time.monotonic() - started
+
+    load = timed()  # includes loading the model
+    step = max(timed() for _ in range(WARMUP_TRIES))
+    per_read = step / _reads(len(window), WARMUP_STEPS)
+    run = estimate_seconds(context=len(window), horizon=horizon, rows=rows, per_read=per_read)
+    return float(math.ceil(max(load, step) + run * scale))
 
 
 def say_time(seconds: float) -> str:
     if seconds < 90:
         return f"about {max(1, round(seconds))} seconds"
     if seconds < 5400:
-        return f"about {round(seconds / 60)} minutes"
+        return f"about {math.ceil(seconds / 60)} minutes"
     return f"about {seconds / 3600:.1f} hours"
 
 

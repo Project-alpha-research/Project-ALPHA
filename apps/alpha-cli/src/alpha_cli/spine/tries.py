@@ -112,9 +112,10 @@ def reading_count_sentence(family: dict[str, Any], symbol: str) -> str | None:
     times = "time" if on_shape == 1 else "times"
     settings = "setting" if variants == 1 else "settings"
     return (
-        f"{first} {shape} has been tried {on_shape} {times} across all assets, which can be more "
-        f"than the first count, plus {variants} nearby {settings} tried inside this test. The luck "
-        f"adjustment uses the larger of the first two counts, plus the nearby settings: {used}."
+        f"{first} {shape} has been tried {on_shape} {times} across all assets, "
+        "which can be more than the first count. "
+        f"It also had {variants} nearby {settings} tried inside this test. "
+        f"The luck adjustment uses the larger of the first two counts, plus these: {used}."
     )
 
 

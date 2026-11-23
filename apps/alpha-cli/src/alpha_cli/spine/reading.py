@@ -415,7 +415,7 @@ def deciding_sentence(reading: Mapping[str, Any]) -> str | None:
         held = [
             b for b in because if not b.startswith(("Random-data", "Sharpe interval", "Deflated"))
         ]
-        return f"What held back the top word: {' '.join(held)}" if held else None
+        return f"What decided it: {' '.join(held)}" if held else None
     sharpe, dsr = _measure(reading, "out-of-sample Sharpe"), _measure(reading, "deflated Sharpe")
     value, lower = _num(sharpe.get("value")), _num((sharpe.get("interval_95") or [None])[0])
     tests = next((re.search(r"held: (\d+) of (\d+)", b) for b in because if "held:" in b), None)

@@ -232,7 +232,7 @@ def test_diagnose_prints_a_plain_summary_and_json_keeps_the_raw_file(tmp_path: P
     text = RUNNER.invoke(app, ["diagnose", RUN], env=env).output
     assert "One bar later" in text and "75% kept" in text
     assert "This rule shape [spine:ma_cross] has been tried 12 times" in text
-    assert "plus 5 nearby settings" in text and "family counted as" not in text
+    assert "5 nearby settings tried inside this test" in text and "family counted as" not in text
     assert "Warnings recorded with this run:" in text and "implausibly high" in text
     assert "across the middle 90%" in text and "stayed between" not in text
     assert "look closer: Enough closed trades. 4 closed trades." in text

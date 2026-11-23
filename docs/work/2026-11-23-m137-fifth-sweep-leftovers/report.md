@@ -27,3 +27,12 @@ Decisions and results per item. No numbers from a real run are written here.
 - Finding: the protected worker writes `predictions.parquet`, the ensemble file and `result.json` once, after all folds (`workers/qlib/.../real.py` `_publish` calls). It writes no per-fold file. So the CLI cannot count folds, and no fold is named.
 - Change: the line now says "Model training: still running, N seconds so far, fold count N; this stage reports when it ends." The closing stage keeps its own line ("Scoring the model run and writing the run"). `fold_phrase` was removed as an orphan.
 - Test: `tests/unit/test_ml_progress_words.py`.
+
+## 6. `cost_realism.cost_sweep` on an ML run (and the scientific-notation half of item 10)
+- Cause: `alpha tool run` printed a "fraction" unit as a bare fraction; and the no-cost figure (from the account's fills) had no basis sentence next to the report's figure (planned weights).
+- Change: `_shown` prints a fraction as a percent. For a model run, `cost_sweep` adds "Return with no costs is from the account's fills with costs added back; `alpha report` uses the planned weights." Stored values are unchanged.
+- Test: `tests/unit/test_tool_run_text.py`.
+
+## 10b. `alpha tool run` scientific notation
+- Cause: `:.4g` gives `1.5e-07` for tiny or large numbers.
+- Change: `_plain` prints fixed digits instead. Test: same file (parametrised over units).

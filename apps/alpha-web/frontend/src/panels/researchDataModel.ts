@@ -1,4 +1,4 @@
-// Pure projections for the ResearchDataExplorer: audit badges, range labels, and the
+// Pure projections for the Crypto Data Center and dataset audit labels: badges, range labels, and the
 // provenance-chain summary. Registration itself is owner-CLI only (fail-closed on
 // receipts); this model only renders what the read plane serves.
 

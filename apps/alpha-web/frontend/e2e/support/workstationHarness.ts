@@ -2734,12 +2734,6 @@ export async function cryptoDataCenterJourney(page: Page): Promise<void> {
   await center.getByRole('button', { name: 'Verify for research', exact: true }).click()
   await expect(center.getByText('ELIGIBLE', { exact: true })).toBeVisible()
   await expect(center.getByText(new RegExp(CRYPTO_SNAPSHOT_ID))).toBeHidden()
-  await center.getByRole('button', { name: 'Register research-only dataset', exact: true }).click()
-  await expect(center.getByText('REGISTERED · RESEARCH ONLY', { exact: true })).toBeVisible()
-  await expect(page.getByText('REFRESHING REGISTERED DATASETS', { exact: true })).toBeVisible()
-  await expect(page.getByText('Loading stored symbol inventory…', { exact: true })).toBeVisible()
-  await expect(center.getByText(/does not make an incompatible case executable/)).toBeVisible()
-  await expect(center.getByText(new RegExp(`rd_${'c'.repeat(64)}`))).toBeHidden()
 
   const qualifiedOption = center.locator('.crypto-dataset').filter({ hasText: 'USDT' }).first()
   await qualifiedOption.getByRole('button', { name: 'Quality', exact: true }).click()

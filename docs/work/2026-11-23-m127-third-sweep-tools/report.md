@@ -16,8 +16,10 @@ refused on the buy-and-hold value). Items 3, 5, 6, 7, 8 had tests that failed be
    a sentence and a flag; every number glossed (`ml_glosses.py`); held-back bars per asset; chart titles say "20 assets · model run".
 4. **`alpha ml run` progress.** The worker prints nothing, so the fold is estimated from time (labelled "about"). Default rate
    1 s per asset and fold on a first run; later runs use the measured rate. Decision: a default I could not measure here.
-5. **Kronos estimates.** A timed warm-up (model load, then the slower of two short forecasts) sets the rate; rounded up;
-   the heartbeat says "taking longer than expected; still running". The 30% bound is tested with a stub model, not real Kronos.
+5. **Kronos estimates.** A timed warm-up (model load, then one full batch of paths for one step and for
+   two steps) gives the time per step and the fixed time per batch; rounded up; the heartbeat says
+   "taking longer than expected; still running". Review: on one real Kronos call on this desktop the
+   estimate was within about 10% of the real time; the warm-up costs about 20 seconds.
 6. **Monte Carlo Kronos.** Prints median end value with units, where the real run sits, and the window dates; `results show`
    and `report` read Monte Carlo runs; "Real run" is the one name; the regime-window note is plain.
 7. **`forecast eval`.** Held-back wording; "N dates is too few to judge coverage" under 30 origins; model read offline

@@ -52,5 +52,8 @@ def test_price_noise_diagnose_and_cite(tmp_path: Path) -> None:
         assert fact["unit"] in {"ratio", "fraction", "count"}
     listed = alpha(home, "results", "--idea-id", run["idea_id"], "--json").json()
     assert listed["items"][0]["run_id"] == run["run_id"]
-    assert "price_noise" in alpha(home, "diagnose", run["run_id"]).stdout
+    assert (
+        f"Price noise: {diagnostic['price_noise']['sentence']}"
+        in alpha(home, "diagnose", run["run_id"]).stdout
+    )
     assert ledger.read_bytes() == before

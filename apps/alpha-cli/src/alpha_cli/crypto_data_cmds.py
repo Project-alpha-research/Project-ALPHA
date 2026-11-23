@@ -23,7 +23,7 @@ from alpha_cli._crypto_acquisition import (
     AcquisitionPlan as _AcquisitionPlan,
 )
 from alpha_cli._crypto_acquisition import bybit_plan, option_quote_frame
-from alpha_cli._crypto_acquisition_errors import FixtureAccountingBlocked
+from alpha_cli._crypto_acquisition_errors import FixtureAccountingBlocked, plain_error
 from alpha_cli._crypto_analysis import (
     coverage_row as _coverage_row,
 )
@@ -2735,7 +2735,7 @@ def coverage(
         )
         return
     except DataError as exc:
-        raise typer.BadParameter(str(exc)) from exc
+        plain_error(exc)
     try:
         if metadata_only:
             store.verify_readable()
@@ -2745,7 +2745,7 @@ def coverage(
             if manifest.get("artifact_kind") == "normalized"
         ]
     except DataError as exc:
-        raise typer.BadParameter(str(exc)) from exc
+        plain_error(exc)
     items.sort(
         key=lambda row: (str(row["family"]), str(row["instrument"]), str(row["manifest_id"]))
     )

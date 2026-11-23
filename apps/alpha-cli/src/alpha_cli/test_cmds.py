@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import io
+import re
 import sys
+from collections.abc import Callable
 from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Any
@@ -11,6 +13,7 @@ from typing import Any
 import typer
 
 from alpha_cli._cli_json import emit
+from alpha_cli._estimate import UnitTimer, read_rate, say_minutes, write_rate
 from alpha_cli._progress import heartbeat
 from alpha_cli.spine.data_health import health_sentence
 from alpha_cli.spine.errors import SpineError, fail, test_error
@@ -33,19 +36,54 @@ def _echo_notes(text: str) -> None:
         typer.echo(line)
 
 
-_SECONDS_PER_ASSET = 240  # a full test on a busy machine; a quick one is a quarter of it
+def rate_key(quick: bool, kind: str, no_diagnose: bool) -> str:
+    """One kept rate per kind of test: an owner rule costs more per asset than a built-in one."""
+    return f"test_asset:{kind}{':quick' if quick else ''}{':no-diagnose' if no_diagnose else ''}"
 
 
-def expected_seconds(assets: int, quick: bool) -> float:
-    return assets * _SECONDS_PER_ASSET / (4 if quick else 1)
-
-
-def expected_line(seconds: float) -> str:
-    minutes = max(1, round(seconds / 60))
+def expected_line(expected: float | None, *, units: int) -> str:
+    """The first line: a time from the last run on this computer, or when one will follow."""
+    if expected is None:
+        when = "after the first asset is tested" if units > 1 else "from the next run on"
+        return (
+            f"alpha test: no time estimate yet; this computer has not timed a test. "
+            f"One follows {when}. Progress lines follow about every 10 seconds."
+        )
     return (
-        f"alpha test: this takes about {minutes} {'minute' if minutes == 1 else 'minutes'}; "
+        f"alpha test: this takes {say_minutes(expected)} (from the last test on this computer); "
         "a busy machine takes longer. Progress lines follow about every 10 seconds."
     )
+
+
+class RunClock:
+    """Times the assets of one `alpha test` run and re-states the estimate once, when measured."""
+
+    def __init__(self, units: int, prior: float | None, say: Callable[[str], None]) -> None:
+        self.timer = UnitTimer(units, prior_per_unit=prior)
+        self._say = say
+
+    def stage(self, text: str) -> None:
+        """Called as each stage begins; "testing X (n of N)" marks the start of asset n."""
+        found = re.fullmatch(r"testing .+ \(\d+ of \d+\)", text)
+        if found is None:
+            return
+        if not self.timer.started:  # the first asset tested; an unreadable one is skipped
+            self.timer.start()
+            return
+        self.timer.finish_unit()
+        expected = self.timer.expected()
+        if self.timer.done == 1 and expected is not None:
+            self._say(f"alpha test: measured on the first asset: {say_minutes(expected)} in all.")
+
+    def finish(self, data_dir: Path, key: str, results: list[dict[str, Any]]) -> None:
+        """Keep the rate of this run for the next first guess, when every asset was tested.
+
+        A repeat is read from the stored run and a failed asset stops early: neither is a rate."""
+        if not self.timer.started:
+            return
+        self.timer.finish_unit()
+        if all(row.get("executed") is True and row.get("error") is None for row in results):
+            write_rate(data_dir, key, self.timer.per_unit() or 0.0)
 
 
 def _reading_count(home: Path, result: dict[str, Any]) -> list[str]:
@@ -214,11 +252,21 @@ def test_rule(
         if recheck:
             _recheck(parsed, settings, quick, accept_bad_data, check_data, json_out)
             return
-        expected = expected_seconds(len(parsed.assets), quick)
-        typer.echo(expected_line(expected), err=True)
+        key = rate_key(quick, parsed.rule.kind, no_diagnose)
+        clock = RunClock(
+            len(parsed.assets),
+            read_rate(settings.data_dir, key),
+            lambda line: typer.echo(line, err=True),
+        )
+        typer.echo(expected_line(clock.timer.expected(), units=len(parsed.assets)), err=True)
         stage = ["starting"]
+
+        def note_stage(text: str) -> None:
+            stage[0] = text
+            clock.stage(text)
+
         with (
-            heartbeat(lambda: f"alpha test: {stage[0]}", expected=expected),
+            heartbeat(lambda: f"alpha test: {stage[0]}", expected=clock.timer.expected),
             redirect_stdout(sys.stderr if json_out else notes),
         ):
             output = run_idea(
@@ -229,8 +277,9 @@ def test_rule(
                 check_data=check_data,
                 accept_bad_data=accept_bad_data,
                 no_diagnose=no_diagnose,
-                stage=lambda text: stage.__setitem__(0, text),
+                stage=note_stage,
             )
+            clock.finish(settings.data_dir, key, output["results"])
         if all(result["error"] is not None for result in output["results"]):
             _echo_notes(notes.getvalue())
             fail(

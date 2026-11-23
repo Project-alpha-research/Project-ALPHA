@@ -71,3 +71,20 @@ def test_an_unknown_preset_is_rejected_with_the_valid_names_before_any_read(
     assert "Unknown firm preset 'ftmo'" in ran.output
     assert "apex, takeprofit, topstep" in ran.output
     assert not (home / "propfirm").exists()
+
+
+def test_negative_money_has_the_minus_first() -> None:
+    from alpha_cli.propfirm_cmds import money
+
+    assert money(-1234.4) == "-$1,234"
+    assert money(1234.4) == "$1,234"
+    assert money(-0.2) == "$0"
+
+
+def test_a_futures_preset_on_a_stock_run_says_so(home: Path) -> None:
+    ran = CliRunner().invoke(propfirm_app, [*ARGS, "--firm", "takeprofit"])
+    assert "takeprofit preset is a futures-firm rule set; this run trades a stock or ETF" in (
+        ran.output
+    )
+    custom = CliRunner().invoke(propfirm_app, ARGS)
+    assert "futures-firm" not in custom.output

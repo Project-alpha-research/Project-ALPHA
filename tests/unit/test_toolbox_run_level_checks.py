@@ -513,3 +513,17 @@ def test_hold_threshold_below_today(tmp_path: Path) -> None:
         "The result breaks even at 5 times today's costs. The result does not beat buy and hold"
         " at today's costs. It matches buy and hold at 0.5 times today's costs."
     )
+
+
+def test_the_three_cost_figures_measure_different_things(tmp_path: Path) -> None:
+    """Hand computation. Two bars of 10% gross and 2% cost: compounded gross 1.1^2 - 1 = 21%,
+    compounded net 1.08^2 - 1 = 16.64%. The cost share weights each bar by the account size at
+    its start: (1*.02 + 1.08*.02) / (1*.1 + 1.08*.1) = 0.2. It is not the 4.36-point gap."""
+    folder = stored_run(tmp_path, COSTS)
+    write_costs(folder, [0.1, 0.1], [0.02, 0.02], 1.04**2 - 1)
+    share = run(tmp_path, COSTS, RUN)["values"]["cost_share"]
+    sweep = run(tmp_path, "cost_realism.cost_sweep", RUN)["values"]
+    assert sweep["return_x0"] == pytest.approx(0.21, rel=1e-9, abs=1e-12)
+    assert sweep["return_x1"] == pytest.approx(1.08**2 - 1, rel=1e-9, abs=1e-12)
+    assert share == pytest.approx(0.2, rel=1e-9, abs=1e-12)
+    assert 1 - sweep["return_x1"] / sweep["return_x0"] != pytest.approx(share, abs=1e-3)

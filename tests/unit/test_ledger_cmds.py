@@ -320,3 +320,5 @@ def test_the_summary_headline_counts_the_rdagent_rows_it_shows(
     assert "The RD-Agent ledger adds 4 trials (factor 3, rule_family 1)." in out
     spine_only = CliRunner().invoke(ledger_app, ["summary"]).output
     assert "The RD-Agent ledger adds" not in spine_only
+    assert "Counting 0 ML tries and 4 RD-Agent tries, the ledger lists 5 tries in all." in out
+    assert "Counting" not in spine_only

@@ -206,13 +206,33 @@ def _resolve_port() -> int:
     return 8801
 
 
-def main() -> None:
+HELP_TEXT = """alpha-web: the ALPHA Workstation, a local web page for your research.
+
+It serves on http://127.0.0.1:<port> (this computer only), by default http://127.0.0.1:8801.
+
+Set these before you start it:
+  ALPHA_WEB_PORT  the port to serve on (default 8801)
+  ALPHA_DATA_DIR  the folder that holds your stored data and runs
+
+Options:
+  -h, --help      show this text and exit
+"""
+
+
+def main(argv: list[str] | None = None) -> None:
     """Entry point: serve the workstation on http://127.0.0.1:<port> (loopback only).
 
     The port comes from ``ALPHA_WEB_PORT`` (preferred) or ``PORT``, defaulting to 8801; the
     host is always ``127.0.0.1``. Invalid port values fail loud (:class:`alpha_core.AlphaError`).
     """
+    import sys
+
     import uvicorn
+
+    args = sys.argv[1:] if argv is None else argv
+    if any(arg in {"-h", "--help"} for arg in args):
+        print(HELP_TEXT, end="")
+        return
 
     port = _resolve_port()  # fail loud before the app is even constructed
     uvicorn.run(create_app(), host="127.0.0.1", port=port)

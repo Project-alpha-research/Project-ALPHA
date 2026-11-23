@@ -107,6 +107,28 @@ def test_costs_are_stored_per_period_and_reconcile(ml_home: tuple[Path, str]) ->
     )
 
 
+def test_the_two_before_cost_returns_say_their_different_bases(ml_home: tuple[Path, str]) -> None:
+    """`alpha report` compounds the model's target weights on open-to-open moves; the cost sweep
+    compounds the account's own fills with the costs added back. Each says which it is."""
+    import polars as pl
+
+    home, run_id = ml_home
+    manifest = json.loads((home / "runs" / run_id / "manifest.json").read_text())
+    periods = pl.read_parquet(home / "runs" / run_id / "ml_periods.parquet")
+    planned = float((1.0 + periods["gross_return"]).product()) - 1.0
+    assert manifest["metrics"]["gross_total_return"] == pytest.approx(planned, rel=1e-9)
+    frame = pl.read_parquet(home / "runs" / run_id / "equity_curve.parquet")
+    filled = float((1.0 + frame["gross_return"][1:]).product()) - 1.0
+    sweep = runner.run(home, "cost_realism.cost_sweep", run_id)
+    assert sweep["values"]["return_x0"] == pytest.approx(filled, rel=1e-9)
+    assert filled != pytest.approx(planned, rel=1e-6)  # two bases: the planned and the filled
+    report = _alpha("report", run_id)
+    assert report.exit_code == 0, report.output
+    assert "the model's target weights" in report.output
+    words = {o.key: o.gloss for o in registry.get("cost_realism.cost_sweep").outputs}
+    assert "the account's own fills" in words["return_x0"]
+
+
 @pytest.mark.parametrize("spec", registry.SPECS, ids=lambda spec: spec.id)
 def test_every_check_reads_or_refuses_a_model_run(ml_home: tuple[Path, str], spec: Any) -> None:
     home, run_id = ml_home
@@ -233,8 +255,17 @@ def test_ml_run_prints_the_expected_time_and_fold_progress(
     data = tmp_path / "alpha-data"
     _seed_store(data)
     ml_run.run_spec(_spec(tmp_path), data_dir=data)
+    first = capsys.readouterr().err.splitlines()
+    # Nothing was timed on this computer yet: no number is made up.
+    assert first[0].startswith("The model trains ") and "No time estimate yet" in first[0]
+    assert (data / "ml_timing.json").is_file()
+    # With a rate kept from an earlier run, the estimate and the fold count both appear.
+    other = tmp_path / "alpha-data-2"
+    _seed_store(other)
+    other.mkdir(exist_ok=True)
+    (other / "ml_timing.json").write_text('{"seconds_per_asset_fold": 10.0}', encoding="utf-8")
+    ml_run.run_spec(_spec(tmp_path), data_dir=other)
     lines = capsys.readouterr().err.splitlines()
     assert lines[0].startswith("The model trains ") and "Expected time: about " in lines[0]
     beats = [line for line in lines if line.startswith("Model training:")]
     assert beats and all(" of " in line and "about fold " in line for line in beats)
-    assert (data / "ml_timing.json").is_file()

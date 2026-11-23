@@ -1,6 +1,7 @@
 """CLI stored projections and stable error envelopes."""
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -375,3 +376,21 @@ def test_unreadable_candles_are_corrupt(tmp_path: Path, monkeypatch: pytest.Monk
     assert "corrupt" in result.output
     assert str(bars) in result.output
     assert "not found" not in result.output
+
+
+def test_list_hides_tool_rows_and_shows_clean_dates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    base = {"test_id": "t", "labels": [], "symbol": "SPY", "name": "r", "flags": []}
+    append_trial(tmp_path, {**base, "run_id": "a" * 16, "verdict": "B"})
+    append_trial(tmp_path, {**base, "run_id": "b" * 16, "kind": "tool:deflated_sharpe"})
+    shown = CliRunner().invoke(app(), ["results"]).output
+    assert "tool:deflated_sharpe" not in shown
+    assert "rule_test" in shown
+    assert "flags (count)" in shown
+    assert re.search(r"\d{4}-\d\d-\d\d \d\d:\d\d(?!:)", shown)
+    assert not re.search(r"\.\d{6}", shown)
+    with_tools = CliRunner().invoke(app(), ["results", "--tools"]).output
+    assert "tool:deflated_sharpe" in with_tools
+    assert "fault" not in with_tools

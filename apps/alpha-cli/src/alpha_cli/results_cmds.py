@@ -74,8 +74,16 @@ def _error(exc: ValueError | OSError | DataError, json_out: bool) -> None:
     )
 
 
+def _when(stamp: object) -> str:
+    """``YYYY-MM-DD HH:MM`` from a stored ISO time; anything else is shown as stored."""
+    text = str(stamp)
+    return f"{text[:10]} {text[11:16]}" if len(text) >= 16 and text[10] in "T " else text
+
+
 def _row_word(home: Path, row: dict[str, Any], evidence: str | None) -> str:
     """The ledger row's own evidence word; an older row is read from its run, or by its letter."""
+    if str(row.get("kind", "")).startswith("tool:") and not evidence:
+        return "tool reading"
     return evidence or owner_word(home, row["run_id"], row["verdict"])
 
 
@@ -86,9 +94,10 @@ def list_results(
     symbol: str | None = None,
     name: str | None = None,
     idea_id: str | None = None,
+    tools: bool = typer.Option(False, "--tools", help="Also list single tool readings."),
     json_out: bool = typer.Option(False, "--json"),
 ) -> None:
-    """List recorded trials, including failed attempts, and the total count."""
+    """List recorded tests and runs; a tool reading belongs to its run (see results show)."""
     if ctx.invoked_subcommand is not None:
         return
     try:
@@ -110,7 +119,8 @@ def list_results(
         selected = [
             row
             for row in reversed(rows)
-            if (symbol is None or row.get("symbol") == symbol)
+            if (tools or not str(row.get("kind", "")).startswith("tool:"))
+            and (symbol is None or row.get("symbol") == symbol)
             and (name is None or row.get("name") == name)
             and (idea_id is None or row.get("idea_id") == idea_id)
         ][:limit]
@@ -150,11 +160,15 @@ def list_results(
                 "labels",
                 "run",
                 "idea",
-                "flags",
+                "flags (count)",
             ),
             [
                 [
-                    _row_word(home, row, found.get("evidence")) if key == "verdict" else row[key]
+                    _row_word(home, row, found.get("evidence"))
+                    if key == "verdict"
+                    else _when(row[key])
+                    if key == "recorded_at"
+                    else row[key]
                     for key in row
                 ]
                 for row, found in zip(items, selected, strict=True)

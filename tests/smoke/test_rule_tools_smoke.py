@@ -92,7 +92,9 @@ def test_investigation_tools_on_a_rule_test(tmp_path: Path) -> None:
     assert cited["value"] == pytest.approx(own["result"]["beta"], rel=1e-12)
     assert cited["source"] == f"{own['file']}:result.beta"
 
-    listing = alpha(home, "results", "--json").json()
+    default = alpha(home, "results", "--json").json()
+    assert not any(item["kind"].startswith("tool:") for item in default["items"])
+    listing = alpha(home, "results", "--tools", "--json").json()  # tool readings only on request
     kinds = [item["kind"] for item in listing["items"]]
     assert kinds[-1] == "rule_test"
     assert kinds.count("tool:market.attribution") == 4

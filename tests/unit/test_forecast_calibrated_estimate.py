@@ -87,26 +87,65 @@ def test_minutes_are_rounded_up() -> None:
     assert _forecast.say_time(121.0) == "about 3 minutes"
 
 
-class _BatchedStub(_Stub):
-    """Kronos draws samples in batches of 32: a batch costs about what one sample costs."""
+def _timed(ticks: Any, per_step: Any) -> Any:
+    """A stubbed Kronos on a stubbed clock: a batch costs per path, per step, by window size."""
 
-    def forecast(
-        self, bars: Sequence[Bar], *, horizon: int, sample_count: int, **_: object
-    ) -> object:
-        self.calls += 1
-        reads = sum(min(len(bars) + step, _forecast.MAX_WINDOW) for step in range(horizon))
-        time.sleep(reads * -(-sample_count // 32) * self.per_read)
-        return object()
+    class Timed:
+        calls = 0
+        steps: list[int] = []
+
+        def forecast(
+            self, bars: Sequence[Bar], *, horizon: int, sample_count: int, **_: object
+        ) -> object:
+            load = 5.0 if self.calls == 0 else 0.0
+            work = sum(per_step(len(bars) + step) for step in range(horizon))
+            ticks.now += load + 0.1 + sample_count * work
+            self.calls += 1
+            self.steps.append(horizon)
+            return object()
+
+    return Timed()
 
 
-@pytest.mark.parametrize("rows", [32, 64])
-def test_the_estimate_counts_batches_not_single_samples(rows: int) -> None:
-    stub = _BatchedStub(1e-4)
-    bars = _bars(300)
-    expected = _forecast.calibrated_seconds(
-        cast(Any, stub), bars, context=120, horizon=12, rows=rows, model="kronos"
-    )
-    started = time.monotonic()
-    stub.forecast(bars[-120:], horizon=12, sample_count=rows)
-    real = time.monotonic() - started
-    assert expected <= 1.3 * real + 1.0, (expected, real)  # +1: rounded up
+class _Ticks:
+    now = 0.0
+
+    def __call__(self) -> float:
+        return self.now
+
+
+def _real(per_step: Any, *, context: int, horizon: int, rows: int) -> float:
+    ticks = _Ticks()
+    stub = _timed(ticks, per_step)
+    stub.calls = 1  # loaded
+    stub.forecast(_bars(context), horizon=horizon, sample_count=rows)
+    return ticks.now + 5.0
+
+
+@pytest.mark.parametrize("rows", [8, 32, 64])
+def test_a_batch_costs_by_its_paths_on_a_cpu(rows: int) -> None:
+    """Measured on a desktop CPU: 32 paths in one batch take about four times 8 paths. The
+    estimate and the "--paths N" tip both come from one warm-up and the same formula."""
+    ticks = _Ticks()
+    per_step = lambda window: 1e-3 * window  # noqa: E731
+    found = _forecast.calibrate(
+        cast(Any, _timed(ticks, per_step)), _bars(300), context=30, rows=8, horizon=362,
+        model="kronos", clock=ticks,
+    )  # fmt: skip
+    real = _real(per_step, context=30, horizon=362, rows=rows)
+    assert 0.7 * real <= found.seconds(horizon=362, rows=rows) <= 1.3 * real + 1.0
+
+
+def test_the_warm_up_reaches_past_two_steps_on_a_long_horizon() -> None:
+    """A step costs more as the window grows; two steps from a short window miss that."""
+    ticks = _Ticks()
+    per_step = lambda window: 1e-4 * window**1.2  # noqa: E731  # a step costs more than its window
+    stub = _timed(ticks, per_step)
+    found = _forecast.calibrate(
+        cast(Any, stub), _bars(300), context=30, rows=32, horizon=362, model="kronos",
+        clock=ticks,
+    )  # fmt: skip
+    assert max(stub.steps) > 2
+    assert sum(stub.steps) < 362 // 2  # the warm-up stays short beside the run
+    real = _real(per_step, context=30, horizon=362, rows=32)
+    assert 0.7 * real <= found.seconds(horizon=362, rows=32) <= 1.3 * real + 1.0

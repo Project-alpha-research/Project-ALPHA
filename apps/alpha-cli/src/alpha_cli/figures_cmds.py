@@ -139,6 +139,20 @@ def _render_one(
     }
 
 
+def _with_plain_name(item: dict[str, Any], variant: str) -> dict[str, Any]:
+    """Copy the figure to ``<figure>.<format>`` beside its cache entry, the name the owner sees,
+    with its explanation beside it as ``<figure>.json``.
+
+    The cache entry keeps its hash in the name; the copy does not. A variant other than the plain
+    chart is named ``<figure>.<variant>.<format>``."""
+    cached = Path(item["path"])
+    middle = "" if variant == "plain" else f".{variant}"
+    plain = cached.parent / f"{item['figure_id']}{middle}.{item['format']}"
+    _publish(plain, cached.read_bytes())
+    _publish(plain.with_suffix(".json"), cached.with_suffix(".json").read_bytes())
+    return {**item, "cache_path": item["path"], "path": str(plain)}
+
+
 def store_rule_figures(rdir: Path, manifest: dict[str, Any], data_dir: Path) -> None:
     """Populate the ordinary immutable figure cache before exposing the completed rule run."""
     from alpha_cli.figures.rule_periods import CHARTS, TRADABLE
@@ -253,6 +267,7 @@ def _catalogue_envelope() -> dict[str, Any]:
 
 @figures_app.command("list")
 def list_figures(
+    run_arg: Annotated[str | None, typer.Argument(help="Stored run id (same as --run).")] = None,
     run: Annotated[str | None, typer.Option("--run", help="Annotate for one stored run.")] = None,
     as_json: _OPT_JSON = False,
 ) -> None:
@@ -264,6 +279,9 @@ def list_figures(
     stat instead of spawning a process. It is published here rather than imported because
     the web layer is forbidden from importing the renderer at all.
     """
+    if run_arg is not None and run is not None and run_arg != run:
+        raise typer.BadParameter("name the run once: as the argument or with --run, not both")
+    run = run if run is not None else run_arg
     if run is None:
         _echo(
             _catalogue_envelope(),
@@ -340,18 +358,17 @@ def render(
             )
             continue
         try:
-            rendered.append(
-                _render_one(
-                    figure_id,
-                    run_id=run_id,
-                    rdir=rdir,
-                    manifest=manifest,
-                    data_dir=data_dir,
-                    fmt=fmt,
-                    force=force,
-                    variant=variant,
-                )
+            item = _render_one(
+                figure_id,
+                run_id=run_id,
+                rdir=rdir,
+                manifest=manifest,
+                data_dir=data_dir,
+                fmt=fmt,
+                force=force,
+                variant=variant,
             )
+            rendered.append(_with_plain_name(item, variant))
         except DataError as error:
             # A pack render is best-effort across figures: one figure whose input turns
             # out to be unreadable at render time must not cost the caller the other

@@ -10,7 +10,9 @@ import typer
 
 def emit(value: object, *, json_out: bool, fallback: str) -> None:
     if json_out:
-        typer.echo(json.dumps(value, sort_keys=True, allow_nan=False))
+        # The screen says `alpha`; a stored sentence may still say `uv run alpha` (it stays stored).
+        text = json.dumps(value, sort_keys=True, allow_nan=False)
+        typer.echo(text.replace("uv run alpha ", "alpha "))
     else:
         # Stored sentences may still say `uv run alpha`; the screen says `alpha`, the stored text
         # stays as written.

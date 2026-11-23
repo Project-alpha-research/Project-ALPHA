@@ -245,7 +245,9 @@ BREAK_EVEN = ToolSpec(
         Output(
             "cost_share",
             "Share spent on costs",
-            "Total fill costs divided by positive before-cost profit, both in account currency.",
+            "Share of summed per-bar gross profit spent on costs, in account currency (each bar "
+            "weighted by the account size at its start). Not the gap between the compounded "
+            "gross and net returns.",
             "fraction",
         ),
         Output(

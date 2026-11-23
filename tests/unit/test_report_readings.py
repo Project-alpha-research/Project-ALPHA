@@ -231,8 +231,9 @@ def test_diagnose_prints_a_plain_summary_and_json_keeps_the_raw_file(tmp_path: P
     env = {"ALPHA_DATA_DIR": str(tmp_path)}
     text = RUNNER.invoke(app, ["diagnose", RUN], env=env).output
     assert "One bar later" in text and "75% kept" in text
+    assert "can differ slightly from the Sharpe ratio of the test" in text
     assert "This rule shape [spine:ma_cross] has been tried 12 times" in text
-    assert "plus 5 nearby settings" in text and "family counted as" not in text
+    assert "5 nearby settings tried inside this test" in text and "family counted as" not in text
     assert "Warnings recorded with this run:" in text and "implausibly high" in text
     assert "across the middle 90%" in text and "stayed between" not in text
     assert "look closer: Enough closed trades. 4 closed trades." in text
@@ -256,4 +257,9 @@ def test_the_delay_line_survives_an_undefined_retained_share() -> None:
 
     delay = {"base_sharpe": -0.5, "delayed_sharpe": 0.2, "delayed_share_of_base": None}
     lines = plain_diagnose_lines({"delay": delay}, {"sentence": "A reading."})
-    assert "One bar later: acting one bar late moves the Sharpe ratio from -0.50 to 0.20." in lines
+    assert any(
+        line.startswith(
+            "One bar later: acting one bar late moves the Sharpe ratio from -0.50 to 0.20. "
+        )
+        for line in lines
+    )

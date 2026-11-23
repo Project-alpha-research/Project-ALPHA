@@ -191,8 +191,26 @@ def window_sentence(source: Mapping[str, Any]) -> str:
     )
 
 
+MIN_PATHS_TO_RANK = 100  # fewer simulated paths than this are too few to give a percentage
+
+
+def rank_sentence(real_end: float, ends: Sequence[float], window: str) -> str:
+    """Where the real run ended among the simulated paths; a count, not a percentage, if few."""
+    below = sum(1 for end in ends if end < real_end)
+    if len(ends) >= MIN_PATHS_TO_RANK:
+        return (
+            f"The real run ended {_percent(real_end)}, above {below / len(ends):.0%} of the "
+            "simulated paths."
+        )
+    where = "all" if below == len(ends) else f"{below} of"
+    return (
+        f"The real run ended {_percent(real_end)}, above {where} {len(ends)} simulated paths, "
+        f"which is too few to rank ({window})."
+    )
+
+
 def _family_reading(
-    row: Mapping[str, Any], real_end: float | None, ends: Sequence[float]
+    row: Mapping[str, Any], real_end: float | None, ends: Sequence[float], window: str
 ) -> list[str]:
     """Where the real run sits among the simulated paths, with units. Numbers, no verdict."""
     if row.get("status") == "not_estimable":
@@ -207,10 +225,7 @@ def _family_reading(
         f"{loss:.0%} of paths end with a loss."
     ]
     if real_end is not None and ends:
-        below = sum(1 for end in ends if end < real_end) / len(ends)
-        lines.append(
-            f"The real run ended {_percent(real_end)}, above {below:.0%} of the simulated paths."
-        )
+        lines.append(rank_sentence(real_end, ends, window))
     return lines
 
 
@@ -221,10 +236,12 @@ def stored_lines(rdir: Path, manifest: Mapping[str, Any]) -> list[str]:
     observed = pl.read_parquet(rdir / "observed_oos.parquet").sort("step")["equity"].to_list()
     real_end = observed[-1] / observed[0] - 1.0 if len(observed) >= 2 else None
     metrics = pl.read_parquet(rdir / "path_metrics.parquet")
-    lines = [window_sentence(manifest["built_from"])]
+    source = manifest["built_from"]
+    window = f"window {_day(source['first_ts'])} to {_day(source['last_ts'])}"
+    lines = [window_sentence(source)]
     for row in families:
         ends = metrics.filter(pl.col("family") == row["family"])["terminal_return"].to_list()
-        lines += _family_reading(row, real_end, ends)
+        lines += _family_reading(row, real_end, ends, window)
     return lines
 
 

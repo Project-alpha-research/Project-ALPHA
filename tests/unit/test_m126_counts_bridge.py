@@ -25,8 +25,8 @@ def test_each_count_says_what_it_counts() -> None:
     assert text is not None
     assert "5 ideas on SPY, counting this asset alone" in text
     assert "7 times across all assets, which can be more than the first count" in text
-    assert "plus 5 nearby settings tried inside this test" in text
-    assert text.endswith("plus the nearby settings: 12.")
+    assert "5 nearby settings tried inside this test" in text
+    assert text.endswith("plus these: 12.")
 
 
 def _reading(
@@ -133,4 +133,33 @@ def test_alpha_test_prints_the_expected_time_first(tmp_path: Path) -> None:
         env={"ALPHA_DATA_DIR": str(tmp_path)},
     )
     assert out.exit_code == 0, out.output
-    assert "alpha test: this takes about 1 minute" in out.output
+    assert "alpha test: no time estimate yet" in out.output  # nothing timed on this computer yet
+
+
+def test_the_deciding_sentence_has_one_heading_for_every_reading() -> None:
+    from alpha_cli.spine.reading import deciding_sentence
+
+    found = _reading(
+        "some evidence", ["Sharpe interval 0.1 to 2.0.", "Only 3 years of data."], 1, 1, 1
+    )
+    text = deciding_sentence(found)
+    assert text is not None and text.startswith("What decided it: ")
+
+
+def test_the_tries_paragraph_is_three_short_sentences() -> None:
+    from alpha_cli.spine.tries import reading_count_sentence
+
+    said = reading_count_sentence(
+        {
+            "n_trials_used": 17,
+            "prior_trials": 11,
+            "this_run": 1,
+            "same_asset_tests": 5,
+            "variants_scored": 5,
+            "family_id": "spine:ma_cross",
+        },
+        "SPY",
+    )
+    assert said is not None
+    assert len([s for s in said.split(". ") if s]) == 4  # the first count, then three
+    assert all(len(s) < 160 for s in said.split(". "))

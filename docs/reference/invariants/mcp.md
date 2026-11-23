@@ -113,13 +113,15 @@ It is a surface like the web backend: it composes nothing and has no authority o
   See [research-integrity § Owner authority](research-integrity.md#owner-authority) and
   [research-integrity § No live capital](research-integrity.md#no-live-capital).
 - No tool name may contain `approve`, `decide`, `decision`, `reveal`, `d2`, `order` or `paper`. Spine tool names and
-  arguments also never match `approve|promote|confirm|accept_bad|owner|order|enroll`.
+  arguments also never match `approve|promote|confirm|accept_bad|owner|order|enroll`. Enforced by
+  `tests/integration/test_mcp_server.py::test_mcp_tool_set_is_pinned_without_owner_authority` and
+  `tests/unit/test_mcp_spine_tools.py`.
 - Agent output is commentary or a draft, never evidence.
 
 ## Changing the tool set
 
 - The tool surface is pinned. Adding or removing a tool means, in the same change:
-  - update the expected names in `tests/integration/test_mcp_server.py`
+  - update the pinned set in `tests/integration/test_mcp_server.py::test_mcp_tool_set_is_pinned_without_owner_authority`
     (`tests/unit/test_repo_awareness_drift.py` checks the count equals the `@mcp.tool` decorators in `server.py`);
   - run `uv run python scripts/check_openapi_operations.py --write` to regenerate the
     [capability matrix](../../governance/capability-authority-matrix.md), which records the tool count.

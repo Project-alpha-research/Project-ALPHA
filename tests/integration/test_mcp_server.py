@@ -134,6 +134,71 @@ def test_all_expected_tools_are_registered() -> None:
     )
 
 
+def test_mcp_tool_set_is_pinned_without_owner_authority() -> None:
+    """The tool list is pinned; no tool name carries an approval, holdout or order verb."""
+    names = {t.name for t in anyio.run(server.mcp.list_tools)}
+    assert names == {
+        "backtest_cross_sectional",
+        "backtest_portfolio",
+        "backtest_run",
+        "cancel_development_suite",
+        "compare_runs",
+        "create_development_job",
+        "data_health",
+        "data_pull",
+        "diagnose_run",
+        "follows_list",
+        "follows_show",
+        "follows_today",
+        "follows_verify",
+        "forecast_eval",
+        "forecast_run",
+        "get_chart_bundle",
+        "get_data_candles",
+        "get_data_inventory",
+        "get_data_quality",
+        "get_development_job",
+        "get_portfolio_analytics",
+        "get_provider_registry",
+        "get_run",
+        "idea_file",
+        "idea_list",
+        "idea_new",
+        "idea_show",
+        "ledger_history",
+        "ledger_summary",
+        "library_card",
+        "library_list",
+        "library_show",
+        "list_development_jobs",
+        "list_runs",
+        "list_snapshots",
+        "list_strategies",
+        "next_step",
+        "nightly_status",
+        "optim_grid",
+        "propfirm_run",
+        "reconcile_development_jobs",
+        "results_check",
+        "results_cite",
+        "results_show",
+        "rule_test",
+        "setup_find",
+        "setup_study",
+        "setup_trade",
+        "tool_describe",
+        "tool_find",
+        "tool_list",
+        "tool_run",
+        "tool_run_set",
+        "tool_situations",
+        "validate",
+    }
+    markers = ("approve", "decide", "decision", "reveal", "d2", "order", "paper")
+    for name in names:
+        assert not any(marker in name for marker in markers), name
+
+
 def test_control_plane_tools_round_trip_through_cli(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

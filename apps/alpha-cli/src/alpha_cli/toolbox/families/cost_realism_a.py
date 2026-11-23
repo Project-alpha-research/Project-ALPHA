@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING, Any
 from alpha_cli.toolbox.contract import Output, Result, ToolSpec
 from alpha_cli.toolbox.families.cost_realism_common import (
     NO_TRADES,
-    OLD_RUN,
     closed_trades,
     cost_curve,
     make,
+    old_run,
     unavailable,
 )
 
@@ -56,7 +56,7 @@ def cost_sweep(inputs: Inputs, params: dict[str, Any], rng: Generator | None) ->
 
     curve = cost_curve(inputs)
     if curve is None:
-        return unavailable(SWEEP_OUTPUTS, OLD_RUN, BASIS)
+        return unavailable(SWEEP_OUTPUTS, old_run(inputs), BASIS)
     _, _, gross, costs = curve
     values: dict[str, Any] = {}
     reasons: dict[str, str] = {}
@@ -113,7 +113,7 @@ CHURN_OUTPUTS = (
 def churn_budget(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
     curve = cost_curve(inputs)
     if curve is None:
-        return unavailable(CHURN_OUTPUTS, OLD_RUN, BASIS)
+        return unavailable(CHURN_OUTPUTS, old_run(inputs), BASIS)
     dates, _, gross, costs = curve
     trades = closed_trades(inputs)
     years = (dates[-1] - dates[0]).total_seconds() / (365.25 * 86400)

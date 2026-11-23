@@ -517,13 +517,27 @@ def export(
     dark: bool = typer.Option(False, "--dark", help=_DARK_NOTE),
 ) -> None:
     """Write one figure outside the cache, for a paper or a deck."""
-    from alpha_cli.figures import build_figure_spec, resolve_run
+    from alpha_cli.figures import available_figures, build_figure_spec, resolve_run
     from alpha_cli.figures.variants import render_variant
 
     data_dir = _data_dir()
-    rdir, manifest = resolve_run(run_id, data_dir=data_dir)
-    spec = build_figure_spec(figure, run_id=run_id, rdir=rdir, manifest=manifest, data_dir=data_dir)
-    payload = render_variant(spec, variant, fmt)
+    try:
+        rdir, manifest = resolve_run(run_id, data_dir=data_dir)
+        entry = next(
+            (e for e in available_figures(rdir, manifest) if e.definition.figure_id == figure),
+            None,
+        )
+        if entry is None:
+            raise DataError(f"The figure {figure} does not apply to this run.")
+        if not entry.available:
+            raise DataError(f"The figure {figure} is not available: {entry.unavailable_reason}")
+        spec = build_figure_spec(
+            figure, run_id=run_id, rdir=rdir, manifest=manifest, data_dir=data_dir
+        )
+        payload = render_variant(spec, variant, fmt)
+    except DataError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=1) from error
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_bytes(payload)
     typer.echo(f"wrote {len(payload):,}B -> {out}")

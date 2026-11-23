@@ -97,18 +97,37 @@ def test_the_home_config_file_is_used_when_it_exists(
     assert "loops: 7" in result.output
 
 
-@pytest.mark.parametrize(
-    ("setting", "fix"),
-    [("rdagent_source", "setup_rdagent.sh"), ("factor_python", "setup_rdagent.sh")],
-)
-def test_a_missing_install_is_one_plain_sentence(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, setting: str, fix: str
+def test_a_dry_run_needs_no_factor_runtime_and_names_the_missing_one(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    m = machine(tmp_path, monkeypatch, installed=False)
+    result = RUNNER.invoke(rdagent_app, ["run", "--dry-run"])
+    assert result.exit_code == 0, result.output
+    assert "Nothing was started." in result.output
+    assert str(m.home / "runs" / "rdagent") in result.output  # the full settings are shown
+    named = [line for line in result.output.splitlines() if "factor runtime is missing" in line]
+    assert len(named) == 1
+    assert "rdagent_source" in named[0] and "factor_python" in named[0]
+    assert "bash scripts/setup_rdagent.sh --with-factor-runtime" in named[0]
+    assert not list(m.home.iterdir())  # a dry run writes nothing
+
+
+def test_a_real_run_still_needs_the_factor_runtime(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     machine(tmp_path, monkeypatch, installed=False)
-    result = RUNNER.invoke(rdagent_app, ["run", "--dry-run"])
+    result = RUNNER.invoke(rdagent_app, ["run"])
     assert result.exit_code == 2
     assert isinstance(result.exception, SystemExit)  # no traceback
-    assert setting in result.output and fix in result.output
+    assert "rdagent_source" in result.output and "setup_rdagent.sh" in result.output
+
+
+def test_a_dry_run_with_the_runtime_installed_prints_no_missing_line(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    machine(tmp_path, monkeypatch)
+    result = RUNNER.invoke(rdagent_app, ["run", "--dry-run"])
+    assert "factor runtime is missing" not in result.output
 
 
 def test_a_wrong_path_in_the_file_names_the_setting_and_the_fix(

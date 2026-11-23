@@ -10,6 +10,8 @@ policy: warn + flag, never block). Artifacts: ``manifest.json`` (byte-stable) +
 
 from __future__ import annotations
 
+import math
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -18,6 +20,7 @@ from typing import Any
 
 import numpy as np
 import polars as pl
+import typer
 
 from alpha_cli._artifacts import publish_artifact, write_manifest
 from alpha_core import Bar, DataError
@@ -45,6 +48,10 @@ def _forecaster_factory(
         return FakeForecaster()
     from alpha_forecast import KronosForecaster
 
+    offline = local_files_only or (
+        _in_cache(model, model_revision, hub_cache)
+        and _in_cache(tokenizer, tokenizer_revision, hub_cache)
+    )
     return KronosForecaster(
         model_id=model,
         model_revision=model_revision,
@@ -52,8 +59,18 @@ def _forecaster_factory(
         tokenizer_revision=tokenizer_revision,
         device=device,
         cache_dir=hub_cache,
-        local_files_only=local_files_only,
+        local_files_only=offline,
     )
+
+
+def _in_cache(repo: str, revision: str, cache_dir: Path | None) -> bool:
+    """True when the files are local (a checkpoint folder, or the hub cache): no request needed."""
+    if Path(repo).is_dir():
+        return True
+    from huggingface_hub import try_to_load_from_cache
+
+    found = try_to_load_from_cache(repo, "config.json", cache_dir=cache_dir, revision=revision)
+    return isinstance(found, str)
 
 
 def _provenance(forecaster: Forecaster, *, model: str) -> dict[str, Any]:
@@ -80,17 +97,64 @@ SECONDS_PER_BAR_READ = 2.3e-4
 MAX_WINDOW = 512
 
 
-def estimate_seconds(*, context: int, horizon: int, rows: int) -> float:
+def _reads(context: int, horizon: int) -> int:
+    return sum(min(context + step, MAX_WINDOW) for step in range(horizon))
+
+
+def estimate_seconds(
+    *, context: int, horizon: int, rows: int, per_read: float = SECONDS_PER_BAR_READ
+) -> float:
     """A rough CPU time for ``rows`` paths of ``horizon`` steps from a ``context``-bar window."""
-    reads = sum(min(context + step, MAX_WINDOW) for step in range(horizon))
-    return reads * rows * SECONDS_PER_BAR_READ
+    return _reads(context, horizon) * rows * per_read
+
+
+BATCH = 32  # Kronos draws up to 32 paths in one batch, for about the time of one path
+
+
+def calibrated_seconds(
+    forecaster: Forecaster,
+    bars: Sequence[Bar],
+    *,
+    context: int,
+    horizon: int,
+    rows: int,
+    model: str,
+    scale: int = 1,
+) -> float:
+    """The time for the run, from a short timed warm-up on this machine, rounded up.
+
+    The first warm-up call loads the model; its time is added once. Two short forecasts of one
+    full batch (a single path costs nearly as much as a batch), one step and two steps long, give
+    the time per step and the fixed time of each batch. The offline double is never timed.
+    ``scale`` repeats the run (one per scored origin).
+    """
+    if model == "fake" or len(bars) < 2:
+        return estimate_seconds(context=context, horizon=horizon, rows=rows) * scale
+    window = list(bars[-context:])
+    typer.echo("Timing a short warm-up step on this computer first.", err=True)
+    batch = min(rows, BATCH)
+
+    def timed(paths: int, steps: int) -> float:
+        started = time.monotonic()
+        forecaster.forecast(window, horizon=steps, sample_count=paths, seed=0)
+        return time.monotonic() - started
+
+    load = timed(1, 1)  # includes loading the model
+    one, two = timed(batch, 1), timed(batch, 2)
+    first = _reads(len(window), 1)
+    # The second step's own time; a noisy reading falls back to the one-step time.
+    per_read = (two - one) / (_reads(len(window), 2) - first) if two > one else one / first
+    fixed = max(0.0, one - per_read * first)
+    batches = math.ceil(rows / batch)
+    run = batches * (fixed + per_read * _reads(len(window), horizon))
+    return float(math.ceil(load + run * scale))
 
 
 def say_time(seconds: float) -> str:
     if seconds < 90:
         return f"about {max(1, round(seconds))} seconds"
     if seconds < 5400:
-        return f"about {round(seconds / 60)} minutes"
+        return f"about {math.ceil(seconds / 60)} minutes"
     return f"about {seconds / 3600:.1f} hours"
 
 

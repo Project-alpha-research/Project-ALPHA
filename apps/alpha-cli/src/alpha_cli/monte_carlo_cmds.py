@@ -782,7 +782,14 @@ def kronos(
         )
         provenance = _forecast._provenance(forecaster, model=resolved_model)
         _same_model(eval_manifest, provenance)
-        expected = _forecast.estimate_seconds(context=resolved_context, horizon=steps, rows=paths)
+        expected = _forecast.calibrated_seconds(
+            forecaster,
+            training_prefix,
+            context=resolved_context,
+            horizon=steps,
+            rows=paths,
+            model=resolved_model,
+        )
         for line in (lowered, _forecast.expected_time_line(resolved_model, expected)):
             if line is not None:
                 typer.echo(line)
@@ -975,6 +982,7 @@ def kronos(
         f"monte-carlo kronos -> run {identity.run_id}: {paths} full-engine paths over the first "
         f"{source_horizon} out-of-sample days"
     )
+    _mc_reading.echo_stored(rdir, _artifacts.read_manifest(rdir))
     if not np.any(path_matrix):
         typer.echo(
             f"No path made a trade in these {source_horizon} days: the rule did not act on "

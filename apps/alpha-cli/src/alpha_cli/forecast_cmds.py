@@ -25,6 +25,7 @@ from alpha_cli.spine import reserve
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 
+FEW_ORIGINS = 30  # fewer scored dates than this cannot show whether the bands cover
 QUICK_ORIGINS = 6  # the default eval scores the latest few origins: minutes, not hours, on a CPU
 
 forecast_app = typer.Typer(
@@ -98,7 +99,14 @@ def run(
         hub_cache=settings.forecast_hub_cache,
         local_files_only=settings.forecast_local_only,
     )
-    expected = _forecast.estimate_seconds(context=resolved_context, horizon=horizon, rows=samples)
+    expected = _forecast.calibrated_seconds(
+        forecaster,
+        bars,
+        context=resolved_context,
+        horizon=horizon,
+        rows=samples,
+        model=resolved_model,
+    )
     _say(_forecast.trading_day_line(as_of_dt, bars[-1].ts), lowered)
     _say(_forecast.expected_time_line(resolved_model, expected))
 
@@ -371,11 +379,20 @@ def evaluate(
     )
 
     scored = len(every) if origins == 0 else min(origins, len(every))
-    per_origin = _forecast.estimate_seconds(context=resolved_context, horizon=horizon, rows=samples)
+    expected = _forecast.calibrated_seconds(
+        forecaster,
+        bars,
+        context=resolved_context,
+        horizon=horizon,
+        rows=samples,
+        model=resolved_model,
+        scale=scored,
+    )
+    per_origin = expected / max(scored, 1)
     _say(_forecast.trading_day_line(held.as_of if as_of else None, bars[-1].ts), lowered)
-    _say(_forecast.expected_time_line(resolved_model, per_origin * scored))
+    _say(_forecast.expected_time_line(resolved_model, expected))
     try:
-        with heartbeat("Forecast evaluation", expected=per_origin * scored):
+        with heartbeat("Forecast evaluation", expected=expected):
             out = _forecast_eval.run_forecast_eval(
                 bars,
                 forecaster=forecaster,
@@ -490,9 +507,21 @@ def evaluate(
     if out.summary_post is not None:
         typer.echo(f"  post-cutoff ({out.n_post} origins): {_summary_line(out.summary_post)}")
     else:
-        typer.secho(
-            "WARNING: no post-cutoff origins — every skill number overlaps the assumed "
-            "Kronos pretraining window (ADR-0009); extend the data past "
-            f"{out.pretrain['cutoff']} for an honest read",
-            fg=typer.colors.YELLOW,
+        cutoff = out.pretrain["cutoff"]
+        if held.held_back:
+            reason = (
+                f"every origin falls before the end of the model's assumed training period "
+                f"({cutoff}), so every skill number may overlap what the model saw in training; "
+                "later bars are stored but held back for your confirmation, so this test did "
+                "not use them"
+            )
+        else:
+            reason = (
+                "every skill number overlaps the assumed Kronos pretraining window (ADR-0009); "
+                f"extend the data past {cutoff} for an honest read"
+            )
+        typer.secho(f"WARNING: no post-cutoff origins: {reason}", fg=typer.colors.YELLOW)
+    if len(out.origins) < FEW_ORIGINS:
+        typer.echo(
+            f"  {len(out.origins)} dates is too few to judge coverage; use --origins N for more."
         )

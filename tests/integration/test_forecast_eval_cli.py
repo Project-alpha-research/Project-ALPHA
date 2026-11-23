@@ -116,3 +116,41 @@ def test_report_displays_forecast_eval(tmp_path: Path, monkeypatch: pytest.Monke
     assert "forecast_eval" in report.output
     assert "skill_vs_rw" in report.output
     assert "pre-cutoff" in report.output.lower()
+
+
+def test_the_post_cutoff_warning_says_later_bars_are_held_back(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    seed_store(tmp_path, symbol="SPY", n=2200)  # stored bars run past the held-back day
+    result = runner.invoke(
+        app, ["forecast", "eval", "SPY", "--model", "fake", "--context", "8", "--horizon", "4"]
+    )
+    assert result.exit_code == 0, result.output
+    text = " ".join(result.output.split())
+    assert "no post-cutoff origins" in text.lower()
+    assert "later bars are stored but held back" in text
+    assert "extend the data" not in text
+
+
+def test_the_post_cutoff_warning_still_asks_for_data_when_nothing_is_held_back(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    seed_store(tmp_path, symbol="SPY", n=60)
+    result = runner.invoke(app, _ARGS)
+    assert "extend the data past" in " ".join(result.output.split())
+
+
+def test_few_origins_say_coverage_cannot_be_judged(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    seed_store(tmp_path, symbol="SPY", n=200)
+    base = ["forecast", "eval", "SPY", "--model", "fake", "--context", "8", "--horizon", "4"]
+    quick = runner.invoke(app, [*base, "--stride", "4"])
+    assert "6 dates is too few to judge coverage; use --origins N for more" in " ".join(
+        quick.output.split()
+    )
+    many = runner.invoke(app, [*base, "--stride", "4", "--origins", "0"])
+    assert "too few to judge coverage" not in many.output

@@ -10,13 +10,15 @@ import fcntl
 import hashlib
 import json
 import shutil
+import time
 import tomllib
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from alpha_cli import ml_cmds
+from alpha_cli import ml_cmds, ml_progress
 from alpha_cli._ml_replay import run_ml_replay
+from alpha_cli._progress import heartbeat
 from alpha_cli._runner import parse_as_of
 from alpha_cli.ml_contract import (
     MIN_SYMBOLS,
@@ -25,9 +27,9 @@ from alpha_cli.ml_contract import (
     prepare_exchange,
     sha256_file,
 )
+from alpha_cli.ml_glosses import held_back_sentence
 from alpha_cli.ml_input import export_input
 from alpha_cli.ml_split import split_sentence
-from alpha_cli.spine import reserve
 from alpha_cli.spine.ledger import append_trial
 from alpha_cli.spine.reading import old_grade_text
 from alpha_core import DataError
@@ -201,6 +203,28 @@ def _count_try(
     return "This run counted 1 try in family qlib. A later `alpha ledger summary` shows the total."
 
 
+def _train(base: Path, experiment: dict[str, Any], project: Path, data_dir: Path) -> None:
+    """Train with the expected time printed first and a progress line while the worker runs."""
+    folds = len(_folds(base))
+    assets = len(experiment["universe"])
+    expected, each = ml_progress.announce(data_dir, assets, folds)
+    started = time.monotonic()
+    with heartbeat(
+        "Model training",
+        every=ml_progress.PROGRESS_EVERY,
+        expected=expected,
+        detail=lambda elapsed: ml_progress.fold_phrase(elapsed, each, folds),
+    ):
+        ml_cmds.train_exchange(
+            base / "exchange",
+            mode="real",
+            worker_project=project,
+            no_sync=True,
+            timeout_seconds=7_200,
+        )
+    ml_progress.record(data_dir, assets, folds, time.monotonic() - started)
+
+
 def _build(base: Path, experiment: dict[str, Any], project: Path, as_of: str | None) -> None:
     """Export, prepare and train into `base` unless a finished exchange is already there."""
     data_dir = base.parents[1]
@@ -222,13 +246,7 @@ def _build(base: Path, experiment: dict[str, Any], project: Path, as_of: str | N
                 base / "exchange",
                 worker_lock_path=project / "uv.lock",
             )
-            ml_cmds.train_exchange(
-                base / "exchange",
-                mode="real",
-                worker_project=project,
-                no_sync=True,
-                timeout_seconds=7_200,
-            )
+            _train(base, experiment, project, data_dir)
             (base / "done").write_text("ok\n", encoding="utf-8")
         except (DataError, MLContractError, OSError):
             shutil.rmtree(base, ignore_errors=True)
@@ -276,7 +294,7 @@ def run_spec(
         "validation": manifest["validation"],
         "tries_sentence": _count_try(data_dir, spec, replayed.run_id, snapshot_id, folds),
         **(
-            {"reserve_sentence": reserve.describe(manifest["reserve"])}
+            {"reserve_sentence": held_back_sentence(manifest["reserve"], len(manifest["universe"]))}
             if "reserve" in manifest
             else {}
         ),

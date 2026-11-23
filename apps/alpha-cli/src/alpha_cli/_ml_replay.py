@@ -34,6 +34,9 @@ from alpha_validation import (
 )
 
 REPLAY_LABEL = "OOS replay validated — model not recomputed under counterfactual"
+# The stored buy-and-hold line of a model run: the equal-weight basket of its assets, rebalanced
+# at each period's open (the same open-to-open basis the replay scores), price only.
+BASKET_KIND = "equal_weight_basket_open_to_open_price_only"
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,6 +126,41 @@ def _period_frame(result: PortfolioReplayResult) -> pl.DataFrame:
             "fees": pl.Float64,
             "slippage_cost": pl.Float64,
         },
+    )
+
+
+def _basket_and_costs(
+    result: PortfolioReplayResult,
+) -> tuple[tuple[tuple[datetime, float], ...], tuple[np.ndarray, np.ndarray]]:
+    """The basket value and the per-period (gross, cost) returns, one per stored equity point.
+
+    Cost is the period's fees plus slippage over the equity it started with; gross is the
+    after-cost return plus that cost, so net = gross - cost holds on every period.
+    """
+    curve = result.backtest.equity_curve
+    value = curve[0][1]
+    basket = [(curve[0][0], value)]
+    for period in result.periods:
+        value *= 1.0 + period.benchmark_return
+        basket.append((period.exit_ts, value))
+    equity = np.array([v for _, v in curve], dtype=np.float64)
+    net = equity[1:] / equity[:-1] - 1.0
+    costs = np.array([p.fees + p.slippage_cost for p in result.periods]) / equity[:-1]
+    return tuple(basket), (net + costs, costs)
+
+
+def _write_sidecars(rdir: Path, replay: PortfolioReplayResult, periods_per_year: int) -> None:
+    """The standard sidecars, with the basket as the passive line and per-period costs."""
+    basket, bar_returns = _basket_and_costs(replay)
+    _artifacts.write_run_sidecars(
+        rdir,
+        equity=replay.backtest.equity_curve,
+        trades=replay.backtest.trades,
+        trace_result=dataclasses.replace(
+            replay.backtest, benchmark_curve=basket, benchmark_kind=BASKET_KIND
+        ),
+        periods_per_year=periods_per_year,
+        bar_returns=bar_returns,
     )
 
 
@@ -238,13 +276,7 @@ def run_ml_replay(
     )
     run_id = identity.run_id
     rdir = _artifacts.run_dir(data_dir, run_id)
-    _artifacts.write_run_sidecars(
-        rdir,
-        equity=replay.backtest.equity_curve,
-        trades=replay.backtest.trades,
-        trace_result=replay.backtest,
-        periods_per_year=periods_per_year,
-    )
+    _write_sidecars(rdir, replay, periods_per_year)
     _artifacts.publish_artifact(
         rdir / "ml_predictions.parquet", validated.predictions.write_parquet
     )

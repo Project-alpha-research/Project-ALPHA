@@ -20,8 +20,18 @@ if TYPE_CHECKING:
 TESTS = "tests/unit/test_toolbox_cost_realism.py::"
 OLD_RUN = "This run was made before costs were stored per bar. Run the rule test again."
 OLD_TRADES = "This run's trades do not store quantity and price. Run the rule test again."
+OLD_MODEL_RUN = (
+    "This model run was made before costs were stored per bar. Run `alpha ml run` again."
+)
 NO_TRADES = "Too little to read: the run has no closed trades."
 NO_BARS = "The run carries no price bars, so this check cannot read it."
+
+
+def old_run(inputs: Inputs) -> str:
+    """The made-before sentence that names the command which makes the run again."""
+    return OLD_MODEL_RUN if inputs.stored.is_ml else OLD_RUN
+
+
 Compute = Callable[["Inputs", dict[str, Any], "Generator | None"], Result]
 
 

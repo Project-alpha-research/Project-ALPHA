@@ -308,3 +308,15 @@ def test_default_rdagent_ledger_follows_the_workstation_rule(
     output = CliRunner().invoke(ledger_app, ["summary"]).output
 
     assert f"rdagent: read {ledger.resolve()}" in output
+
+
+def test_the_summary_headline_counts_the_rdagent_rows_it_shows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home, rd = example(tmp_path)
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
+    out = CliRunner().invoke(ledger_app, ["summary", "--rdagent-ledger", str(rd)]).output
+    assert "You have tested 1 idea on all assets" in out
+    assert "The RD-Agent ledger adds 4 trials (factor 3, rule_family 1)." in out
+    spine_only = CliRunner().invoke(ledger_app, ["summary"]).output
+    assert "The RD-Agent ledger adds" not in spine_only

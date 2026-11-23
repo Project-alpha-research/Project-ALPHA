@@ -66,6 +66,9 @@ class BuildContext:
 
     @property
     def symbol(self) -> str:
+        if self.command == "ml_replay":  # its stored "label" is a validation note, not a name
+            universe = self.manifest.get("universe")
+            return f"{len(universe)} assets" if isinstance(universe, list) else "a basket of assets"
         value = self.field("symbol", "label")
         if isinstance(value, str):
             return value
@@ -81,6 +84,8 @@ class BuildContext:
         name = spine.get("name") if isinstance(spine, dict) else None
         if isinstance(name, str) and name:
             return name
+        if self.command == "ml_replay":
+            return "model run"
         value = self.field("strategy", "strategy_name")
         return value if isinstance(value, str) else self.command
 

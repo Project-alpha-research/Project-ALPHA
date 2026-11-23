@@ -31,3 +31,20 @@ def test_the_decorator_keeps_the_command_signature() -> None:
 
     assert "from_run" in inspect.signature(classical).parameters
     assert inspect.signature(evaluate).parameters
+
+
+def test_a_run_past_its_estimate_says_it_is_taking_longer(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with _progress.heartbeat("Forecast", every=0.05, expected=0.12):
+        time.sleep(0.4)
+    lines = [line for line in capsys.readouterr().err.splitlines() if line]
+    assert "of about" in lines[0] and "taking longer" not in lines[0]
+    assert any("taking longer than expected; still running" in line for line in lines[-2:])
+
+
+def test_a_detail_is_added_to_each_line(capsys: pytest.CaptureFixture[str]) -> None:
+    with _progress.heartbeat("Model", every=0.05, expected=10.0, detail=lambda s: f"fold {s} of 9"):
+        time.sleep(0.2)
+    lines = [line for line in capsys.readouterr().err.splitlines() if line]
+    assert lines and all("fold " in line and " of 9" in line for line in lines)

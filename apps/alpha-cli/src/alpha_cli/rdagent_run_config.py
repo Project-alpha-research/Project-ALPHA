@@ -172,7 +172,12 @@ def _problem(name: str, path: Path, source: str | None = None) -> str:
     return f"The path for {name} does not exist: {path}{used}. Fix: {fix}"
 
 
-def _missing(config: RdagentConfig, environ: dict[str, str], sources: dict[str, str]) -> list[str]:
+def _missing(
+    config: RdagentConfig,
+    environ: dict[str, str],
+    sources: dict[str, str],
+    runtime: list[str] | None = None,
+) -> list[str]:
     work = config.working_directory
     checks: list[tuple[str, Path | None, bool]] = [
         ("working_directory", work, True),
@@ -194,17 +199,19 @@ def _missing(config: RdagentConfig, environ: dict[str, str], sources: dict[str, 
         and not (path.is_dir() if folder else path.exists())
         and not (path in made and _inside(path, config.data_dir))
     ]
+    # The factor runtime is needed to start a loop, not to show what would start.
+    runtime_list = problems if runtime is None else runtime
     for name, path, variable in (
         ("rdagent_source", config.rdagent_source, SOURCE_VARIABLE),
         ("factor_python", config.factor_python, PYTHON_VARIABLE),
     ):
         chosen = path or (Path(environ[variable]) if environ.get(variable) else None)
         if chosen is None:
-            problems.append(
+            runtime_list.append(
                 f"Set {name} in the config or {variable} in the environment. {SETUP_HINT}"
             )
         elif not chosen.exists():
-            problems.append(_problem(name, chosen, sources.get(name)))
+            runtime_list.append(_problem(name, chosen, sources.get(name)))
     return problems
 
 
@@ -222,10 +229,17 @@ def _read(path: Path | None) -> dict[str, object]:
         raise RdagentConfigError(f"The config file cannot be read: {path} ({error})") from error
 
 
-def load_config(path: Path | None, environ: dict[str, str] | None = None) -> RdagentConfig:
+def load_config(
+    path: Path | None,
+    environ: dict[str, str] | None = None,
+    *,
+    runtime_problems: list[str] | None = None,
+) -> RdagentConfig:
     """Read, type-check and path-check the config. A path left out has a default.
 
     Relative paths count from the config's folder. With no file, every path has its default.
+    A caller that only shows the settings (a dry run) passes ``runtime_problems``: the missing
+    factor runtime is then added to that list instead of being refused.
     """
     env = environ if environ is not None else {}
     raw = _read(path)
@@ -251,7 +265,7 @@ def load_config(path: Path | None, environ: dict[str, str] | None = None) -> Rda
         config = RdagentConfig.model_validate(raw)
     except ValidationError as error:
         raise RdagentConfigError("\n".join(_words(error))) from error
-    if problems := [*_git_problems(config), *_missing(config, env, sources)]:
+    if problems := [*_git_problems(config), *_missing(config, env, sources, runtime_problems)]:
         raise RdagentConfigError("\n".join(problems))
     return config
 

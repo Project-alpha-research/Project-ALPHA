@@ -46,8 +46,31 @@ def resolve_run(run_id: str, *, data_dir: Path) -> tuple[Path, dict[str, Any]]:
 
 def _reason(definition: FigureDefinition, rdir: Path, manifest: dict[str, Any]) -> str | None:
     """A specific reason beats a blank slot: the UI shows this text verbatim."""
+    found = _machine_reason(definition, rdir, manifest)
+    if found is None or manifest.get("command") != "ml_replay":
+        return found
+    return _plain(found, definition.title)
+
+
+def _plain(reason: str, title: str) -> str:
+    """One plain sentence for a model run; the stored tokens stay for other runs."""
+    if reason.startswith("artifact_missing:"):
+        return f"{title} needs {reason.split(':', 1)[1]}, which this model run did not store."
+    if reason == "snapshot_unavailable":
+        return f"{title} needs the stored bars of one asset, and a model run trades a basket."
+    if reason.startswith("artifact_empty:"):
+        return f"{title} has nothing to draw: {reason.split(':', 1)[1]} holds no rows."
+    return reason
+
+
+def _machine_reason(
+    definition: FigureDefinition, rdir: Path, manifest: dict[str, Any]
+) -> str | None:
     if definition.figure_id not in BUILDERS and definition.figure_id not in rule_periods.TRADABLE:
         return "builder_not_implemented"
+    plain = _model_run_reason(definition, rdir, manifest)
+    if plain:
+        return plain
     version = manifest.get("artifact_contract_version")
     if not isinstance(version, int) or version < 3:
         needs_sidecars = any(
@@ -67,6 +90,8 @@ def _reason(definition: FigureDefinition, rdir: Path, manifest: dict[str, Any]) 
         # and the UI should say so rather than surfacing a render error.
         if path.stat().st_size and _is_empty(path):
             return f"artifact_empty:{name}"
+    if definition.figure_id == "exposure_turnover" and _holds_neither(rdir):
+        return "This run stored neither exposure nor turnover, so there is nothing to draw."
     metadata = manifest.get("metadata")
     nested = metadata if isinstance(metadata, dict) else {}
     snapshot = manifest.get("snapshot_id") or nested.get("snapshot_id")
@@ -78,6 +103,40 @@ def _reason(definition: FigureDefinition, rdir: Path, manifest: dict[str, Any]) 
     ):
         return "snapshot_unavailable"
     return None
+
+
+_MADE_BEFORE = "This model run was made before {what} was stored. Run `alpha ml run` again."
+
+
+def _model_run_reason(
+    definition: FigureDefinition, rdir: Path, manifest: dict[str, Any]
+) -> str | None:
+    """Plain words for a model run whose files lack what a figure draws from."""
+    if manifest.get("command") != "ml_replay":
+        return None
+    if definition.figure_id == "fold_sharpe" and not (rdir / "ml_periods.parquet").is_file():
+        return _MADE_BEFORE.format(what="its periods")
+    if definition.figure_id == "equity_vs_passive":
+        frame = _frame(rdir / "benchmark_comparison.parquet")
+        if frame is not None and not all(frame["available"].to_list()):
+            return _MADE_BEFORE.format(what="the equal-weight basket line")
+    return None
+
+
+def _frame(path: Path) -> Any:
+    import polars as pl
+
+    if not path.is_file() or path.is_symlink():
+        return None
+    return pl.read_parquet(path, columns=["available"])
+
+
+def _holds_neither(rdir: Path) -> bool:
+    import polars as pl
+
+    frame = pl.read_parquet(rdir / "exposure_turnover.parquet")
+    flags = ("exposure_available", "turnover_available")
+    return frame.height > 0 and not any(frame[name][0] for name in flags)
 
 
 def _is_empty(path: Path) -> bool:

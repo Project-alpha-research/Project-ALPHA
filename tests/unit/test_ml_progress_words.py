@@ -1,4 +1,4 @@
-"""The ML progress line counts every fold, then names the closing stages."""
+"""The ML progress line gives the fold count and names no fold in progress."""
 
 from __future__ import annotations
 
@@ -6,19 +6,15 @@ from pathlib import Path
 
 import pytest
 
-from alpha_cli.ml_progress import expected_sentence, fold_phrase, record, seconds_per_fold
+from alpha_cli.ml_progress import expected_sentence, record, seconds_per_fold, training_phrase
 
 
-def test_the_count_reaches_the_last_fold() -> None:
-    assert fold_phrase(0.0, 10.0, 8) == "about fold 1 of 8"
-    assert fold_phrase(35.0, 10.0, 8) == "about fold 4 of 8"
-    assert fold_phrase(79.0, 10.0, 8) == "about fold 8 of 8"
+def test_the_line_says_the_fold_count_and_that_the_stage_reports_at_its_end() -> None:
+    assert training_phrase(8) == "fold count 8; this stage reports when it ends"
 
 
-def test_past_the_estimate_the_line_names_the_closing_stages() -> None:
-    said = fold_phrase(80.0, 10.0, 8)
-    assert "scoring" in said and "writing the run" in said
-    assert "fold 8 of 8" not in said
+def test_the_line_never_guesses_a_fold() -> None:
+    assert "about fold" not in training_phrase(8)
 
 
 def test_no_estimate_is_made_up_without_a_timed_run(tmp_path: Path) -> None:

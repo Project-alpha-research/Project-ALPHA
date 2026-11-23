@@ -35,6 +35,13 @@ _MONTE_CARLO_ASSUMPTIONS = {
 }
 
 
+def fan_axis_label(family: str) -> str:
+    """The y-axis label of one fan; the Kronos fan says in plain words what the number is."""
+    if family == "kronos_synthetic":
+        return "Account value on simulated prices (1 = start)"
+    return f"{_MONTE_CARLO_LABELS[family]} equity (x)"
+
+
 def _mc_families(frame: Any) -> tuple[str, ...]:
     available = {str(value) for value in frame["family"].unique().to_list()}
     return tuple(family for family in _MONTE_CARLO_LABELS if family in available)
@@ -70,7 +77,7 @@ def monte_carlo_equity_fans(ctx: BuildContext) -> FigureSpec:
         panels.append(
             Panel(
                 panel_id=f"fan_{family}",
-                y_label=f"{_MONTE_CARLO_LABELS[family]} equity (x)",
+                y_label=fan_axis_label(family),
                 y_unit="multiple",
                 note=_MONTE_CARLO_ASSUMPTIONS[family],
                 marks=(

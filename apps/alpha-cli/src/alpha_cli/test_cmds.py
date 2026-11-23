@@ -86,6 +86,27 @@ class RunClock:
             write_rate(data_dir, key, self.timer.per_unit() or 0.0)
 
 
+def _start_progress(
+    parsed: IdeaSpec, settings: AlphaSettings, key: str
+) -> tuple[RunClock, list[str], Callable[[str], None]]:
+    """Print the time estimate; return the clock, the current stage, and the stage reporter.
+
+    A normal test and a recheck both use it, so both tell the owner how long to wait."""
+    clock = RunClock(
+        len(parsed.assets),
+        read_rate(settings.data_dir, key),
+        lambda line: typer.echo(line, err=True),
+    )
+    typer.echo(expected_line(clock.timer.expected(), units=len(parsed.assets)), err=True)
+    stage = ["starting"]
+
+    def note_stage(text: str) -> None:
+        stage[0] = text
+        clock.stage(text)
+
+    return clock, stage, note_stage
+
+
 def _reading_count(home: Path, result: dict[str, Any]) -> list[str]:
     """The stored deflated-Sharpe count of this reading, tied to the headline count of tries."""
     from alpha_cli import _artifacts
@@ -150,13 +171,19 @@ def _recheck(
             ),
             json_out,
         )
-    with redirect_stdout(sys.stderr if json_out else sys.stdout):
+    key = rate_key(quick, parsed.rule.kind, False)
+    clock, stage, note_stage = _start_progress(parsed, settings, key)
+    with (
+        heartbeat(lambda: f"alpha test: {stage[0]}", expected=clock.timer.expected),
+        redirect_stdout(sys.stderr if json_out else sys.stdout),
+    ):
         output = recheck_idea(
             parsed,
             home=settings.data_dir,
             seed=settings.random_seed,
             quick=quick,
             accept_bad_data=accept_bad_data,
+            stage=note_stage,
         )
     if all(result["error"] is not None for result in output["results"]):
         fail(
@@ -253,18 +280,7 @@ def test_rule(
             _recheck(parsed, settings, quick, accept_bad_data, check_data, json_out)
             return
         key = rate_key(quick, parsed.rule.kind, no_diagnose)
-        clock = RunClock(
-            len(parsed.assets),
-            read_rate(settings.data_dir, key),
-            lambda line: typer.echo(line, err=True),
-        )
-        typer.echo(expected_line(clock.timer.expected(), units=len(parsed.assets)), err=True)
-        stage = ["starting"]
-
-        def note_stage(text: str) -> None:
-            stage[0] = text
-            clock.stage(text)
-
+        clock, stage, note_stage = _start_progress(parsed, settings, key)
         with (
             heartbeat(lambda: f"alpha test: {stage[0]}", expected=clock.timer.expected),
             redirect_stdout(sys.stderr if json_out else notes),

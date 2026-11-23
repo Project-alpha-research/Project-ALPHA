@@ -113,6 +113,64 @@ def _verified_forecast_eval(
     return rdir, manifest
 
 
+def _only_fitting_eval(data_dir: Path, source_manifest: dict[str, Any]) -> str:
+    """The one stored forecast-eval run for the source run's symbol and bars, or say what to do."""
+    metadata = source_manifest["metadata"]
+    symbol = metadata.get("symbol")
+    first = (
+        f"run `alpha forecast eval {symbol}` first (a few minutes); it prints the id, "
+        "then pass it with --forecast-eval-run"
+    )
+    fitting = []
+    for path in sorted((data_dir / "forecast").glob("*/manifest.json")):
+        manifest = _artifacts.read_manifest(path.parent)
+        if (
+            manifest.get("command") == "forecast_eval"
+            and manifest.get("symbol") == symbol
+            and manifest.get("snapshot_id") == metadata.get("snapshot_id")
+        ):
+            fitting.append(path.parent.name)
+    if len(fitting) == 1:
+        return fitting[0]
+    if not fitting:
+        raise DataError(f"--forecast-eval-run is missing: {first}")
+    raise DataError(
+        f"--forecast-eval-run is missing and {len(fitting)} stored evaluations fit "
+        f"{symbol}: pass one of {', '.join(fitting)}"
+    )
+
+
+def _resolve_eval(
+    data_dir: Path, source_manifest: dict[str, Any], given: str | None
+) -> tuple[str, Path, dict[str, Any]]:
+    """The forecast-eval run id (the one stored fitting run when none is given) and its files."""
+    run_id = given
+    if run_id is None:
+        run_id = _only_fitting_eval(data_dir, source_manifest)
+        typer.echo(
+            f"Using forecast evaluation {run_id}: the only stored one for this symbol and "
+            "these bars."
+        )
+    eval_dir, eval_manifest = _verified_forecast_eval(
+        data_dir, run_id, source_manifest=source_manifest
+    )
+    return run_id, eval_dir, eval_manifest
+
+
+def _horizon_steps(horizon: int | None, spec: _runner.RunSpec, future: int) -> int:
+    """Sessions per path. Kronos re-reads its window at every step, so the cost grows with the
+    tail: by default it makes the first test window only, and never more than its 512-bar window."""
+    if horizon is None:
+        return min(spec.embargo + spec.test_size + 1, future, _forecast.MAX_WINDOW)
+    if horizon > min(future, _forecast.MAX_WINDOW):
+        raise DataError(
+            f"--horizon {horizon} is too long: the largest that works is "
+            f"{min(future, _forecast.MAX_WINDOW)} (Kronos makes at most "
+            f"{_forecast.MAX_WINDOW} sessions; the run has {future} after training)."
+        )
+    return horizon
+
+
 def _spec_from_validation(manifest: dict[str, Any]) -> _runner.RunSpec:
     metadata = manifest["metadata"]
     raw_params = metadata.get("strategy_params", ())
@@ -689,8 +747,14 @@ def _kronos_caveats(
 @monte_carlo_app.command("kronos")
 def kronos(
     from_run: str = typer.Option(..., "--from-run", help="completed validation run id"),
-    forecast_eval_run: str = typer.Option(
-        ..., "--forecast-eval-run", help="matching rolling-origin Kronos evaluation run id"
+    forecast_eval_run: str | None = typer.Option(
+        None,
+        "--forecast-eval-run",
+        help=(
+            "matching rolling-origin Kronos evaluation run id: run `alpha forecast eval "
+            "<SYMBOL>` first (a few minutes); it prints the id. Left out, the one stored "
+            "evaluation of the same symbol and bars is used"
+        ),
     ),
     paths: int = typer.Option(8, "--paths", min=1, help="synthetic paths, made in one batch"),
     horizon: int | None = typer.Option(
@@ -721,8 +785,8 @@ def kronos(
 
     try:
         source_dir, source_manifest = _verified_validation_source(settings.data_dir, from_run)
-        eval_dir, eval_manifest = _verified_forecast_eval(
-            settings.data_dir, forecast_eval_run, source_manifest=source_manifest
+        forecast_eval_run, eval_dir, eval_manifest = _resolve_eval(
+            settings.data_dir, source_manifest, forecast_eval_run
         )
         metadata = source_manifest["metadata"]
         symbol = str(metadata["symbol"])
@@ -751,18 +815,7 @@ def kronos(
             raise DataError("source validation has no future tail after its training prefix")
         training_prefix = list(bars[: spec.train_size])
         future = len(bars) - spec.train_size
-        # Kronos re-reads its window at every step, so the cost grows with the tail: by default
-        # it makes the first test window only (one fold), and never more than its 512-bar window.
-        if horizon is None:
-            steps = min(spec.embargo + spec.test_size + 1, future, _forecast.MAX_WINDOW)
-        elif horizon > min(future, _forecast.MAX_WINDOW):
-            raise DataError(
-                f"--horizon {horizon} is too long: the largest that works is "
-                f"{min(future, _forecast.MAX_WINDOW)} (Kronos makes at most "
-                f"{_forecast.MAX_WINDOW} sessions; the run has {future} after training)."
-            )
-        else:
-            steps = horizon
+        steps = _horizon_steps(horizon, spec, future)
         future_timestamps = tuple(bar.ts for bar in bars[spec.train_size :][:steps])
         resolved_context, lowered = _forecast.fit_context(
             context,

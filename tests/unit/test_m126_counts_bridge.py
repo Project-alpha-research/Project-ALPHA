@@ -26,7 +26,8 @@ def test_each_count_says_what_it_counts() -> None:
     assert "5 ideas on SPY, counting this asset alone" in text
     assert "7 times across all assets, which can be more than the first count" in text
     assert "5 nearby settings tried inside this test" in text
-    assert text.endswith("plus these: 12.")
+    assert text.endswith("which makes 12 tries in all.")
+    assert "plus these" not in text
 
 
 def _reading(

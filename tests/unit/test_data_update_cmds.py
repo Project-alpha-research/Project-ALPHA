@@ -70,6 +70,17 @@ def test_update_dry_run_prints_the_pull_and_pulls_nothing(tmp_path: Path) -> Non
     assert (home / "store" / "bars" / "AAA.parquet").read_bytes() == before
 
 
+def test_update_dry_run_prints_the_pull_note_once_for_many_symbols(tmp_path: Path) -> None:
+    home = _home(tmp_path)
+    store = ParquetStore(home / "store")
+    store.write_bars("BBB", store.read_bars("AAA"))
+    store.write_provenance("BBB", source="yfinance", adapter_version="1", parser_version="1")
+    code, out = _run(home, "update", "--dry-run")
+    assert code == 0
+    assert "AAA: would run" in out and "BBB: would run" in out
+    assert out.count("re-pulls every day from the first stored bar") == 1
+
+
 def test_update_skips_a_symbol_whose_source_has_no_pull_and_fails(tmp_path: Path) -> None:
     code, out = _run(_home(tmp_path, source="vendor"), "update", "--dry-run")
     assert code == 1 and "AAA: skipped" in out

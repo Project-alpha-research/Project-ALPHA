@@ -25,8 +25,8 @@ approval gate is before paper or live trading. Changing the research code is a d
 | [RD-Agent config example](examples/rdagent.example.toml) | — | starting RD-Agent with `alpha rdagent run` |
 | [lessons](lessons/README.md) | — | before proposing a test |
 | [research integrity](../docs/reference/invariants/research-integrity.md) | Owner authority | before paper or live trading, or any owner act |
-| [what this part is for](../docs/reference/project/components/research-cases-and-approval.md) | — | why it exists; before you keep, shelve or remove it |
-| [research method](../docs/reference/research-method.md) | — | working a case in the older staged lane |
+| [what this part is for](../docs/reference/project/overview.md) | The research loop | the current path: test, ideas, follow |
+| [research cases (being removed)](../docs/reference/project/components/research-cases-and-approval.md) | — | only to remove them |
 | [architecture](../docs/ARCHITECTURE.md) | Runtime data-directory layout | finding where records live |
 | [research README](README.md) | Skills by trigger | the owner's words say which skill to use |
 

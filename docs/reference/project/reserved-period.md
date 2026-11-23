@@ -84,6 +84,9 @@ Three kinds: the code locks it out (it refuses reserved rows or aborts), only la
 
 ### Locks it out: research cases, ML input and forecasts
 
+The research-case part is being removed (owner decision 2026-11-23): see
+[owner-decisions-6.md](owner-decisions-6.md#2026-11-23-remove-the-old-research-case-machinery-export-first).
+
 - Research-case lane: the weekly classifier (`alpha research diagnostic weekly-classifier`), the data audit (`research_data_audit.py`), the
   run-plan controller (`research_execution.py`) and the crypto crowding and hedged-basis reads cut at the same boundary and say so. The classifier and
   the controller use `Hold`, record `reserve` and give the sentence (`reserve_sentence`). The audit caps its read, puts the sentence in its notes and

@@ -33,6 +33,9 @@ Six volumes hold the log: [volume 1](owner-decisions.md),
 | The agent is a collaborator, never a black box | Agent proposes and discusses with the user; steps and reasons shown; labels over refusals | [vol. 5][e10] |
 | The AI is a research partner | The AI suggests tests, data and how to read results, not just follow instructions | [vol. 3][e11] |
 | Fewer strict rules, no daily-only rule | Any idea at any timeframe goes through the pipeline; prefer labels and warnings to refusals | [vol. 3][e12] |
+| The 2026-11-19 redirect | Front door, three golden paths, nightly real run, wider universe, then the idea card | [vol. 6][e54] |
+| Forward test on paper | A tested idea is followed on new bars on paper; no broker, no order | [vol. 6][e55] |
+| Research-case removal | Export first, then delete in twelve ordered steps; three case-only cards retired | [vol. 6][e56] |
 
 ## RD-Agent
 
@@ -153,3 +156,6 @@ Six volumes hold the log: [volume 1](owner-decisions.md),
 [e51]: owner-decisions-5.md#2026-11-19-claude-agents-build-until-the-codex-subscription-returns-the-file-system-comes-first
 [e52]: owner-decisions-6.md#2026-11-19-never-reduce-rd-agents-capability-to-save-tokens-or-cost
 [e53]: owner-decisions-6.md#2026-11-19-all-features-work-together-as-one-system-four-approvals
+[e54]: owner-decisions-6.md#2026-11-19-redirect-front-door-three-golden-paths-nightly-real-run-wider-universe-idea-card
+[e55]: owner-decisions-6.md#2026-11-19-forward-test-follow-a-tested-idea-on-paper
+[e56]: owner-decisions-6.md#2026-11-23-remove-the-old-research-case-machinery-export-first

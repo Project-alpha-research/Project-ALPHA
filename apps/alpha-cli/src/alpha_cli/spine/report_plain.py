@@ -207,7 +207,11 @@ def _delay_line(output: Mapping[str, Any]) -> str | None:
         return None
     kept = _pct(block.get("delayed_share_of_base"), 0)  # undefined when the base is not positive
     tail = f" ({kept} kept)" if kept is not None else ""
-    return f"One bar later: acting one bar late moves the Sharpe ratio from {base} to {late}{tail}."
+    return (
+        f"One bar later: acting one bar late moves the Sharpe ratio from {base} to {late}{tail}. "
+        "The quick check re-computes the first figure, so it can differ slightly from the "
+        "Sharpe ratio of the test."
+    )
 
 
 def _concentration_line(output: Mapping[str, Any]) -> str | None:

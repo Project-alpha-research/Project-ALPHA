@@ -100,7 +100,8 @@ def test_forecast_eval_fails_loud_when_nothing_fits(
         app, ["forecast", "eval", "SPY", "--model", "fake", "--context", "8", "--horizon", "8"]
     )
     assert result.exit_code != 0
-    assert "origin" in result.output.lower()
+    # It names the fix: the largest context that leaves room for an origin.
+    assert "--context 2" in result.output
 
 
 def test_report_displays_forecast_eval(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

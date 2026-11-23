@@ -363,7 +363,11 @@ def test_program_golden_path_reaches_the_strategy_brief_losslessly(
     stored_report = runner.invoke(app, ["report", validation_runs[0]])
     assert stored_report.exit_code == 0, stored_report.output
     assert validation_runs[0] in stored_report.output
-    assert "gate[randomized_price_null]" in stored_report.output
+    # The plain report is a short reading; the stored gate stays reachable through --json.
+    stored_json = runner.invoke(app, ["report", validation_runs[0], "--json"])
+    assert stored_json.exit_code == 0, stored_json.output
+    gates = [o["name"] for o in json.loads(stored_json.output)["outcomes"]]
+    assert "randomized_price_null" in gates
     monte_carlo_report = runner.invoke(app, ["report", monte_carlo_runs[0]])
     assert monte_carlo_report.exit_code == 0, monte_carlo_report.output
     assert "Monte Carlo families:" in monte_carlo_report.output

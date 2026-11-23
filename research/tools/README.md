@@ -18,7 +18,8 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 |---|---|
 | Stored symbols, history, a new symbol; gaps or bad timestamps; a copy of the data | [data](data.md), [data health](data-health.md), [backup](home-backup.md) |
 | "Has the chart looked like this before?"; a Kronos range of paths | [lookalike and unusual](lookalike.md), [forecast](forecast.md) |
-| "Which check fits my situation?", "a better model for RD-Agent?" | [toolbox by situation](toolbox-by-situation.md), [model bench](rdagent-model-bench.md), [RD-Agent setup](rdagent-setup.md) |
+| "Which check fits my situation?" | [toolbox by situation](toolbox-by-situation.md) |
+| "A better model for RD-Agent?" | [model bench](rdagent-model-bench.md), [RD-Agent setup](rdagent-setup.md) |
 | "Can a model find it?" (Qlib gradient boosting) | [ML model](ml-model.md) |
 | An idea to test ([idea card](idea-card.md), [library](library.md)) | [rule test](rule-test.md), [follow](follow.md), [final](reserved-confirmation.md) |
 | "Does the pipeline still work?", "did last night fail?", "is the disk filling up?" | [nightly run](nightly-run.md), [failure marker, disk](nightly-alert.md) |

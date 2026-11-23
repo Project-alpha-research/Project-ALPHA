@@ -6,11 +6,12 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 - **Capabilities:** 37 working, 36 partly working, 0 demo only, 2 shelved, 1 not started.
 - **Known defects:** 0.
-- **Decisions waiting for you:** 5.
+- **Decisions waiting for you:** 2.
 
-"Working" means the workflow was run from start to finish through the installed program
-on made-up (synthetic) data.
-Runs on real market data are still to be confirmed on the Mac, except where noted.
+"Working" means the workflow was run from start to finish through the installed program.
+Where a line says "a real run is recorded", it ran on the owner's real data on the Dell.
+Not yet proven: the booking step of follow on paper (it needs one new market session)
+and RD-Agent's paid loop inside a test sweep.
 
 ## What works today
 
@@ -120,10 +121,7 @@ The full triage sheet, with what each item does and why: [docs/roadmap/triage-20
 **Recommended: Your call**
 
 - Card N2: RD-Agent idea-family failure limit (three near-copies in one round close a family)
-- Card N3: Move RD-Agent research toward stocks and the owner's own setups
 - Card N4: Make the Qlib v3 feature recipe the default
-- Card N5: When to resume Workstation screen work
-- Card N6: Add the purpose and the three golden paths to CLAUDE.md
 
 ## Next up
 

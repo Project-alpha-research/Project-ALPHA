@@ -4,6 +4,14 @@ ALPHA is one person's private, non-commercial quant-research platform: it tests 
 idea survives point-in-time data, costs and out-of-sample statistics, and records the owner's
 decisions. Python 3.12 with uv; there is no hosting, no distribution and no live trading.
 
+Purpose: one retail swing trader tells luck from edge before money is at risk. The owner is not a
+coder: they prompt an AI, the AI runs the pipeline, and the Workstation shows the result. Three
+golden paths must always work end to end on real data:
+
+1. Test an idea: `alpha test` gives a reading, the try count and charts.
+2. Study a chart setup: `alpha setup find|study|trade` (Setup Lab).
+3. Run RD-Agent on a theme: `alpha rdagent run`; every try is counted.
+
 ## Never break these
 
 - Every data and strategy read is point-in-time at an aware-UTC `as_of`.

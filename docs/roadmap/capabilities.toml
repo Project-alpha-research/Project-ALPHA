@@ -1301,8 +1301,8 @@ owner_decision = "undecided"
 card = "N3"
 name = "Move RD-Agent research toward stocks and the owner's own setups"
 recommendation = "YOUR CALL"
-# open since 2026-11-18, listed in docs/reference/project/owner-decisions-4.md
-owner_decision = "undecided"
+# owner, 2026-11-23: yes; stocks and ETFs and the owner's own setups first, crypto stays as a second universe
+owner_decision = "KEEP"
 
 [[decision]]
 card = "N4"
@@ -1315,15 +1315,15 @@ owner_decision = "undecided"
 card = "N5"
 name = "When to resume Workstation screen work"
 recommendation = "YOUR CALL"
-# open since 2026-11-18, listed in docs/reference/project/owner-decisions-4.md
-owner_decision = "undecided"
+# owner, 2026-11-23: decided; Workstation work resumed on 2026-11-21: keep the look, finish and clean, no redesign
+owner_decision = "KEEP"
 
 [[decision]]
 card = "N6"
 name = "Add the purpose and the three golden paths to CLAUDE.md"
 recommendation = "YOUR CALL"
-# open since 2026-11-18, listed in docs/reference/project/owner-decisions-4.md
-owner_decision = "undecided"
+# owner, 2026-11-23: yes; added to CLAUDE.md the same day
+owner_decision = "KEEP"
 
 [[capability]]
 id = "macro-context"

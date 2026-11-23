@@ -41,7 +41,7 @@
 id = "workstation"
 name = "Workstation web app"
 what = "Open ALPHA in a browser on this computer and move between its charts, research and results screens."
-see_it = ["uv run alpha-web, then open http://localhost:8801"]
+see_it = ["uv run alpha-web, then open http://localhost:8801 — it starts by itself on the Dell"]
 entry_points = [
   "script: alpha-web",
   "api: GET /api/system",
@@ -53,7 +53,7 @@ proof_synthetic = [
 proof_smoke = [
   "tests/smoke/test_web_smoke.py::test_web_app_lists_the_run_and_serves_its_detail",
 ]
-real_data = "not yet confirmed (to check on the Mac later)"
+real_data = "Recorded: the Workstation's web API answered on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4); the screens were not re-checked in that sweep."
 needs = []
 state = "Working"
 
@@ -76,10 +76,10 @@ proof_synthetic = [
   "tests/integration/test_chart_cmds.py::test_overlays_ported_indicators_and_patterns",
   "apps/alpha-web/frontend/e2e/workflow.spec.ts::real workflow navigation, asset selection, chart and history",
 ]
-real_data = "Recorded: on 2026-10-02 a live AAVEUSDT 1-hour chart opened 41,113 bars from verified downloads (docs/BUILD-STATUS.md, 2026-10-02 crypto archive entry)."
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Partial"
-missing = "tested in-process and in a browser against a test server; no end-to-end smoke check yet"
+missing = "chart pictures and pattern marks ran on real data through the installed program on 2026-11-23; the Workstation chart was tested in a browser against a test server only; no end-to-end smoke check yet"
 
 [[capability]]
 id = "market-overview"
@@ -169,7 +169,6 @@ what = "Download crypto prices, trades, derivatives and on-chain data from named
 see_it = [
   "uv run alpha crypto-data catalog",
   "uv run alpha crypto-data acquire <provider> <family> <instrument> --base BTC --quote USDT",
-  "Workstation: View → Funding (opens the Crypto Data Center)",
 ]
 entry_points = [
   "cli: alpha crypto-data acquire",
@@ -222,7 +221,6 @@ name = "\"Are my downloaded daily bars complete?\" check"
 what = "Check downloaded daily prices for missing, duplicated or out-of-place days against the calendar you expect."
 see_it = [
   "uv run alpha crypto-data quality <manifest-id> --coverage-start … --coverage-end … --as-of …",
-  "Workstation: View → Funding → Coverage & Quality tab, then pick a dataset",
 ]
 entry_points = [
   "cli: alpha crypto-data quality",
@@ -250,7 +248,6 @@ codes = ["W05"]
 what = "Freeze chosen crypto datasets into one exact snapshot, and refuse to reuse it if its source files are missing, changed or ambiguous."
 see_it = [
   "uv run alpha crypto-data snapshot-create …, then uv run alpha crypto-data snapshot-verify <snapshot-id>",
-  "Workstation: View → Funding → Crypto Data Center",
 ]
 entry_points = [
   "cli: alpha crypto-data snapshot-create",
@@ -322,10 +319,10 @@ proof_smoke = [
   "tests/smoke/test_backtest_smoke.py::test_backtest_run_is_stored_and_reported",
   "tests/smoke/test_backtest_smoke.py::test_backtest_report_json_describes_the_run",
 ]
-real_data = "not yet confirmed (to check on the Mac later)"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Partial"
-missing = "the text and JSON (--json) reports are proven end to end; figures and run comparison are tested in-process only"
+missing = "the text and JSON reports, the figures and the run comparison all ran on real data through the installed program on 2026-11-23; no smoke check covers the figures and the comparison yet"
 
 [[capability]]
 id = "rules-and-scans"
@@ -347,7 +344,7 @@ proof_synthetic = [
 real_data = "not yet confirmed (to check on the Mac later)"
 needs = []
 state = "Partial"
-missing = "tested in-process and in a browser against a test server; no end-to-end smoke check yet"
+missing = "tested in-process only; the Builder and Scanner windows were removed from the Workstation, the commands remain; no end-to-end smoke check yet"
 
 [[capability]]
 id = "strategy-development"
@@ -355,7 +352,6 @@ name = "Strategy development workspace"
 what = "Run fixed, approved strategy-development steps on a project and keep a full record of each run."
 see_it = [
   "uv run alpha suite plan <project-id> <experiment-id> <action>",
-  "Workstation: View → Build (Development Center)",
 ]
 entry_points = [
   "cli: alpha suite plan",
@@ -416,7 +412,7 @@ proof_smoke = [
   "tests/smoke/test_monte_carlo_smoke.py::test_classical_monte_carlo_is_published_and_recomputes_independently",
   "tests/smoke/test_monte_carlo_smoke.py::test_monte_carlo_refuses_a_backtest_source",
 ]
-real_data = "On 2026-11-14 the installed alpha ran the classical simulation on a validation run over the free Alpaca SPY bars (2016-2026) on the Dell; every summary matched an independent recomputation; not yet confirmed (pull request #173, its 04-verify.md). The classical families are proven end to end; alpha monte-carlo kronos ran only with the stand-in model and needs the Kronos model files."
+real_data = "Recorded: the classical families ran on real data on 2026-11-14 and every summary matched an independent recomputation; on 2026-11-23 the Kronos family also finished on a copy of the real data on the Dell (acceptance sweep, run 4); the classical families were not re-run in that sweep."
 needs = []
 state = "Working"
 
@@ -434,7 +430,7 @@ proof_synthetic = [
 proof_smoke = [
   "tests/smoke/test_next_smoke.py::test_next_on_an_empty_home",
 ]
-real_data = "not yet confirmed (to check on the Mac later)"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 
@@ -459,7 +455,7 @@ proof_synthetic = [
 proof_smoke = [
   "tests/smoke/test_idea_card_smoke.py::test_the_example_card_can_be_saved_shown_and_listed",
 ]
-real_data = "not yet confirmed (to check on the Mac later)"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 
@@ -513,10 +509,10 @@ proof_smoke = [
   "tests/smoke/test_follow_smoke.py::test_an_empty_home_lists_no_follows_and_a_factor_is_refused",
 ]
 docs = ["docs/reference/invariants/cli-follow.md"]
-real_data = "not yet confirmed (to check on the Mac later)"
+real_data = "Recorded in part: start, list, today, update, show, verify and stop ran on a copy of the owner's real data on the Dell on 2026-11-23; booking a new session is not proven yet."
 needs = []
 state = "Partial"
-missing = "Build F2: a followed rule test updates on stored bars (synthetic proof only). A setup or factor cannot be updated yet. Build F3 added `follow today` and the nightly steps N4 (update every follow, check journals) and N0 (opt-in bar refresh for followed assets); proven with fakes only. `scripts/status.py` does not show the follow count yet (protected). No real-data run yet."
+missing = "start, list, today, update, show, verify and stop ran on real data through the installed program on 2026-11-23, but the step that books a new session is not proven yet: it needs one new market session after the follow starts; a setup or factor cannot be updated yet; the nightly follow steps are proven with fakes only"
 
 [[capability]]
 id = "portfolio-book"
@@ -533,10 +529,10 @@ proof_synthetic = [
   "tests/unit/test_follow_book_view.py::test_sizes_total_and_exposure_per_asset",
 ]
 docs = ["docs/reference/invariants/cli-results-check.md", "docs/reference/invariants/cli-follow.md"]
-real_data = "not yet confirmed (to check on the Mac later)"
+real_data = "Recorded in part: `alpha results correlate` ran on a copy of the owner's real data on the Dell on 2026-11-23; `alpha follow book` has no real-data run."
 needs = []
 state = "Partial"
-missing = "Proven with in-process unit tests only; no smoke test through the installed program. Follow sizes are fixed paper sizes, not marked to market. No real-data run recorded."
+missing = "`alpha results correlate` ran on real data on 2026-11-23, but `alpha follow book` has not been run on real data, and no smoke test goes through the installed program; follow sizes are fixed paper sizes, not marked to market"
 
 [[capability]]
 id = "reserved-period-confirmation"
@@ -556,10 +552,10 @@ proof_synthetic = [
   "tests/unit/test_reserved_confirmation_surfaces.py::test_plan_says_what_is_spent_and_run_prints_the_plan_before_it_spends",
 ]
 docs = ["docs/reference/project/reserved-period.md"]
-real_data = "not yet: no real slot may be used in a test; the owner's first use is the real run"
+real_data = "not yet on the owner's own slots: on 2026-11-23 the plan and the run worked on a copy of the real data (a copy slot, not one of the owner's ten); the owner's first real use is still to come"
 needs = []
 state = "Partial"
-missing = "tested in-process on synthetic data only; Setup Lab runs cannot be confirmed yet."
+missing = "worked on real data only on a copy, with no end-to-end smoke check; the owner's own slots are not used; Setup Lab runs cannot be confirmed yet"
 
 [[capability]]
 id = "follow-today-screen"
@@ -604,7 +600,7 @@ proof_synthetic = [
 proof_smoke = [
   "tests/smoke/test_library_smoke.py::test_a_library_record_becomes_an_idea_card",
 ]
-real_data = "not yet confirmed (to check on the Mac later)"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 
@@ -612,7 +608,7 @@ state = "Working"
 id = "nightly-run"
 name = "Nightly real run (alpha nightly)"
 what = "Prove each night that the rule path and the setup path still work on the data stored here, and say when it is ready: two clean full runs in a row."
-see_it = ["uv run alpha nightly status"]
+see_it = ["uv run alpha nightly status — it runs by itself every night on the Dell"]
 entry_points = [
   "cli: alpha nightly run",
   "cli: alpha nightly status",
@@ -629,7 +625,7 @@ proof_synthetic = [
 proof_smoke = [
   "tests/smoke/test_nightly_smoke.py::test_nightly_rule_path_runs_the_real_commands",
 ]
-real_data = "not yet confirmed (to check on the Mac later)"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 real_data_needs = "The RD-Agent path stays off until the owner sets rdagent_config with a key file and a spend cap."
 needs = []
 state = "Working"
@@ -656,7 +652,7 @@ proof_synthetic = [
 proof_smoke = [
   "tests/smoke/test_home_backup_smoke.py::test_backup_verify_and_restore_round_trip",
 ]
-real_data = "not yet confirmed (synthetic home only; not yet run on the owner's data home)"
+real_data = "Recorded: backup, check and restore ran on a copy of the owner's real data home on the Dell on 2026-11-23 (acceptance sweep, run 4); the live home was not written."
 real_data_needs = "A run on the Dell's data home with a second disk for the archive."
 needs = []
 state = "Working"
@@ -669,7 +665,7 @@ codes = ["C04"]
 what = "See VaR, CVaR and other risk figures for a backtest together with what they are measured against; bad dates or numbers are refused."
 see_it = [
   "uv run alpha risk scenario --from-run <run-id> --json --include-metric-basis",
-  "Workstation: View → Machine learning → Risk tab, or a run's report → Stress test",
+  "Workstation: Results › Risk, or a run's report → Stress test",
 ]
 entry_points = [
   "cli: alpha risk scenario",
@@ -703,10 +699,10 @@ entry_points = ["cli: alpha propfirm run", "api: GET /api/runs/{run_id}/propfirm
 proof_synthetic = [
   "tests/integration/test_propfirm_cli.py::test_propfirm_fresh_backtest_writes_manifest",
 ]
-real_data = "not yet confirmed (to check on the Mac later)"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Partial"
-missing = "tested in-process only; no end-to-end smoke check yet"
+missing = "ran on real data from a stored rule test on 2026-11-23; no end-to-end smoke check yet"
 
 [[capability]]
 id = "price-forecasts"
@@ -725,10 +721,10 @@ entry_points = [
 proof_synthetic = [
   "tests/integration/test_forecast_cli.py::test_forecast_run_writes_manifest_paths_quantiles",
 ]
-real_data = "not yet confirmed (to check on the Mac later)"
-needs = ["the Kronos model files (downloaded on first use; not on this computer)"]
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
+needs = []
 state = "Partial"
-missing = "proved only with a stand-in model"
+missing = "forecast and forecast check ran on real data with the real Kronos model on 2026-11-23; no end-to-end smoke check yet"
 
 [[capability]]
 id = "research-cases"
@@ -737,7 +733,6 @@ codes = ["D0", "D1", "D2"]
 what = "Turn one sentence of market idea into a tracked case, test it in fixed stages, and record your decision."
 see_it = [
   "uv run alpha research capture \"<your idea>\" --json, then uv run alpha research status <project-id>",
-  "Workstation: View → Research → Research Case",
 ]
 entry_points = [
   "cli: alpha research capture",
@@ -773,7 +768,7 @@ proof_smoke = [
   "tests/smoke/test_screening_smoke.py::test_screen_is_recorded_replayed_and_recomputes_independently",
   "tests/smoke/test_screening_smoke.py::test_screen_without_a_snapshot_is_refused_and_recorded",
 ]
-real_data = "On 2026-11-14 the installed alpha screened the free Yahoo (16 symbols, 1990-2026) and Alpaca (15 symbols, 2016-2026) snapshots on the Dell; every IC, t statistic and spread matched an independent recomputation; not yet confirmed (pull request #171, its 04-verify.md). The equity lane is proven end to end; the crypto lane (Bybit funding and open interest) is not."
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 
@@ -784,7 +779,6 @@ codes = ["R4"]
 what = "Search for research papers, fetch them, and record which claims in them you accept for testing."
 see_it = [
   "uv run alpha research sources search \"<topic>\"",
-  "Workstation: View → Research → Literature",
 ]
 entry_points = [
   "cli: alpha research sources search",
@@ -808,7 +802,6 @@ what = "Tie a screened claim, with its page number, to the data and experiment t
 see_it = [
   "uv run alpha research import-pdf <project-id> --file <paper.pdf> --title \"…\"",
   "uv run alpha research sources original-pdf …",
-  "Workstation: View → Research → Literature (PDF status and download button)",
 ]
 entry_points = [
   "cli: alpha research import-pdf",
@@ -875,7 +868,7 @@ name = "Machine-learning experiments with Qlib"
 what = "Prepare data, train Qlib models in a separate environment, and replay their predictions as a costed ALPHA backtest."
 see_it = [
   "uv run alpha ml capabilities",
-  "Workstation: View → Machine learning → ML lab",
+  "Workstation: Research › Machine learning",
 ]
 entry_points = [
   "cli: alpha ml prepare",
@@ -890,7 +883,7 @@ proof_synthetic = [
 proof_smoke = [
   "tests/smoke/test_ml_smoke.py::test_ml_upstream_alpha158_train_import_evaluate_replay",
 ]
-real_data = "not yet confirmed (to check on the Mac later)"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 
@@ -1085,7 +1078,7 @@ needs = [
   "an end-to-end smoke check of the factor loop through the installed programs with a scripted model route",
 ]
 state = "Partial"
-missing = "RD-Agent's own factor loop now runs model-connected on real Binance bars, judged by ALPHA instead of its built-in Qlib backtest (ADR-0049), from one launcher command with a hash-pinned runtime and the gateway's call cap: by 2026-11-16 about 80 factors judged across runs, no candidate; since ADR-0055 a screened factor passes only if its top third beat its bottom third (offline this rejects 16 of the 18 earlier replays; they still count as trials), the proposer sees every idea family, and each paid call has a 180 s limit; new frozen universes support explicit missing days, causal membership and 30-day write-offs with a disclosed 30% haircut, and an optional store directory; a first system check on the wide store (142 pairs) found three tickers whose identity changes across a gap (LUNA reused, DREP and COCOS redenominated), which the data layer must split before that store is used; `alpha rdagent run` and `alpha rdagent status` now start and watch it from one config file (no retry, no daemon), but it is not yet supervised as an ALPHA job, has no end-to-end smoke check with a scripted model, the fixture and stock loops ALPHA runs still use stand-in steps, and restart after a crash is not solved"
+missing = "RD-Agent's factor loop ran with a paid model on real Binance bars on 2026-11-16, judged by ALPHA, and gave no candidate. The 2026-11-23 sweep proved only its dry run (no spend); the paid loop was not run inside the sweep. It is not yet supervised as an ALPHA job, it has no end-to-end smoke check with a scripted model, and restart after a crash is not solved. `alpha rdagent run` starts it as a plain child process"
 # owner, 2026-11-14: RD-Agent is a key component of how the project works
 triage = { card = "7", recommendation = "KEEP", owner_decision = "KEEP" }
 docs = ["docs/roadmap/rd-agent-in-alpha.md"]
@@ -1160,10 +1153,10 @@ docs = ["workers/rdagent/README.md"]
 
 [[capability]]
 id = "native-job-result"
-name = "\"Native job result\" screen"
+name = "Read an RD-Agent job result by its job number"
 codes = ["W04", "W18"]
-what = "Type an RD-Agent job number into the web app and read its result."
-see_it = ["Workstation: View → Research → Native job result"]
+what = "Read the result of one RD-Agent job by its job number, from the command line or the web API. The Workstation screen for it was removed."
+see_it = ["uv run alpha research diagnostic native-result --data-dir … --job-id … --profile-source … --profile-runtime … --profile-mode …"]
 entry_points = [
   "api: GET /api/native-jobs/{job_id}/result",
   "panel: apps/alpha-web/frontend/src/panels/NativeJobResult.tsx",
@@ -1177,7 +1170,7 @@ proof_smoke = [
 ]
 needs = ["a real (not made-up) stock RD-Agent job, which needs an AI model connection"]
 state = "Partial"
-missing = "its smoke check now passes here: alpha and the web app read a made-up stock job's result; the browser lane fails here only because the web front end's test packages are not installed; no real job exists yet"
+missing = "its smoke check passes here: alpha and the web API read a made-up stock job's result; no real job exists yet; the Workstation screen was removed"
 # owner, 2026-11-14: RD-Agent is a key component of how the project works
 triage = { card = "8", recommendation = "SHELVE", owner_decision = "KEEP" }
 docs = ["docs/roadmap/rd-agent-in-alpha.md"]
@@ -1228,15 +1221,15 @@ docs = ["docs/roadmap/backlog/agentic-research-programme.md"]
 
 [[capability]]
 id = "mac-real-data"
-name = "Running ALPHA on your Mac with real data providers"
-what = "Install and run ALPHA on your own Mac with real BTC/ETH data providers and your own storage."
-see_it = ["the whole app on your Mac"]
+name = "Real data on the Dell: what is proven and what is not"
+what = "ALPHA runs on the owner's real data on the Dell. This line says how far that is proven."
+see_it = ["uv run alpha next"]
 entry_points = ["script: alpha", "script: alpha-web"]
 proof_synthetic = []
-real_data = "not yet confirmed (to check on the Mac later)"
-needs = ["your Mac", "access to a real data provider (blocked since 31 August)"]
+real_data = "Recorded: two acceptance sweeps on a copy of the owner's real data on the Dell on 2026-11-23."
+needs = ["one new market session, to prove the follow-on-paper booking step", "a paid RD-Agent loop run inside an acceptance sweep"]
 state = "Partial"
-missing = "one final review and a run on your Mac"
+missing = "On 2026-11-23 two acceptance sweeps ran the main path and the tools through the installed program on a copy of the owner's real data on the Dell. Every tool tested passed. Every main-path step passed except one. Not yet proven: the booking step of follow-on-paper, which needs one new market session. Not yet proven: RD-Agent's paid loop inside a sweep, where only the dry run was proven. Not covered by the sweeps: every feature that this page does not mark with a real run"
 # owner's delegation, 2026-11-14 ("Build whatever you believe is the right decision"): keep; the two plans merged into one
 triage = { card = "13", recommendation = "KEEP", owner_decision = "KEEP" }
 
@@ -1374,10 +1367,9 @@ see_it = ["uv run alpha test spec.toml --quick --json", "Workstation: Results, o
 entry_points = ["cli: alpha test", "panel: apps/alpha-web/frontend/src/panels/rundetail/RuleTestReport.tsx"]
 proof_synthetic = ["tests/unit/test_spine_spec.py::test_run_records_errors_and_continues", "tests/integration/test_web_api_reading.py::test_a_new_run_reaches_the_client_with_its_stored_reading", "tests/unit/test_reserve_holdback.py::test_rule_test_and_tool_read_no_held_back_bar"]
 proof_smoke = ["tests/smoke/test_rule_test_smoke.py::test_rule_test_records_two_assets"]
-real_data = "not yet confirmed; development-machine results are labelled"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
-state = "Partial"
-missing = "installed-command synthetic run checked; smoke suite awaits execution outside the sandbox"
+state = "Working"
 docs = ["docs/reference/project/components/command-line.md"]
 
 [[capability]]
@@ -1388,10 +1380,9 @@ see_it = ["alpha results --json", "alpha results show <run_id> --json", "alpha d
 entry_points = ["cli: alpha diagnose", "cli: alpha results"]
 proof_synthetic = ["tests/unit/test_spine_results_cmds.py::test_cite_and_no_diagnostics", "tests/unit/test_spine_diagnostics.py::test_drawdown_market_share_and_unrecovered"]
 proof_smoke = ["tests/smoke/test_rule_results_smoke.py::test_rule_results_and_diagnostics"]
-real_data = "not yet confirmed; synthetic data only"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
-state = "Partial"
-missing = "end-to-end smoke verification outside the builder sandbox"
+state = "Working"
 docs = ["docs/reference/invariants/cli-runs.md"]
 
 [[capability]]
@@ -1427,7 +1418,7 @@ proof_synthetic = [
   "tests/unit/test_toolbox_declarations.py::test_values_and_result_ids_do_not_depend_on_a_declaration",
   "tests/unit/test_spine_tools.py::test_attribution_is_stored_outside_the_run_and_counted", "tests/integration/test_web_api_rule_test_checks.py::test_stored_results_are_returned_with_their_stored_reading", "tests/unit/test_regimes.py::test_a_bar_cannot_change_its_own_causal_label", "tests/unit/test_changepoints.py::test_two_planted_mean_shifts_are_found"]
 proof_smoke = ["tests/smoke/test_rule_tools_smoke.py::test_investigation_tools_on_a_rule_test", "tests/smoke/test_web_checks_smoke.py::test_web_api_returns_the_readings_of_a_rule_tests_standard_set"]
-real_data = "market tools only, development machine: SPY and BTC/USDT 50/200 moving-average runs on 2026-11-16 (labelled dev-machine-data); run-level and RD-Agent checks verified on synthetic runs; published factors read once on a copy of a US ETF rule-test run (2026-11-20, read-only)"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 docs = ["research/tools/resampling-checks.md", "research/tools/montecarlo-checks.md", "research/tools/run-level-checks.md", "research/tools/published-factors.md", "docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-investigation-tools.md"]
@@ -1441,7 +1432,7 @@ see_it = ["uv run alpha lookalike --asset SPY@alpaca --last 30", "the figure.png
 entry_points = ["cli: alpha lookalike", "code: packages/alpha-patterns/src/alpha_patterns/lookalike.py"]
 proof_synthetic = ["tests/unit/test_lookalike.py::test_a_planted_repeated_motif_is_found", "tests/bias_guards/test_lookalike_future_poison.py::test_lookalikes_ignore_every_bar_after_the_query_end"]
 proof_smoke = ["tests/smoke/test_lookalike_smoke.py::test_lookalike_and_unusual_write_labelled_results"]
-real_data = "yes: SPY (Alpaca) and BTC/USDT daily, SPY hourly, 2026-11-16, read-only"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 docs = ["docs/reference/invariants/cli-runs.md", "docs/reference/project/outside-projects.md"]
@@ -1526,7 +1517,7 @@ see_it = ["alpha ledger summary --json", "alpha ledger families --json"]
 entry_points = ["cli: alpha ledger"]
 proof_synthetic = ["tests/unit/test_trial_reader.py::test_worked_example", "tests/unit/test_ledger_cmds.py::test_commands"]
 proof_smoke = ["tests/smoke/test_ledger_smoke.py::test_ledger_reads_rule_and_factor_trials"]
-real_data = "Read-only run on 2026-11-16 against copies of the Dell ledgers: 14 spine rows and 117 RD-Agent rows, 243 trials counted, 2 rows with a status this reader does not map yet (SPREAD_FAIL) shown and counted; evidence checks run on the real runs folder; not yet confirmed on the Mac."
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 docs = ["docs/reference/invariants/cli-trial-ledger.md"]
@@ -1552,7 +1543,7 @@ see_it = ["alpha results cite <run_id> family_trials"]
 entry_points = ["cli: alpha results"]
 proof_synthetic = ["tests/unit/test_spine_deflation.py::test_worked_example", "tests/unit/test_spine_deflation.py::test_ledger_fixture", "tests/unit/test_spine_deflation.py::test_validate_rerun_keeps_the_family_recorded_at_first_publication", "tests/unit/test_spine_deflation.py::test_family_sharpes_keep_only_the_run_frequency", "tests/unit/test_spine_deflation.py::test_same_test_repeats_count_once_keeping_the_earliest", "tests/unit/test_spine_deflation.py::test_spread_floored_below_five_comparable_trials", "tests/unit/test_spine_deflation.py::test_variants_count_in_n_but_not_in_the_spread"]
 proof_smoke = ["tests/smoke/test_family_deflation_smoke.py::test_family_deflation_grows"]
-real_data = "on 2026-11-17 two quick ma_cross rule tests of SPY daily bars on a copy of the Dell's data folder: family count 10 then 11 (2 repeats of earlier tests not counted); the verdict's deflated Sharpe 0.985 then 0.953 (equal to trial_dsr), against 0.999 and 0.997 counted as one trial"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 docs = ["docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-trial-ledger.md"]
@@ -1565,7 +1556,7 @@ see_it = ["alpha diagnose <run_id>", "alpha results cite <run_id> inverted_sharp
 entry_points = ["cli: alpha diagnose", "cli: alpha results"]
 proof_synthetic = ["tests/unit/test_spine_controls.py::test_inversion_next_open_known_pnl_and_ledger_unchanged", "tests/unit/test_spine_controls.py::test_short_is_resized_on_equity_net_of_its_dividend_debit", "tests/unit/test_spine_controls.py::test_a_shrinking_short_book_keeps_trading_whole_units", "tests/unit/test_spine_controls.py::test_label_order", "tests/unit/test_spine_diagnostics.py::test_rule_test_publishes_controls_without_counting_them"]
 proof_smoke = ["tests/smoke/test_inverted_control_smoke.py::test_inverted_control_and_wfe"]
-real_data = "on 2026-11-17 quick rule tests on a copy of the Dell's data folder, ledger unchanged by alpha diagnose: ma_cross 50/200 SPY Sharpe 0.76, opposite -0.75, 15 trades each, inconclusive; same on BTC/USDT 0.63 against -0.61, 9 trades, inconclusive; tsmom 252/21 BTC/USDT 0.72 against -0.70, 20 trades, inconclusive; ma_cross 10/50 SPY 0.55 against -0.59, 107 trades, control passed with the rising-market caveat"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 docs = ["research/tools/inverted-signal-control.md", "docs/reference/invariants/cli-runs.md"]
@@ -1578,7 +1569,7 @@ see_it = ["alpha diagnose <run_id>", "alpha results cite <run_id> wfe"]
 entry_points = ["cli: alpha diagnose", "cli: alpha results"]
 proof_synthetic = ["tests/unit/test_spine_controls.py::test_wfe_reads_the_recorded_train_window_after_warm_up", "tests/unit/test_spine_controls.py::test_wfe_two_folds", "tests/unit/test_spine_controls.py::test_wfe_null", "tests/unit/test_spine_controls.py::test_wfe_median_uses_defined_folds_and_names_the_rest"]
 proof_smoke = ["tests/smoke/test_inverted_control_smoke.py::test_inverted_control_and_wfe"]
-real_data = "on 2026-11-17 quick rule tests on a copy of the Dell's data folder: ma_cross 50/200 SPY median 65% over 31 of 33 folds; same on BTC/USDT 0% over 7 of 9; tsmom 252/21 BTC/USDT -11% over 6 of 9; ma_cross 10/50 SPY 99% over 33 of 34"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 docs = ["research/tools/walk-forward.md", "docs/reference/invariants/cli-runs.md"]
@@ -1591,7 +1582,7 @@ see_it = ["alpha setup find <spec.toml> --json", "Workstation: Research → Setu
 entry_points = ["cli: alpha setup", "api: GET /api/setup/runs", "panel: apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx"]
 proof_synthetic = ["tests/unit/test_setup_find.py::test_worked_counts_ledger_and_cluster_sheets", "tests/unit/test_setup_find.py::test_nothing_after_the_trigger_reaches_any_file_or_sheet", "tests/unit/test_contact_sheet.py::test_outcome_blindness_dimensions_and_determinism", "tests/unit/test_web_setup_runs.py::test_reads_candidates_curves_trades_costs_and_missing_bars", "tests/unit/test_reserve_holdback.py::test_setups_read_no_held_back_bar"]
 proof_smoke = ["tests/smoke/test_setup_find_smoke.py::test_setup_find_and_repeat"]
-real_data = "on 2026-11-17 a double-bottom spec on the Dell's SPY (8,507 daily bars, Yahoo) and BTC/USDT (3,361) found 19 and 26 separate occurrences (21 and 30 matching days), as the evaluator's own check did; a system test, not evidence of an edge"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 docs = ["docs/reference/invariants/cli-setups.md", "docs/reference/project/components/strategies-and-signals.md"]
@@ -1604,7 +1595,7 @@ see_it = ["alpha diagnose <run_id>", "alpha results cite <run_id> price_noise_p0
 entry_points = ["cli: alpha diagnose", "cli: alpha results"]
 proof_synthetic = ["tests/unit/test_spine_price_noise.py::test_noise_is_deterministic_valid_independent_and_preserves_volume", "tests/unit/test_spine_price_noise.py::test_price_noise_real_engine_leaves_ledger_byte_identical", "tests/unit/test_spine_price_noise.py::test_fragile_and_robust_noise"]
 proof_smoke = ["tests/smoke/test_price_noise_smoke.py::test_price_noise_diagnose_and_cite"]
-real_data = "on 2026-11-17 full rule tests on the Dell's data (scratch ledger): net Sharpe 5-95% across 50 copies, original in brackets: ma_cross 50/200 SPY 0.74-0.75 (0.75); ma_cross 10/50 SPY 0.54-0.57 (0.56); ma_cross 50/200 BTC/USDT 0.63-0.64 (0.63); tsmom 365 BTC/USDT 0.81-0.84 (0.83); no sign flips, no undefined copy, no fragile label; adds 10-22% to alpha test time (about a minute on SPY 1993-2026)"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 docs = ["research/tools/price-noise.md", "docs/reference/invariants/cli-runs.md"]
@@ -1617,7 +1608,7 @@ see_it = ["alpha diagnose <run_id>"]
 entry_points = ["cli: alpha diagnose"]
 proof_synthetic = ["tests/unit/test_spine_honesty_3.py::test_plausibility_triggers", "tests/unit/test_spine_honesty_3.py::test_plausibility_flag_does_not_change_verdict", "tests/unit/test_spine_honesty_3.py::test_implausibly_good_fires_on_a_rule_over_a_steadily_rising_demo_series"]
 proof_smoke = ["tests/smoke/test_price_noise_smoke.py::test_price_noise_diagnose_and_cite"]
-real_data = "on 2026-11-17 the same four Dell rule tests (SPY ma_cross 50/200 and 10/50, BTC/USDT ma_cross 50/200 and tsmom 365) stored the check and raised nothing, as expected; it fires on a synthetic steady uptrend (Sharpe 6.4, 40 trades)"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 docs = ["research/tools/diagnose-and-audit.md", "docs/reference/invariants/cli-runs.md"]
@@ -1630,7 +1621,7 @@ see_it = ["alpha setup study <find_id> --json", "alpha results cite <study_id> s
 entry_points = ["cli: alpha setup", "cli: alpha results", "api: GET /api/setup/runs", "panel: apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx"]
 proof_synthetic = ["tests/unit/test_setup_study.py::test_returns_incomplete_facts_repeat_and_blindness", "tests/unit/test_setup_controls.py::test_fixed_seed_null_calibration_and_planted_effect", "tests/unit/test_setup_controls.py::test_halves_compare_with_controls_from_their_own_half", "tests/unit/test_event_study_figure.py::test_dimensions_and_bytes", "tests/unit/test_web_setup_runs.py::test_reads_candidates_curves_trades_costs_and_missing_bars", "tests/unit/test_reserve_holdback.py::test_old_find_that_saw_the_period_is_refused_before_any_bar_loads"]
 proof_smoke = ["tests/smoke/test_setup_study_smoke.py::test_setup_study_and_repeat"]
-real_data = "on 2026-11-17 the double-bottom find on the Dell's SPY and BTC/USDT daily bars was studied at 5, 10, 20 and 60 bars (primary 20) against drift and 2,000 random-date draws; one exploratory counted look in a scratch ledger, a system test, not evidence of an edge"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 docs = ["research/tools/setup-study.md", "docs/reference/invariants/cli-setups.md", "docs/reference/project/components/strategies-and-signals.md"]
@@ -1643,7 +1634,7 @@ see_it = ["alpha setup trade <find_id> --json", "alpha results cite <trade_id> s
 entry_points = ["cli: alpha setup", "cli: alpha results", "api: GET /api/setup/runs", "panel: apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx"]
 proof_synthetic = ["tests/unit/test_setup_exits.py::test_price_exits", "tests/unit/test_setup_exits.py::test_short_fills_and_reflection", "tests/unit/test_setup_trade.py::test_direction_change_counts_once_and_control_uses_other_sides_costs", "tests/unit/test_setup_trade.py::test_legacy_long_figures_byte_for_byte", "tests/unit/test_setup_exits.py::test_frozen_atr_levels_and_future_poison", "tests/unit/test_setup_trade.py::test_publication_costs_facts_repeat_and_exit_identity", "tests/unit/test_setup_trade.py::test_seeded_null_calibration_and_planted_effect", "tests/unit/test_setup_trade_figure.py::test_identical_bytes_and_dimensions", "tests/unit/test_web_setup_runs.py::test_reads_candidates_curves_trades_costs_and_missing_bars", "tests/unit/test_reserve_holdback.py::test_setups_read_no_held_back_bar"]
 proof_smoke = ["tests/smoke/test_setup_trade_smoke.py::test_setup_trade_and_repeat"]
-real_data = "on 2026-11-17 the double-bottom find on the Dell's SPY and BTC/USDT daily bars was traded with a 1.5 ATR stop, 3 ATR target and 20-bar time exit against same-exit drift and 2,000 random-date draws; trades hand-checked from the bars; one exploratory counted look in a scratch ledger, a system test, not evidence of an edge"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 docs = ["research/tools/setup-trade.md", "docs/reference/invariants/cli-setups.md", "docs/reference/project/components/strategies-and-signals.md"]
@@ -1656,7 +1647,7 @@ see_it = ["alpha data health SPY@home", "alpha data health SPY@home --stored --j
 entry_points = ["cli: alpha data health"]
 proof_synthetic = ["tests/unit/test_data_health_report.py::test_clean_and_inapplicable_checks", "tests/unit/test_data_health_report.py::test_future_stock_bars_change_no_finding_dated_before_the_report_time", "tests/unit/test_data_health_command.py::test_health_command_and_stored_fingerprint"]
 proof_smoke = ["tests/smoke/test_data_health_smoke.py::test_health_report_is_printed_saved_and_goes_out_of_date"]
-real_data = "on 2026-11-18 run read-only on copies of the Dell's two stock stores and its crypto daily bars; one false alarm (repeated closes in the coarse-tick era) led to the frozen-price rule now needing the whole bar to repeat"
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 docs = ["research/tools/data-health.md", "docs/reference/project/components/data-layer.md"]

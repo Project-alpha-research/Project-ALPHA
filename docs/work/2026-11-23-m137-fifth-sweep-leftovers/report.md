@@ -21,3 +21,9 @@ Decisions and results per item. No numbers from a real run are written here.
 - Cause: `_recheck` called `recheck_idea` with no estimate and no heartbeat.
 - Change: a shared `_start_progress` (estimate line, stage, clock) serves a normal test and a recheck; `recheck_idea` takes an optional `stage` callback. A recheck keeps no rate (it writes nothing).
 - Test: `tests/unit/test_recheck_progress.py` (failed first).
+
+## 5. `alpha ml run` fold progress
+- Cause: the progress line guessed "about fold k of N" from elapsed time.
+- Finding: the protected worker writes `predictions.parquet`, the ensemble file and `result.json` once, after all folds (`workers/qlib/.../real.py` `_publish` calls). It writes no per-fold file. So the CLI cannot count folds, and no fold is named.
+- Change: the line now says "Model training: still running, N seconds so far, fold count N; this stage reports when it ends." The closing stage keeps its own line ("Scoring the model run and writing the run"). `fold_phrase` was removed as an orphan.
+- Test: `tests/unit/test_ml_progress_words.py`.

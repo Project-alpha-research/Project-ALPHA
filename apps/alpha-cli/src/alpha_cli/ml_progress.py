@@ -1,8 +1,8 @@
 """Time estimate and progress for `alpha ml run`.
 
-The worker prints nothing while it trains, so the fold in progress is an estimate from the time
-so far. The seconds per fold and asset are measured on each finished run and kept in the data
-folder; a first run uses a rough default.
+The worker prints nothing while it trains and writes its files only at the end, so no fold in
+progress is named. The seconds per fold and asset are measured on each finished run and kept in
+the data folder; a first run has no estimate.
 """
 
 from __future__ import annotations
@@ -56,17 +56,10 @@ def expected_sentence(expected: float | None, folds: int) -> str:
     )
 
 
-def fold_phrase(elapsed: float, per_fold: float, folds: int) -> str:
-    """The fold in progress, estimated from the time so far (the worker reports none).
-
-    The count runs to the last fold. Past the estimate the run is in its last fold or in the
-    closing stages, and the line says so instead of freezing on one fold."""
-    if elapsed >= per_fold * folds:
-        return (
-            f"past the estimate for {folds} folds: in the last fold, or in the closing stages "
-            "(scoring, writing the run)"
-        )
-    return f"about fold {int(elapsed // per_fold) + 1} of {folds}"
+def training_phrase(folds: int) -> str:
+    """What the progress line says: the fold count. The worker reports no fold until it ends,
+    and writes no per-fold file the command could count, so no fold in progress is named."""
+    return f"fold count {folds}; this stage reports when it ends"
 
 
 def announce(data_dir: Path, assets: int, folds: int) -> tuple[float | None, float | None]:

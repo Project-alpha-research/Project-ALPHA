@@ -34,7 +34,7 @@ const LABEL_MEANING: Record<string, string> = {
   'dev-machine-data': 'Run on the data stored on this development machine.',
   'source-defaulted': 'The asset is in more than one data store; the first match was used.',
   'short-history': 'The test covers less than three years of price history.',
-  repeat: 'An identical test was already recorded; it still counts as another trial.',
+  repeat: 'An identical test was already recorded; the repeat adds a ledger entry but not another distinct try.',
   'no-diagnostics': 'The diagnostic pass was skipped for this run.',
   error: 'The test ended with an error; unavailable numbers stay empty.',
   'ad-hoc': 'Run on its own, not as part of a predeclared set of checks.',

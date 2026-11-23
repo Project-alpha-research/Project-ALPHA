@@ -210,4 +210,3 @@ def providers(*, data_dir: Path) -> list[dict[str, Any]]:
     """Provider capability/configuration registry (fresh so credential presence can change)."""
     result: list[dict[str, Any]] = _run_json(["info", "providers", "--json"], data_dir=data_dir)
     return result
-

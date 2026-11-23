@@ -19,8 +19,7 @@ What the Workstation backend reads, writes and relays. The other backend rules a
   The one in-process writer is the owner-auth seam, which records challenges and receipts in the control store.
 - Read runs only through bounded seams (`alpha_cli.run_store`, `artifact_contract.verify_manifest_artifacts`,
   `run_projection`). Operational state needs its own governed public seam — do not scan `RUN_DIRS` for it.
-- The only file the web code writes itself is a named workspace, `data_dir/web/workspaces/<slug>.json` (atomic write through
-  `alpha_core.atomic`, slugified name). It is presentation state with no research or execution authority.
+- The web code writes no file itself. Saved layouts and named workspaces were removed (the screen that saved them is gone).
 - Never reconstruct trading evidence or compute metrics in the backend; relay what the CLI and artifacts record.
 - RD-Agent GETs read bounded receipt/ledger/round/evaluation files; IDs select listed folders, never paths; raw fields are allowlisted/redacted.
   Tasks join trials by evaluation number/name/hash, never loop count; conflicts fail loud; unlinked counts stay unknown; empty dead rounds are disclosed.

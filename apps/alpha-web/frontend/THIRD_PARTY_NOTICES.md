@@ -6,8 +6,8 @@ Copyright (с) 2025 TradingView, Inc. https://www.tradingview.com/
 Lightweight Charts 5.2.0 is licensed under Apache-2.0. Upstream notice:
 https://github.com/tradingview/lightweight-charts/blob/v5.2.0/NOTICE
 
-The chart retains its TradingView attribution logo/link. Governance → Providers also displays
-this notice. See the installed package's LICENSE for the full license text.
+The chart retains its TradingView attribution logo/link. See the installed package's LICENSE for the
+full license text.
 
 ## Scientific rendering
 

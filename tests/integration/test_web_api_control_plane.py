@@ -24,4 +24,3 @@ def test_provider_api_is_registry_derived_and_redacts_credentials(
     assert by_id["ccxt"]["options"]["exchange"]["choices"] == ["coinbase", "binance"]
     assert by_id["tiingo"]["credential_env"] == [{"name": "ALPHA_TIINGO_API_KEY", "present": True}]
     assert "never-return-this-secret" not in response.text
-

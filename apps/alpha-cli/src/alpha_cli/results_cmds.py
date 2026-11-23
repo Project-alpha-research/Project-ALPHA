@@ -429,12 +429,12 @@ def diagnose_run(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
             )
         output = read_json(rdir / "diagnostics.json")
         found = stored_reading(manifest, output)
-        from alpha_cli.spine.report_plain import plain_diagnose_lines
+        from alpha_cli.spine.report_plain import plain_diagnose_lines, run_symbol
 
         emit(
             {**output, "reading": found},
             json_out=json_out,
-            fallback="\n".join(plain_diagnose_lines(output, found)),
+            fallback="\n".join(plain_diagnose_lines(output, found, run_symbol(manifest))),
         )
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)

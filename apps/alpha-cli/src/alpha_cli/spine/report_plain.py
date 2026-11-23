@@ -114,15 +114,17 @@ def _folds_count(manifest: Mapping[str, Any]) -> str | None:
     return f"Walk-forward: the rule was scored on {len(folds)} later {noun}, one after another."
 
 
-def _count_paragraph(
-    manifest: Mapping[str, Any], diagnostics: Mapping[str, Any] | None
-) -> str | None:
+def run_symbol(manifest: Mapping[str, Any]) -> str | None:
+    symbol = _map(manifest.get("metadata")).get("symbol") or manifest.get("symbol")
+    return symbol if isinstance(symbol, str) else None
+
+
+def _count_paragraph(symbol: str | None, diagnostics: Mapping[str, Any] | None) -> str | None:
     """The one paragraph about the counts, the same as `alpha test` prints."""
     from alpha_cli.spine.tries import reading_count_sentence
 
     family = _map(_map(diagnostics).get("trials")).get("family")
-    symbol = _map(manifest.get("metadata")).get("symbol") or manifest.get("symbol")
-    if not isinstance(family, Mapping) or not isinstance(symbol, str):
+    if not isinstance(family, Mapping) or symbol is None:
         return None
     return reading_count_sentence(dict(family), symbol)
 
@@ -142,7 +144,7 @@ def plain_report_lines(
         _luck_line(manifest),
         _range_line(manifest),
         _deflated_line(manifest),
-        _count_paragraph(manifest, diagnostics),
+        _count_paragraph(run_symbol(manifest), diagnostics),
         _folds_line(manifest),
         costs if isinstance(costs, str) else None,
     ]
@@ -241,7 +243,9 @@ def _settings_line(output: Mapping[str, Any]) -> str | None:
     )
 
 
-def plain_diagnose_lines(output: Mapping[str, Any], found: Mapping[str, Any]) -> list[str]:
+def plain_diagnose_lines(
+    output: Mapping[str, Any], found: Mapping[str, Any], symbol: str | None = None
+) -> list[str]:
     """What the diagnostic pass checked and found, in about one screen."""
     summary = [
         _versus_buy_and_hold(output),
@@ -253,7 +257,7 @@ def plain_diagnose_lines(output: Mapping[str, Any], found: Mapping[str, Any]) ->
         _settings_line(output),
     ]
     lines = [_sentence(plain(str(found.get("sentence") or f"Reading: {reading_word(found)}")))]
-    lines += [line for line in summary if line]
+    lines += [line for line in (_count_paragraph(symbol, output), *summary) if line]
     flags = _flag_lines(output)
     if flags:
         lines += [WARNINGS_HEAD, *flags]

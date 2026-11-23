@@ -207,12 +207,23 @@ def test_realized_profit_shows_as_gain_or_loss_while_the_stored_text_is_untouche
 def test_diagnose_prints_a_plain_summary_and_json_keeps_the_raw_file(tmp_path: Path) -> None:
     rdir = tmp_path / "runs" / RUN
     rdir.mkdir(parents=True)
-    (rdir / "manifest.json").write_text(json.dumps(gauntlet()))
+    (rdir / "manifest.json").write_text(json.dumps({**gauntlet(), "symbol": "SPY"}))
     diagnostics = {
         "audit": [{"check": "enough-trades", "detail": "4 closed trades.", "status": "FLAG"}],
         "delay": {"base_sharpe": 2.0, "delayed_sharpe": 1.5, "delayed_share_of_base": 0.75},
         "flags": [{"flag": "implausibly-good", "detail": "The Sharpe ratio is implausibly high."}],
         "price_noise": {"sentence": "The Sharpe ranged from 1.00 to 2.00 across the middle 90%."},
+        "trials": {
+            "family": {
+                "n_trials_used": 17,
+                "family_id": "spine:ma_cross",
+                "prior_trials": 11,
+                "this_run": 1,
+                "variants_scored": 5,
+                "same_asset_tests": 5,
+                "unknown_rows": 0,
+            }
+        },
         "macro_window": {"available": False, "reason": None},
         "inverted_signal": {"inverted_sharpe": None, "sentence": "Opposite rule: no result."},
     }
@@ -220,6 +231,8 @@ def test_diagnose_prints_a_plain_summary_and_json_keeps_the_raw_file(tmp_path: P
     env = {"ALPHA_DATA_DIR": str(tmp_path)}
     text = RUNNER.invoke(app, ["diagnose", RUN], env=env).output
     assert "One bar later" in text and "75% kept" in text
+    assert "This rule shape [spine:ma_cross] has been tried 12 times" in text
+    assert "plus 5 nearby settings" in text and "family counted as" not in text
     assert "Warnings recorded with this run:" in text and "implausibly high" in text
     assert "across the middle 90%" in text and "stayed between" not in text
     assert "look closer: Enough closed trades. 4 closed trades." in text

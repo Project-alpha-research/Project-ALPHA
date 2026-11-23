@@ -136,15 +136,23 @@ def _text(output: dict[str, Any]) -> str:
 @tool_app.command("run")
 def run_tool(
     tool_id: str,
-    target: str,
+    target: Annotated[str, typer.Argument(help="The run id (or use --run).")] = "",
     param: Annotated[list[str] | None, typer.Option("--param")] = None,
     seed: int = 0,
+    run_id: Annotated[str, typer.Option("--run", help="The run id; the same as the target.")] = "",
     json_out: bool = _JSON,
 ) -> None:
     """Run one tool with repeatable key=value parameters."""
     from alpha_cli.toolbox.runner import run
 
     try:
+        if bool(target) == bool(run_id):
+            raise SpineError(
+                "TOOL_TARGET",
+                "Name the run once: as the id after the tool name, or with --run.",
+                "Example: alpha tool run <tool> --run <run id>",
+            )
+        target = target or run_id
         with redirect_stdout(sys.stderr):
             output = run(AlphaSettings().data_dir, tool_id, target, param, seed)
     except SpineError as exc:

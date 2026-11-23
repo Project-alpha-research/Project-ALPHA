@@ -782,3 +782,75 @@ def test_a_reversal_starts_a_new_open_position_at_the_reversing_fill(
     zone = next(m for m in marks if getattr(m, "label", None) == "Open position")
     assert zone.role == "down"
     assert zone.x0 == days[70].timestamp()
+
+
+def test_fill_markers_shrink_with_the_count_and_are_thinned_past_the_cap() -> None:
+    from alpha_cli.figures._price_signal import _MAX_FILL_MARKERS, marker_size, thin_step
+
+    assert marker_size(10) == 26.0 > marker_size(100) > marker_size(1000) >= 10.0
+    assert thin_step(_MAX_FILL_MARKERS) == 1
+    assert thin_step(_MAX_FILL_MARKERS + 1) == 2
+    assert -(-1000 // thin_step(1000)) <= _MAX_FILL_MARKERS
+
+
+def _long_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, years: int, fills: int) -> Path:
+    from alpha_cli.figures import _sources
+
+    first = datetime(2010, 1, 4, tzinfo=UTC)
+    days = [first + timedelta(days=i) for i in range(365 * years)]
+    rows = [{"t": d.timestamp(), "o": 1.0, "h": 2.0, "l": 0.5, "c": 1.5, "v": 1.0} for d in days]
+    monkeypatch.setattr(_sources, "bars", lambda *a, **k: (rows, None))
+    rdir = _synthetic(tmp_path, snapshot_id="snap")
+    pl.DataFrame({"ts": days, "equity": [1.0 + i * 1e-4 for i in range(len(days))]}).write_parquet(
+        rdir / "equity_curve.parquet"
+    )
+    pl.DataFrame(
+        [
+            {
+                "sequence_id": i,
+                "event_type": "fill",
+                "ts": days[i * 2],
+                "side": "BUY" if i % 2 == 0 else "SELL",
+                "price": 1.0,
+                "quantity": 10.0,
+                "filled_quantity": 10.0,
+            }
+            for i in range(fills)
+        ]
+    ).write_parquet(rdir / "execution_trace.parquet")
+    return rdir
+
+
+def test_a_long_history_gets_a_log_price_axis_and_a_short_one_does_not(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    long = _build(_long_run(tmp_path / "a", monkeypatch, years=7, fills=20), "price_signal")
+    short = _build(_long_run(tmp_path / "b", monkeypatch, years=3, fills=20), "price_signal")
+    assert long.panels[0].y_scale == "log" and "log scale" in long.panels[0].y_label
+    assert short.panels[0].y_scale == "linear"
+
+
+def test_thousands_of_fills_are_thinned_and_the_caption_says_so(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    spec = _build(_long_run(tmp_path, monkeypatch, years=7, fills=1000), "price_signal")
+    drawn = sum(len(m.x) for m in spec.panels[0].marks if type(m).__name__ == "ScatterMark")
+    assert drawn <= 200 and "of 1,000 fills drawn" in spec.caption
+
+
+def test_trade_pnl_says_the_account_size_the_money_axis_assumes(tmp_path: Path) -> None:
+    def spec_for(root: Path, cash: float | None = None) -> Any:
+        extra: dict[str, Any] = {"starting_cash": cash} if cash else {}
+        rdir = _synthetic(root, **extra)
+        pl.DataFrame(
+            {
+                "entry_ts": [datetime(2022, 1, 3, tzinfo=UTC), datetime(2022, 2, 3, tzinfo=UTC)],
+                "realized_pnl": [100.0, -40.0],
+            }
+        ).write_parquet(rdir / "trades.parquet")
+        return _build(rdir, "trade_pnl")
+
+    known = spec_for(tmp_path / "a", 1_000_000.0)
+    assert "account size assumed: 1,000,000" in known.caption
+    unknown = spec_for(tmp_path / "b")
+    assert "account size not stored in this run" in unknown.caption

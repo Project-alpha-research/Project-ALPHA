@@ -16,10 +16,11 @@ EVERY_SECONDS = 10.0
 
 @contextmanager
 def heartbeat(
-    label: str, every: float = EVERY_SECONDS, expected: float | None = None
+    label: str | Callable[[], str], every: float = EVERY_SECONDS, expected: float | None = None
 ) -> Iterator[None]:
     """Print `label: still running, N seconds so far` to stderr every `every` seconds.
 
+    ``label`` may be a function, so the line can name the stage the command has reached.
     With ``expected`` (a rough estimate in seconds) the line also says how long the run should
     take. A run shorter than `every` prints nothing. stderr keeps `--json` output on stdout clean.
     """
@@ -30,7 +31,8 @@ def heartbeat(
     def beat() -> None:
         while not stop.wait(every):
             seconds = round(time.monotonic() - started)
-            typer.echo(f"{label}: still running, {seconds} seconds so far{of}.", err=True)
+            name = label() if callable(label) else label
+            typer.echo(f"{name}: still running, {seconds} seconds so far{of}.", err=True)
 
     thread = threading.Thread(target=beat, daemon=True)
     thread.start()

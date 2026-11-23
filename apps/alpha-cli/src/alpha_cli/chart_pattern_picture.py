@@ -213,11 +213,16 @@ def _figure(
             -1,
             f"Of {len(shapes)} found, {len(drawn)} recent ones that do not crowd are drawn.",
         )
+    noted = ([s for s in drawn if s.shape == "marker"][-NOTES:] or drawn[-1:]) if annotated else []
+    notes = [f"{chr(65 + i)}  {s.label}, known {s.known.date()}" for i, s in enumerate(noted)]
+    if notes:
+        sentences.insert(-1, "Each letter marks a point; its note is under the plot.")
+    note_box = 0.19 * len(notes) + 0.3 if notes else 0.0  # the notes sit below the plot
     box = ps.box_height(sentences) if annotated else 0.0
-    height = 6.0 + box
+    height = 6.0 + box + note_box
     figure = ps.new_figure(height)
     axes = figure.add_subplot(1, 1, 1)
-    figure.subplots_adjust(top=0.84, bottom=(box + 0.9) / height, left=0.07, right=0.98)
+    figure.subplots_adjust(top=0.84, bottom=(box + note_box + 0.9) / height, left=0.07, right=0.98)
     days = [_when(series, i) for i in range(len(series))]
     keep = [i for i, d in enumerate(days) if start <= d.date() <= end]
     x = [_num(days[i]) for i in keep]
@@ -246,11 +251,23 @@ def _figure(
         axes, f"Price with {pattern} drawn", f"{series.symbol}  ·  {pattern}  ·  {start} to {end}"
     )
     if annotated:
-        used: list[Any] = []
-        noted = [s for s in drawn if s.shape == "marker"][-NOTES:] or drawn[-1:]
-        for s in noted:
+        # The notes stay outside the plot, so no box covers a drawn line; a letter marks each point.
+        for i, s in enumerate(noted):
             px, py = s.points[-1]
-            ps.callout(axes, f"{s.label}, known {s.known.date()}", (_num(px), py), used)
+            axes.annotate(
+                chr(65 + i),
+                (_num(px), py),
+                xytext=(0, 8),
+                textcoords="offset points",
+                ha="center",
+                fontsize=9,
+                fontweight="bold",
+                zorder=7,
+            )
+        if notes:
+            figure.text(
+                0.01, (box + 0.25) / height, "\n".join(notes), fontsize=9, ha="left", va="bottom"
+            )
         ps.how_to_read(figure, sentences, 0.15)
     return figure
 

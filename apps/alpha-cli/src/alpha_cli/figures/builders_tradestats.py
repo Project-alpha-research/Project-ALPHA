@@ -41,6 +41,12 @@ def trade_pnl(ctx: BuildContext) -> FigureSpec:
     shown_pnl = tuple(value / divisor for value in pnl)
     shown_cumulative = tuple(value / divisor for value in cumulative)
     suffix = f"{unit}account currency"
+    cash = ctx.field("starting_cash")
+    account = (
+        f"account size assumed: {money(float(cash))}"
+        if isinstance(cash, int | float) and not isinstance(cash, bool) and cash > 0
+        else "account size not stored in this run"
+    )
     spec = ctx.spec(
         "trade_pnl",
         x_label="Trade (chronological)",
@@ -81,7 +87,7 @@ def trade_pnl(ctx: BuildContext) -> FigureSpec:
         ),
     )
     # Both panels on one trade axis, so a bar sits above its step of the running total.
-    return replace(spec, x_limits=(0.5, len(pnl) + 0.5))
+    return replace(spec, x_limits=(0.5, len(pnl) + 0.5), caption=f"{spec.caption} · {account}")
 
 
 def holding_period(ctx: BuildContext) -> FigureSpec:

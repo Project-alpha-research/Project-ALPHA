@@ -183,3 +183,19 @@ def test_the_first_held_back_day_counts_as_held_back() -> None:
     from alpha_cli.chart_pattern_picture import reaches_held_back
 
     assert reaches_held_back(date(2024, 1, 1)) and not reaches_held_back(date(2023, 12, 31))
+
+
+def test_the_annotation_notes_sit_outside_the_plot() -> None:
+    from alpha_cli.chart_cmds import to_ohlcv
+    from alpha_cli.chart_pattern_picture import _figure, _shapes
+
+    series = to_ohlcv(_bars())
+    shapes = _shapes(series, "swings")
+    window = (date(2021, 1, 1), date(2023, 6, 18))
+    figure = _figure(series, shapes, "swings", window, annotated=True)
+    axes = figure.axes[0]
+    assert [t for t in axes.texts if t.get_bbox_patch() is not None] == []  # no box in the plot
+    notes = [t.get_text() for t in figure.texts if t.get_text().startswith("A  ")]
+    assert notes and ", known " in notes[0]
+    below = figure.texts[0].get_window_extent(figure.canvas.get_renderer())
+    assert below.y1 <= axes.get_window_extent(figure.canvas.get_renderer()).y0

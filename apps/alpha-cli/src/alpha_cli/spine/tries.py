@@ -106,15 +106,15 @@ def reading_count_sentence(family: dict[str, Any], symbol: str) -> str | None:
     on_shape = int(family.get("prior_trials") or 0) + this_run + unknown
     on_asset = int(family.get("same_asset_tests") or 0) + this_run
     shape = f"This rule shape [{family.get('family_id')}]"
-    first = f"You have tested {_ideas(on_asset)} on {symbol}."
+    first = f"You have tested {_ideas(on_asset)} on {symbol}, counting this asset alone."
     if used != max(on_shape, on_asset) + variants:
         return f"{first} The luck adjustment counts {used} tries in all."
     times = "time" if on_shape == 1 else "times"
     settings = "setting" if variants == 1 else "settings"
     return (
-        f"{first} {shape} has been tried {on_shape} {times} across all assets, "
-        f"plus {variants} nearby {settings}. The luck adjustment uses the larger of the first "
-        f"two counts, plus the nearby settings: {used}."
+        f"{first} {shape} has been tried {on_shape} {times} across all assets, which can be more "
+        f"than the first count, plus {variants} nearby {settings} tried inside this test. The luck "
+        f"adjustment uses the larger of the first two counts, plus the nearby settings: {used}."
     )
 
 

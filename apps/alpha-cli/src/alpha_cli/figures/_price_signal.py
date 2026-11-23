@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import replace
 from typing import Any, Literal, cast
 
@@ -28,7 +29,24 @@ from alpha_research.figures import (
 )
 from alpha_research.figures.spec import Role, YUnit
 
-_MAX_FILL_MARKERS = 60
+_FULL_SIZE_FILLS = 40  # up to this many fills the markers keep full size
+_MAX_FILL_MARKERS = 200  # more fills than this are thinned, and the caption says so
+_FULL_MARKER, _SMALLEST_MARKER = 26.0, 10.0
+_LOG_AFTER_SECONDS = 5 * 365.25 * 86400  # a span over five years gets a log price axis
+
+
+def marker_size(fills: int) -> float:
+    """Full size for few fills; smaller as fills grow, never below a readable size."""
+    if fills <= _FULL_SIZE_FILLS:
+        return _FULL_MARKER
+    return max(_SMALLEST_MARKER, _FULL_MARKER * math.sqrt(_FULL_SIZE_FILLS / fills))
+
+
+def thin_step(fills: int) -> int:
+    """Draw every ``step``-th fill so that at most `_MAX_FILL_MARKERS` are drawn."""
+    return -(-fills // _MAX_FILL_MARKERS)
+
+
 _MAX_CANDLES = 400
 
 
@@ -137,7 +155,12 @@ def _fill_marks(ctx: BuildContext, span: tuple[float, float] | None) -> tuple[li
     open_zone = open_position_zone(all_fills, span)
     if open_zone is not None:
         zones.append(open_zone)
-    size = 26.0 if len(fills) <= _MAX_FILL_MARKERS else 9.0
+    step = thin_step(len(fills))
+    if step > 1:
+        fills = fills.with_row_index("_row").filter(
+            fills.with_row_index("_row")["_row"] % step == 0
+        )
+    size = marker_size(len(fills))
     marks: list[Mark] = list(zones)
     sides: tuple[tuple[str, Literal["^", "v"], Role, str], ...] = (
         ("BUY", "^", "up", "Buy fill"),
@@ -156,7 +179,11 @@ def _fill_marks(ctx: BuildContext, span: tuple[float, float] | None) -> tuple[li
                     label=label,
                 )
             )
-    many = f"{len(fills):,} fills drawn as small triangles" if size < 26.0 else ""
+    total = len(all_fills) if span is None else len(_clip(all_fills, "ts", span))
+    if step > 1:
+        many = f"every {step}th of {total:,} fills drawn, to keep the triangles readable"
+    else:
+        many = f"{total:,} fills drawn as small triangles" if size < _FULL_MARKER else ""
     return marks, many, len(all_fills)
 
 
@@ -256,10 +283,13 @@ def price_signal(ctx: BuildContext) -> FigureSpec:
     marks.extend(fill_marks)
     overlays, indicator_panels = _indicator_panels(ctx, span)
     marks.extend(overlays)
+    lows = [row["l"] for row in rows]
+    long_span = rows[-1]["t"] - rows[0]["t"] > _LOG_AFTER_SECONDS and min(lows) > 0
     price = Panel(
         panel_id="price",
-        y_label="Price (native quote)",
+        y_label="Price (native quote, log scale)" if long_span else "Price (native quote)",
         y_unit="price",
+        y_scale="log" if long_span else "linear",
         height_ratio=3.0,
         marks=tuple(marks),
     )

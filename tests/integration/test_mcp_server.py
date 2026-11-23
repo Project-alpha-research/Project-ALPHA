@@ -22,10 +22,6 @@ from alpha_data.snapshot import create_snapshot
 from alpha_data.store import ParquetStore
 from alpha_mcp import _invoke, server, spine_tools
 from tests.fixtures.cli_fixtures import seed_store
-from tests.fixtures.control_store_fixtures import (
-    mark_project_as_migrated_legacy,
-    publish_decision_grade_run,
-)
 
 # small-parameter knobs so the fixture's 60 bars warm up, trade, and cost nothing
 _OPTS = {
@@ -115,33 +111,11 @@ def test_all_expected_tools_are_registered() -> None:
         "list_strategies",
     } <= names
     assert {
-        "create_strategy_project",
-        "create_strategy_version",
-        "create_experiment_spec",
-        "link_project_run",
-        "advance_stage_state",
-        "advance_experiment_stage",
-        "record_project_attempt",
-        "seal_project_holdout",
-        "list_projects",
-        "get_project",
-        "get_strategy_version",
-        "get_experiment_spec",
-        "get_agent_brief",
         "create_development_job",
         "list_development_jobs",
         "get_development_job",
-        "search_evidence",
-        "get_evidence",
-        "draft_evidence",
-        "review_evidence",
-        "plan_development_suite",
-        "launch_development_suite",
         "cancel_development_suite",
         "reconcile_development_jobs",
-        "plan_ml_experiment",
-        "launch_ml_experiment",
-        "search_asset_evidence",
         "get_chart_bundle",
         "get_portfolio_analytics",
         "compare_runs",
@@ -164,142 +138,9 @@ def test_control_plane_tools_round_trip_through_cli(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
-    run_id = "0123456789abcdef"
-    publish_decision_grade_run(
-        tmp_path,
-        run_id=run_id,
-        manifest_fields={"outcomes": {"randomized_price_null": {"passed": False}}},
-    )
-
-    project = server.create_strategy_project(
-        "AAPL reversal",
-        "Large deviations revert after costs.",
-        "Reject on non-positive locked OOS Sharpe.",
-    )
-    governed_project_id = project["project_id"]
-    with pytest.raises(RuntimeError, match="research_contract_id"):
-        server.create_strategy_version(
-            governed_project_id,
-            "mean_reversion",
-            "git:must-not-bypass",
-            {"signal": "zscore", "window": 20},
-            {"window": [10, 20, 40]},
-        )
-    assert ControlStore(tmp_path).research_case_summary(governed_project_id)["phase"] == "triage"
-
-    project = ControlStore(tmp_path).create_project(
-        name="Grandfathered AAPL reversal",
-        hypothesis="Large deviations revert after costs.",
-        falsification_criterion="Reject on non-positive locked OOS Sharpe.",
-        at=datetime(2026, 7, 19, tzinfo=UTC),
-    )
-    project_id = str(project["project_id"])
-    mark_project_as_migrated_legacy(ControlStore(tmp_path), project_id)
-    version = server.create_strategy_version(
-        project_id,
-        "mean_reversion",
-        "git:abc1234",
-        {"signal": "zscore", "window": 20},
-        {"window": [10, 20, 40]},
-    )
-    experiment = server.create_experiment_spec(
-        project_id,
-        version["version_id"],
-        "snap-aapl",
-        ["AAPL", "SPY"],
-        {"train": 504, "test": 63, "embargo": 5},
-        {"fee_bps": 1.0, "slippage_bps": 2.0},
-        {"master": 7},
-        {"null_families": ["bootstrap", "student_t", "garch"]},
-    )
-    sealed = server.seal_project_holdout(
-        project_id,
-        experiment["experiment_id"],
-        "owner",
-        "final period reserved before selection",
-        "2026-04-01",
-        "2026-06-30",
-    )
-    assert sealed["revealed_at"] is None
-    assert sealed["holdout_spec_hash"] is not None
-    assert sealed["start_date"] is None and sealed["end_date"] is None
-    baseline = server.advance_experiment_stage(
-        project_id,
-        experiment["experiment_id"],
-        "baseline",
-        "queued",
-        "owner approved resolved baseline spec",
-    )
-    assert baseline["state"] == "queued"
-    assert baseline["state_history_truncated"] is False
-    linked = server.link_project_run(
-        project_id, experiment["experiment_id"], "oos", "queued", run_id
-    )
-    running = server.advance_stage_state(linked["link_id"], "running", "worker accepted")
-    assert running["state"] == "running"
-    attempt = server.record_project_attempt(
-        project_id,
-        experiment["experiment_id"],
-        "robustness",
-        "failed",
-        "cfg:bootstrap:7",
-        error="Tier-2 null threshold not cleared",
-        details={"family": "bootstrap", "tier": 2},
-    )
-    assert attempt["status"] == "failed"
-    assert server.list_projects(limit=1)["items"][0]["project_id"] == project_id
-    shown_project = server.get_project(project_id)
-    assert shown_project["current_version_id"] == version["version_id"]
-    assert len(shown_project["stage_states"]) == 15
-    assert (
-        next(row for row in shown_project["stage_states"] if row["stage"] == "baseline")["state"]
-        == "queued"
-    )
-    assert (
-        server.get_strategy_version(project_id, version["version_id"])["source_fingerprint"]
-        == "git:abc1234"
-    )
-    assert (
-        server.get_experiment_spec(project_id, experiment["experiment_id"])["snapshot_id"]
-        == "snap-aapl"
-    )
-
-    drafted = server.draft_evidence(
-        claim="AAPL reversal needs more OOS support.",
-        assets=["AAPL"],
-        frozen_universe=["AAPL", "SPY"],
-        method="walk_forward_oos",
-        knowledge_at="2026-07-19T08:00:00Z",
-        author="codex",
-        source_run_id=run_id,
-        source_artifact="manifest.json",
-        source_field="outcomes.randomized_price_null",
-        project_id=project_id,
-        strategy_version_id=version["version_id"],
-        experiment_id=experiment["experiment_id"],
-    )
-    assert drafted["status"] == "draft"
-    assert drafted["author_kind"] == "agent"
-    evidence = server.search_evidence(asset="AAPL", project_id=project_id)
-    assert evidence["items"][0]["evidence_id"] == drafted["evidence_id"]
-    reviewed = server.review_evidence(drafted["evidence_id"], "rejected", "codex")
-    assert reviewed["revision"] == 2
-    assert reviewed["author_kind"] == "agent"
-    assert server.get_evidence(drafted["evidence_id"])["revisions_truncated"] is False
-
-    brief = server.get_agent_brief(project_id, evidence_limit=10)
-    assert brief["allowed_scope"]["snapshot_id"] == "snap-aapl"
-    assert len(brief["stage_statuses"]) == 15
-    assert (
-        next(row for row in brief["stage_statuses"] if row["stage"] == "baseline")["run_id"] is None
-    )
-    assert "reveal_holdout" not in str(brief)
-
     job = server.create_development_job(
         "validation_suite",
         {"families": ["bootstrap", "student_t", "garch"]},
-        project_id=project_id,
-        experiment_id=experiment["experiment_id"],
     )
     assert job["status"] == "queued"
     assert server.list_development_jobs(limit=1)["items"][0]["job_id"] == job["job_id"]
@@ -314,45 +155,11 @@ def test_control_plane_tools_round_trip_through_cli(
     prior = server.get_development_job(job["job_id"], event_limit=1, event_offset=1)
     assert prior["events"][0]["event_type"] == "created"
     assert prior["events_has_more"] is False
-    baseline_plan = server.plan_development_suite(
-        project_id, experiment["experiment_id"], "baseline"
-    )
-    assert baseline_plan["action"] == "baseline"
-    assert baseline_plan["ready"] is False  # baseline was already queued above
-    ml_plan = server.plan_ml_experiment(project_id, experiment["experiment_id"])
-    assert ml_plan["action"] == "qlib"
-    assert (
-        server.search_asset_evidence("AAPL", project_id=project_id)["items"][0]["evidence_id"]
-        == drafted["evidence_id"]
-    )
 
 
 def test_control_plane_tool_bounds_fail_before_cli() -> None:
     with pytest.raises(ValueError, match="limit"):
         server.list_runs(limit=501)
-    with pytest.raises(ValueError, match="limit"):
-        server.list_projects(limit=101)
-    with pytest.raises(ValueError, match="lineage_limit"):
-        server.get_project("8458c871-8c13-412d-8332-40e90b2041fd", lineage_limit=0)
-    with pytest.raises(ValueError, match="counterevidence"):
-        server.review_evidence(
-            "74312554-5131-4b2e-8434-c80151573166",
-            "rejected",
-            "codex",
-            counterevidence=[],
-        )
-    with pytest.raises(ValueError, match="owner-only"):
-        server.launch_development_suite(
-            "8458c871-8c13-412d-8332-40e90b2041fd",
-            "ex_" + "a" * 64,
-            "holdout_reveal",
-        )
-    with pytest.raises(ValueError, match="cannot grant corroborated"):
-        server.review_evidence(
-            "74312554-5131-4b2e-8434-c80151573166",
-            "corroborated",
-            "codex",
-        )
 
 
 def test_legacy_action_options_are_closed_per_tool(
@@ -485,33 +292,11 @@ def test_forecast_action_preserves_safe_managed_identifier_compatibility(
 def test_v3_control_tools_publish_named_output_schemas() -> None:
     tools = {tool.name: tool for tool in anyio.run(server.mcp.list_tools)}
     typed_names = {
-        "create_strategy_project",
-        "create_strategy_version",
-        "create_experiment_spec",
-        "link_project_run",
-        "advance_stage_state",
-        "advance_experiment_stage",
-        "record_project_attempt",
-        "seal_project_holdout",
-        "list_projects",
-        "get_project",
-        "get_strategy_version",
-        "get_experiment_spec",
-        "get_agent_brief",
         "create_development_job",
         "list_development_jobs",
         "get_development_job",
-        "search_evidence",
-        "get_evidence",
-        "draft_evidence",
-        "review_evidence",
-        "plan_development_suite",
-        "launch_development_suite",
         "cancel_development_suite",
         "reconcile_development_jobs",
-        "plan_ml_experiment",
-        "launch_ml_experiment",
-        "search_asset_evidence",
         "get_chart_bundle",
         "get_portfolio_analytics",
         "compare_runs",
@@ -524,9 +309,6 @@ def test_v3_control_tools_publish_named_output_schemas() -> None:
         assert schema.get("type") == "object"
         assert schema.get("properties"), name
         assert schema.get("additionalProperties") is not True
-    holdout_required = tools["seal_project_holdout"].inputSchema.get("required")
-    assert isinstance(holdout_required, list)
-    assert {"start_date", "end_date"} <= set(holdout_required)
 
 
 def test_chart_bundle_and_run_comparison_are_snapshot_locked_and_bounded(

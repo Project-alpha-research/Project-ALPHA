@@ -4,7 +4,6 @@ sources:
   - apps/alpha-mcp/src/alpha_mcp/**
   - tests/unit/test_mcp_invoke.py
   - tests/integration/test_mcp_server.py
-  - tests/integration/test_research_mcp.py
   - tests/unit/test_mcp_spine_tools.py
   - tests/unit/test_mcp_front_door_tools.py
   - tests/integration/test_mcp_front_door.py
@@ -43,7 +42,7 @@ It is a surface like the web backend: it composes nothing and has no authority o
   engine, data, research and study package and `alpha_web`, including indirect imports. Unlike the web backend it has
   no `ignore_imports` exception. See [engineering § Import layers](engineering.md#import-layers).
 - Seams in use: `run_projection`, `catalog` (`known_strategies`, `strategy_params`), `run_store`, `artifact_contract`,
-  `durable_lease`, `job_capacity`, `suite_catalog`. Do not import `alpha_cli.owner_auth` or any control-store module.
+  `durable_lease`, `job_capacity`. Do not import `alpha_cli.owner_auth` or any control-store module.
 
 ## Spine tools
 
@@ -113,25 +112,21 @@ It is a surface like the web backend: it composes nothing and has no authority o
   [ADR-0030](../../adr/0030-touch-id-owner-presence-for-research-actions.md).
   See [research-integrity § Owner authority](research-integrity.md#owner-authority) and
   [research-integrity § No live capital](research-integrity.md#no-live-capital).
-- Research tools are exactly `research_capture`, `research_get`, `research_propose`, `research_launch`,
-  `research_status` and `research_report`, and no tool name may contain `approve`, `decide`, `decision`, `reveal`, `d2`,
-  `order` or `paper`. Spine tool names and arguments also never match
-  `approve|promote|confirm|accept_bad|owner|order|enroll`. Enforced by
-  `tests/integration/test_research_mcp.py::test_research_mcp_surface_is_pinned_without_owner_authority`.
-- Agent output is commentary or a draft, never evidence. Research source page reads return bounded, project-bound
-  slices of the hash-verified extraction labelled `UNTRUSTED_SOURCE`; they do not screen claims or advance state.
+- No tool name may contain `approve`, `decide`, `decision`, `reveal`, `d2`, `order` or `paper`. Spine tool names and
+  arguments also never match `approve|promote|confirm|accept_bad|owner|order|enroll`.
+- Agent output is commentary or a draft, never evidence.
 
 ## Changing the tool set
 
 - The tool surface is pinned. Adding or removing a tool means, in the same change:
-  - update `_EXPECTED_MCP_TOOLS` and the `assert len(names) == N` count in `tests/integration/test_research_mcp.py`
+  - update the expected names in `tests/integration/test_mcp_server.py`
     (`tests/unit/test_repo_awareness_drift.py` checks the count equals the `@mcp.tool` decorators in `server.py`);
   - run `uv run python scripts/check_openapi_operations.py --write` to regenerate the
     [capability matrix](../../governance/capability-authority-matrix.md), which records the tool count.
 - Every new tool must be a read or a draft-write within its typed contract. [ADR-0022](../../adr/0022-codex-collaboration-surface.md)
 - When a CLI command or flag that a tool wraps is added, renamed or removed, update the tool in `server.py` and its
   option allowlist to match. No test catches a stale wrapper until the tool is called.
-- Adding or removing a tool: update the expected tool set in `tests/integration/test_research_mcp.py`,
+- Adding or removing a tool: update the expected tool set in `tests/integration/test_mcp_server.py`,
   then run `uv run python scripts/check_openapi_operations.py --write` (the capability matrix records
   the tool count).
 
@@ -146,7 +141,6 @@ D2 confirmation, reveal a holdout or place orders.
 - Code: `apps/alpha-mcp/src/alpha_mcp/` (`server.py` holds the tools and each tool's option
   allowlist; `spine_tools.py` holds the research-path tools; `front_door_tools.py` holds the front-door tools; `_invoke.py` runs the CLI).
 - Tests: `tests/unit/test_mcp_invoke.py`, `tests/integration/test_mcp_server.py`,
-  `tests/integration/test_research_mcp.py` (pins the exact tool list and count),
   `tests/unit/test_mcp_spine_tools.py` (spine argv and refusals),
   `tests/unit/test_mcp_front_door_tools.py` and `tests/integration/test_mcp_front_door.py` (front door).
 - Check: `uv run python scripts/gate.py check`.

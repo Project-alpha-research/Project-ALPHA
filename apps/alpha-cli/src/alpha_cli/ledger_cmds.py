@@ -143,7 +143,8 @@ def _render(output: dict[str, Any]) -> str:
             kinds = ", ".join(f"{name} {n}" for name, n in output["rdagent_kinds"].items())
             lines.append(f"The RD-Agent ledger adds {total} trials ({kinds}).")
         if output.get("breakdown"):
-            lines.append(f"By kind: {json.dumps(counted['by_kind'], sort_keys=True)}")
+            kinds = {**counted["by_kind"], **({"ml_run": ml} if ml else {})}
+            lines.append(f"By kind: {json.dumps(kinds, sort_keys=True)}")
             lines.append(f"By family: {json.dumps(counted['by_family'], sort_keys=True)}")
         lines.append(counted["definition"])
         if output.get("unknown_rows"):

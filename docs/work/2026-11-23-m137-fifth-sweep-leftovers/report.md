@@ -45,3 +45,8 @@ Decisions and results per item. No numbers from a real run are written here.
 - Cause: the "re-pulls every day" note was part of each symbol's line.
 - Change: one line per symbol, then the note once at the end.
 - Test: `tests/unit/test_data_update_cmds.py` (failed first, checked by stashing the change).
+
+## 12. `alpha ledger summary` "By kind"
+- Cause: the line printed only the rule-test kinds of the headline count; ML tries are counted apart ("Counting N ML tries").
+- Change: the text line adds `ml_run` when there are ML tries. The JSON field `by_kind` is unchanged.
+- Test: `tests/unit/test_ledger_cmds.py`.

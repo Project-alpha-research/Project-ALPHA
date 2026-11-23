@@ -31,3 +31,9 @@ Decision: the commit trailer names the model that did the work (Sonnet 5.5), not
 - Cause: `alpha test` had no heartbeat.
 - Change: it prints the expected time first (240 s per asset, a quarter of that with `--quick`), then the existing `heartbeat` helper prints a line about every 10 seconds naming the stage ("testing SPY (1 of 2)"). `heartbeat` now accepts a label function; `run_idea` takes an optional `stage` callback. Lines go to stderr; stored runs are unchanged.
 - Test: `tests/unit/test_m126_counts_bridge.py`.
+
+## 3. Price chart
+- Cause: fixed marker sizes (26, then 9 past 60 fills) and always a linear price axis.
+- Change (`figures/_price_signal.py`): marker size falls smoothly with the fill count (never under 10). Past 200 fills, every k-th fill is drawn and the caption says "every kth of N fills drawn". A span over five years (and all lows above 0) gets a log price axis, named in the axis label. Look unchanged: white, standard matplotlib.
+- Decision: no zoomed second panel. All panels of a figure share one x-axis in `alpha_research.figures` (protected), so a last-two-years panel cannot be drawn. The brief allowed thinning instead.
+- Test: `tests/unit/test_figure_pack.py` (three new tests).

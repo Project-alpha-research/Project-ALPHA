@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
+from alpha_core.reserve import RESERVED_START
+
 LABEL_MEANING: dict[str, str] = {
     "null-closes-for-high-low": (
         "The rule reads the high or low. The first random-price test has no daily range, "
@@ -38,10 +40,10 @@ LABEL_MEANING: dict[str, str] = {
         "Run with a setting other than the default, or with another random seed."
     ),
     "reserved-period-seen": (
-        "The data reaches into the reserved period, which starts on 2024-01-01."
+        f"The data reaches into the reserved period, which starts on {RESERVED_START}."
     ),
     "reserved-period-confirmation": (
-        "The owner's one confirmation of a frozen test on the reserved period (2024-01-01 "
+        f"The owner's one confirmation of a frozen test on the reserved period ({RESERVED_START} "
         "on). It is recorded whatever it shows."
     ),
     "reserved-period-confirmed-in-family": (
@@ -57,7 +59,8 @@ LABEL_MEANING: dict[str, str] = {
         "The model settings were fitted on the same history they describe."
     ),
     "reserved-period-held-back": (
-        "Data from 2024-01-01 on was held back for the owner's confirmation and was not used."
+        f"Data from {RESERVED_START} on was held back for the owner's confirmation and was "
+        "not used."
     ),
     "class-default-costs": (
         "Costs came from the default for this kind of market, not from a setting you chose."

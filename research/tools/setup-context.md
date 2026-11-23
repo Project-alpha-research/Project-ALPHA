@@ -10,7 +10,6 @@ verified: 346d6900dd873041
 
 **Reach for it when** the owner asks "what happened after positioning (or short volume) was extreme?" and a
 [setup find](setup-find.md) should use that series as a condition.
-
 **Spec** (full example: `research/examples/setup-context.example.toml`)
 ```toml
 [context]
@@ -26,7 +25,6 @@ alpha setup study <find_id> --json
 `--context "alias=series@key"` also works on `find`, `study` and `trade`; repeat it for more series.
 
 **How to read it**
-
 - Series and keys: [positioning and short volume](positioning-short-volume-context.md). Aliases work in `event`, `filters`, `trigger`
   and `reference`, not in `[exit]`.
 - Each asset prints the span where the series has a value, the days the condition was true and its **separate spells**. A weekly value
@@ -39,5 +37,4 @@ alpha setup study <find_id> --json
 **What it cannot tell you**
 - Cause. A reading is not a verdict and promises no profit. Different levels or series are new tests, counted in the same idea family.
 - Data after 2023-12-31 is held back; rows added later change nothing. Short volume covers FINRA facilities only.
-
 **Next** Report the occurrences and spells first, then the study reading. Say "Hypothesis:" for any reason you give.

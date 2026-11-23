@@ -149,6 +149,21 @@ def _basket_and_costs(
     return tuple(basket), (net + costs, costs)
 
 
+def _write_sidecars(rdir: Path, replay: PortfolioReplayResult, periods_per_year: int) -> None:
+    """The standard sidecars, with the basket as the passive line and per-period costs."""
+    basket, bar_returns = _basket_and_costs(replay)
+    _artifacts.write_run_sidecars(
+        rdir,
+        equity=replay.backtest.equity_curve,
+        trades=replay.backtest.trades,
+        trace_result=dataclasses.replace(
+            replay.backtest, benchmark_curve=basket, benchmark_kind=BASKET_KIND
+        ),
+        periods_per_year=periods_per_year,
+        bar_returns=bar_returns,
+    )
+
+
 def _fold_frame(validated: ValidatedResult) -> pl.DataFrame:
     rows = [
         {
@@ -261,17 +276,7 @@ def run_ml_replay(
     )
     run_id = identity.run_id
     rdir = _artifacts.run_dir(data_dir, run_id)
-    basket, bar_returns = _basket_and_costs(replay)
-    _artifacts.write_run_sidecars(
-        rdir,
-        equity=replay.backtest.equity_curve,
-        trades=replay.backtest.trades,
-        trace_result=dataclasses.replace(
-            replay.backtest, benchmark_curve=basket, benchmark_kind=BASKET_KIND
-        ),
-        periods_per_year=periods_per_year,
-        bar_returns=bar_returns,
-    )
+    _write_sidecars(rdir, replay, periods_per_year)
     _artifacts.publish_artifact(
         rdir / "ml_predictions.parquet", validated.predictions.write_parquet
     )

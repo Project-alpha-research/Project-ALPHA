@@ -24,6 +24,7 @@ import typer
 
 from alpha_cli._artifacts import publish_artifact, write_manifest
 from alpha_core import Bar, DataError
+from alpha_core.config import AlphaSettings
 from alpha_forecast import Forecaster, ForecastResult, close_quantiles
 
 FORECAST_SEED_NS = 0x464F5243  # "FORC": forecast children of the master seed (spec §11.4)
@@ -334,3 +335,21 @@ def write_forecast_run(
     )
     publish_artifact(rdir / "history.parquet", history_frame.write_parquet)
     write_manifest(rdir, manifest)
+
+
+def resolved_model(
+    settings: AlphaSettings,
+    model: str | None,
+    model_revision: str | None,
+    tokenizer: str | None,
+    tokenizer_revision: str | None,
+) -> tuple[str, str, str, str]:
+    """Model and tokenizer ids with their revisions: the option, else the setting."""
+    return (
+        model if model is not None else settings.forecast_model,
+        model_revision if model_revision is not None else settings.forecast_model_revision,
+        tokenizer if tokenizer is not None else settings.forecast_tokenizer,
+        tokenizer_revision
+        if tokenizer_revision is not None
+        else settings.forecast_tokenizer_revision,
+    )

@@ -70,15 +70,8 @@ def run(
 ) -> None:
     """Sample future OHLCV paths for SYMBOL and write the outcome-cone artifacts."""
     settings = AlphaSettings()
-    resolved_model = model if model is not None else settings.forecast_model
-    resolved_model_rev = (
-        model_revision if model_revision is not None else settings.forecast_model_revision
-    )
-    resolved_tokenizer = tokenizer if tokenizer is not None else settings.forecast_tokenizer
-    resolved_tokenizer_rev = (
-        tokenizer_revision
-        if tokenizer_revision is not None
-        else settings.forecast_tokenizer_revision
+    (resolved_model, resolved_model_rev, resolved_tokenizer, resolved_tokenizer_rev) = (
+        _forecast.resolved_model(settings, model, model_revision, tokenizer, tokenizer_revision)
     )
     resolved_device = device if device is not None else settings.forecast_device
     master_seed = seed if seed is not None else settings.random_seed
@@ -205,6 +198,20 @@ def run(
     _forecast.write_forecast_run(rdir, manifest=manifest, out=out, history=bars)
     pictures = _cone_pictures(run_id, rdir, settings.data_dir)
 
+    _announce(symbol, run_id, out, (horizon, samples), prov, rdir, pictures)
+
+
+def _announce(
+    symbol: str,
+    run_id: str,
+    out: Any,
+    shape: tuple[int, int],
+    prov: dict[str, Any],
+    rdir: Path,
+    pictures: tuple[str, str],
+) -> None:
+    """Print the one-screen forecast summary, then the pretraining-overlap warning if any."""
+    horizon, samples = shape
     typer.echo(
         f"forecast {symbol} -> run {run_id}: median {out.median_end_return:+.2%} "
         f"[p05 {out.p05_end_return:+.2%}, p95 {out.p95_end_return:+.2%}] over {horizon} steps "
@@ -336,15 +343,8 @@ def evaluate(
 ) -> None:
     """Score SYMBOL's forecaster at rolling origins vs realized outcomes + baselines."""
     settings = AlphaSettings()
-    resolved_model = model if model is not None else settings.forecast_model
-    resolved_model_rev = (
-        model_revision if model_revision is not None else settings.forecast_model_revision
-    )
-    resolved_tokenizer = tokenizer if tokenizer is not None else settings.forecast_tokenizer
-    resolved_tokenizer_rev = (
-        tokenizer_revision
-        if tokenizer_revision is not None
-        else settings.forecast_tokenizer_revision
+    (resolved_model, resolved_model_rev, resolved_tokenizer, resolved_tokenizer_rev) = (
+        _forecast.resolved_model(settings, model, model_revision, tokenizer, tokenizer_revision)
     )
     resolved_device = device if device is not None else settings.forecast_device
     master_seed = seed if seed is not None else settings.random_seed

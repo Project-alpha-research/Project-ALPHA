@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
@@ -71,3 +72,11 @@ def overview(
         return result
     except RuntimeError as exc:  # unknown store or unreadable data: the CLI's own text
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+def warm() -> None:
+    """Fill the cache for the screen's default view; one log line, never an error, if it fails."""
+    try:
+        overview()
+    except HTTPException as exc:  # a speed-up only: the screen still works without it
+        logging.getLogger("alpha_web").warning("market warm-up skipped: %s", exc.detail)

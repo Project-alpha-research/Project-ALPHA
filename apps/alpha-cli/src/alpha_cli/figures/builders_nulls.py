@@ -8,6 +8,7 @@ import numpy as np
 
 from alpha_cli.figures import _sources as src
 from alpha_cli.figures._common import BuildContext, _hist, _observed_label, pct
+from alpha_cli.figures.ml_folds import ml_folds
 from alpha_core import DataError
 from alpha_research.figures import (
     BarMark,
@@ -96,7 +97,11 @@ def null_distribution(ctx: BuildContext) -> FigureSpec:
 
 
 def fold_sharpe(ctx: BuildContext) -> FigureSpec:
-    folds = ctx.manifest.get("folds")
+    folds = (
+        ml_folds(ctx.rdir, ctx.manifest)
+        if ctx.manifest.get("command") == "ml_replay"
+        else ctx.manifest.get("folds")
+    )
     if not isinstance(folds, list) or not folds:
         raise DataError("this run records no walk-forward folds")
     index: list[float] = []

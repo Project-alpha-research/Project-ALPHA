@@ -95,7 +95,7 @@ DEFLATED_SHARPE = ToolSpec(
     ),
     caveats=(
         "It uses the count frozen when the run was recorded. Tries made later, or never recorded"
-        " in the ledger, are not counted; a new rule test counts the current ledger.",
+        " in the ledger, are not counted; a new run counts the current ledger.",
     ),
     time_safety="hindsight",
     poison_test=TESTS + "test_future_input_rejected",

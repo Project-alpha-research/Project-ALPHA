@@ -75,7 +75,13 @@ STORED_FILES = {
 }
 # Stored buy-and-hold kinds a tool may read: the engine's price-only line, or the rule test's
 # line on the strategy's own dividend rule (entitled before the ex-date open, paid on pay date).
-HOLD_KINDS = frozenset(("passive_open_to_open_price_only", "passive_open_to_open_with_dividends"))
+HOLD_KINDS = frozenset(
+    (
+        "passive_open_to_open_price_only",
+        "passive_open_to_open_with_dividends",
+        "equal_weight_basket_open_to_open_price_only",
+    )
+)
 
 
 @dataclass(frozen=True)
@@ -126,9 +132,9 @@ class Target:
         if self.is_ml:
             raise SpineError(
                 "NOT_FOR_A_MODEL_RUN",
-                f"Run {self.run_id} is a model run. Its equity is stored in currency, not in "
-                "units of starting cash, so this check does not apply.",
-                "Run this check on a rule test.",
+                f"Run {self.run_id} is a model run, which stores its equity in currency and not "
+                "in units of starting cash, so this check does not apply.",
+                "Use a check that needs only equity, returns or trades.",
             )
         cash = self.metadata.get("starting_cash")
         if not isinstance(cash, int | float) or isinstance(cash, bool) or not cash > 0:
@@ -210,9 +216,9 @@ class Target:
         if self.is_ml and not self.kinds.issuperset(needs):
             raise SpineError(
                 "NOT_FOR_A_MODEL_RUN",
-                f"Run {self.run_id} is a model run. This check needs a single rule's bars or "
-                "settings (or a stored buy-and-hold file), and a model run has none.",
-                "Use a check that needs only equity, returns or trades, or run it on a rule test.",
+                f"Run {self.run_id} is a model run, and this check needs one rule's bars or "
+                "settings, which a model run does not have.",
+                "Use a check that needs only equity, returns or trades.",
             )
         files = [STORED_FILES[kind] for kind in needs if kind in STORED_FILES]
         for name in files:

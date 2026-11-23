@@ -57,6 +57,15 @@ def _passive(frame: Any) -> tuple[float, ...]:
     return passive
 
 
+BASKET = "equal_weight_basket_open_to_open_price_only"
+
+
+def _is_basket(frame: Any) -> bool:
+    """A model run stores the equal-weight basket of its assets as the passive line."""
+    kinds = set(frame["benchmark_kind"].to_list()) if "benchmark_kind" in frame.columns else set()
+    return kinds == {BASKET}
+
+
 def _legacy_basis(frame: Any) -> str:
     """Runs without period records state only what their stored buy-and-hold kind says."""
     kinds = set(frame["benchmark_kind"].to_list()) if "benchmark_kind" in frame.columns else set()
@@ -95,34 +104,42 @@ def build(ctx: BuildContext, figure_id: str, row: dict[str, Any] | None) -> Figu
     strategy = src.rebase(src.floats(frame[column], name=column))
     points = src.sample(len(strategy))
     basis = row["price_basis"] if row else None
-    subject_label = f"Strategy ({basis})" if basis else "Strategy"
+    basket = comparison and _is_basket(frame)
+    subject = "Model" if basket else "Strategy"
+    subject_label = f"{subject} ({basis})" if basis else subject
     if comparison:
         passive = _passive(frame)
         basis = basis or _legacy_basis(frame)
         lower = tuple(s / b - 1 for s, b in zip(strategy, passive, strict=True))
-        reference, reference_label = passive, f"Buy and hold ({basis})"
+        hold = "the equal-weight basket" if basket else "buy and hold"
+        reference, reference_label = passive, f"{hold.capitalize()} ({basis})"
         # One short line: a two-line label is wider than the left margin and is clipped.
         axis = "Ahead (%)"
         lead = lower[-1]
         relation = "ahead of" if lead >= 0 else "behind"
         answer = (
-            f"Strategy finished at {mult(strategy[-1])}. "
-            f"Buy and hold finished at {mult(passive[-1])}. "
-            f"The strategy finished {pct(abs(lead))} {relation} buy and hold."
+            f"{subject} finished at {mult(strategy[-1])}. "
+            f"{hold.capitalize()} finished at {mult(passive[-1])}. "
+            f"The {subject.lower()} finished {pct(abs(lead))} {relation} {hold}."
             if lead
-            else f"Strategy and buy and hold both finished at {mult(strategy[-1])}, level at 0.0%."
+            else f"{subject} and {hold} both finished at {mult(strategy[-1])}, level at 0.0%."
         )
         same = (
-            f"Both lines use the same opening prices and dividend rule ({basis}). Rule tests "
-            "add dividends when the store holds them. "
-            if row
-            else f"Buy and hold is the stored {basis} line. Backtest and validate runs use the "
-            "engine's built-in buy-and-hold, which never adds dividends, so the same asset can "
-            "read price only here and with dividends in a rule test. "
+            "The basket holds every asset of the run in equal weight, reset at each period's "
+            "open, on opening prices without dividends. "
+            if basket
+            else (
+                f"Both lines use the same opening prices and dividend rule ({basis}). Rule tests "
+                "add dividends when the store holds them. "
+                if row
+                else f"Buy and hold is the stored {basis} line. Backtest and validate runs use the "
+                "engine's built-in buy-and-hold, which never adds dividends, so the same asset can "
+                "read price only here and with dividends in a rule test. "
+            )
         )
         caveat = (
-            same + "The strategy pays recorded fees and slippage; buy and hold pays none. "
-            "The lower panel (Ahead) divides strategy growth by buy-and-hold growth and "
+            same + f"The {subject.lower()} pays recorded fees and slippage; {hold} pays none. "
+            f"The lower panel (Ahead) divides {subject.lower()} growth by {hold} growth and "
             "subtracts one: above zero is ahead, below zero is behind."
         )
     else:

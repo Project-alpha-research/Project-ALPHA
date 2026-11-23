@@ -136,11 +136,6 @@ docs/reference/invariants/web-frontend.md
 docs/reference/invariants/web-ideas.md
   verified e24cae1f03437816 on 2026-11-21: new page: the section moved here unchanged except the follow line, which is now true
 
-docs/reference/invariants/web-research.md
-  verified 4778c8b8e3105da1 on 2026-11-21: only the Ideas page, its two read routes and the ideas activity area were added; this page does not describe them
-  verified 939a57e5a99340e9 on 2026-11-21: Merge of main (options group) into the nightly alert branch took main's stamps: main verified its options changes against this text; this branch's home group, nightly alert and backup statements were re-read and hold
-  verified 8cfe152731a9e4fb on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
-
 docs/reference/invariants/web-run-detail.md
   verified 25d4664ae908e940 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 

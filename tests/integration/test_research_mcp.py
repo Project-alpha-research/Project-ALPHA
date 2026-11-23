@@ -307,7 +307,7 @@ def test_research_launch_uses_a_launch_class_timeout(
         "00000000-0000-4000-8000-000000000000",
         "--json",
     ]
-    web_launch_timeout = 120.0  # alpha_web/_research.py::launch uses this launch-class ceiling
+    web_launch_timeout = 120.0  # the launch-class ceiling
     timeout_seconds = captured["timeout_seconds"]
     assert isinstance(timeout_seconds, float)
     assert timeout_seconds >= web_launch_timeout

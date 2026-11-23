@@ -84,7 +84,7 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
   `passed` and `overall` stay for machines. The words come from `panels/readingModel.ts`: `runWord`, `manifestWord`, `toastDetail`, `paletteHint`.
   The browser re-derives no word.
 - A run in a list shows its evidence word, else "graded X under the old rules", muted: the Navigator run list
-  (`navigatorModel.ts`: the word after the short id, no result column), Pipeline (`PipelineLatest`), toasts, the command palette.
+  (`navigatorModel.ts`: the word after the short id, no result column), toasts, the command palette.
 - Summary has a "Reading" row and no "Passed" row. The edge review has a "Reading" row and no verdict or gate-result row. A Monte
   Carlo run adds one row per family: stored percentiles in words, no letter and no stage word.
 - Gates tab (`explain/gates.ts`, `Gates.tsx`, `ExplainCard`): each check is a FACT (walk-forward: the icon and "computed", "fault"

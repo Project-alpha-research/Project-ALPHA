@@ -16,7 +16,7 @@ _AGENT_RUNNABLE_SUITE_ACTIONS = _SUITE_ACTIONS - {"holdout_reveal"}
 _RESEARCH_ANSWER_KEYS = frozenset({"chart_construction", "event_availability", "primary_outcome"})
 # The D0 pilot computes and publishes a run; a projection-class timeout would kill it
 # mid-compute and permanently consume one of the three lifetime launch reservations.
-# Matches the launch-class ceiling used by alpha_web/_research.py::launch.
+# The launch-class ceiling (120 s) the web app used to share with this server.
 _RESEARCH_LAUNCH_TIMEOUT_S = 120.0
 
 

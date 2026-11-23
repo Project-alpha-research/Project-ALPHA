@@ -1227,7 +1227,6 @@ function responseFor(route: Route, options: MockOptions): unknown {
   if (url.pathname === '/api/market/overview') return { store: '1D', available_stores: ['1D'], bar_unit: 'day', window: 90, limit: 15, assets_in_store: 0, assets_scanned: 0, scan_cap: 200, bars_cap: 400, eligible_assets: 0, data_to: null, assets: [], too_few_bars: [], unreadable: [], generated_at: '2026-11-19T10:00:00+00:00' }
   if (url.pathname === '/api/follow/today') return { as_of: '2026-11-20T01:00:00+00:00', paper: true, followed: 0, behind: 0, markets: [], groups: [], rows: [], notice: 'Paper only. Forward use; not research. Not advice.' }
   if (url.pathname === '/api/jobs') return options.jobs ?? []
-  if (url.pathname === '/api/evidence') return EMPTY_PAGE
   if (url.pathname === '/api/ml/experiments') return EMPTY_PAGE
   if (url.pathname === '/api/ml/experiments/preflight') {
     return {

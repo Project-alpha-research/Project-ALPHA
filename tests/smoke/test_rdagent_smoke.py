@@ -110,11 +110,6 @@ def test_native_fixture_loop_runs_and_alpha_shows_its_job() -> None:
         (row,) = _alpha(root, "research", "list", "--json")["items"]
         assert row["case_id"] == PROJECT_ID
 
-        with web_server(root, ALPHA_DATA_DIR=str(root)) as base:
-            served = get_json(f"{base}/api/research/cases/{PROJECT_ID}/status")
-            assert served["active_job_id"] == JOB
-            assert served["execution_state"] == "running"
-
 
 def test_stock_rdloop_result_is_read_by_alpha_and_the_web_app() -> None:
     _source()

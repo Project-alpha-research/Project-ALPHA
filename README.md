@@ -39,24 +39,7 @@ real money: there is no live-trading route and no broker connection.
 
 ## What works today
 
-The honest scoreboard is [STATUS.md](STATUS.md), generated from
-[`docs/roadmap/capabilities.toml`](docs/roadmap/capabilities.toml). Its first lines give the
-current count of capabilities that are Working, Partial, Shelved and Not started.
-
-- **Working** means the whole workflow was run from start to finish through the installed
-  programs, on made-up (synthetic) data. Real market data runs are still to be confirmed.
-- **Partial** means pieces are tested, but not yet end to end, or something is still missing.
-- **Working today (synthetic data):** the Workstation, backtests, the statistical checks
-  (walk-forward, randomised nulls, deflated Sharpe, Monte Carlo path risk), the trial ledger,
-  family-wide deflated Sharpe, the opposite-trade control, walk-forward efficiency, the investigation tools
-  (market exposure, calm versus turbulent markets, change points; `alpha tool --help`), the answer
-  checker, crypto data download and freezing, the Qlib machine-learning lab, and the price
-  look-alike and "what is unusual now" tools.
-- **Partial:** the one-command rule test and its automatic diagnostics (the final end-to-end
-  check is still pending), the macro, filings and funding context data, stock and ETF data,
-  research cases, and the RD-Agent factor loop.
-- **Not started:** an autonomous AI research team. **Shelved:** five older pieces, kept but not
-  wired in.
+The honest scoreboard is [STATUS.md](STATUS.md), generated from [`docs/roadmap/capabilities.toml`](docs/roadmap/capabilities.toml).
 
 ## How to see it
 
@@ -153,6 +136,8 @@ a background job. Start at [RD-Agent in ALPHA](docs/roadmap/rd-agent-in-alpha.md
 | `workers/` | separate environments for Qlib, RD-Agent, literature search and textbook methods |
 | `research/` | the playbook and the tool cards for testing an idea |
 | `docs/` | reference pages, decisions, runbooks and the [roadmap](docs/roadmap/README.md) |
+| `workflow/` | the delivery pipeline: stages a change follows from brief to merge |
+| `scripts/` | the checks and tools: `gate.py`, `fs.py`, generators |
 | `tests/` | unit, integration, end-to-end and honesty tests |
 
 Start with [`CONTEXT.md`](CONTEXT.md): it routes any task to the folder that owns it. To find a

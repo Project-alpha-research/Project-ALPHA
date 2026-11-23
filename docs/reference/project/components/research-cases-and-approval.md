@@ -10,6 +10,8 @@ verified: fe3620faee2eed45
 
 # Research cases and owner approval
 
+Being removed (owner decision 2026-11-23): see [owner-decisions-6.md](../owner-decisions-6.md#2026-11-23-remove-the-old-research-case-machinery-export-first).
+
 A research case is the record of one market question from idea to decision: what will be tested,
 on which data, with what budget, what happened, and what the owner decided. Testing an idea needs
 no approval; the owner's approval is needed before anything goes to paper or live trading, and in

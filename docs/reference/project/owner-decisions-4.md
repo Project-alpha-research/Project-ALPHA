@@ -135,3 +135,10 @@ Continues the [owner decisions log](owner-decisions.md), [volume 2](owner-decisi
   anything is spent; honesty checks appear as labels on results.
 - **Governs:** [overview](overview.md#the-target-shape); [RD-Agent](components/rd-agent.md);
   [checklist](../../roadmap/production-scope-2.md#9-rd-agent-and-qlib-engines).
+
+## 2026-11-23: three of the open cards decided
+
+- **N3:** yes. RD-Agent research moves toward stocks, ETFs and the owner's own setups. Crypto stays as a second universe.
+- **N5:** decided. Workstation work resumed on 2026-11-21. Keep the look; finish and clean; no redesign.
+- **N6:** yes. The purpose and the three golden paths are in `CLAUDE.md`.
+- **Still open:** N2 (RD-Agent idea-family failure limit) and N4 (Qlib v3 feature recipe as the default).

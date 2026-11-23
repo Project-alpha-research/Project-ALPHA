@@ -42,8 +42,9 @@ def test_every_capability_and_undecided_card_is_on_the_page() -> None:
 def test_working_is_defined_as_run_end_to_end_through_the_installed_program() -> None:
     text = status.render(ROOT)
     assert (
-        '"Working" means the workflow was run from start to finish through the installed program\n'
-        "on made-up (synthetic) data." in text
+        '"Working" means the workflow was run from start to finish through the installed program.\n'
+        'Where a line says "a real run is recorded", it ran on the owner\'s real data on the Dell.'
+        in text
     )
     cmap = capabilities.load(ROOT)
     for cap in cmap.capabilities:

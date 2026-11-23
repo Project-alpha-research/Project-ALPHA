@@ -143,7 +143,8 @@ def _items() -> list[dict[str, object]]:
     app.add_typer(results_app, name="results")
     out = CliRunner().invoke(app, ["results", "--json"])
     assert out.exit_code == 0, out.output
-    return json.loads(out.stdout)["items"]
+    items: list[dict[str, object]] = json.loads(out.stdout)["items"]
+    return items
 
 
 def test_every_kind_is_in_the_default_list_with_a_reading(home: Path) -> None:

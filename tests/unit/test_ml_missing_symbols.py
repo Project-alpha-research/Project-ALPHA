@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -20,7 +21,8 @@ def test_all_missing_symbols_are_named_with_their_pull_lines(tmp_path: Path) -> 
     said = str(caught.value)
     assert "No stored bars for QQQ, IWM." in said
     assert "<date>" not in said
-    start = ParquetStore(tmp_path / "store").read_bars("SPY")["ts"].min().date().isoformat()
+    first = cast(datetime, ParquetStore(tmp_path / "store").read_bars("SPY")["ts"].min())
+    start = first.date().isoformat()
     today = datetime.now(UTC).date().isoformat()
     assert f"alpha data pull QQQ --start {start} --end {today}" in said
     assert f"alpha data pull IWM --start {start} --end {today}" in said

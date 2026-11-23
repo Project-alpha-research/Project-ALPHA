@@ -2,7 +2,7 @@
 
 The mapping is a cheap text search, not an import graph: a changed test file selects itself, a
 changed module selects the test files whose source imports it, and last run's failures run again.
-CI still runs every test on the pull request; this only decides what is worth running locally.
+The pull-request check in CI uses the same selection; every test runs on main after the merge.
 """
 
 from __future__ import annotations
@@ -12,7 +12,21 @@ import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
-ALWAYS = ("tests/bias_guards", "tests/oracles", "tests/acceptance")
+ALWAYS = (
+    "tests/bias_guards",
+    "tests/oracles",
+    "tests/acceptance",
+    # Fast whole-repository rules. A change far from them can break them, so the import mapping
+    # misses them; each one broke main after a merge. Together they take about ten seconds.
+    "tests/unit/test_code_size.py",
+    "tests/unit/test_reserved_date_one_home.py",
+    "tests/unit/test_research_playbook.py",
+    "tests/unit/test_filesystem_contract.py",
+    "tests/unit/test_spine_spec.py",
+    "tests/unit/test_capabilities.py",
+    "tests/unit/test_status_page.py",
+    "tests/unit/test_commands_reference.py",
+)
 MAX_MAPPED_TESTS = 400
 LAST_FAILED = Path(".pytest_cache") / "v" / "cache" / "lastfailed"
 _TEST_DEF = re.compile(r"^\s*(?:async\s+)?def test_", re.MULTILINE)

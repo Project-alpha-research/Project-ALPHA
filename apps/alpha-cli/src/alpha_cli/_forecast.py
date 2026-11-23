@@ -108,8 +108,7 @@ def estimate_seconds(
     return _reads(context, horizon) * rows * per_read
 
 
-WARMUP_STEPS = 2
-WARMUP_TRIES = 2
+BATCH = 32  # Kronos draws up to 32 paths in one batch, for about the time of one path
 
 
 def calibrated_seconds(
@@ -124,25 +123,31 @@ def calibrated_seconds(
 ) -> float:
     """The time for the run, from a short timed warm-up on this machine, rounded up.
 
-    The first warm-up call loads the model and its time is added once. The slower of two short
-    timed forecasts sets the seconds per bar read, so a busy CPU lengthens the estimate. The
-    offline double is never timed. ``scale`` repeats the run (one per scored origin).
+    The first warm-up call loads the model; its time is added once. Two short forecasts of one
+    full batch (a single path costs nearly as much as a batch), one step and two steps long, give
+    the time per step and the fixed time of each batch. The offline double is never timed.
+    ``scale`` repeats the run (one per scored origin).
     """
     if model == "fake" or len(bars) < 2:
         return estimate_seconds(context=context, horizon=horizon, rows=rows) * scale
     window = list(bars[-context:])
     typer.echo("Timing a short warm-up step on this computer first.", err=True)
+    batch = min(rows, BATCH)
 
-    def timed() -> float:
+    def timed(paths: int, steps: int) -> float:
         started = time.monotonic()
-        forecaster.forecast(window, horizon=WARMUP_STEPS, sample_count=1, seed=0)
+        forecaster.forecast(window, horizon=steps, sample_count=paths, seed=0)
         return time.monotonic() - started
 
-    load = timed()  # includes loading the model
-    step = max(timed() for _ in range(WARMUP_TRIES))
-    per_read = step / _reads(len(window), WARMUP_STEPS)
-    run = estimate_seconds(context=len(window), horizon=horizon, rows=rows, per_read=per_read)
-    return float(math.ceil(max(load, step) + run * scale))
+    load = timed(1, 1)  # includes loading the model
+    one, two = timed(batch, 1), timed(batch, 2)
+    first = _reads(len(window), 1)
+    # The second step's own time; a noisy reading falls back to the one-step time.
+    per_read = (two - one) / (_reads(len(window), 2) - first) if two > one else one / first
+    fixed = max(0.0, one - per_read * first)
+    batches = math.ceil(rows / batch)
+    run = batches * (fixed + per_read * _reads(len(window), horizon))
+    return float(math.ceil(load + run * scale))
 
 
 def say_time(seconds: float) -> str:

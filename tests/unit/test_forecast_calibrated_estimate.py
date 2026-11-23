@@ -84,3 +84,28 @@ def test_the_offline_double_is_never_timed() -> None:
 def test_minutes_are_rounded_up() -> None:
     assert _forecast.say_time(100.0) == "about 2 minutes"
     assert _forecast.say_time(121.0) == "about 3 minutes"
+
+
+class _BatchedStub(_Stub):
+    """Kronos draws samples in batches of 32: a batch costs about what one sample costs."""
+
+    def forecast(
+        self, bars: Sequence[Bar], *, horizon: int, sample_count: int, **_: object
+    ) -> object:
+        self.calls += 1
+        reads = sum(min(len(bars) + step, _forecast.MAX_WINDOW) for step in range(horizon))
+        time.sleep(reads * -(-sample_count // 32) * self.per_read)
+        return object()
+
+
+@pytest.mark.parametrize("rows", [32, 64])
+def test_the_estimate_counts_batches_not_single_samples(rows: int) -> None:
+    stub = _BatchedStub(1e-4)
+    bars = _bars(300)
+    expected = _forecast.calibrated_seconds(
+        stub, bars, context=120, horizon=12, rows=rows, model="kronos"
+    )
+    started = time.monotonic()
+    stub.forecast(bars[-120:], horizon=12, sample_count=rows)
+    real = time.monotonic() - started
+    assert expected <= 1.3 * real + 1.0, (expected, real)  # +1: rounded up

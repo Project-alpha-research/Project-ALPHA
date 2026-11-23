@@ -84,13 +84,19 @@ def _range_line(manifest: Mapping[str, Any]) -> str | None:
     return f"Range check: {lead} its likely range is {low:.2f} to {high:.2f}, which is {where}."
 
 
-def _deflated_line(manifest: Mapping[str, Any]) -> str | None:
+def _deflated_line(manifest: Mapping[str, Any], counted_elsewhere: bool) -> str | None:
+    """The luck adjustment. With no count paragraph, it names the stored number of tries."""
     block = _map(manifest.get("dsr"))
     value = _x(block.get("dsr"))
     if value is None:
         return None
+    tries = block.get("n_trials")
+    known = isinstance(tries, int) and not isinstance(tries, bool)
+    after = ""
+    if known and not counted_elsewhere:
+        after = f", after counting {tries} {'try' if tries == 1 else 'tries'}"
     return (
-        f"Luck adjustment: the Sharpe ratio, adjusted for the ideas tried, scores {value} "
+        f"Luck adjustment: the Sharpe ratio, adjusted for the ideas tried{after}, scores {value} "
         "on a scale from 0 to 1."
     )
 
@@ -137,14 +143,15 @@ def plain_report_lines(
     """The summary of a stored gauntlet run: what was checked, the number, one sentence each."""
     spine = _map(manifest.get("spine"))
     costs = _map(spine.get("costs")).get("line")
+    paragraph = _count_paragraph(run_symbol(manifest), diagnostics)
     lines = [
         reading_sentence(manifest, found),
         _result_line(_map(manifest.get("oos_metrics"))),
         _folds_count(manifest),
         _luck_line(manifest),
         _range_line(manifest),
-        _deflated_line(manifest),
-        _count_paragraph(run_symbol(manifest), diagnostics),
+        _deflated_line(manifest, paragraph is not None),
+        paragraph,
         _folds_line(manifest),
         costs if isinstance(costs, str) else None,
     ]

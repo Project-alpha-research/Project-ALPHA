@@ -35,3 +35,9 @@ Proof: after deletion I grepped apps, packages, tests, docs, scripts and researc
 - The five named unit test files (322): pass.
 - `gate.py check --base origin/main`: ruff format failed once (two files); fixed. The other steps (ruff, docs, import contracts, mypy, pytest) passed.
 - Fail-first evidence: the new stale-link tests name windows that did not exist in the registries after the change; they pass by dropping them. I wrote them with the code, not before (cleanup change).
+
+## Browser tests
+- Default lane (3 projects, 346 tests passed in the first run): one real failure of mine, fixed. `archive-chart` "watchlist picker" assumed the first read of `/api/chart-datasets` came from the picker; the Price chart also reads it. The test now fails every read until the retry and looks inside the dock. Same checks, same order.
+- Two failures also occur on untouched `origin/main` in this cloud box, so they are not from this change: `rule-test-summary` hover readout (chromium-minimum) and the `chart-document` screenshot (chromium-wide, 8% pixels differ here, tolerance 2%). I did not regenerate that snapshot: the removed Governance button is far below the 2% tolerance, and a snapshot made in this box would not match CI.
+- Removed the four `governance-document-*` screenshots (the window is gone).
+- Native-result lane skipped: it needs the RD-Agent source and Python, not provisioned here. CI runs it.

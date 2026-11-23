@@ -108,7 +108,8 @@ def estimate_seconds(
     return _reads(context, horizon) * rows * per_read
 
 
-BATCH = 32  # Kronos draws up to 32 paths in one batch, for about the time of one path
+BATCH = 32  # Kronos draws up to 32 paths in one batch
+LONGEST_WARM_UP = 64  # steps; a step costs more as the window grows, so time more than two
 
 
 @dataclass(frozen=True)
@@ -116,8 +117,9 @@ class Calibration:
     """What a short timed warm-up on this machine measured; it prices any run of the same model.
 
     One formula serves every number printed: the expected time and the "--paths N takes about"
-    tip. ``load`` is the one-off model load; a batch costs ``fixed`` plus ``per_read`` for each
-    bar the model reads."""
+    tip. ``load`` is the one-off model load. A warm-up batch of ``paths`` paths costs ``fixed``
+    plus ``per_read`` for each bar the model reads; on a CPU a batch costs about in proportion to
+    its paths (measured: 32 paths take about four times 8 paths)."""
 
     model: str
     context: int
@@ -125,14 +127,13 @@ class Calibration:
     load: float
     fixed: float
     per_read: float
-    batch: int
+    paths: int  # paths in the timed warm-up batch
 
     def seconds(self, *, horizon: int, rows: int, scale: int = 1) -> float:
         """The time for ``rows`` paths of ``horizon`` steps, rounded up to a whole second."""
         if self.model == "fake":
             return estimate_seconds(context=self.context, horizon=horizon, rows=rows) * scale
-        batches = math.ceil(rows / self.batch)
-        run = batches * (self.fixed + self.per_read * _reads(self.window, horizon))
+        run = rows / self.paths * (self.fixed + self.per_read * _reads(self.window, horizon))
         return float(math.ceil(self.load + run * scale))
 
 
@@ -142,17 +143,19 @@ def calibrate(
     *,
     context: int,
     rows: int,
+    horizon: int,
     model: str,
     clock: Callable[[], float] = time.monotonic,
 ) -> Calibration:
-    """Time the warm-up: the first call loads the model, then one full batch of one step and of
-    two steps give the time per bar read and the fixed time of a batch. The offline double is
-    never timed. ``clock`` is stubbed in tests."""
+    """Time the warm-up: the first call loads the model, then one batch of one step and one of
+    up to a quarter of the horizon (at most 64 steps) give the time per bar read and the fixed
+    time of a batch. The offline double is never timed. ``clock`` is stubbed in tests."""
     if model == "fake" or len(bars) < 2:
         return Calibration("fake", context, 0, 0.0, 0.0, 0.0, BATCH)
     window = list(bars[-context:])
     typer.echo("Timing a short warm-up step on this computer first.", err=True)
     batch = min(rows, BATCH)
+    long = max(2, min(LONGEST_WARM_UP, horizon // 4))
 
     def timed(paths: int, steps: int) -> float:
         started = clock()
@@ -160,12 +163,12 @@ def calibrate(
         return clock() - started
 
     load = timed(1, 1)  # includes loading the model
-    one, two = timed(batch, 1), timed(batch, 2)
+    one, later = timed(batch, 1), timed(batch, long)
     first = _reads(len(window), 1)
-    # The second step's own time; a noisy reading falls back to the one-step time.
-    per_read = (two - one) / (_reads(len(window), 2) - first) if two > one else one / first
+    # The later steps' own time; a noisy reading falls back to the one-step time.
+    per_read = (later - one) / (_reads(len(window), long) - first) if later > one else one / first
     fixed = max(0.0, one - per_read * first)
-    return Calibration(model, context, len(window), load, fixed, per_read, BATCH)
+    return Calibration(model, context, len(window), load, fixed, per_read, batch)
 
 
 def calibrated_seconds(
@@ -181,7 +184,7 @@ def calibrated_seconds(
     """The time for the run, from a short timed warm-up on this machine, rounded up.
 
     ``scale`` repeats the run (one per scored origin)."""
-    found = calibrate(forecaster, bars, context=context, rows=rows, model=model)
+    found = calibrate(forecaster, bars, context=context, rows=rows, horizon=horizon, model=model)
     return found.seconds(horizon=horizon, rows=rows, scale=scale)
 
 

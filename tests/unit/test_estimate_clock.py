@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from alpha_cli._estimate import UnitTimer, read_rate, say_minutes, write_rate
-from alpha_cli.test_cmds import RunClock, expected_line
+from alpha_cli.test_cmds import RunClock, expected_line, rate_key
 
 
 class Ticks:
@@ -75,3 +75,51 @@ def test_rates_survive_bad_files(tmp_path: Path) -> None:
     assert read_rate(tmp_path, "test_asset") == 5.0
     write_rate(tmp_path, "test_asset", float("nan"))
     assert read_rate(tmp_path, "test_asset") == 5.0
+
+
+def test_a_first_asset_that_could_not_be_read_does_not_stop_the_clock() -> None:
+    """Asset 1 had no data, so the first "testing" stage is asset 2: the clock starts there."""
+    said: list[str] = []
+    clock = RunClock(3, None, said.append)
+    ticks = Ticks()
+    clock.timer = UnitTimer(3, clock=ticks)
+    clock.stage("testing BBB (2 of 3)")
+    ticks.now += 60.0
+    clock.stage("testing CCC (3 of 3)")
+    assert said == ["alpha test: measured on the first asset: about 3 minutes in all."]
+
+
+def test_two_assets_get_the_measured_estimate_too() -> None:
+    said: list[str] = []
+    clock = RunClock(2, None, said.append)
+    ticks = Ticks()
+    clock.timer = UnitTimer(2, clock=ticks)
+    clock.stage("testing AAA (1 of 2)")
+    ticks.now += 45.0
+    clock.stage("testing BBB (2 of 2)")
+    assert said == ["alpha test: measured on the first asset: about 2 minutes in all."]
+
+
+def test_only_a_run_that_tested_every_asset_keeps_its_rate(tmp_path: Path) -> None:
+    """A repeat is read from the stored run in a moment; its time is no rate for a real test."""
+    ticks = Ticks()
+    for executed, error in ((False, None), (True, "DataError: no bars")):
+        clock = RunClock(1, None, lambda _: None)
+        clock.timer = UnitTimer(1, clock=ticks)
+        clock.stage("testing AAA (1 of 1)")
+        ticks.now += 0.1
+        clock.finish(tmp_path, "test_asset", [{"executed": executed, "error": error}])
+        assert read_rate(tmp_path, "test_asset") is None
+    clock = RunClock(1, None, lambda _: None)
+    clock.timer = UnitTimer(1, clock=ticks)
+    clock.stage("testing AAA (1 of 1)")
+    ticks.now += 30.0
+    clock.finish(tmp_path, "test_asset", [{"executed": True, "error": None}])
+    assert read_rate(tmp_path, "test_asset") == pytest.approx(30.0, rel=1e-9, abs=1e-12)
+
+
+def test_each_rule_kind_keeps_its_own_rate() -> None:
+    """An owner rule with its nearby settings costs more per asset than a built-in rule."""
+    assert rate_key(True, "owner", False) != rate_key(True, "ma_cross", False)
+    assert rate_key(True, "ma_cross", False) != rate_key(False, "ma_cross", False)
+    assert rate_key(True, "ma_cross", True) != rate_key(True, "ma_cross", False)

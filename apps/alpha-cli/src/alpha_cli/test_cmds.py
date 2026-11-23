@@ -36,8 +36,9 @@ def _echo_notes(text: str) -> None:
         typer.echo(line)
 
 
-def rate_key(quick: bool) -> str:
-    return "test_asset_quick" if quick else "test_asset"
+def rate_key(quick: bool, kind: str, no_diagnose: bool) -> str:
+    """One kept rate per kind of test: an owner rule costs more per asset than a built-in one."""
+    return f"test_asset:{kind}{':quick' if quick else ''}{':no-diagnose' if no_diagnose else ''}"
 
 
 def expected_line(expected: float | None, *, units: int) -> str:
@@ -63,23 +64,26 @@ class RunClock:
 
     def stage(self, text: str) -> None:
         """Called as each stage begins; "testing X (n of N)" marks the start of asset n."""
-        found = re.fullmatch(r"testing .+ \((\d+) of \d+\)", text)
+        found = re.fullmatch(r"testing .+ \(\d+ of \d+\)", text)
         if found is None:
             return
-        number = int(found.group(1))
-        if number == 1:
+        if not self.timer.started:  # the first asset tested; an unreadable one is skipped
             self.timer.start()
             return
         self.timer.finish_unit()
         expected = self.timer.expected()
-        if number == 2 and self.timer.units > 2 and expected is not None:
+        if self.timer.done == 1 and expected is not None:
             self._say(f"alpha test: measured on the first asset: {say_minutes(expected)} in all.")
 
-    def finish(self, data_dir: Path, quick: bool) -> None:
-        """Keep the rate of this run for the next first guess."""
-        if self.timer.started:
-            self.timer.finish_unit()
-            write_rate(data_dir, rate_key(quick), self.timer.per_unit() or 0.0)
+    def finish(self, data_dir: Path, key: str, results: list[dict[str, Any]]) -> None:
+        """Keep the rate of this run for the next first guess, when every asset was tested.
+
+        A repeat is read from the stored run and a failed asset stops early: neither is a rate."""
+        if not self.timer.started:
+            return
+        self.timer.finish_unit()
+        if all(row.get("executed") is True and row.get("error") is None for row in results):
+            write_rate(data_dir, key, self.timer.per_unit() or 0.0)
 
 
 def _reading_count(home: Path, result: dict[str, Any]) -> list[str]:
@@ -248,9 +252,10 @@ def test_rule(
         if recheck:
             _recheck(parsed, settings, quick, accept_bad_data, check_data, json_out)
             return
+        key = rate_key(quick, parsed.rule.kind, no_diagnose)
         clock = RunClock(
             len(parsed.assets),
-            read_rate(settings.data_dir, rate_key(quick)),
+            read_rate(settings.data_dir, key),
             lambda line: typer.echo(line, err=True),
         )
         typer.echo(expected_line(clock.timer.expected(), units=len(parsed.assets)), err=True)
@@ -274,7 +279,7 @@ def test_rule(
                 no_diagnose=no_diagnose,
                 stage=note_stage,
             )
-            clock.finish(settings.data_dir, quick)
+            clock.finish(settings.data_dir, key, output["results"])
         if all(result["error"] is not None for result in output["results"]):
             _echo_notes(notes.getvalue())
             fail(

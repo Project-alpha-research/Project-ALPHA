@@ -787,6 +787,7 @@ def kronos(
             training_prefix,
             context=resolved_context,
             rows=paths,
+            horizon=steps,
             model=resolved_model,
         )
         expected = timing.seconds(horizon=steps, rows=paths)

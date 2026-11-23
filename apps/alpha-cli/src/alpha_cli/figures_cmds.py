@@ -140,7 +140,8 @@ def _render_one(
 
 
 def _with_plain_name(item: dict[str, Any], variant: str) -> dict[str, Any]:
-    """Copy the figure to ``<figure>.<format>`` beside its cache entry, the name the owner sees.
+    """Copy the figure to ``<figure>.<format>`` beside its cache entry, the name the owner sees,
+    with its explanation beside it as ``<figure>.json``.
 
     The cache entry keeps its hash in the name; the copy does not. A variant other than the plain
     chart is named ``<figure>.<variant>.<format>``."""
@@ -148,6 +149,7 @@ def _with_plain_name(item: dict[str, Any], variant: str) -> dict[str, Any]:
     middle = "" if variant == "plain" else f".{variant}"
     plain = cached.parent / f"{item['figure_id']}{middle}.{item['format']}"
     _publish(plain, cached.read_bytes())
+    _publish(plain.with_suffix(".json"), cached.with_suffix(".json").read_bytes())
     return {**item, "cache_path": item["path"], "path": str(plain)}
 
 

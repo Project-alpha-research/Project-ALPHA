@@ -80,7 +80,8 @@ _ROWS = (
         "Return before costs",
         "gross_total_return",
         _percent,
-        "compounded return over the same days with no fees or slippage",
+        "the model's target weights on each period's open-to-open price moves, compounded, "
+        "with no fees or slippage; the cost checks use the account's own fills instead",
         "not stored",
     ),
     (

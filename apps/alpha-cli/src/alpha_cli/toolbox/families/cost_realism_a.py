@@ -27,8 +27,8 @@ SWEEP_OUTPUTS = (
         Output(
             f"return_x{m}",
             f"Return at {m} times costs" if m else "Return with no costs",
-            f"Compounded return (bar returns multiplied together) with the stored fill costs "
-            f"multiplied by {m}.",
+            f"Compounded return of the account's own fills (bar returns multiplied together) "
+            f"with the stored fill costs multiplied by {m}.",
             "fraction",
         )
         for m in MULTIPLES

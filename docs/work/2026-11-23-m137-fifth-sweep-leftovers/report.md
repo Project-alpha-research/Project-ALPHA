@@ -11,3 +11,8 @@ Decisions and results per item. No numbers from a real run are written here.
 - Cause: the loss line and the P(loss), ruin and drawdown lines printed shares of paths whatever the path count.
 - Change: under 20 paths every line gives a count ("Result: all 8 simulated paths ended with a loss; 8 paths is too few to rank"). The stored reading and the report lines use the same helper `path_count_words`. The older rank sentence keeps its own stricter 100-path limit.
 - Test: `tests/unit/test_mc_few_paths_words.py` (failed first).
+
+## 3. `alpha monte-carlo kronos` evaluation id
+- Cause: `--forecast-eval-run` was required and its help did not say where the id comes from.
+- Change: help and the missing-option message say "run `alpha forecast eval <SYMBOL>` first (a few minutes); it prints the id". If exactly one stored forecast-eval run has the source run's symbol and snapshot, it is used and the command says so. Zero or several fitting runs fail loud with the next step. To stay under the size ceiling of `kronos`, two blocks moved into `_resolve_eval` and `_horizon_steps` (no behaviour change).
+- Test: `tests/unit/test_monte_carlo_cmds.py` (failed first).

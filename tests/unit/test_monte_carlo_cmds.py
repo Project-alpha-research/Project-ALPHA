@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import timedelta
 from pathlib import Path
 from types import SimpleNamespace
@@ -232,3 +233,51 @@ def test_classical_prints_time_estimate_before_it_starts(
     assert "2000 paths" in out
     assert "about" in out
     assert "10000" in out
+
+
+def _stored_eval(home: Path, run_id: str, symbol: str, snapshot: str) -> None:
+    folder = home / "forecast" / run_id
+    folder.mkdir(parents=True)
+    manifest = {
+        "command": "forecast_eval",
+        "symbol": symbol,
+        "snapshot_id": snapshot,
+        "run_id": run_id,
+    }
+    (folder / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+
+SOURCE = {"metadata": {"symbol": "SPY", "snapshot_id": "snap1"}}
+
+
+def test_kronos_help_says_where_the_evaluation_id_comes_from() -> None:
+    from typer.testing import CliRunner
+
+    result = CliRunner().invoke(monte_carlo_cmds.monte_carlo_app, ["kronos", "--help"])
+
+    flat = " ".join(result.output.replace("│", " ").split())
+    assert "alpha forecast eval <SYMBOL>` first (a few minutes); it prints the id" in flat
+
+
+def test_one_fitting_evaluation_is_used_by_default(tmp_path: Path) -> None:
+    _stored_eval(tmp_path, "e" * 16, "SPY", "snap1")
+    _stored_eval(tmp_path, "f" * 16, "QQQ", "snap1")
+    _stored_eval(tmp_path, "9" * 16, "SPY", "other")
+
+    assert monte_carlo_cmds._only_fitting_eval(tmp_path, SOURCE) == "e" * 16
+
+
+@pytest.mark.parametrize("stored", [0, 2])
+def test_no_or_several_fitting_evaluations_say_what_to_do(tmp_path: Path, stored: int) -> None:
+    for number in range(stored):
+        _stored_eval(tmp_path, f"{number}" * 16, "SPY", "snap1")
+
+    with pytest.raises(DataError) as error:
+        monte_carlo_cmds._only_fitting_eval(tmp_path, SOURCE)
+
+    said = str(error.value)
+    assert "--forecast-eval-run is missing" in said
+    if stored == 0:
+        assert "alpha forecast eval SPY" in said and "a few minutes" in said
+    else:
+        assert "2 stored evaluations fit" in said

@@ -50,3 +50,8 @@ Decisions and results per item. No numbers from a real run are written here.
 - Cause: the line printed only the rule-test kinds of the headline count; ML tries are counted apart ("Counting N ML tries").
 - Change: the text line adds `ml_run` when there are ML tries. The JSON field `by_kind` is unchanged.
 - Test: `tests/unit/test_ledger_cmds.py`.
+
+## 13. `alpha ml run` missing-symbol lines
+- Cause: the pull lines held `<date>` placeholders.
+- Decision: an ML spec has no start date field (keys: name, assets, features, horizon_days, model, split). The start is the earliest first stored bar among the assets that are stored; with nothing stored, it is two calendar days per training, validation and test day of the spec's split. The end is today (UTC).
+- Test: `tests/unit/test_ml_missing_symbols.py` (failed first).

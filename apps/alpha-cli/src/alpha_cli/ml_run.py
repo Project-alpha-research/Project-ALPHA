@@ -12,9 +12,9 @@ import json
 import shutil
 import time
 import tomllib
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from alpha_cli import ml_cmds, ml_progress
 from alpha_cli._ml_replay import run_ml_replay
@@ -94,12 +94,31 @@ def _require_worker(project: Path | None) -> Path:
     return root
 
 
-def _require_stored(store: ParquetStore, symbols: list[str]) -> None:
+def _pull_window(
+    store: ParquetStore, symbols: list[str], days: int, today: date
+) -> tuple[date, date]:
+    """The dates to pull: from the earliest stored bar of the other assets, to today.
+
+    A spec holds no start date. With nothing stored, the start is two calendar days for each
+    training, validation and test day the split needs (a weekend and holiday margin)."""
+    firsts = [
+        cast(datetime, store.read_bars(symbol).select("ts").min().item()).date()
+        for symbol in symbols
+        if store._bars_path(symbol).is_file()
+    ]
+    return (min(firsts) if firsts else today - timedelta(days=2 * days)), today
+
+
+def _require_stored(
+    store: ParquetStore, symbols: list[str], *, days: int = sum(_SPLIT_DEFAULTS.values())
+) -> None:
     """Name every symbol with no stored bars at once, each with the line that pulls it."""
     missing = [symbol for symbol in symbols if not store._bars_path(symbol).is_file()]
     if missing:
+        start, end = _pull_window(store, symbols, days, datetime.now(UTC).date())
         pulls = "\n".join(
-            f"  alpha data pull {symbol} --start <date> --end <date>" for symbol in missing
+            f"  alpha data pull {symbol} --start {start.isoformat()} --end {end.isoformat()}"
+            for symbol in missing
         )
         raise MlRunError(
             f"No stored bars for {', '.join(missing)}. Pull each one first:\n{pulls}\n"
@@ -122,7 +141,7 @@ def _content_key(store: ParquetStore, symbols: list[str]) -> str:
     return f"ml-{digest.hexdigest()[:16]}"
 
 
-def _freeze(data_dir: Path, assets: list[str]) -> str:
+def _freeze(data_dir: Path, assets: list[str], days: int = sum(_SPLIT_DEFAULTS.values())) -> str:
     """Freeze the stored bars of the assets into one immutable snapshot; reuse an equal one.
 
     The snapshot id is the hash of its own bytes: a snapshot is reused only after its files hash
@@ -130,7 +149,7 @@ def _freeze(data_dir: Path, assets: list[str]) -> str:
     """
     symbols = sorted(assets)
     store = ParquetStore(store_dir(data_dir, DAILY))
-    _require_stored(store, symbols)
+    _require_stored(store, symbols, days=days)
     snapshot_id = _content_key(store, symbols)
     source: dict[str, object] | None = None
     for symbol in symbols:
@@ -278,7 +297,8 @@ def run_spec(
     spec = _read(spec_path)
     project = worker_project
     project = _require_worker(project)
-    snapshot_id = _freeze(data_dir, spec["assets"])
+    split_days = sum({**_SPLIT_DEFAULTS, **spec.get("split", {})}.values())
+    snapshot_id = _freeze(data_dir, spec["assets"], split_days)
     experiment = _experiment(spec, snapshot_id)
     key = hashlib.sha256(
         canonical_json_bytes(

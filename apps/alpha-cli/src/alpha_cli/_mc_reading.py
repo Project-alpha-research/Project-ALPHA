@@ -10,6 +10,7 @@ from typing import Any
 import polars as pl
 import typer
 
+from alpha_cli.spine.report_readings import MIN_PATHS_FOR_SHARES, path_count_words
 from alpha_validation import MonteCarloFamilySummaryV1
 
 _DAILY_UNIT = "one daily account return, flat days included; a trade is not kept whole"
@@ -143,6 +144,17 @@ def time_estimate(paths: int) -> str:
     )
 
 
+def _few_paths_line(row: MonteCarloFamilySummaryV1) -> str:
+    """The family line for few paths: counts and the range, no share of paths."""
+    return (
+        f"  {row.family}: median terminal {row.terminal_return_q50:+.4f}, "
+        f"drawdown median {row.maximum_drawdown_q50:.4f}; "
+        f"{path_count_words(row.loss_probability.point, row.n_paths)} simulated paths ended with "
+        f"a loss and {path_count_words(row.ruin_probability.point, row.n_paths)} fell 50% or more "
+        f"from a peak; {row.n_paths} paths is too few to rank"
+    )
+
+
 def echo_family_lines(
     source: dict[str, Any],
     summaries: Sequence[MonteCarloFamilySummaryV1],
@@ -156,6 +168,9 @@ def echo_family_lines(
         if row.status == "not_estimable":
             typer.echo(f"  {row.family}: not estimable; {row.caveats[0]}")
         else:
+            if row.n_paths < MIN_PATHS_FOR_SHARES:
+                typer.echo(_few_paths_line(row))
+                continue
             typer.echo(
                 f"  {row.family}: "
                 f"median terminal {row.terminal_return_q50:+.4f} "
@@ -216,13 +231,25 @@ def _family_reading(
     if row.get("status") == "not_estimable":
         return [f"{row['family']}: not estimable; {row['caveats'][0]}"]
     loss = row["loss_probability"]["point"]
+    few = row["n_paths"] < MIN_PATHS_FOR_SHARES
+    if few:
+        tail = (
+            f"The worst fall from a peak has a median of {abs(row['maximum_drawdown_q50']):.1%}. "
+            f"Result: {path_count_words(loss, row['n_paths'])} simulated paths ended with a "
+            f"loss; {row['n_paths']} paths is too few to rank."
+        )
+        spread = "the simulated paths end between"
+    else:
+        tail = (
+            f"The worst fall from a peak has a median of {abs(row['maximum_drawdown_q50']):.1%} "
+            f"and is deeper than {abs(row['maximum_drawdown_q95']):.1%} in 5% of paths. "
+            f"{loss:.0%} of paths end with a loss."
+        )
+        spread = f"the middle 90% of the {row['n_paths']} simulated paths end between"
     lines = [
-        f"{row['family']}: median end value {_percent(row['terminal_return_q50'])}; the middle 90% "
-        f"of the {row['n_paths']} simulated paths end between "
+        f"{row['family']}: median end value {_percent(row['terminal_return_q50'])}; {spread} "
         f"{_percent(row['terminal_return_q05'])} and {_percent(row['terminal_return_q95'])}. "
-        f"The worst fall from a peak has a median of {abs(row['maximum_drawdown_q50']):.1%} and "
-        f"is deeper than {abs(row['maximum_drawdown_q95']):.1%} in 5% of paths. "
-        f"{loss:.0%} of paths end with a loss."
+        + tail
     ]
     if real_end is not None and ends:
         lines.append(rank_sentence(real_end, ends, window))

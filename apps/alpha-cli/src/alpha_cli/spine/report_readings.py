@@ -87,6 +87,17 @@ def null_line(tier: Mapping[str, Any]) -> str:
     )
 
 
+MIN_PATHS_FOR_SHARES = 20  # with fewer paths no line gives a share of paths, only a count
+
+
+def path_count_words(share: float, n_paths: int) -> str:
+    """How many of the paths a stored share is: "all 8", "none of the 8" or "5 of 8"."""
+    count = round(share * n_paths)
+    if count == n_paths:
+        return f"all {n_paths}"
+    return f"none of the {n_paths}" if count == 0 else f"{count} of {n_paths}"
+
+
 def monte_carlo_lines(manifest: Mapping[str, Any]) -> list[str]:
     """The family count, then one line per family: stored percentiles and the share below zero."""
     families = manifest.get("families")
@@ -97,6 +108,8 @@ def monte_carlo_lines(manifest: Mapping[str, Any]) -> list[str]:
     for family in (f for f in families if isinstance(f, Mapping)):
         loss = family.get("loss_probability")
         loss = loss if isinstance(loss, Mapping) else {}
+        n_paths, point = family.get("n_paths"), _num(loss.get("point"))
+        few = isinstance(n_paths, int) and n_paths < MIN_PATHS_FOR_SHARES and point is not None
         lines.append(
             f"family[{family.get('family')}]: paths={family.get('n_paths')} "
             f"median_terminal={_f(family.get('terminal_return_q50'))} "
@@ -104,8 +117,12 @@ def monte_carlo_lines(manifest: Mapping[str, Any]) -> list[str]:
             f"terminal_95th={_f(family.get('terminal_return_q95'))} "
             f"drawdown_median={_f(family.get('maximum_drawdown_q50'))} "
             f"drawdown_q95={_f(family.get('maximum_drawdown_q95'))} "
-            f"paths_below_zero={_f(loss.get('point'))} "
-            f"[{_f(loss.get('lower'))}, {_f(loss.get('upper'))}]"
+            + (
+                f"paths_below_zero={path_count_words(point, n_paths)} (too few paths to rank)"
+                if few
+                else f"paths_below_zero={_f(loss.get('point'))} "
+                f"[{_f(loss.get('lower'))}, {_f(loss.get('upper'))}]"
+            )
         )
     return lines
 

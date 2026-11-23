@@ -161,3 +161,16 @@ def resolve_asset(asset: str, *, data_dir: Path, timeframe: str = "1D") -> Resol
         raise _unknown_asset(symbol, searched, stored)
     name, directory, path = matches[0]
     return ResolvedAsset(symbol, name, directory, _source(path), len(matches) > 1)
+
+
+def typed_symbol(asset: str, *, data_dir: Path) -> tuple[str, str | None]:
+    """The stored name for a typed symbol, by the rule `alpha test` uses, and a note if it differs.
+
+    A symbol that is not stored stays as typed: a ledger filter may name an asset that was tested
+    and later removed.
+    """
+    try:
+        name = resolve_asset(asset, data_dir=data_dir).symbol
+    except DataError:
+        return asset, None
+    return name, (None if name == asset else f"{asset} is stored as {name}.")

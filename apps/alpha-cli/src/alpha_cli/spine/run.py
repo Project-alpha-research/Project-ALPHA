@@ -9,6 +9,7 @@ import io
 import json
 import math
 import os
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
@@ -502,13 +503,16 @@ def run_idea(
     check_data: bool = False,
     accept_bad_data: str | None = None,
     report_time: datetime | None = None,
+    stage: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
     """Run assets independently; ledger failures remain fatal rather than losing trial history."""
     idea_card.require(home, idea.idea_card)
     knobs = gauntlet_knobs(seed, quick)
     results: list[dict[str, Any]] = []
     prepared: list[Prepared | None] = []
-    for asset in idea.assets:
+    say = stage or (lambda _: None)
+    for number, asset in enumerate(idea.assets, 1):
+        say(f"reading the data for {asset} ({number} of {len(idea.assets)})")
         result = new_result(asset, quick=quick, no_diagnose=no_diagnose)
         try:
             prepared.append(
@@ -539,8 +543,9 @@ def run_idea(
     ids = sorted(item.identity.run_id for item in prepared if item is not None)
     test_id = hashlib.sha256((idea.spec_sha256 + "".join(ids)).encode()).hexdigest()[:16]
     total = 0
-    for result, item in zip(results, prepared, strict=True):
+    for number, (result, item) in enumerate(zip(results, prepared, strict=True), 1):
         if item is not None:
+            say(f"testing {result['symbol']} ({number} of {len(results)})")
             try:
                 _execute(idea, item, home, knobs, test_id, result)
             except SpineError as exc:

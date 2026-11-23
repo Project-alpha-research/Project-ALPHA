@@ -390,13 +390,56 @@ def build_reading(
     }
 
 
+def _measure(reading: Mapping[str, Any], name: str) -> Mapping[str, Any]:
+    rows = reading.get("measures")
+    found = (
+        next((m for m in rows if m.get("name") == name), None) if isinstance(rows, list) else None
+    )
+    return found if isinstance(found, Mapping) else {}
+
+
+def deciding_sentence(reading: Mapping[str, Any]) -> str | None:
+    """One sentence naming what decided the evidence word, from the stored reading's own fields.
+
+    It changes no statistic: a luck-adjusted number near 1 can sit beside "not clear of chance"
+    because another check decided."""
+    word = _get(reading, "evidence", "word")
+    because = _get(reading, "evidence", "because")
+    if word not in WORDS or not isinstance(because, list) or not because:
+        return None
+    if word == TOO_LITTLE:
+        return f"What decided it: {because[0]}"
+    if word == CLEAR:
+        return "What decided it: every check held."
+    if word == SOME:
+        held = [
+            b for b in because if not b.startswith(("Random-data", "Sharpe interval", "Deflated"))
+        ]
+        return f"What held back the top word: {' '.join(held)}" if held else None
+    sharpe, dsr = _measure(reading, "out-of-sample Sharpe"), _measure(reading, "deflated Sharpe")
+    value, lower = _num(sharpe.get("value")), _num((sharpe.get("interval_95") or [None])[0])
+    tests = next((re.search(r"held: (\d+) of (\d+)", b) for b in because if "held:" in b), None)
+    reasons = []
+    if value is None or value <= 0:
+        reasons.append("the Sharpe is not above 0")
+    if lower is None or lower <= 0:
+        reasons.append("its likely range includes 0")
+    if tests is None or tests.group(1) != tests.group(2):
+        shown = f" ({tests.group(1)} of {tests.group(2)} held)" if tests else " (none stored)"
+        reasons.append(f"the random-price tests did not all hold{shown}")
+    if (_num(dsr.get("value")) or 0) < DSR_THRESHOLD:
+        reasons.append(f"the deflated Sharpe is under {DSR_THRESHOLD}")
+    return f"What decided it: {'; '.join(reasons)}." if reasons else None
+
+
 def reading_text(reading: Mapping[str, Any]) -> str:
     """The reading sentence, then the costs line and the annualisation line when stored."""
     costs = reading.get("costs")
     extra = [
         costs[key] for key in ("line", "periods") if isinstance(costs, Mapping) and costs.get(key)
     ]
-    return "\n".join([plain(reading["sentence"]), *extra])
+    decided = deciding_sentence(reading)
+    return "\n".join([plain(reading["sentence"]), *([decided] if decided else []), *extra])
 
 
 def stored_reading(

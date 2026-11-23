@@ -110,4 +110,4 @@ def test_compare_cli(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     )
     human = CliRunner().invoke(results_app, ["compare", A, B, "--metric", "oos_sharpe"])
     assert human.exit_code == 0
-    assert "quick" in human.stdout and "diff" in human.stdout and A in human.stdout
+    assert "quick" in human.stdout and "change from first" in human.stdout and A in human.stdout

@@ -32,7 +32,7 @@ SENTENCE = (
     "The reference factors were published as a data set after this test's period. "
     "This is a description of the result made later, not something the strategy could have used."
 )
-PULL = "uv run alpha context pull-osap-portfolios --release <RELEASE> --released <DATE>"
+PULL = "alpha context pull-osap-portfolios --release <RELEASE> --released <DATE>"
 # Later than any release: the descriptive read takes every stored row, then cuts it by month.
 EVERYTHING = datetime(9999, 12, 31, tzinfo=UTC)
 

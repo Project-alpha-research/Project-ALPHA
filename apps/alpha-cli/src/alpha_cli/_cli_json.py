@@ -12,7 +12,9 @@ def emit(value: object, *, json_out: bool, fallback: str) -> None:
     if json_out:
         typer.echo(json.dumps(value, sort_keys=True, allow_nan=False))
     else:
-        typer.echo(fallback)
+        # Stored sentences may still say `uv run alpha`; the screen says `alpha`, the stored text
+        # stays as written.
+        typer.echo(fallback.replace("uv run alpha ", "alpha "))
 
 
 def json_object_option(raw: str, label: str) -> dict[str, object]:

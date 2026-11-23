@@ -17,6 +17,7 @@ import typer
 from alpha_cli._cli_json import emit
 from alpha_cli.rdagent_discussion import NOTE_HELP
 from alpha_cli.spine.errors import SpineError, fail
+from alpha_cli.spine.stores import typed_symbol
 from alpha_cli.spine.trial_query import ASSET_NOTE, asset_group
 from alpha_cli.spine.trial_reader import (
     LedgerSnapshot,
@@ -279,6 +280,7 @@ def list_trials(
     def select(snapshot: LedgerSnapshot, home: Path) -> dict[str, Any]:
         if not 1 <= limit <= 200:
             raise SpineError("BAD_PARAMETER", "Limit must be from 1 to 200.", "Use --limit 1..200.")
+        name, said = typed_symbol(asset, data_dir=home) if asset else (None, None)
         records = [
             r
             for r in snapshot.records
@@ -288,7 +290,7 @@ def list_trials(
             )
             # The filter still takes the old machine words, so existing callers keep working.
             and (outcome is None or outcome in {r.outcome, r.machine_outcome})
-            and (asset is None or asset_group(asset) in {asset_group(a) for a in r.assets})
+            and (name is None or asset_group(name) in {asset_group(a) for a in r.assets})
         ]
         records.sort(
             key=lambda r: (r.created_at is not None, r.created_at or "", r.source, r.source_line),
@@ -297,7 +299,16 @@ def list_trials(
         shown = records[:limit] if kind else _share_per_kind(records, limit)
         return {
             "records": [asdict(r) for r in shown],
-            "note": f"Showing {len(shown)} of {len(records)} rows (newest first within each kind).",
+            "note": " ".join(
+                filter(
+                    None,
+                    [
+                        said,
+                        f"Showing {len(shown)} of {len(records)} rows "
+                        "(newest first within each kind).",
+                    ],
+                )
+            ),
         }
 
     _run(rdagent_ledger, json_out, select)
@@ -399,12 +410,16 @@ def tries_cmd(
     json_out: JSON = False,
 ) -> None:
     """How many tries on one asset, in one sentence (the count the deflated Sharpe uses)."""
-    _run(
-        rdagent_ledger,
-        json_out,
-        lambda snapshot, home: {"tries": tries(snapshot, asset)},
-        lambda output: sentence(output["tries"]),
-    )
+
+    def select(snapshot: LedgerSnapshot, home: Path) -> dict[str, Any]:
+        name, note = typed_symbol(asset, data_dir=home)
+        return {"tries": tries(snapshot, name), "resolved_note": note}
+
+    def text(output: dict[str, Any]) -> str:
+        line = sentence(output["tries"])
+        return f"{output['resolved_note']} {line}" if output["resolved_note"] else line
+
+    _run(rdagent_ledger, json_out, select, text)
 
 
 @ledger_app.command("query")
@@ -420,17 +435,18 @@ def query_trials(
     """Run a named question with bound parameters; arbitrary SQL is unavailable."""
     from alpha_cli.spine.trial_query import query
 
-    _run(
-        rdagent_ledger,
-        json_out,
-        lambda snapshot, home: {
+    def select(snapshot: LedgerSnapshot, home: Path) -> dict[str, Any]:
+        name, said = typed_symbol(asset, data_dir=home) if asset else (None, None)
+        note = " ".join(filter(None, [said, ASSET_NOTE if "asset" in question else None]))
+        return {
             "question": question,
-            **({"note": ASSET_NOTE} if "asset" in question else {}),
+            **({"note": note} if note else {}),
             "rows": query(
-                snapshot, question, asset=asset, family=family, measure=measure, limit=limit
+                snapshot, question, asset=name, family=family, measure=measure, limit=limit
             ),
-        },
-    )
+        }
+
+    _run(rdagent_ledger, json_out, select)
 
 
 class Theme(StrEnum):

@@ -43,6 +43,9 @@ def _show_text(identity: str, card: cards.IdeaCard, home: Path) -> str:
 
 @idea_app.command("new")
 def new(
+    text: Annotated[
+        str, typer.Argument(help="The idea in your own words; the same as --claim.")
+    ] = "",
     claim: str = typer.Option("", help="The idea, in your own words."),
     mechanism: str = typer.Option("", help="Why it could work."),
     other_side: str = typer.Option("", help="Who is on the other side of the trade."),
@@ -64,8 +67,17 @@ def new(
     json_out: JSON = False,
 ) -> None:
     """Save a card. Any field may stay empty; it then reads "not stated"."""
+    if text and claim:
+        fail(
+            SpineError(
+                "IDEA_CLAIM_TWICE",
+                "The idea was given twice: as bare text and as --claim.",
+                'Give it once: alpha idea new "your idea".',
+            ),
+            json_out,
+        )
     flags: dict[str, Any] = {
-        "claim": claim,
+        "claim": text or claim,
         "mechanism": mechanism,
         "other_side": other_side,
         "disproved_by": disproved_by,
@@ -115,8 +127,9 @@ def new(
             "papers": papers.papers_of(home, identity),
         },
         json_out=json_out,
-        fallback=f"Idea card {identity} {word}.\nTo link a test to it, add idea_card = "
-        f'"{identity}" to the spec.\nRead it again: alpha idea show {identity}',
+        fallback=f"Idea card {identity} {word}.\nTo link a test to it, run alpha test with "
+        f'--idea-card {identity}, or add idea_card = "{identity}" to the spec.\n'
+        f"Read it again: alpha idea show {identity}",
     )
 
 

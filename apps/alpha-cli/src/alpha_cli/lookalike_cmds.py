@@ -356,8 +356,21 @@ def _look_today(asset: str, last: int, top: int, horizons: str, json_out: bool) 
     emit(out, json_out=json_out, fallback=look_text(out))
 
 
+def _one_asset(option: str | None, argument: str | None) -> str:
+    """The asset named as `--asset SPY` or as a plain `SPY`; both must not name different ones."""
+    if option and argument and option != argument:
+        raise typer.BadParameter("Name the asset once: `--asset SPY` or `SPY`, not both.")
+    named = option or argument
+    if not named:
+        raise typer.BadParameter("Name the asset: `alpha lookalike SPY` or `--asset SPY`.")
+    return named
+
+
 def lookalike(
-    asset: str = typer.Option(..., help="Symbol or symbol@store, e.g. SPY@alpaca."),
+    symbol: str | None = typer.Argument(None, help="The asset, the same as --asset."),
+    asset: str | None = typer.Option(
+        None, help="Symbol or symbol@store, e.g. SPY@alpaca. Or give it as a plain argument."
+    ),
     last: int = typer.Option(30, min=5, help="The query: the latest N bars."),
     timeframe: str = typer.Option("1D", help="Stored bar size, e.g. 1D or 1h."),
     top: int = typer.Option(10, min=1, help="At most this many closest lookalikes."),
@@ -376,6 +389,7 @@ def lookalike(
     json_out: bool = typer.Option(False, "--json", help="Emit one JSON result object."),
 ) -> None:
     """Has price action like the latest N bars happened before? (descriptive, not a forecast)"""
+    asset = _one_asset(asset, symbol)
     if today:
         _look_today(asset, last, top, horizons, json_out)
         return

@@ -101,3 +101,23 @@ def test_no_history_before_the_boundary_is_refused(
 
     assert result.exit_code != 0
     assert "before the held-back boundary" in result.output
+
+
+def test_a_symbol_as_an_argument_works_like_the_asset_option(
+    home: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(today, "forward_bars", lambda *a, **k: (bars(), None))
+    by_option = RUNNER.invoke(app(), ["--asset", "SPY", "--last", "20", "--today", "--json"])
+    by_argument = RUNNER.invoke(app(), ["--last", "20", "--today", "SPY", "--json"])
+    assert by_argument.exit_code == 0, by_argument.output
+    assert json.loads(by_argument.stdout) == json.loads(by_option.stdout)
+
+
+def test_the_symbol_is_needed_and_the_two_ways_must_agree(
+    home: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(today, "forward_bars", lambda *a, **k: (bars(), None))
+    missing = RUNNER.invoke(app(), ["--last", "20", "--today"])
+    assert missing.exit_code != 0 and "Name the asset" in missing.output
+    clash = RUNNER.invoke(app(), ["QQQ", "--asset", "SPY", "--today"])
+    assert clash.exit_code != 0 and "once" in clash.output

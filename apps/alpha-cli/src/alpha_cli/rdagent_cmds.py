@@ -17,6 +17,7 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.rdagent_bench_cmds import bench_app
+from alpha_cli.rdagent_defaults import SETUP_HINT
 from alpha_cli.rdagent_init import init_text, write_init
 from alpha_cli.rdagent_run_config import (
     RdagentConfig,
@@ -69,9 +70,9 @@ def _config_path(path: Path | None) -> Path | None:
     return home_file if home_file.is_file() else None
 
 
-def _load(path: Path | None) -> RdagentConfig:
+def _load(path: Path | None, runtime: list[str] | None = None) -> RdagentConfig:
     try:
-        return load_config(_config_path(path), dict(os.environ))
+        return load_config(_config_path(path), dict(os.environ), runtime_problems=runtime)
     except RdagentConfigError as error:
         typer.echo(f"The RD-Agent config has a problem:\n{error}", err=True)
         raise typer.Exit(2) from error
@@ -96,7 +97,8 @@ def run(
     run_id: Annotated[str | None, typer.Option("--run-id", help="Default: date-number.")] = None,
 ) -> None:
     """Start the RD-Agent factor loop. No config file is needed. --dry-run shows it only."""
-    settings = _load(config)
+    missing_runtime: list[str] = []
+    settings = _load(config, missing_runtime if dry_run else None)
     default_id, default_dir = next_run(settings, datetime.now(UTC).date())
     try:
         chosen = check_run_id(run_id) if run_id else default_id
@@ -107,6 +109,19 @@ def run(
     argv = launcher_argv(settings, run_dir, chosen)
     if dry_run:
         typer.echo(_plain(settings, argv, run_dir))
+        if missing_runtime:
+            names = [
+                name
+                for name, path in (
+                    ("rdagent_source", settings.rdagent_source),
+                    ("factor_python", settings.factor_python),
+                )
+                if path is None or not path.exists()
+            ]
+            typer.echo(
+                f"The factor runtime is missing ({', '.join(names)}), and a real run needs it. "
+                f"Build it with: {SETUP_HINT}"
+            )
         typer.echo("Nothing was started.")
         return
     for folder in (runs_root(settings), settings.trial_ledger.parent, settings.gateway_data_dir):

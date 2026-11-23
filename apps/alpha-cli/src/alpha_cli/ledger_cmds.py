@@ -130,6 +130,10 @@ def _render(output: dict[str, Any]) -> str:
     if isinstance(counted, dict):
         # One headline number; the row counts stay in the JSON for machines.
         lines.append(sentence(counted))
+        if output.get("rdagent_kinds"):
+            kinds = ", ".join(f"{name} {n}" for name, n in output["rdagent_kinds"].items())
+            total = sum(output["rdagent_kinds"].values())
+            lines.append(f"The RD-Agent ledger adds {total} trials ({kinds}).")
         if output.get("breakdown"):
             lines.append(f"By kind: {json.dumps(counted['by_kind'], sort_keys=True)}")
             lines.append(f"By family: {json.dumps(counted['by_family'], sort_keys=True)}")
@@ -215,6 +219,9 @@ def _summary(snapshot: LedgerSnapshot, home: Path) -> dict[str, Any]:
         "breakdown": True,
         "by_kind": dict(Counter(r.kind for r in snapshot.records)),
         "by_outcome": dict(Counter(r.outcome for r in snapshot.records)),
+        "rdagent_kinds": dict(
+            sorted(Counter(r.kind for r in snapshot.records if r.source == "rdagent").items())
+        ),
         "family_count": len(family_counts(snapshot)),
         **_totals(snapshot),
         "newest_created_at": max(

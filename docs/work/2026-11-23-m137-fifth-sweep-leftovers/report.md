@@ -65,3 +65,8 @@ Decisions and results per item. No numbers from a real run are written here.
 - Cause: `alpha forecast run` printed the cache path (`<figure>.<hash>.png`); the Kronos fan label was "Kronos synthetic OHLCV equity (x)".
 - Change: `_cone_pictures` copies through the existing `_with_plain_name` (as `alpha figures` does), so the printed files are `forecast_fan.png` and `forecast_fan.annotated.png`. The Kronos fan label is "Account value on simulated prices (1 = start)" (`fan_axis_label`). The other families keep their labels.
 - Test: `tests/unit/test_forecast_picture_names.py` (failed first).
+
+## 7. "What decided it" for ML, forecast and Monte Carlo
+- Cause: `deciding_sentence` read only rule-test readings. `alpha results show` on a forecast or forecast-eval run also printed "Fault: the out-of-sample Sharpe could not be computed" (it went down the rule-test path).
+- Change: an ML reading says "What decided it:" followed by its own stored `because` text. A forecast or Monte Carlo reading says "Nothing decides a reading for this kind of run: it is a description." New `forecast_show` gives forecast and forecast-eval runs a description reading, with the same first sentence as the list (item 1).
+- Test: `tests/unit/test_results_list_other_runs.py`.

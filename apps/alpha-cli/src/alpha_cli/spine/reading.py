@@ -398,11 +398,22 @@ def _measure(reading: Mapping[str, Any], name: str) -> Mapping[str, Any]:
     return found if isinstance(found, Mapping) else {}
 
 
+DESCRIPTION_KINDS = ("forecast", "monte_carlo")
+NOTHING_DECIDES = "Nothing decides a reading for this kind of run: it is a description."
+
+
 def deciding_sentence(reading: Mapping[str, Any]) -> str | None:
     """One sentence naming what decided the evidence word, from the stored reading's own fields.
 
     It changes no statistic: a luck-adjusted number near 1 can sit beside "not clear of chance"
-    because another check decided."""
+    because another check decided. A model run says what its own stored reading says; a forecast
+    or Monte Carlo run decides nothing."""
+    kind = reading.get("kind")
+    if kind == "ml_run":
+        said = reading.get("because")
+        return f"What decided it: {' '.join(said)}" if isinstance(said, list) and said else None
+    if kind in DESCRIPTION_KINDS:
+        return NOTHING_DECIDES
     word = _get(reading, "evidence", "word")
     because = _get(reading, "evidence", "because")
     if word not in WORDS or not isinstance(because, list) or not because:

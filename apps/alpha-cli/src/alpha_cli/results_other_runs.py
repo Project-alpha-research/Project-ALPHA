@@ -25,16 +25,18 @@ def _pct(value: Any) -> str:
 
 def _forecast_sentence(manifest: dict[str, Any]) -> str:
     summary = manifest.get("summary")
+    run = manifest.get("command") == "forecast_run"
+    lead = f"Forecast {'run' if run else 'check'} for {manifest.get('symbol')}"
     if not isinstance(summary, dict):
-        return "a forecast with no stored summary"
-    if manifest.get("command") == "forecast_run":
+        return f"{lead}: no summary is stored."
+    if run:
         return (
-            f"median end return {_pct(summary['median_end_return'])}, middle 90% "
-            f"{_pct(summary['p05_end_return'])} to {_pct(summary['p95_end_return'])}"
+            f"{lead}: median end return {_pct(summary['median_end_return'])}, middle 90% "
+            f"{_pct(summary['p05_end_return'])} to {_pct(summary['p95_end_return'])}."
         )
     return (
-        f"skill vs random walk {_pct(summary['skill_vs_rw'])}, vs bootstrap "
-        f"{_pct(summary['skill_vs_bootstrap'])}, hit rate {summary['hit_rate']:.0%}"
+        f"{lead}: skill vs random walk {_pct(summary['skill_vs_rw'])}, vs bootstrap "
+        f"{_pct(summary['skill_vs_bootstrap'])}, hit rate {summary['hit_rate']:.0%}."
     )
 
 
@@ -98,4 +100,27 @@ def ml_fields(home: Path, row: dict[str, Any]) -> dict[str, Any]:
         "oos_sharpe": reading["out_of_sample_sharpe"],
         "benchmark_sharpe": reading["equal_weight_basket_sharpe"],
         "reading": reading,
+    }
+
+
+def forecast_show(rdir: Path, manifest: dict[str, Any], run_id: str) -> dict[str, Any]:
+    """`alpha results show` for a forecast or forecast-eval run: the same sentence as the list."""
+    from alpha_cli.figures import available_figures
+
+    return {
+        "run_id": run_id,
+        "reading": {"kind": "forecast", "sentence": short_reading(rdir, manifest)},
+        "data_health": None,
+        "facts": [],
+        "labels": [],
+        "flags": [],
+        "audit": [],
+        "tool_history": [],
+        "tools": [],
+        "tool_counts": {},
+        "charts": [
+            entry.definition.figure_id
+            for entry in available_figures(rdir, manifest)
+            if entry.available
+        ],
     }

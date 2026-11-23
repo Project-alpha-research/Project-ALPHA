@@ -165,3 +165,32 @@ def test_the_text_list_shows_no_missing_reading(home: Path) -> None:
     shown = CliRunner().invoke(app, ["results"]).stdout
     assert "recorded without a reading" not in shown
     assert "0.81" in shown
+
+
+def _show(run_id: str) -> str:
+    app = typer.Typer()
+    app.add_typer(results_app, name="results")
+    out = CliRunner().invoke(app, ["results", "show", run_id])
+    assert out.exit_code == 0, out.output
+    return out.stdout
+
+
+def test_show_gives_a_forecast_run_a_reading_not_a_fault(home: Path) -> None:
+    for run_id in (FC, EV):
+        shown = _show(run_id)
+        assert "Fault" not in shown and "No reading" not in shown
+        assert "Nothing decides a reading for this kind of run: it is a description." in shown
+    assert "Forecast run for SPY" in _show(FC)
+    assert "Forecast check for SPY" in _show(EV)
+
+
+def test_the_list_and_show_say_the_same_first_sentence(home: Path) -> None:
+    by_run = {str(row["run_id"]): row for row in _items()}
+    for run_id in (FC, EV, MC):
+        assert str(by_run[run_id]["evidence"]) in _show(run_id)
+
+
+def test_ml_and_monte_carlo_readings_say_what_decided_them(home: Path) -> None:
+    ml = _show(ML)
+    assert "What decided it: A model run is replayed once" in ml
+    assert "Nothing decides a reading for this kind of run: it is a description." in _show(MC)

@@ -9,7 +9,7 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.ml_reading import fold_table
-from alpha_cli.results_other_runs import NOT_HELD, folder_rows, ml_fields
+from alpha_cli.results_other_runs import NOT_HELD, folder_rows, forecast_show, ml_fields
 from alpha_cli.results_summary import summary_lines, table
 from alpha_cli.run_store import RUN_DIRS, find_run_dir, read_manifest, valid_run_id
 from alpha_cli.spine import book, reserve
@@ -248,6 +248,8 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
         return _show_ml(home, rdir, manifest, run_id)
     if manifest.get("command") in ("monte_carlo_classical", "monte_carlo_kronos"):
         return _show_monte_carlo(home, rdir, manifest, run_id)
+    if manifest.get("command") in ("forecast_run", "forecast_eval"):
+        return forecast_show(rdir, manifest, run_id)
     from alpha_cli.toolbox import declarations
     from alpha_cli.toolbox.store import history
 

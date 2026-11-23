@@ -27,13 +27,18 @@ def test_numbers_are_rounded_with_their_units() -> None:
             ],
             "trades": [_cell(10, 0, 1.0), _cell(12, 2, 1.2)],
             "dsr": [_cell(0.7532240448959223, 0.0, 1.0), _cell(None, None, None)],
+            "performance.recovery_factor.max_drawdown_amount": [
+                _cell(5000.0, 0.0, 1.0),
+                _cell(2500.5, -2499.5, 0.5),
+            ],
         },
         "warnings": [],
     }
     text = render_compare(result)
     assert "1.97" in text and "1.9689568250869662" not in text
     assert "39.1%" in text and "-26.8 pts" in text
-    assert "0.75" in text and "0.7532240448959223" not in text
+    assert "75.3%" in text and "0.7532240448959223" not in text
+    assert "5,000.00" in text and "-2,499.50" in text
     assert "12" in text and "1.00x" in text
     assert "null (not stored)" in text
     assert not any(len(word) > 8 and "." in word and word[0].isdigit() for word in text.split())

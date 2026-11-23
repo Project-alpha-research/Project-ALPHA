@@ -269,6 +269,22 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
     }
 
 
+def _count_text(home: Path, row: dict[str, Any]) -> str:
+    """The one count paragraph under a rule test's reading; nothing for a run without counts."""
+    from alpha_cli.spine.report_plain import run_symbol
+    from alpha_cli.spine.tries import reading_count_sentence
+
+    folder = find_run_dir(home, str(row.get("run_id") or ""))
+    if folder is None or not isinstance(row.get("reading"), dict):
+        return ""
+    symbol = run_symbol(read_manifest(folder))
+    family = (read_json(folder / "diagnostics.json").get("trials") or {}).get("family")
+    if symbol is None or not isinstance(family, dict):
+        return ""
+    said = reading_count_sentence(family, symbol)
+    return f"\n{said}" if said else ""
+
+
 def _show_text_fields(row: dict[str, Any]) -> dict[str, Any]:
     """The details printed as text: the reading is a sentence above; the old letter stays out."""
     hidden = {"data_health", "data_health_sentence"}
@@ -350,6 +366,7 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
             (f"{row['run_id']} — " if len(runs) > 1 else "")
             + row["data_health_sentence"]
             + (f"\n{reading_text(row['reading'])}" if isinstance(row.get("reading"), dict) else "")
+            + _count_text(home, row)
             for row in runs
         ]
         for row in runs:

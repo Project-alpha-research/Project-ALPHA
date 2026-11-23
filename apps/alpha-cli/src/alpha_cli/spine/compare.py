@@ -8,7 +8,7 @@ from collections.abc import Callable, Collection, Sequence
 from typing import Any
 
 from alpha_cli.spine.errors import SpineError
-from alpha_cli.spine.facts import require_metric
+from alpha_cli.spine.facts import METRIC_UNITS, require_metric
 
 Fact = dict[str, Any]
 Lookup = Callable[[str, str], Fact]
@@ -116,19 +116,21 @@ def compare_runs(
     return {"runs": runs, "metrics": rows, "warnings": warnings}
 
 
-_PERCENT = re.compile(r"return|drawdown|cagr|vol|exposure|share", re.IGNORECASE)
-
-
 def _plain_number(metric: str, operation: str, value: Any) -> str:
-    """A stored number for the screen: 2 decimals, or 1 decimal of a percent, with its unit."""
+    """A stored number for the screen, in the unit the metric declares (`METRIC_UNITS`)."""
     if isinstance(value, bool) or not isinstance(value, int | float):
         return str(value)
     if operation == "ratio":
         return f"{value:.2f}x"
     if isinstance(value, int):
-        return str(value)
-    if _PERCENT.search(metric):
+        return f"{value:,}"
+    unit = METRIC_UNITS.get(metric)
+    if unit == "fraction":
         return f"{value * 100:.1f} pts" if operation == "diff" else f"{value * 100:.1f}%"
+    if unit == "bps":
+        return f"{value:.1f} bps"
+    if unit == "currency":
+        return f"{value:,.2f}"
     return f"{value:.2f}"
 
 

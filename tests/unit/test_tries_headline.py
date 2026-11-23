@@ -149,3 +149,11 @@ def test_ledger_query_tries_prints_the_count_column(home: Path) -> None:
     code, text = _cli(home, "ledger", "query", "tries")
     assert code == 0, text
     assert text.splitlines()[:2] == ["asset\ttries", "SPY\t2"]
+
+
+def test_results_show_prints_the_count_paragraph_under_the_reading(home: Path) -> None:
+    last = read_trials(home)[-1]
+    code, text = _cli(home, "results", "show", last["run_id"])
+    assert code == 0, text
+    assert "You have tested" in text and "The luck adjustment uses" in text
+    assert "family counted as" not in text and "Ledger entry" not in text

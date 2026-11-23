@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -28,7 +29,9 @@ def test_each_count_says_what_it_counts() -> None:
     assert text.endswith("plus the nearby settings: 12.")
 
 
-def _reading(word: str, because: list[str], sharpe: float, lower: float, dsr: float) -> dict:
+def _reading(
+    word: str, because: list[str], sharpe: float, lower: float, dsr: float
+) -> dict[str, Any]:
     return {
         "sentence": "x.",
         "evidence": {"word": word, "because": because},

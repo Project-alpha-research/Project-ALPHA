@@ -353,6 +353,8 @@ def test_owner_text_has_no_grade_and_no_verdict_words(home: Path, first_run: str
         # The stored details printed after the reading are older diagnostic text; the reading
         # and result lines above them are the new owner text.
         new_text = text.split("\n{")[0] if name in {"show", "diagnose"} else text
+        # The recorded warnings are the diagnostic pass's own older text, printed as stored.
+        new_text = new_text.split("Warnings recorded with this run:")[0]
         assert not FORBIDDEN_WORDS.search(new_text), (name, FORBIDDEN_WORDS.search(new_text))
         assert not LETTER_GRADE.search(text), (name, LETTER_GRADE.search(text))
         assert '"PASS"' not in text, name

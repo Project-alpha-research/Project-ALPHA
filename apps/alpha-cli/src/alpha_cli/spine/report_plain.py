@@ -149,6 +149,7 @@ def plain_report_lines(
     return [line for line in lines if line]
 
 
+WARNINGS_HEAD = "Warnings recorded with this run:"
 _CHECKS = {
     "fills-after-decisions": "Every fill came after its decision",
     "fills-inside-bar-range": "Every fill sits inside its bar's price range",
@@ -213,18 +214,14 @@ def _concentration_line(output: Mapping[str, Any]) -> str | None:
 
 
 def _noise_line(output: Mapping[str, Any]) -> str | None:
-    block = _map(output.get("price_noise"))
-    low, high, copies = (
-        _x(block.get("p05_sharpe")),
-        _x(block.get("p95_sharpe")),
-        block.get("copies"),
-    )
-    if low is None or high is None or not isinstance(copies, int):
-        return None
-    return (
-        f"Price noise: with tiny changes to the prices ({copies} copies), the Sharpe ratio "
-        f"stayed between {low} and {high}."
-    )
+    """Price noise, in the diagnostic pass's own sentence: its range is the middle 90% only."""
+    return _stored_sentence(output, "price_noise", "Price noise")
+
+
+def _flag_lines(output: Mapping[str, Any]) -> list[str]:
+    """Every recorded warning with its detail, as the diagnostic pass wrote it."""
+    details = [_map(f).get("detail") for f in output.get("flags") or []]
+    return [f"  {_sentence(d)}" for d in details if isinstance(d, str) and d]
 
 
 def _stored_sentence(output: Mapping[str, Any], key: str, lead: str) -> str | None:
@@ -257,6 +254,9 @@ def plain_diagnose_lines(output: Mapping[str, Any], found: Mapping[str, Any]) ->
     ]
     lines = [_sentence(str(found.get("sentence") or f"Reading: {reading_word(found)}"))]
     lines += [line for line in summary if line]
+    flags = _flag_lines(output)
+    if flags:
+        lines += [WARNINGS_HEAD, *flags]
     audit = _audit_lines(output)
     if audit:
         lines += ["Fact checks:", *audit]

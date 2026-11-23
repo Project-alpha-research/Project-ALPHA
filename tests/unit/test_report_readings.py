@@ -211,6 +211,8 @@ def test_diagnose_prints_a_plain_summary_and_json_keeps_the_raw_file(tmp_path: P
     diagnostics = {
         "audit": [{"check": "enough-trades", "detail": "4 closed trades.", "status": "FLAG"}],
         "delay": {"base_sharpe": 2.0, "delayed_sharpe": 1.5, "delayed_share_of_base": 0.75},
+        "flags": [{"flag": "implausibly-good", "detail": "The Sharpe ratio is implausibly high."}],
+        "price_noise": {"sentence": "The Sharpe ranged from 1.00 to 2.00 across the middle 90%."},
         "macro_window": {"available": False, "reason": None},
         "inverted_signal": {"inverted_sharpe": None, "sentence": "Opposite rule: no result."},
     }
@@ -218,6 +220,8 @@ def test_diagnose_prints_a_plain_summary_and_json_keeps_the_raw_file(tmp_path: P
     env = {"ALPHA_DATA_DIR": str(tmp_path)}
     text = RUNNER.invoke(app, ["diagnose", RUN], env=env).output
     assert "One bar later" in text and "75% kept" in text
+    assert "Warnings recorded with this run:" in text and "implausibly high" in text
+    assert "across the middle 90%" in text and "stayed between" not in text
     assert "look closer: Enough closed trades. 4 closed trades." in text
     assert "{" not in text and "None" not in text and "null" not in text
     raw = json.loads(RUNNER.invoke(app, ["diagnose", RUN, "--json"], env=env).output)

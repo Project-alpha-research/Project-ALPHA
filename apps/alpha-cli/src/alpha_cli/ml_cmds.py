@@ -26,9 +26,9 @@ from alpha_cli.ml_contract import (
     validate_request_bundle,
     validate_result_bundle,
 )
+from alpha_cli.ml_glosses import held_back_sentence
 from alpha_cli.ml_input import export_input as export_ml_input
 from alpha_cli.ml_refit import plan_refit, publish_refit_plan, status_refit_plan
-from alpha_cli.spine.reserve import describe
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 
@@ -549,7 +549,12 @@ def replay(
             "metrics": manifest["metrics"],
             "validation": manifest["validation"],
             **(
-                {"reserve": manifest["reserve"], "reserve_sentence": describe(manifest["reserve"])}
+                {
+                    "reserve": manifest["reserve"],
+                    "reserve_sentence": held_back_sentence(
+                        manifest["reserve"], len(manifest["universe"])
+                    ),
+                }
                 if "reserve" in manifest
                 else {}
             ),

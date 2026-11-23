@@ -288,7 +288,7 @@ def test_a_check_that_needs_one_rules_bars_says_why_it_does_not_apply(
     out = CliRunner().invoke(app, ["tool", "run", "parameters.price_noise", run_id])
 
     assert out.exit_code != 0
-    assert "model run" in out.output and "single rule" in out.output
+    assert "model run" in out.output and "one rule" in out.output
 
 
 def test_every_check_either_runs_or_says_why_on_an_ml_run(home: Path, tmp_path: Path) -> None:

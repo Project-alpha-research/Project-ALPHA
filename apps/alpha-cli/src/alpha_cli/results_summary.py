@@ -71,6 +71,7 @@ def summary_lines(run: dict[str, Any]) -> list[str]:
         )
     flags = run.get("flags") or []
     lines.append(f"Flags raised: {len(flags)}." if flags else "Flags raised: none.")
+    lines += [f"  {flag}" for flag in flags if isinstance(flag, str)]
     if run.get("labels"):
         lines.append("Labels: " + cell(run["labels"]))
     tools = run.get("tools") or []

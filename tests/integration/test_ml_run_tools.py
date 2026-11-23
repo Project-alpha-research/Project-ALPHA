@@ -156,3 +156,35 @@ def test_an_old_model_run_says_it_was_made_before_and_to_run_it_again(
     for figure in ("equity_vs_passive", "fold_sharpe"):
         assert "made before" in str(reasons[figure])
         assert "alpha ml run" in str(reasons[figure])
+
+
+def test_chart_titles_of_a_model_run_are_short_and_plain(
+    ml_home: tuple[Path, str], tmp_path: Path
+) -> None:
+    from alpha_cli.figures import available_figures, build_figure_spec, resolve_run
+
+    home, run_id = ml_home
+    rdir, manifest = resolve_run(run_id, data_dir=home)
+    for entry in available_figures(rdir, manifest):
+        if not entry.available:
+            continue
+        spec = build_figure_spec(
+            entry.definition.figure_id, run_id=run_id, rdir=rdir, manifest=manifest, data_dir=home
+        )
+        text = f"{spec.title} {spec.subtitle} {spec.caption}"
+        assert "counterfactual" not in text and "OOS replay validated" not in text, text
+        assert "20 assets" in spec.subtitle
+
+
+def test_the_model_run_reads_in_plain_words(ml_home: tuple[Path, str]) -> None:
+    home, run_id = ml_home
+    shown = _alpha("results", "show", run_id).output
+    assert "Reading: " in shown
+    assert "The model returned less than holding the basket." in shown
+    assert "Flags raised: none" not in shown
+    report = _alpha("report", run_id).output
+    for raw in ("costed_excess_total_return=", "dsr=", "psr=", "total_fees="):
+        assert raw not in report
+    assert "Reading: " in report and "(the chance" in report
+    assert "bars for each of 20 assets" in report
+    assert "Held back 2160 bars" not in report

@@ -298,6 +298,7 @@ def _show_ml(home: Path, rdir: Path, manifest: dict[str, Any], run_id: str) -> d
     from alpha_cli.toolbox.store import history
 
     reading = ml_reading(home, rdir, manifest)
+    trails = str(reading["versus_basket"]).endswith("less than holding the basket.")
     stored_tools = tool_outputs(home, run_id)
     return {
         **(
@@ -310,7 +311,7 @@ def _show_ml(home: Path, rdir: Path, manifest: dict[str, Any], run_id: str) -> d
         "data_health": None,
         "facts": ml_facts(run_id, reading),
         "labels": [manifest["label"]],
-        "flags": [],
+        "flags": [reading["versus_basket"]] if trails else [],
         "audit": [],
         "diagnostics_reason": _no_diagnostics_reason(manifest),
         "tool_history": history(home, run_id),

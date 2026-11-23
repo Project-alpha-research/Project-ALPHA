@@ -14,8 +14,8 @@ from typing import Any
 
 import numpy as np
 
+from alpha_cli.ml_glosses import held_back_sentence, reading_word, versus_basket
 from alpha_cli.ml_split import split_sentence
-from alpha_cli.spine import reserve
 
 COMMAND = "ml_replay"
 MODEL = "lightgbm on the alpha158 features (Qlib)"
@@ -102,13 +102,19 @@ def ml_reading(home: Path, rdir: Path, manifest: Mapping[str, Any]) -> dict[str,
         f"Assets: {len(universe)} assets ({', '.join(universe)}).",
         f"Model: {MODEL}.",
         f"Costs: {costs['fee_bps']} bp fee and {costs['slippage_bps']} bp slippage per trade.",
-        f"Out-of-sample Sharpe {_number(sharpe, reason)}; the equal-weight basket of the same "
-        f"assets (rebalanced each day) over the same days {_number(held, reason)}.",
-        tries_sentence(home),
+        f"Out-of-sample Sharpe {_number(sharpe, reason)} (return per unit of risk, per year); "
+        f"the equal-weight basket of the same assets (rebalanced each day) over the same days "
+        f"{_number(held, reason)}.",
     ]
+    ahead = versus_basket(manifest)
+    if ahead:
+        lines.append(ahead)
+    word, because = reading_word(manifest)
+    lines.append(f"Reading: {word}. {' '.join(because)}")
+    lines.append(tries_sentence(home))
     block = manifest.get("reserve")
     if isinstance(block, dict):
-        lines.append(reserve.describe(block))
+        lines.append(held_back_sentence(block, len(universe)))
     lines.append(str(manifest["label"]) + ".")
     return {
         "kind": "ml_run",
@@ -118,6 +124,9 @@ def ml_reading(home: Path, rdir: Path, manifest: Mapping[str, Any]) -> dict[str,
         "costs": costs,
         "out_of_sample_sharpe": sharpe,
         "equal_weight_basket_sharpe": held,
+        "evidence": word,
+        "because": because,
+        "versus_basket": ahead,
         "folds": folds,
     }
 

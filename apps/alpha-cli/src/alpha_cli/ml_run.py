@@ -25,9 +25,9 @@ from alpha_cli.ml_contract import (
     prepare_exchange,
     sha256_file,
 )
+from alpha_cli.ml_glosses import held_back_sentence
 from alpha_cli.ml_input import export_input
 from alpha_cli.ml_split import split_sentence
-from alpha_cli.spine import reserve
 from alpha_cli.spine.ledger import append_trial
 from alpha_cli.spine.reading import old_grade_text
 from alpha_core import DataError
@@ -276,7 +276,7 @@ def run_spec(
         "validation": manifest["validation"],
         "tries_sentence": _count_try(data_dir, spec, replayed.run_id, snapshot_id, folds),
         **(
-            {"reserve_sentence": reserve.describe(manifest["reserve"])}
+            {"reserve_sentence": held_back_sentence(manifest["reserve"], len(manifest["universe"]))}
             if "reserve" in manifest
             else {}
         ),

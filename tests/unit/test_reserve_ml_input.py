@@ -306,7 +306,8 @@ def test_a_model_run_from_a_held_bundle_carries_the_hold_back(poisoned: World) -
     # The replay's own later cut-off is capped: the panel stopped before the boundary.
     assert manifest["research_cutoff"] == "2023-12-31"
     assert summary["reserve"] == block
-    assert SENTENCE in str(summary["reserve_sentence"])
+    per_asset = f"Held back {HELD_PER_SYMBOL} bars for each of {MIN_SYMBOLS} assets"
+    assert per_asset in str(summary["reserve_sentence"])
 
 
 def test_a_model_run_from_an_unheld_bundle_is_unchanged(cut: World) -> None:

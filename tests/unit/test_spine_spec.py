@@ -158,7 +158,7 @@ def test_cli_json_partial_and_all_failed(tmp_path: Path, monkeypatch: pytest.Mon
     args = ["--rule", "breakout", "--param", "window=20", "--asset", "MISSING", "--json"]
     failed = runner.invoke(app, args)
     assert failed.exit_code == 1, failed.output
-    error = json.loads(failed.output)["error"]
+    error = json.loads(failed.stdout)["error"]
     assert error["code"] == "UNKNOWN_ASSET"
     assert "not found" in error["message"]
     assert error["known"] == ["home"]
@@ -189,7 +189,7 @@ def test_cli_json_partial_and_all_failed(tmp_path: Path, monkeypatch: pytest.Mon
     monkeypatch.setattr(test_cmds, "run_idea", lambda *args, **kwargs: output)
     partial = runner.invoke(app, args)
     assert partial.exit_code == 0, partial.output
-    assert json.loads(partial.output) == output
+    assert json.loads(partial.stdout) == output
 
 
 def test_json_redirects_renderer_status_to_stderr(

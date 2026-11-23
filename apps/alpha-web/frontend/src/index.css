@@ -2776,14 +2776,17 @@ textarea.field:focus {
 .kronos-inspector > div {
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 5px 8px;
   background: var(--panel-2);
 }
 
+.kronos-inspector .eyebrow { flex: none; }
+
 .kronos-inspector .mono {
+  min-width: 0;
   overflow: hidden;
   color: var(--ink-dim);
   font-size: var(--font-size);

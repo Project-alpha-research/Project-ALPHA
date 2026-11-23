@@ -14,8 +14,10 @@ The SPA is served at ``/`` (and ``/app``); its assets ride the ``/static`` mount
 
 from __future__ import annotations
 
+import asyncio
 import os
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -61,12 +63,22 @@ _PKG = Path(__file__).resolve().parent
 _APP_INDEX = _PKG / "static" / "app" / "index.html"  # built SPA entry (Vite → static/app)
 
 
+@asynccontextmanager
+async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Warm the Market screen's cache in the background; start-up and requests never wait for it."""
+    warm_up = asyncio.create_task(asyncio.to_thread(market_api.warm))
+    yield
+    del warm_up  # a running thread cannot be cancelled; it ends with the process
+
+
 def create_app() -> FastAPI:
     """Build the FastAPI app (factory so tests can construct a fresh instance)."""
     error_responses: dict[int | str, dict[str, Any]] = {
         "default": {"model": ApiErrorV1, "description": "Stable, redacted Workstation error"}
     }
-    app = FastAPI(title="Project ALPHA — Workstation", responses=error_responses)
+    app = FastAPI(
+        title="Project ALPHA — Workstation", responses=error_responses, lifespan=_lifespan
+    )
     app.add_middleware(GZipMiddleware, minimum_size=1_000, compresslevel=5)
     static_dir = _PKG / "static"
     if static_dir.exists():

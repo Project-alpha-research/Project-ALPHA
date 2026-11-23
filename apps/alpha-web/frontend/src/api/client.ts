@@ -250,7 +250,9 @@ async function responseError(res: Response): Promise<Error> {
     // The stable API contract was unavailable; never relay an untrusted raw response to the DOM.
   }
   const advice = recovery || 'Try again. If it keeps failing, restart the Workstation.'
-  return new Error(`${message}${fields ? ` Fields: ${fields}.` : ''} ${advice}`)
+  const plain = `${message}${fields ? ` Fields: ${fields}.` : ''} ${advice}`
+  // Panels print `String(cause)`; the owner reads a sentence, not "Error: ...".
+  return Object.assign(new Error(plain), { toString: () => plain })
 }
 
 const IMMUTABLE_CACHE_LIMIT = 128

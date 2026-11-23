@@ -236,7 +236,7 @@ export function KronosStudio(props: PanelHandleProps) {
         {paths ? <label className="kronos-sample-control"><span className="eyebrow">visible paths</span><select value={pathLimit} onChange={(event) => setPathLimit(Number(event.target.value))}><option value={20}>20</option><option value={40}>40 MAX</option></select></label> : null}
       </div>
       <div className="panel-body panel-pad kronos-studio">
-        {!runId ? <Placeholder big="NO FORECAST RUN">Select a stored Kronos forecast or rolling-evaluation run.</Placeholder> : error ? <Placeholder big="ERROR">{error}</Placeholder> : !detail ? <div className="skeleton" style={{ height: 380 }} /> : command !== 'forecast_run' && command !== 'forecast_eval' ? <Placeholder big="NOT A KRONOS RUN">This workspace renders forecast_run and forecast_eval artifacts only.</Placeholder> : !scenarioDetail && evaluationDetail ? <EvaluationMode detail={evaluationDetail} /> : forecast && paths && sample && originClose !== null && originTs !== null ? (
+        {!runId ? <Placeholder big="NO FORECAST RUN">Open a stored forecast from Run library, then come back here. To make one: alpha forecast run SPY</Placeholder> : error ? <Placeholder big="ERROR">{error}</Placeholder> : !detail ? <div className="skeleton" style={{ height: 380 }} /> : command !== 'forecast_run' && command !== 'forecast_eval' ? <Placeholder big="NOT A KRONOS RUN">This workspace renders forecast_run and forecast_eval artifacts only.</Placeholder> : !scenarioDetail && evaluationDetail ? <EvaluationMode detail={evaluationDetail} /> : forecast && paths && sample && originClose !== null && originTs !== null ? (
           <>
             <div className="kronos-main-grid">
               <div className="kronos-chart-column">

@@ -12,9 +12,6 @@ export function evaluationUnavailable(linked: LinkedState, archive: ArchiveChart
   if (!linked.symbol) return 'Select a stored market to evaluate conditions.'
   return null
 }
-export function scanChartContext(symbol: string, barDate: string) {
-  return { symbol, start: null, end: barDate, snapshotId: null, runId: null }
-}
 
-export const RESULT_TABS = ['Scan results', 'Trades', 'Results', 'Run library'] as const
+export const RESULT_TABS = ['Trades', 'Results', 'Run library'] as const
 export type ResultTab = typeof RESULT_TABS[number]

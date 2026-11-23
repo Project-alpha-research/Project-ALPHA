@@ -6,7 +6,6 @@ import type { RuleSummary } from '../api/types'
 import { useLinked } from '../context/linked'
 import { contextKey, evaluationUnavailable } from '../shell/edgeWorkspace'
 import { selectDeskRule, useDeskRule } from '../state/deskRule'
-import { openRuleBuilder, openScanner } from './actions'
 
 export function ConditionChecklist({ archive }: { archive: ArchiveChartDataset | null }) {
   const linked = useLinked()
@@ -30,7 +29,7 @@ export function ConditionChecklist({ archive }: { archive: ArchiveChartDataset |
   return <section className="condition-checklist" aria-label="Condition checklist">
     <h2>Why this market matches</h2>
     <label>Saved conditions<select className="field" aria-label="Saved conditions" value={rule.id} onChange={event => selectDeskRule(event.target.value)}><option value="">Choose a rule set…</option>{rules.map(item => <option key={item.name} value={item.name}>{item.spec_name || item.name}</option>)}</select></label>
-    {unavailable ? <p role="status">{unavailable}</p> : !rule.id ? <p>Choose saved conditions or draft them in the rule builder.</p> : !current && !error ? <p role="status">Evaluating recorded bars…</p> : null}
+    {unavailable ? <p role="status">{unavailable}</p> : !rule.id ? <p>Choose saved conditions.</p> : !current && !error ? <p role="status">Evaluating recorded bars…</p> : null}
     {error ? <p role="alert">{error}</p> : null}
     {changed ? <p role="alert">Rules changed since this scan. <button className="btn" onClick={() => selectDeskRule(rule.id)}>Use current rules</button></p> : null}
     {current && !changed ? <>
@@ -39,7 +38,7 @@ export function ConditionChecklist({ archive }: { archive: ArchiveChartDataset |
       <ul className="condition-rows">{current.conditions.map(row => <li key={`${row.side}:${row.index}`}><strong>{row.side} · {row.status}</strong><span className="mono">{row.label}</span><span>{row.left ?? '—'} / {row.right ?? '—'}</span>{row.reason ? <small>{row.reason}</small> : null}</li>)}</ul>
       <small className="mono">Rules {current.rules_sha256?.slice(0, 12) ?? 'unavailable'} · cutoff {current.as_of ? <Timestamp value={current.as_of} /> : 'latest stored'}</small>
     </> : null}
-    <div className="edge-actions"><button className="btn" onClick={() => setAttempt(value => value + 1)}>Refresh conditions</button><button className="btn" onClick={() => openRuleBuilder()}>Edit / test rules</button><button className="btn" onClick={openScanner}>Scan markets</button></div>
+    <div className="edge-actions"><button className="btn" onClick={() => setAttempt(value => value + 1)}>Refresh conditions</button></div>
     <p className="muted">A matching setup is an observation. Test after costs and against a baseline before calling it an edge.</p>
   </section>
 }

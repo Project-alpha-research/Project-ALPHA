@@ -15,7 +15,7 @@ describe('workflow navigation', () => {
       for (const doc of DOCUMENTS) {
         for (const pane of doc.panes) expect(panes).toContain(pane.name)
       }
-      expect(panes).toEqual(expect.arrayContaining(['DataManager', 'MarketWatch', 'MarketOverview', 'FollowToday', 'AllTests', 'Navigator', 'Alerts', 'DataPulls']))
+      expect(panes).toEqual(expect.arrayContaining(['DataManager', 'MarketWatch', 'MarketOverview', 'FollowToday', 'AllTests', 'Navigator', 'DataPulls']))
     }
   })
   it('round trips page links and retains legacy run links', () => {
@@ -23,5 +23,8 @@ describe('workflow navigation', () => {
     expect(resolveWorkflow('#run=0123456789abcdef', 'crypto')).toEqual({ page: 'results', pane: 'RunDetail', runId: '0123456789abcdef' })
     expect(resolveWorkflow('#page=data&pane=FundingData', 'crypto').pane).toBe('DataManager')
     expect(resolveWorkflow('#page=unknown', 'crypto').page).toBe('overview')
+    // Links saved before the Builder, Scanner and Alerts windows were removed open the overview, with no error.
+    expect(resolveWorkflow('#page=strategies&pane=Scanner', 'crypto')).toEqual({ page: 'overview', pane: null, runId: null })
+    expect(resolveWorkflow('#page=operations&pane=Alerts', 'crypto').pane).toBe('JobMonitor')
   })
 })

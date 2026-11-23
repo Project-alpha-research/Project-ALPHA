@@ -11,8 +11,6 @@ class Refusal { readonly detail: string; constructor(detail: string) { this.deta
 // View menu, the Navigator or the toolbar rather than from a fixed tab strip.
 const DOCUMENTS = [
   { title: 'Chart', id: 'chart' },
-  { title: 'Strategy Builder', id: 'builder' },
-  { title: 'Scanner', id: 'scanner' },
   { title: 'Strategy Performance Report', id: 'report' },
   { title: 'Compare', id: 'compare' },
   { title: 'Forecast', id: 'forecast' },
@@ -24,8 +22,8 @@ const DOCUMENTS = [
 export async function openDocument(page: Page, title: string): Promise<void> {
   const routes: Record<string, [string, string]> = {
     'Chart': ['Data & Assets', 'Price'], 'Research': ['Research', 'Research Case'],
-    'Build': ['Strategies & Tests', 'Strategy Development'], 'Strategy Builder': ['Strategies & Tests', 'Builder'],
-    'Scanner': ['Strategies & Tests', 'Scanner'], 'Strategy Performance Report': ['Results', 'Report'],
+    'Build': ['Strategies & Tests', 'Strategy Development'],
+    'Strategy Performance Report': ['Results', 'Report'],
     'Compare': ['Results', 'Compare'], 'Forecast': ['Results', 'Forecast'], 'Machine learning': ['Results', 'ML lab'],
     'Jobs': ['Operations', 'Jobs'],
     'Governance': ['Settings', 'Governance'], 'Funding': ['Data & Assets', 'Funding'],
@@ -1574,10 +1572,6 @@ interface MockOptions {
   candles?: Record<string, components['schemas']['Candle'][]>
   /** Saved rule sets served by GET /api/rules. */
   rules?: components['schemas']['RuleSummary'][]
-  /** Saved scans served by GET /api/scans. */
-  scans?: components['schemas']['ScanSummary'][]
-  /** Scan alerts served by GET /api/alerts (oldest first, as the CLI tails them). */
-  alerts?: components['schemas']['ScanAlert'][]
   /** Receives the query string of every `/api/overlays/{symbol}` request the chart makes. */
   capturedOverlays?: (query: string) => void
   /** Opt-in public tickers keyed `SYMBOL@exchange`; a missing key answers 422 like the CLI. */
@@ -2229,19 +2223,6 @@ function responseFor(route: Route, options: MockOptions): unknown {
   if (url.pathname === '/api/rules' && route.request().method() === 'GET') {
     return { rules: options.rules ?? [], authority: 'none' }
   }
-  if (url.pathname === '/api/scans' && route.request().method() === 'GET') {
-    return { scans: options.scans ?? [], authority: 'none' }
-  }
-  if (url.pathname === '/api/alerts') {
-    return { alerts: options.alerts ?? [], authority: 'none' }
-  }
-  if (url.pathname === '/api/rules/validate') {
-    const spec = (route.request().postDataJSON() as { spec: { long_when?: unknown[]; short_when?: unknown[] } }).spec
-    const conditions = (spec.long_when?.length ?? 0) + (spec.short_when?.length ?? 0)
-    return conditions
-      ? { valid: true, error: null, name: '(unsaved)', sha256: 'f'.repeat(64), spec_name: 'x', history: 80, warmup: 20, long_conditions: [], short_conditions: [], spec }
-      : { valid: false, error: 'rule spec needs at least one condition in long_when or short_when' }
-  }
   if (url.pathname === '/api/strategies' || url.pathname === '/api/commands') return []
   if (url.pathname === '/api/providers') return []
   if (url.pathname === '/api/recent-runs') return { total: 0, items: [] }
@@ -2627,58 +2608,6 @@ test('the status bar shows the market, the clock and the hovered bar only', asyn
   await expect(bar.locator('.status-segment--ohlc')).toHaveText('O: — H: — L: — C: — V: —')
   await expect(bar.locator('.status-segment--bars')).toHaveText(/\d+ \/ \d+ bars/)
   await expect(bar.locator('.status-segment--ssd, .status-segment--paper, .status-segment--providers')).toHaveCount(0)
-})
-
-test('Strategy Builder validates through the CLI, saves, and tests in the sandbox', async ({ page }) => {
-  const posts: { path: string; body: Record<string, unknown> }[] = []
-  await preparePage(page, {
-    candles: { 'XRP/USDT': [{ t: 1700000000, o: 1, h: 1, l: 1, c: 1, v: 1 }] },
-    rules: [{ name: 'old-one', path: '/data/rules/old-one.json', sha256: 'a'.repeat(64), spec_name: 'Old one', history: 60, warmup: 20, long_conditions: ['sma:5 > sma:20'], short_conditions: [], spec: {}, error: null }],
-    capturedPost: (path, body) => {
-      posts.push({ path, body })
-      if (path === '/api/rules') {
-        return { name: body.name, sha256: 'b'.repeat(64), path: `/data/rules/${String(body.name)}.json`, spec_name: 'Trend', history: 80, warmup: 20, long_conditions: ['sma:5 > sma:20'], short_conditions: [], spec: body.spec }
-      }
-      if (path === '/api/jobs') return { job_id: 'job-rules-1', status: 'running' }
-      return undefined
-    },
-  })
-  await openDocument(page, 'Strategy Builder')
-  const editor = page.getByRole('region', { name: 'Rule editor' })
-  await expect(page.getByRole('complementary', { name: 'Saved rule sets' })).toContainText('old-one')
-  // A typo is caught before the CLI; a real spec is validated by the CLI.
-  await editor.getByLabel('long condition 1 left').fill('vwap:20')
-  await editor.getByLabel('long condition 1 right').fill('sma:20')
-  await expect(editor.getByRole('status')).toContainText('"vwap" is not a source')
-  await editor.getByLabel('long condition 1 left').fill('sma:5')
-  await expect(editor.getByRole('status')).toContainText('valid · warm-up 20 bars · history 80')
-  const save = editor.getByRole('button', { name: 'Save rule set' })
-  await expect(save).toBeDisabled()
-  await editor.getByLabel('File name').fill('trend')
-  await save.click()
-  await expect(editor.getByRole('button', { name: 'Run a backtest' })).toBeEnabled()
-  expect(posts.filter((entry) => entry.path === '/api/rules')).toEqual([
-    {
-      path: '/api/rules',
-      body: {
-        name: 'trend',
-        spec: {
-          name: 'trend',
-          long_when: [{ left: { indicator: 'sma', params: [5] }, op: '>', right: { indicator: 'sma', params: [20] } }],
-          short_when: [],
-        },
-      },
-    },
-  ])
-  await editor.getByRole('combobox', { name: 'Test asset' }).fill('XRP/USDT')
-  await editor.getByRole('combobox', { name: 'Test asset' }).press('Enter')
-  await editor.getByRole('button', { name: 'Run a backtest' }).click()
-  await expect.poll(() => posts.some(entry => entry.path === '/api/jobs')).toBe(true)
-  const job = posts.find((entry) => entry.path === '/api/jobs')
-  expect(job?.body).toMatchObject({ command: 'backtest run', args: 'XRP/USDT --strategy rules --rules trend --account-type MARGIN' })
-  expect((job?.body.run_context as { kind?: string } | undefined)?.kind ?? 'standalone_sandbox').toBeTruthy()
-  await editor.getByLabel('long condition 1 left').fill('sma:10')
-  await expect(editor.getByRole('button', { name: 'Run a backtest' })).toBeDisabled()
 })
 
 test('Insert › Indicators draws CLI-computed overlays and chart windows tile', async ({ page }) => {
@@ -3417,68 +3346,6 @@ test('Data Manager Snapshots tab lists snapshots and Verify runs a data job', as
   await row.getByRole('button', { name: 'Verify' }).click()
   await expect(page.getByText(/verify snap1 started as job job-verify-1/)).toBeVisible()
   expect(posts).toEqual([{ path: '/api/jobs', body: { command: 'data', args: 'verify snap1' } }])
-})
-
-test('Scanner saves a scan, runs it through the CLI, and Alerts relays checked signal changes', async ({ page }) => {
-  const posts: { path: string; body: Record<string, unknown> }[] = []
-  const rule = { name: 'trend', path: '/data/rules/trend.json', sha256: 'a'.repeat(64), spec_name: 'Trend', history: 60, warmup: 20, long_conditions: ['sma:5 > sma:20'], short_conditions: [], spec: {}, error: null }
-  await preparePage(page, {
-    rules: [rule],
-    scans: [{ name: 'trend-crypto', rules: 'trend', universe: { kind: 'list', symbols: ['XRP/USDT', 'BTC/USDT'] }, checked_at: null, error: null }],
-    alerts: [{ ts: '2026-09-04T10:00:00+00:00', scan: 'trend-crypto', symbol: 'BTC/USDT', previous: null, signal: 1, bar_date: '2026-06-30', close: 93354.22 }],
-    capturedPost: (path, body) => {
-      posts.push({ path, body })
-      if (path === '/api/scans') return { name: body.name, path: `/data/scans/${String(body.name)}.json`, rules: body.rules, universe: { kind: body.symbols ? 'list' : 'stored', symbols: body.symbols }, checked_at: null }
-      if (path === '/api/scans/trend-crypto/run') {
-        return {
-          scan: 'trend-crypto', rules: 'trend', rules_sha256: 'a'.repeat(64), as_of: null, universe_as_of: '2026-09-04T10:00:00+00:00', universe: ['XRP/USDT', 'BTC/USDT'],
-          rows: [
-            { symbol: 'XRP/USDT', signal: 0, bar_ts: 1, bar_date: '2026-06-30', close: 2.12, values: { 'sma:5': 2.1, 'sma:20': 2.2 } },
-            { symbol: 'BTC/USDT', signal: 1, bar_ts: 1, bar_date: '2026-06-30', close: 93354.22, values: { 'sma:5': 93000, 'sma:20': 90000 } },
-          ],
-          skipped: [{ symbol: 'ETH/USDT', reason: 'only 10 bars, rule set needs 60' }],
-          authority: 'none',
-        }
-      }
-      if (path === '/api/scans/trend-crypto/check' || path === '/api/scans/check') {
-        return { checks: [{ scan: 'trend-crypto', checked_at: '2026-09-04T10:05:00+00:00', evaluated: 2, skipped: 0, changed: 1 }], alerts: [{ ts: '2026-09-04T10:05:00+00:00', scan: 'trend-crypto', symbol: 'XRP/USDT', previous: 0, signal: -1, bar_date: '2026-06-30', close: 2.12 }], authority: 'none' }
-      }
-      return undefined
-    },
-  })
-  await openDocument(page, 'Scanner')
-  const side = page.getByRole('region', { name: 'Saved scans' })
-  await expect(side).toContainText('trend-crypto')
-  await expect(side).toContainText('XRP/USDT, BTC/USDT')
-  // Save a new scan over every stored symbol.
-  const form = page.getByRole('form', { name: 'New scan' })
-  await expect(form.getByRole('button', { name: 'Save scan' })).toBeDisabled()
-  await form.getByLabel('Scan name').fill('all-trend')
-  await form.getByRole('button', { name: 'Save scan' }).click()
-  expect(posts.find((entry) => entry.path === '/api/scans')?.body).toEqual({ name: 'all-trend', rules: 'trend', symbols: null })
-  // Run: matches lead, the operand values the rule compared are columns, skipped symbols say why.
-  await side.getByRole('button', { name: 'Run' }).first().click()
-  const results = page.getByRole('table', { name: 'Scan results' })
-  await expect(results.locator('tbody tr')).toHaveCount(2)
-  await expect(results.locator('tbody tr').first()).toContainText('BTC/USDT')
-  await expect(results.locator('tbody tr').first()).toContainText('LONG')
-  await expect(results.locator('thead')).toContainText('sma:5')
-  await expect(page.getByRole('region', { name: 'Scan results' })).toContainText('2 evaluated, 1 skipped')
-  expect(posts.find((entry) => entry.path === '/api/scans/trend-crypto/run')?.body).toEqual({ as_of: null })
-  // Check appends changed signals; the notice repeats the CLI's count.
-  await side.getByRole('button', { name: 'Check' }).first().click()
-  await expect(page.getByRole('region', { name: 'Scan results' }).getByRole('status')).toContainText('trend-crypto: 1 new alert')
-  // Toolbox › Alerts is live: it tails the log and offers a check of every scan.
-  await openTask(page, 'Operations', 'Alerts')
-  const alerts = page.getByRole('table', { name: 'Scan alerts' })
-  await expect(alerts.locator('tbody tr')).toHaveCount(1)
-  await expect(alerts).toContainText('→ LONG')
-  await expect(alerts).toContainText('BTC/USDT')
-  // Mounting the tab checked every scan once; the button checks again.
-  await expect.poll(() => posts.filter((entry) => entry.path === '/api/scans/check').length).toBe(1)
-  await page.getByRole('button', { name: 'Check all scans' }).click()
-  await expect.poll(() => posts.filter((entry) => entry.path === '/api/scans/check').length).toBe(2)
-  await expect(page.locator('.workflow-panel')).toContainText('last check 4 Sep 2026, 10:05 UTC')
 })
 
 }

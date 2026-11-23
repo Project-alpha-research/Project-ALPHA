@@ -20,8 +20,6 @@ import { PriceChart } from '../panels/PriceChart'
 import { RdAgentPanel } from '../panels/RdAgentPanel'
 import { IdeaWorkspace } from '../panels/idea/IdeaWorkspace'
 import { SetupLabPanel } from '../panels/SetupLabPanel'
-import { Scanner } from '../panels/Scanner'
-import { StrategyBuilder } from '../panels/StrategyBuilder'
 import { RunDetail } from '../panels/rundetail'
 import type { DockId, WindowId } from './profiles'
 
@@ -29,8 +27,6 @@ export type DocumentKind =
   | 'chart'
   | 'report'
   | 'compare'
-  | 'builder'
-  | 'scanner'
   | 'research'
   | 'governance'
   | 'forecast'
@@ -42,8 +38,6 @@ export const DOCUMENT_KINDS: readonly DocumentKind[] = Object.freeze([
   'chart',
   'report',
   'compare',
-  'builder',
-  'scanner',
   'research',
   'governance',
   'forecast',
@@ -93,18 +87,6 @@ export const DOCUMENTS: readonly DocumentDefinition[] = [
     panes: [{ name: 'CompareRuns', title: 'Compare', component: CompareRuns }],
   },
   {
-    id: 'builder',
-    kind: 'builder',
-    title: 'Strategy Builder',
-    panes: [{ name: 'StrategyBuilder', title: 'Builder', component: StrategyBuilder }],
-  },
-  {
-    id: 'scanner',
-    kind: 'scanner',
-    title: 'Scanner',
-    panes: [{ name: 'Scanner', title: 'Scanner', component: Scanner }],
-  },
-  {
     id: 'governance',
     kind: 'governance',
     title: 'Governance',
@@ -151,7 +133,7 @@ export const DOCKS: readonly DockDefinition[] = [
     id: 'Toolbox',
     side: 'bottom',
     title: 'Toolbox',
-    tabs: ['Jobs', 'Backtests', 'Data pulls', 'Alerts'],
+    tabs: ['Jobs', 'Backtests', 'Data pulls'],
   },
 ]
 

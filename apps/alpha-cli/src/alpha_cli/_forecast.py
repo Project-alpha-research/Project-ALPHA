@@ -47,6 +47,10 @@ def _forecaster_factory(
         return FakeForecaster()
     from alpha_forecast import KronosForecaster
 
+    offline = local_files_only or (
+        _in_cache(model, model_revision, hub_cache)
+        and _in_cache(tokenizer, tokenizer_revision, hub_cache)
+    )
     return KronosForecaster(
         model_id=model,
         model_revision=model_revision,
@@ -54,8 +58,18 @@ def _forecaster_factory(
         tokenizer_revision=tokenizer_revision,
         device=device,
         cache_dir=hub_cache,
-        local_files_only=local_files_only,
+        local_files_only=offline,
     )
+
+
+def _in_cache(repo: str, revision: str, cache_dir: Path | None) -> bool:
+    """True when the files are local (a checkpoint folder, or the hub cache): no request needed."""
+    if Path(repo).is_dir():
+        return True
+    from huggingface_hub import try_to_load_from_cache
+
+    found = try_to_load_from_cache(repo, "config.json", cache_dir=cache_dir, revision=revision)
+    return isinstance(found, str)
 
 
 def _provenance(forecaster: Forecaster, *, model: str) -> dict[str, Any]:

@@ -28,6 +28,8 @@ project-wide rule is [research integrity § Models and isolated workers](researc
   the same name; a key left out puts nothing on the line, so the launcher's default applies.
   `tests/unit/test_rdagent_run_command.py` checks every launcher option has a key, rebuilds the owner's launch element
   by element, and parses the list with the launcher's own parser.
+- Every path key has a default (`rdagent_defaults.py`); `alpha rdagent init` writes them to `<data folder>/rdagent.toml` and a run
+  reads that file when it exists, else uses the defaults. A missing path gives one sentence naming the setting and the fix.
 - The dry run prints a limit only when the config passes it on; otherwise it says the launcher or gateway sets it.
 - The config holds only the key file's path. The path goes to the child in an environment variable, never in the command
   text; the command never reads, prints or stores the file. `alpha rdagent status` only reads the run folder.

@@ -26,6 +26,7 @@ from alpha_cli.ml_contract import (
     sha256_file,
 )
 from alpha_cli.ml_input import export_input
+from alpha_cli.ml_split import split_sentence
 from alpha_cli.spine import reserve
 from alpha_cli.spine.ledger import append_trial
 from alpha_cli.spine.reading import old_grade_text
@@ -176,18 +177,6 @@ def _folds(base: Path) -> list[dict[str, str]]:
     ]
 
 
-def _split_sentence(folds: list[dict[str, str]]) -> str:
-    first, last = folds[0], folds[-1]
-    return (
-        f"The model was refit {len(folds)} times, each time on days before its own test days. "
-        f"First model: trained {first['train_start']} to {first['train_end']}, "
-        f"tested {first['test_start']} to {first['test_end']}. "
-        f"Last model: trained {last['train_start']} to {last['train_end']}, "
-        f"tested {last['test_start']} to {last['test_end']}. "
-        "No model saw its own test days."
-    )
-
-
 def _count_try(
     data_dir: Path, spec: dict[str, Any], run_id: str, snapshot_id: str, folds: list[dict[str, str]]
 ) -> str:
@@ -278,7 +267,7 @@ def run_spec(
         "status": "replayed",
         "run_id": replayed.run_id,
         "folds": folds,
-        "split_sentence": _split_sentence(folds),
+        "split_sentence": split_sentence(folds),
         "costs": f"{FEE_BPS} bp fee and {SLIPPAGE_BPS} bp slippage per trade",
         "n_oos_periods": manifest["n_oos_periods"],
         "metrics": manifest["metrics"],

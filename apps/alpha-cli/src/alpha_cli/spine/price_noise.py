@@ -100,16 +100,26 @@ def noise_summary(runs: list[dict[str, Any]], original: float | None) -> dict[st
     }
 
 
-def _engine_run(task: tuple[list[Bar], _runner.RunSpec, list[CorporateAction]]) -> tuple[Any, int]:
+# One engine run: bars, spec, dividends and, for a toolbox re-run only, a causal signal filter.
+Task = (
+    tuple[list[Bar], _runner.RunSpec, list[CorporateAction]]
+    | tuple[list[Bar], _runner.RunSpec, list[CorporateAction], _runner.SignalFilter | None]
+)
+
+
+def _engine_run(task: Task) -> tuple[Any, int]:
     """One full-sample engine run: its equity values and its count of closed trades."""
-    bars, spec, dividends = task
-    result = _runner.run_full_backtest(bars, spec, dividends=dividends)
+    bars, spec, dividends = task[0], task[1], task[2]
+    signal_filter = task[3] if len(task) == 4 else None
+    result = (
+        _runner.run_full_backtest(bars, spec, dividends=dividends, signal_filter=signal_filter)
+        if signal_filter is not None
+        else _runner.run_full_backtest(bars, spec, dividends=dividends)
+    )
     return [value for _, value in result.equity_curve], len(result.trades)
 
 
-def engine_runs(
-    tasks: Sequence[tuple[list[Bar], _runner.RunSpec, list[CorporateAction]]], workers: int
-) -> list[tuple[Any, int]]:
+def engine_runs(tasks: Sequence[Task], workers: int) -> list[tuple[Any, int]]:
     """Independent engine runs, in order. With workers > 1 they share a spawn pool; each run is
     deterministic and ``map`` keeps the order, so the results equal the serial ones."""
     if workers <= 1 or len(tasks) < 2:

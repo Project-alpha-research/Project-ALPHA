@@ -102,6 +102,7 @@ def _render(output: dict[str, Any]) -> str:
             "figures",
             "month",
             "asset",
+            "tries",
             "rows",
             "mapped",
             "unknown",

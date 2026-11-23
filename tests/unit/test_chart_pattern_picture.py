@@ -108,6 +108,28 @@ def test_a_tangle_of_lines_is_not_drawn() -> None:
     assert 0 < len(numbered) <= MAX_DRAWN
 
 
+@pytest.mark.parametrize("pattern", ["levels", "market_profile"])
+def test_levels_known_on_the_same_day_are_all_drawn(pattern: str) -> None:
+    from alpha_cli.chart_cmds import to_ohlcv
+    from alpha_cli.chart_pattern_picture import _figure, _Shape
+
+    series = to_ohlcv(_bars())
+    day = datetime(2023, 6, 18, tzinfo=UTC)
+    first = day - timedelta(days=100)
+    shapes = [
+        _Shape(f"Level {k}", "line", ((first, 100.0 + k), (day, 100.0 + k)), day) for k in range(4)
+    ]
+    figure = _figure(
+        series, shapes, pattern, (date(2021, 1, 1), date(2023, 6, 18)), annotated=False
+    )
+    horizontal = [
+        line
+        for line in figure.axes[0].get_lines()
+        if len(line.get_ydata()) == 2 and line.get_ydata()[0] == line.get_ydata()[1]
+    ]
+    assert len(horizontal) == 4
+
+
 def test_help_lists_every_pattern() -> None:
     result = CliRunner().invoke(chart_app, ["overlays", "--help"], terminal_width=400)
     flat = " ".join(result.output.split())
@@ -155,3 +177,9 @@ def test_a_picture_in_the_held_back_period_says_so(
 def test_a_picture_before_the_held_back_period_has_no_note(tmp_path: Path) -> None:
     out = draw_pattern_pictures(_bars(), "swings", since=None, out_dir=tmp_path)
     assert "held-back" not in out.summary
+
+
+def test_the_first_held_back_day_counts_as_held_back() -> None:
+    from alpha_cli.chart_pattern_picture import reaches_held_back
+
+    assert reaches_held_back(date(2024, 1, 1)) and not reaches_held_back(date(2023, 12, 31))

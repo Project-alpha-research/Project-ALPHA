@@ -109,6 +109,9 @@ OWNER_WORDS = [
     ("only works some years", {"robustness.start_end_dates"}),
     ("is it just the market going up", {"market.attribution"}),
     ("too few trades", set()),
+    ("would a different data feed change it", {"parameters.price_noise"}),
+    ("parameter sensitivity", {"parameters.one_at_a_time", "parameters.plateau"}),
+    ("what if I enter a bar late", {"parameters.entry_delay"}),
 ]
 
 
@@ -125,7 +128,6 @@ def test_owner_words_find_sensible_entries(words: str, wanted: set[str]) -> None
     ("words", "command"),
     [
         ("does it hold out of sample", "alpha test"),
-        ("would a different data feed change it", "alpha data health"),
     ],
 )
 def test_situations_without_a_check_point_to_the_command_that_answers(

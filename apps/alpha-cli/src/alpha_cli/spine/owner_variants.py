@@ -63,14 +63,22 @@ def _changed(
     new: float,
 ) -> dict[str, Any] | None:
     """The spec with one number changed, or None when the rule language refuses it."""
+    return _edited(spec, [(where, kind, position, new)])
+
+
+def _edited(
+    spec: Mapping[str, Any], edits: list[tuple[tuple[int, str], str, int, float]]
+) -> dict[str, Any] | None:
+    """The spec with each number changed at once, or None when the rule language refuses it."""
     edit = copy.deepcopy(dict(spec))
-    operand = edit["long_when"][where[0]][where[1]]
-    if kind == "constant":
-        operand["value"] = new
-    elif kind == "lag":
-        operand["lag"] = int(new)
-    else:
-        operand["params"][position] = int(new)
+    for where, kind, position, new in edits:
+        operand = edit["long_when"][where[0]][where[1]]
+        if kind == "constant":
+            operand["value"] = new
+        elif kind == "lag":
+            operand["lag"] = int(new)
+        else:
+            operand["params"][position] = int(new)
     try:
         return canonical_spec(edit)
     except ValueError:
@@ -103,16 +111,23 @@ def _label(
     return f"condition {where[0] + 1} {where[1]} {kind} {text(old)} to {text(new)}"
 
 
-def owner_variants(spec: Mapping[str, Any]) -> list[tuple[str, dict[str, Any]]]:
-    """Named neighbour specs of a canonical owner-rule spec, at most ``MAX_VARIANTS``."""
+def _moved(kind: str, value: float, factor: float) -> float:
+    if kind == "constant":
+        return _round_number(value * factor)
+    return float(max(1 if kind == "lag" else 2, round(value * factor)))
+
+
+def owner_variants(
+    spec: Mapping[str, Any], *, factors: tuple[float, ...] = FACTORS
+) -> list[tuple[str, dict[str, Any]]]:
+    """Named neighbour specs of a canonical owner-rule spec, at most ``MAX_VARIANTS`` per factor
+    pair (so 8 at the two default factors)."""
+    limit = MAX_VARIANTS * max(1, len(factors) // len(FACTORS))
     seen = {repr(sorted(spec.items()))}
     found: list[tuple[str, dict[str, Any]]] = []
     for where, kind, position, value in _slots(spec):
-        for factor in FACTORS:
-            if kind == "constant":
-                new = _round_number(value * factor)
-            else:
-                new = float(max(1 if kind == "lag" else 2, round(value * factor)))
+        for factor in factors:
+            new = _moved(kind, value, factor)
             if new == value:
                 continue
             variant = _changed(spec, where, kind, position, new)
@@ -120,6 +135,34 @@ def owner_variants(spec: Mapping[str, Any]) -> list[tuple[str, dict[str, Any]]]:
                 continue
             seen.add(repr(sorted(variant.items())))
             found.append((_label(spec, where, kind, position, value, new), variant))
-            if len(found) == MAX_VARIANTS:
+            if len(found) == limit:
                 return found
     return found
+
+
+def owner_grid(
+    spec: Mapping[str, Any], factors: tuple[float, ...]
+) -> tuple[int, list[tuple[str, dict[str, Any] | None]]]:
+    """Every pair of ``factors`` on the first two numbers of the rule (one number: a line).
+
+    Returns how many numbers the grid moves and one (label, spec) per grid point other than the
+    rule itself; the spec is None where the rule language refuses that point.
+    """
+    slots = _slots(spec)[:2]
+    points: list[tuple[str, dict[str, Any] | None]] = []
+    combos: list[tuple[float, ...]] = [()]
+    for _ in slots:
+        combos = [(*combo, factor) for combo in combos for factor in factors]
+    for combo in combos:
+        if all(factor == 1.0 for factor in combo):
+            continue
+        edits = []
+        labels = []
+        for (where, kind, position, value), factor in zip(slots, combo, strict=True):
+            new = _moved(kind, value, factor)
+            labels.append(_label(spec, where, kind, position, value, new))
+            if new != value:
+                edits.append((where, kind, position, new))
+        changed = _edited(spec, edits) if edits else None
+        points.append(("; ".join(labels), None if changed == dict(spec) else changed))
+    return len(slots), points

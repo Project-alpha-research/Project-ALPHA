@@ -69,7 +69,7 @@ def test_rule_test_records_two_assets(tmp_path: Path) -> None:
     assert [row["trial_index"] for row in rows] == [1, 2]
     assert all(row["schema"] == "AlphaTrialV1" for row in rows)
     again = alpha(home, "test", str(spec), "--quick", "--json").json()
-    assert again["trials_total"] == 4
+    assert again["trials_total"] == 2  # an exact repeat writes no ledger row
     assert {row["run_id"] for row in again["results"]} == run_ids
     assert all("repeat" in row["labels"] for row in again["results"])
     for run_id in run_ids:

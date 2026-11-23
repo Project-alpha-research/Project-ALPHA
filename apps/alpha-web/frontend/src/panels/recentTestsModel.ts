@@ -14,6 +14,13 @@ export function ideaName(run: RecentRun): string {
   return run.idea || run.rule_name || run.display_name
 }
 
+export const OLDER_RUN_LINK = 'older run: open the report'
+
+/** The Reading cell: the stored or worked-out words, or a link to the report when there are none. */
+export function readingCell(run: RecentRun): { words: string | null; link: string | null } {
+  return run.evidence ? { words: run.evidence, link: null } : { words: null, link: OLDER_RUN_LINK }
+}
+
 function sortValue(run: RecentRun, key: SortKey): string | number | null {
   if (key === 'idea') return ideaName(run).toLowerCase()
   if (key === 'symbol') return (run.symbol ?? '').toLowerCase()

@@ -68,6 +68,25 @@ function Tile({ item, scale, differs, hovered, onOpen, onHover }: {
   )
 }
 
+const SKELETON_TILES = 8
+
+/** Empty tile frames shown while the bars are read: the page keeps its shape, no word "Loading". */
+function SkeletonGrid() {
+  return (
+    <div className="market-grid" role="group" aria-label="One small chart per asset" aria-busy="true" data-skeleton="true">
+      {Array.from({ length: SKELETON_TILES }, (_, index) => (
+        <div key={index} className="market-tile market-tile-skeleton" aria-hidden="true">
+          <span className="market-tile-head"><strong>&nbsp;</strong></span>
+          <svg viewBox={`0 0 ${TILE_W} ${TILE_H}`} className="market-spark" preserveAspectRatio="none">
+            <line x1="0" x2={TILE_W} y1={TILE_H / 2} y2={TILE_H / 2} className="market-base" />
+          </svg>
+          <span className="market-tile-foot"><span className="num">&nbsp;</span></span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function AllLines({ assets, scale, hovered, onHover }: {
   assets: MarketAsset[]; scale: [number, number]; hovered: string | null; onHover(asset: string | null): void
 }) {
@@ -209,7 +228,7 @@ export function MarketView(props: MarketViewProps) {
         {data ? ' · ' : null}Market view. Not a test result. It shows stored bars only; nothing is fetched or saved.
       </p>
       {error ? <p role="alert" className="market-error">{error}</p> : null}
-      {loading && !data && !error ? <p className="muted" role="status">Loading stored bars…</p> : null}
+      {loading && !data && !error ? <SkeletonGrid /> : null}
       {data ? (
         <>
           {assets.length === 0 ? <p role="status">No stored bars to show for this bar size and window.</p> : (

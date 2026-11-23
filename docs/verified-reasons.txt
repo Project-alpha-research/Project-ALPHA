@@ -124,6 +124,9 @@ docs/reference/invariants/web-api-reads.md
 docs/reference/invariants/web-api.md
   verified e437a567bae8eef8 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
+docs/reference/invariants/web-frontend-charts.md
+  verified 8cd3ea2164dc85ab on 2026-11-23: new page: the Charts, UTC and exact exports and Generated API client sections moved here unchanged from web-frontend.md
+
 docs/reference/invariants/web-frontend-ideas.md
   verified 84e09ac30d685a71 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 

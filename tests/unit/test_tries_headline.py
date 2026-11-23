@@ -143,3 +143,9 @@ def test_ledger_query_tries_gives_the_count_per_asset(home: Path) -> None:
     assert json.loads(text)["rows"] == [{"asset": "SPY", "tries": 2}]
     code, text = _cli(home, "ledger", "query", "tries", "--asset", "SPY")
     assert code == 1 and "ledger tries" in text
+
+
+def test_ledger_query_tries_prints_the_count_column(home: Path) -> None:
+    code, text = _cli(home, "ledger", "query", "tries")
+    assert code == 0, text
+    assert text.splitlines()[:2] == ["asset\ttries", "SPY\t2"]

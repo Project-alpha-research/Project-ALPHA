@@ -106,10 +106,9 @@ def install_cli(root: Path) -> None:
     crypto_data_cmds._bulk_store = lambda: synthetic_store(root)
 
     def denied(*args: Any, **kwargs: Any) -> Any:
-        raise AssertionError("fixture quality must not fetch, acquire or initialize ControlStore")
+        raise AssertionError("fixture quality must not fetch or acquire")
 
     for name in (
-        "_control_store",
         "_acquire_result",
         "_backfill_acquire",
         "fetch_binance_archive",

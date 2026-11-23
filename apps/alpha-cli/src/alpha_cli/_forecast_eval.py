@@ -83,14 +83,20 @@ def run_forecast_eval(
     seed: int,
     cutoff: date,
     mean_block: float,
+    max_origins: int | None = None,
 ) -> ForecastEvalOutput:
-    """Score the forecaster at every rolling origin against realized outcomes + baselines."""
+    """Score the forecaster at rolling origins against realized outcomes + baselines.
+
+    ``max_origins`` keeps only the latest that many origins of the grid (``None``: all).
+    """
     if sample_count < 2:
         raise DataError(
             f"eval needs sample_count >= 2 for distributional scores, got {sample_count}"
         )
     series = list(bars)
     indices = origin_indices(len(series), context=context, horizon=horizon, stride=stride)
+    if max_origins is not None:
+        indices = indices[-max_origins:]  # the latest origins on the same grid
 
     origins: list[OriginResult] = []
     master = seed & 0xFFFFFFFF

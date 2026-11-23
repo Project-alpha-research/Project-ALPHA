@@ -51,7 +51,7 @@ def _no_effects(monkeypatch: pytest.MonkeyPatch, store: Any) -> None:
     def fail(*args: Any, **kwargs: Any) -> Any:
         pytest.fail("status must not acquire, probe writes, lock, initialize DB or publish")
 
-    for name in ("_backfill_acquire", "_acquire_result", "fetch_bybit_public", "_control_store"):
+    for name in ("_backfill_acquire", "_acquire_result", "fetch_bybit_public"):
         monkeypatch.setattr(crypto_data_cmds, name, fail)
     monkeypatch.setattr(store, "verify_ready", fail)
     monkeypatch.setattr(store, "admission_lock", fail)

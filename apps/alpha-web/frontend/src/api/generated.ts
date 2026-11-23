@@ -963,6 +963,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ml-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Ml Runs
+         * @description The newest stored runs made by ``alpha ml run``, each with its split, model and folds.
+         */
+        get: operations["list_ml_runs_api_ml_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ml/capabilities": {
         parameters: {
             query?: never;
@@ -8902,6 +8922,76 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** MlStoredFold */
+        MlStoredFold: {
+            /** Fold */
+            fold: number;
+            /** Test End */
+            test_end: string;
+            /** Test Start */
+            test_start: string;
+            /** Train End */
+            train_end: string;
+            /** Train Start */
+            train_start: string;
+        };
+        /**
+         * MlStoredMetrics
+         * @description Stored numbers after costs; a number that could not be worked out is null with a reason.
+         */
+        MlStoredMetrics: {
+            /** Benchmark Total Return */
+            benchmark_total_return: number | null;
+            /** Cagr */
+            cagr: number | null;
+            /** Max Drawdown */
+            max_drawdown: number | null;
+            /** Mean Turnover */
+            mean_turnover: number | null;
+            /** Sharpe */
+            sharpe: number | null;
+            /** Sharpe Reason */
+            sharpe_reason: string | null;
+            /** Total Fees */
+            total_fees: number | null;
+            /** Total Return */
+            total_return: number | null;
+            /** Total Slippage Cost */
+            total_slippage_cost: number | null;
+        };
+        /** MlStoredRun */
+        MlStoredRun: {
+            /** Assets */
+            assets: string[];
+            /** Costs */
+            costs: string;
+            /** Folds */
+            folds: components["schemas"]["MlStoredFold"][];
+            /** Folds Total */
+            folds_total: number;
+            /** Label */
+            label: string | null;
+            metrics: components["schemas"]["MlStoredMetrics"];
+            /** Model */
+            model: string;
+            /** Mtime */
+            mtime: number;
+            /** N Oos Periods */
+            n_oos_periods: number | null;
+            /** Run Id */
+            run_id: string;
+            /** Split Sentence */
+            split_sentence: string | null;
+            /** Survivorship Warning */
+            survivorship_warning: string | null;
+        };
+        /** MlStoredRunList */
+        MlStoredRunList: {
+            /** Items */
+            items: components["schemas"]["MlStoredRun"][];
+            /** Total */
+            total: number;
+        };
         /** MlTabularModelRecipe */
         MlTabularModelRecipe: {
             /**
@@ -15074,6 +15164,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MarketOverview"];
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    list_ml_runs_api_ml_runs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MlStoredRunList"];
                 };
             };
             /** @description Stable, redacted Workstation error */

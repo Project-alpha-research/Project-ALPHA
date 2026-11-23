@@ -95,6 +95,8 @@ def run(
             series = (
                 resolved
                 if inputs.STORED_FILES.keys() & set(spec.needs)
+                else inputs.load_rerun(home, resolved)
+                if "run_rerun" in spec.needs
                 else inputs.load_run(home, resolved)
             )
             if spec.compute is None:

@@ -62,3 +62,36 @@ def test_recent_runs_can_skip_the_sparkline(
     _run(tmp_path, "c" * 16, sharpe=0.1, word="some evidence", mtime=1_000, bars=5)
     body = _client(tmp_path, monkeypatch).get("/api/recent-runs?spark=false").json()
     assert body["items"][0]["spark"] == []
+
+
+def _old_run(home: Path, run_id: str, metrics: object) -> None:
+    folder = home / "runs" / run_id
+    folder.mkdir(parents=True)
+    manifest = {"command": "validate", "metadata": {"symbol": "SPY"}, "oos_metrics": metrics}
+    (folder / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    os.utime(folder / "manifest.json", (500, 500))
+
+
+def test_an_older_run_gets_its_reading_word_from_the_report_function(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli.spine.reading import build_reading, reading_word
+
+    metrics = {"sharpe": 0.4, "max_drawdown": -0.1, "risk_of_ruin": 0.0}
+    _old_run(tmp_path, "d" * 16, metrics)
+    manifest = {"command": "validate", "metadata": {"symbol": "SPY"}, "oos_metrics": metrics}
+    item = _client(tmp_path, monkeypatch).get("/api/recent-runs").json()["items"][0]
+    assert item["evidence"] == reading_word(build_reading(manifest))
+    assert item["evidence"] is not None
+
+
+def test_a_run_without_numbers_has_no_word_so_the_table_links_to_the_report(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    folder = tmp_path / "runs" / ("e" * 16)
+    folder.mkdir(parents=True)
+    (folder / "manifest.json").write_text(
+        json.dumps({"command": "validate", "metadata": {"symbol": "SPY"}}), encoding="utf-8"
+    )
+    item = _client(tmp_path, monkeypatch).get("/api/recent-runs").json()["items"][0]
+    assert item["evidence"] is None

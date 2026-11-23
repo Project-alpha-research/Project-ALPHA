@@ -58,3 +58,4 @@
 .market-table-wrap { overflow-x: auto; margin: var(--pad) 0; }
 .market-change { white-space: nowrap; }
 .market-skipped { padding-left: 1.2em; }
+.market-tile-skeleton { pointer-events: none; opacity: 0.6; }

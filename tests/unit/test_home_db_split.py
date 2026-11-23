@@ -68,9 +68,10 @@ def test_an_old_home_reads_and_appends_with_no_migration(tmp_path: Path) -> None
 
     jobs = JobStore(home)
     assert jobs.get_job(OLD_JOB)["status"] == "running"
-    assert jobs.append_job_event(OLD_JOB, event_type="heartbeat", payload={"n": 2}, at=NOW)[
-        "sequence"
-    ] == 4
+    assert (
+        jobs.append_job_event(OLD_JOB, event_type="heartbeat", payload={"n": 2}, at=NOW)["sequence"]
+        == 4
+    )
     jobs.set_job_status(OLD_JOB, "succeeded", at=NOW)
     new = jobs.create_job(kind="ml:synthetic", request={"n": 1}, at=NOW)
     assert [row["job_id"] for row in jobs.list_jobs()] == sorted([OLD_JOB, str(new["job_id"])])

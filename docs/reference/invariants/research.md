@@ -170,5 +170,5 @@ network, persistence or authority; `alpha_cli` and `alpha_study` use it.
 - Tests: `tests/unit/test_research_*.py` (many also cover the CLI side), `tests/unit/test_figure_*.py`;
   bias guards `tests/bias_guards/test_research_*.py`; oracles `tests/oracles/test_metamorphic_panel.py`,
   `test_research_diagnostic.py`; integration `tests/integration/test_research_runtime.py`.
-- Check: `uv run python scripts/gate.py check`; CI adds slow oracles and the mutation gate here.
+- Check: `uv run python scripts/gate.py check`; CI adds slow oracles here ([quant tier](engineering.md#quant-tier)).
 - Tests: an oracle for every new statistic; a future-poison guard for every new read of time.

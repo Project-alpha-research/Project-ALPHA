@@ -7,7 +7,7 @@ sources:
   - scripts/gate_components.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_structural_digest.py
-verified: 0a282d681aa7abfd
+verified: 69df4b64bba1b526
 ---
 
 # Engineering rules
@@ -123,9 +123,10 @@ Project-wide coding rules. Area files add their own detail and link here. The re
   measured) over 1,500 lines, and no function over 150 lines (`def` line to last line), so an
   agent can hold any file or function in its head.
 - The offenders of 2026-11-14 (10 files, 98 functions; 8 files and 90 functions after the suite and research command splits) are capped at their size then in
-  `.claude/code-size-baseline.json`. The baseline only shrinks: an entry that is higher than
-  needed, gone or no longer over the limit fails until it is lowered or removed, and an entry
-  added or raised since `origin/main` fails; split the code instead. Same-name definitions
+  `.claude/code-size-baseline.json`. Each entry is a ceiling: code may shrink below it with no
+  edit, and a sweep change lowers or removes entries later (owner decision, 2026-11-22). Code that
+  grows past its entry fails, and an entry added or raised since `origin/main` fails; split the
+  code instead. Same-name definitions
   (a property setter) are measured separately as `name#2`. Enforced by `tests/unit/test_code_size.py`.
 
 ## Working style

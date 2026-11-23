@@ -98,7 +98,7 @@ docs/reference/invariants/patterns.md
   verified ec724060a0cafaaa on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/rdagent.md
-  verified b60cf511e1f46afc on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified d32f6e791522d873 on 2026-11-23: gate_components.py added a web path filter and dropped the mutation gate from the pull-request quant job; neither page states either fact, and rdagent still has no gate component
 
 docs/reference/invariants/research-integrity.md
   verified 6da3c17b2fb74ddd on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
@@ -391,7 +391,10 @@ research/tools/walk-forward.md
   verified da095a234bc224b3 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 scripts/CONTEXT.md
-  verified c354bd2d393be499 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified c96c7e398bc08a73 on 2026-11-23: gate_components.py added a web path filter and dropped the mutation gate from the pull-request quant job; neither page states either fact, and rdagent still has no gate component
+
+tests/CONTEXT.md
+  verified c9a2fe13f7fd6f9f on 2026-11-23: tests/_tiers.py only dropped a deleted test file from the slow list; the page names no individual slow files
 
 workers/rdagent/CONTEXT.md
   verified 095f2f22bb96915a on 2026-11-19: Re-read after merging main: the launcher change from main only removes a stopped gateway's own session files, and this page's discussion text still matches the worker

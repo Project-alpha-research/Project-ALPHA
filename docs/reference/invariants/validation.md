@@ -191,7 +191,8 @@ statsmodels and ruptures. It imports only `alpha_core` plus numpy, scipy, statsm
   `tests/bias_guards/test_walkforward_no_leak.py`, `test_oos_stitch_no_leak.py`,
   `test_montecarlo_null_calibration.py`; integration `tests/integration/test_gauntlet_*.py`.
 - Check: `uv run python scripts/gate.py check`, then `uv run pytest -q -m slow_oracle` for
-  calibration oracles. CI adds the slow oracles and the mutation gate (kill rate at least 0.90) on
-  every changed module here: `uv run python scripts/gate.py mutate <module path>` runs it locally.
+  calibration oracles. CI adds the slow oracles on every changed module here; the mutation gate (kill
+  rate at least 0.90) runs in the weekly sweep and the local `backend` run, not on a pull request
+  ([quant tier](engineering.md#quant-tier)): `uv run python scripts/gate.py mutate <module path>` runs it.
 - Tests: an oracle (metamorphic, calibration or differential) for every new public primitive, with a
   primary-source citation in its docstring; a bias guard for anything that splits time.

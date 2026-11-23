@@ -447,7 +447,9 @@ def test_kronos_monte_carlo_prints_its_reading_and_its_window(
     result, rdir = _kronos_with_fake_model(stored["rule"], home)
     text = " ".join(result.output.split())
     assert re.search(r"median end value [+-]\d+\.\d\d%", text), text
-    assert re.search(r"the middle 90% of the 4 simulated paths end between [+-]\d+\.\d\d%", text)
+    assert re.search(r"the simulated paths end between [+-]\d+\.\d\d%", text)
+    assert re.search(r"(all 4|none of the 4|\d of 4) simulated paths ended with a loss", text)
+    assert "% of paths" not in text and "middle 90%" not in text
     assert re.search(
         r"The real run ended [+-]\d+\.\d\d%, above (all|\d+ of) 4 simulated paths, "
         r"which is too few to rank \(window \d+ \w+ \d{4} to \d+ \w+ \d{4}\)",

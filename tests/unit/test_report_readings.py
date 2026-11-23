@@ -232,6 +232,8 @@ def test_diagnose_prints_a_plain_summary_and_json_keeps_the_raw_file(tmp_path: P
     text = RUNNER.invoke(app, ["diagnose", RUN], env=env).output
     assert "One bar later" in text and "75% kept" in text
     assert "can differ slightly from the Sharpe ratio of the test" in text
+    why = "its rule figure is a re-run on the full sample, not the out-of-sample figure of the test"
+    assert text.count(why) == 2  # once for price noise, once for the opposite rule
     assert "This rule shape [spine:ma_cross] has been tried 12 times" in text
     assert "5 nearby settings tried inside this test" in text and "family counted as" not in text
     assert "Warnings recorded with this run:" in text and "implausibly high" in text

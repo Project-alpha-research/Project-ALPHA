@@ -132,7 +132,7 @@ def test_alpha_test_ties_the_headline_to_the_deflated_sharpe_count(home: Path) -
     family = read_json(home / "runs" / last["run_id"] / "diagnostics.json")["trials"]["family"]
     used = family["n_trials_used"]
     line = next(x for x in text.splitlines() if x.startswith("You have tested"))
-    assert line.endswith(f"plus these: {used}.")
+    assert line.endswith(f"which makes {used} tries in all.")
     assert f"{family['variants_scored']} nearby settings" in line
     assert "family counted as" not in text and "Ledger entry" not in text
 
@@ -155,5 +155,5 @@ def test_results_show_prints_the_count_paragraph_under_the_reading(home: Path) -
     last = read_trials(home)[-1]
     code, text = _cli(home, "results", "show", last["run_id"])
     assert code == 0, text
-    assert "You have tested" in text and "The luck adjustment uses" in text
+    assert "You have tested" in text and "The luck adjustment adds" in text
     assert "family counted as" not in text and "Ledger entry" not in text

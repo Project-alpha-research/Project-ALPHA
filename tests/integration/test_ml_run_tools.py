@@ -268,4 +268,5 @@ def test_ml_run_prints_the_expected_time_and_fold_progress(
     lines = capsys.readouterr().err.splitlines()
     assert lines[0].startswith("The model trains ") and "Expected time: about " in lines[0]
     beats = [line for line in lines if line.startswith("Model training:")]
-    assert beats and all(" of " in line and "about fold " in line for line in beats)
+    assert beats and all("fold count 8; this stage reports when it ends" in line for line in beats)
+    assert not any("about fold" in line for line in beats)

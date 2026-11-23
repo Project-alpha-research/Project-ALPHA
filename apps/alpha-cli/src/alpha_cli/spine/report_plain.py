@@ -226,7 +226,7 @@ def _concentration_line(output: Mapping[str, Any]) -> str | None:
 
 def _noise_line(output: Mapping[str, Any]) -> str | None:
     """Price noise, in the diagnostic pass's own sentence: its range is the middle 90% only."""
-    return _stored_sentence(output, "price_noise", "Price noise")
+    return _stored_sentence(output, "price_noise", "Price noise", RERUN_NOTE)
 
 
 def _flag_lines(output: Mapping[str, Any]) -> list[str]:
@@ -235,10 +235,16 @@ def _flag_lines(output: Mapping[str, Any]) -> list[str]:
     return [f"  {_sentence(d)}" for d in details if isinstance(d, str) and d]
 
 
-def _stored_sentence(output: Mapping[str, Any], key: str, lead: str) -> str | None:
+RERUN_NOTE = (
+    " (This check's Sharpe ratios differ slightly from the headline: "
+    "its rule figure is a re-run on the full sample, not the out-of-sample figure of the test.)"
+)
+
+
+def _stored_sentence(output: Mapping[str, Any], key: str, lead: str, note: str = "") -> str | None:
     """A sentence the diagnostic pass already wrote for one check, after its plain lead."""
     sentence = _map(output.get(key)).get("sentence")
-    return f"{lead}: {sentence}" if isinstance(sentence, str) and sentence else None
+    return f"{lead}: {sentence}{note}" if isinstance(sentence, str) and sentence else None
 
 
 def _settings_line(output: Mapping[str, Any]) -> str | None:
@@ -261,7 +267,7 @@ def plain_diagnose_lines(
         _delay_line(output),
         _concentration_line(output),
         _noise_line(output),
-        _stored_sentence(output, "inverted_signal", "Opposite rule"),
+        _stored_sentence(output, "inverted_signal", "Opposite rule", RERUN_NOTE),
         _stored_sentence(output, "walk_forward_efficiency", "Later periods against earlier ones"),
         _settings_line(output),
     ]

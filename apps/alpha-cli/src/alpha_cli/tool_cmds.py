@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import sys
 from contextlib import redirect_stdout
@@ -116,13 +117,31 @@ def _printed(output: dict[str, Any]) -> dict[str, Any]:
     return {**output, "result": {k: v for k, v in output["result"].items() if k != "series"}}
 
 
+SWEEP_BASIS = (
+    "from the account's fills with costs added back; `alpha report` uses the planned weights"
+)
+
+
+def _plain(value: float) -> str:
+    """Four significant digits, never in scientific notation."""
+    text = f"{value:.4g}"
+    if "e" not in text:
+        return text
+    decimals = min(max(3 - math.floor(math.log10(abs(value))), 0), 20)
+    return f"{value:.{decimals}f}".rstrip("0").rstrip(".") if decimals else f"{value:.0f}"
+
+
 def _shown(value: Any, unit: str) -> Any:
-    """A number for the screen: four significant digits; money with its unit, minus sign first."""
+    """A number for the screen: four significant digits; money with its unit, minus sign first.
+
+    A fraction prints as a percent, to match the sentences. No number prints with an exponent."""
     if isinstance(value, bool) or not isinstance(value, float):
         return value
     if unit == "currency":
         return f"{'-' if round(value, 2) < 0 else ''}${abs(value):,.2f}"
-    return f"{value:.4g}"
+    if unit == "fraction":
+        return f"{_plain(value * 100)}%" if value else "0%"
+    return _plain(value) if value else "0"
 
 
 def _about_model(output: dict[str, Any]) -> bool:
@@ -164,7 +183,10 @@ def _text(output: dict[str, Any]) -> str:
             f"Matching dates dropped {join['run_bars_dropped']} run bars and "
             f"{join['other_bars_dropped']} bars of the other asset."
         )
-    return "\n".join([*lines, output["basis"], *spec.caveats, f"Saved: {output['file']}"])
+    basis = [output["basis"]]
+    if model and spec.id == "cost_realism.cost_sweep":
+        basis.append(f"Return with no costs is {SWEEP_BASIS}.")
+    return "\n".join([*lines, *basis, *spec.caveats, f"Saved: {output['file']}"])
 
 
 @tool_app.command("run")

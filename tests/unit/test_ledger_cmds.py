@@ -322,3 +322,37 @@ def test_the_summary_headline_counts_the_rdagent_rows_it_shows(
     assert "The RD-Agent ledger adds" not in spine_only
     assert "Counting 0 ML tries and 4 RD-Agent tries, the ledger lists 5 tries in all." in out
     assert "Counting" not in spine_only
+
+
+def test_by_kind_in_the_summary_includes_the_ml_tries(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli.spine.ledger import append_trial
+
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    base = {"labels": [], "symbol": "SPY", "name": "r", "flags": [], "test_id": "t"}
+    append_trial(
+        tmp_path,
+        {
+            **base,
+            "run_id": "a" * 16,
+            "verdict": "B",
+            "oos_sharpe": 0.5,
+            "periods_per_year": 252,
+            "bar_size": "1D",
+        },
+    )
+    append_trial(
+        tmp_path,
+        {
+            "kind": "ml_run",
+            "name": "qlib/lightgbm",
+            "labels": [],
+            "run_id": "b" * 16,
+            "assets": ["SPY"],
+            "evidence": "x",
+        },
+    )
+    out = CliRunner().invoke(ledger_app, ["summary"]).output
+    by_kind = next(line for line in out.splitlines() if line.startswith("By kind:"))
+    assert json.loads(by_kind.removeprefix("By kind: ")) == {"ml_run": 1, "rule_test": 1}

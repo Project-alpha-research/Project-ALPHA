@@ -115,7 +115,8 @@ def reading_count_sentence(family: dict[str, Any], symbol: str) -> str | None:
         f"{first} {shape} has been tried {on_shape} {times} across all assets, "
         "which can be more than the first count. "
         f"It also had {variants} nearby {settings} tried inside this test. "
-        f"The luck adjustment uses the larger of the first two counts, plus these: {used}."
+        "The luck adjustment adds those nearby settings to the larger of the first two counts, "
+        f"which makes {used} tries in all."
     )
 
 

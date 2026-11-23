@@ -36,3 +36,7 @@ Decisions and results per item. No numbers from a real run are written here.
 ## 10b. `alpha tool run` scientific notation
 - Cause: `:.4g` gives `1.5e-07` for tiny or large numbers.
 - Change: `_plain` prints fixed digits instead. Test: same file (parametrised over units).
+
+## 10a. The tries paragraph
+- Cause: the last sentence ended "plus these: N." with no word for what N counts.
+- Change: "The luck adjustment adds those nearby settings to the larger of the first two counts, which makes N tries in all." The two older tests that pinned the old ending now pin the new one.

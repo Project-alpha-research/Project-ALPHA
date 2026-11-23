@@ -540,3 +540,35 @@ def test_band_and_held_back_labels_stay_inside_their_axes() -> None:
                 assert frame.x0 <= box.x0 and box.x1 <= frame.x1 + 1, text.get_text()
                 assert frame.y0 <= box.y0 and box.y1 <= frame.y1, text.get_text()
         assert found >= 3
+
+
+def test_a_log_price_axis_writes_plain_numbers() -> None:
+    x = _epochs(80)
+    spec = FigureSpec(
+        figure_id="rolling_risk",
+        title="T",
+        subtitle="s",
+        x_label="Date (UTC)",
+        x_kind="time",
+        panels=(
+            Panel(
+                panel_id="a",
+                y_label="Price (log scale)",
+                y_unit="price",
+                y_scale="log",
+                marks=(LineMark(x=x, y=tuple(40.0 + 6.0 * i for i in range(80))),),
+            ),
+        ),
+        question="q",
+        plain_language_answer="a",
+        uncertainty="u",
+        caveat="c",
+        caption="c",
+    )
+    figure = _draw(spec, "plain")
+    figure.canvas.draw()
+    axis = figure.axes[0].yaxis
+    labels = [t.get_text() for t in [*axis.get_majorticklabels(), *axis.get_minorticklabels()]]
+    shown = [text for text in labels if text]
+    assert "100" in shown
+    assert not any("10^" in text or "times" in text or "{" in text for text in shown)

@@ -33,6 +33,7 @@ from alpha_cli.spine.facts import (
 from alpha_cli.spine.ledger import read_trials
 from alpha_cli.spine.reading import reading_text, stored_reading
 from alpha_cli.spine.reading_read import owner_word, run_reading
+from alpha_cli.spine.stores import typed_symbol
 from alpha_cli.spine.trial_reader import family_counts, spine_snapshot
 from alpha_cli.toolbox.registry import METRIC_OUTPUTS
 from alpha_core import DataError
@@ -91,6 +92,9 @@ def list_results(
         return
     try:
         rows = read_trials(AlphaSettings().data_dir)
+        said = None
+        if symbol is not None:
+            symbol, said = typed_symbol(symbol, data_dir=AlphaSettings().data_dir)
         if not rows:
             raise SpineError(
                 "EMPTY_LEDGER",
@@ -170,7 +174,7 @@ def list_results(
         from alpha_cli.spine.tries import sentence, tries
 
         counted = tries(spine_snapshot(AlphaSettings().data_dir), symbol)
-        lines.append(sentence(counted))
+        lines.append(" ".join(filter(None, [said, sentence(counted)])))
         emit(
             {"items": items, "total_trials": len(rows), "tries": counted},
             json_out=json_out,

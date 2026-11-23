@@ -116,12 +116,46 @@ def _printed(output: dict[str, Any]) -> dict[str, Any]:
     return {**output, "result": {k: v for k, v in output["result"].items() if k != "series"}}
 
 
+def _shown(value: Any, unit: str) -> Any:
+    """A number for the screen: four significant digits; money with its unit, minus sign first."""
+    if isinstance(value, bool) or not isinstance(value, float):
+        return value
+    if unit == "currency":
+        return f"{'-' if round(value, 2) < 0 else ''}${abs(value):,.2f}"
+    return f"{value:.4g}"
+
+
+def _about_model(output: dict[str, Any]) -> bool:
+    """True when the checked run is a model run."""
+    from alpha_cli.ml_reading import is_ml_manifest
+    from alpha_cli.run_store import find_run_dir, read_manifest
+
+    rdir = find_run_dir(AlphaSettings().data_dir, str(output.get("run_id", "")))
+    return rdir is not None and is_ml_manifest(read_manifest(rdir))
+
+
 def _text(output: dict[str, Any]) -> str:
+    from alpha_cli.spine.label_meaning import label_lines
+
     spec = get(output["tool"])
-    lines = [f"{spec.id} [{', '.join(output['labels'])}]", output["reading"]]
+    model = _about_model(output)
+
+    def said(text: str) -> str:
+        return (
+            text.replace("the rule", "the model").replace("The rule", "The model")
+            if model
+            else text
+        )
+
+    lines = [f"{spec.id} [{', '.join(output['labels'])}]", *label_lines(output["labels"])]
+    lines.append(said(output["reading"]))
     for fact, field in zip(output["facts"], spec.outputs, strict=True):
-        value = fact["value"] if fact["reason"] is None else f"unavailable ({fact['reason']})"
-        lines.append(f"  {fact['metric']} = {value}  {field.gloss}")
+        value = (
+            _shown(fact["value"], field.unit)
+            if fact["reason"] is None
+            else f"unavailable ({fact['reason']})"
+        )
+        lines.append(said(f"  {fact['metric']} = {value}  {field.gloss}"))
     lines.extend(f["detail"] for f in output["result"].get("flags", []))
     lines.extend(f"Change on {b['date'][:10]}" for b in output["result"].get("breaks", []))
     join = output["result"].get("join")

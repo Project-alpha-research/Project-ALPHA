@@ -1,6 +1,7 @@
-"""Owner rule strategies via the CLI (``alpha rules … --json``): list.
+"""Owner rule strategies via the CLI (``alpha rules list --json``).
 
-Every call is a subprocess of the audited CLI; the web layer never parses a rule itself. It confers no authority.
+The call is a subprocess of the audited CLI; the web layer never parses a rule itself.
+It confers no authority.
 """
 
 from __future__ import annotations

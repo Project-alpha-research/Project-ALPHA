@@ -333,21 +333,16 @@ name = "Write trading rules and scan markets"
 what = "Write a rule such as \"buy when the close is above X\", save it, test it, and scan many markets for it."
 see_it = [
   "uv run alpha rules save <name> …, then uv run alpha scan run <name>",
-  "Workstation: View → Strategy Builder, View → Scanner",
 ]
 entry_points = [
   "cli: alpha rules save",
   "cli: alpha scan run",
   "api: POST /api/rules/evaluate",
-  "api: POST /api/scans/{name}/run",
-  "panel: apps/alpha-web/frontend/src/panels/StrategyBuilder.tsx",
-  "panel: apps/alpha-web/frontend/src/panels/Scanner.tsx",
 ]
 proof_synthetic = [
   "tests/integration/test_cli_rules.py::test_rules_lifecycle",
   "tests/integration/test_cli_scan.py::test_scan_lifecycle",
   "tests/unit/test_reserve_holdback_commands.py::test_alpha_scan_and_rules_explain_hold_the_period_back",
-  "apps/alpha-web/frontend/e2e/edge-real.spec.ts::real CLI conditions and scan drilldown share recorded inputs",
 ]
 real_data = "not yet confirmed (to check on the Mac later)"
 needs = []

@@ -10,7 +10,6 @@ from fastapi.testclient import TestClient
 from typer.testing import CliRunner
 
 from alpha_cli.main import app as cli_app
-
 from alpha_web.app import create_app
 
 TREND = {

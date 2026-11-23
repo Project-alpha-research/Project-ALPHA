@@ -37,6 +37,13 @@ Kronos forecast composition (`alpha forecast ...`, `_forecast*` modules). Projec
   into snapshot `ml-<hash>`, then runs export-input, prepare, the same `ml_cmds.train_exchange` worker call and the replay.
   The label horizon is 1 day (the worker's only value); costs are fixed. Each new run is one `ml_run` ledger row in family `qlib`.
   A missing worker `.venv` fails with the one step to run: `bash scripts/setup.sh`.
+  It prints the expected time first and a line about every 10 seconds (`ml_progress.py`); the worker reports no fold, so
+  "about fold k of n" is estimated from the time so far, and the seconds per asset and fold of each finished run are kept
+  in `data_dir/ml_timing.json` for the next estimate.
+- A new model run stores the equal-weight basket line (`benchmark_comparison.parquet`, kind
+  `equal_weight_basket_open_to_open_price_only`) and per-period costs (`gross_return`, `cost_return` in `equity_curve.parquet`).
+  Runs made before that say "made before ... run `alpha ml run` again". Its reading (`ml_glosses.py`) uses the rule-test
+  evidence words, says which returned more, and counts held-back bars per asset.
 
 ## Exchange contract
 

@@ -8,7 +8,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from alpha_cli.spine import reading, reserve
+from alpha_cli.spine import reading
 
 NOT_RUN = "the returns did not vary"
 
@@ -185,6 +185,6 @@ def held_back_sentence(block: Mapping[str, Any], assets: int) -> str:
     each = total / assets
     count = f"{each:.0f}" if total % assets == 0 else f"about {each:.0f}"
     return (
-        f"Held back {count} bars for each of {assets} assets from {reserve.RESERVED_START} on; "
+        f"Held back {count} bars for each of {assets} assets from {block['reserved_start']} on; "
         "they are kept for the owner's confirmation of an idea, so this test did not use them."
     )

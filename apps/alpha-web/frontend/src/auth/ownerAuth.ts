@@ -3,7 +3,6 @@ import {
   type OwnerActionChallengeRequest,
   type OwnerActionResult,
 } from '../api/client'
-import type { ResearchCase } from '../api/types'
 
 function bytesFromBase64url(value: string): Uint8Array<ArrayBuffer> {
   const normalized = value.replaceAll('-', '+').replaceAll('_', '/')
@@ -160,19 +159,6 @@ function canonicalJson(value: unknown): string {
 
 export async function payloadHash(value: unknown): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonicalJson(value)))
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
-}
-
-export async function researchCaseRevision(researchCase: ResearchCase): Promise<string> {
-  const payload = {
-    schema: 'ResearchCaseRevisionV1',
-    project_id: researchCase.project_id,
-    active_contract_id: researchCase.active_contract_id,
-    phase: researchCase.phase,
-    execution_state: researchCase.execution_state,
-    source_pack_id: researchCase.source_pack_id,
-  }
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonicalJson(payload)))
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 

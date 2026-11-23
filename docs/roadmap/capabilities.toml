@@ -358,7 +358,6 @@ entry_points = [
   "cli: alpha suite run",
   "cli: alpha strategy-candidate run",
   "cli: alpha project create",
-  "api: POST /api/projects/{project_id}/experiments/{experiment_id}/suite/{action}/run",
 ]
 proof_synthetic = [
   "tests/integration/test_suite_cli.py::test_suite_cli_previews_then_runs_the_exact_resolved_baseline",
@@ -739,7 +738,6 @@ entry_points = [
   "cli: alpha research decide",
   "cli: alpha evidence add",
   "cli: alpha owner-auth enroll",
-  "api: POST /api/research/cases",
 ]
 proof_synthetic = [
   "tests/integration/test_research_program_acceptance.py::test_program_golden_path_reaches_the_strategy_brief_losslessly",
@@ -782,7 +780,6 @@ entry_points = [
   "cli: alpha research sources search",
   "cli: alpha research sources fetch",
   "cli: alpha research sources claim screen",
-  "api: POST /api/research/cases/{project_id}/literature/discover",
 ]
 proof_synthetic = [
   "tests/integration/test_research_cli.py::test_claim_lifecycle_drafts_screens_and_feeds_the_literature_dimension",
@@ -803,7 +800,6 @@ see_it = [
 entry_points = [
   "cli: alpha research import-pdf",
   "cli: alpha research sources original-pdf",
-  "api: GET /api/research/cases/{project_id}/sources/{source_id}/original-pdf",
 ]
 proof_synthetic = [
   "tests/integration/test_research_cli.py::test_research_source_original_pdf_cli_verifies_before_returning_bytes",

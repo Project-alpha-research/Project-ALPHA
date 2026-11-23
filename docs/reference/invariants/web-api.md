@@ -120,9 +120,6 @@ Moved to [web-api-reads.md § Reads and writes](web-api-reads.md#reads-and-write
   secret environment values and broker account ids; unexpected exceptions return a generic 500 message.
   An in-band `error` string relayed from the CLI (as in `POST /api/rules/evaluate`) passes through `safe_message` too.
   Enforced by `tests/integration/test_web_api_errors.py`.
-- The `/api/research` router may not gain mutation verbs; the allowed POSTs are pinned.
-  [ADR-0021](../../adr/0021-research-workstation-read-plane-and-command-center.md)
-  Enforced by `tests/integration/test_web_api_research.py::test_research_router_exposes_no_new_mutation_verbs`.
 
 ## Streaming (SSE)
 

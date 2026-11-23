@@ -29,9 +29,8 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
 
 - The SPA computes no metric, verdict, signal, indicator value or rule result. It renders what the server returns, and shows server text (blocked reasons,
   watermarks, CLI errors) verbatim.
-- Owner steps run only through `components/OwnerActionButton.tsx`, which calls the owner-auth challenge/perform routes. Steps an ADR keeps CLI-only get
-  `components/CopyCommand.tsx` with the exact command (`CLI_ONLY` in `panels/researchCockpitModel.ts`). See [research-integrity § Owner
-  authority](research-integrity.md#owner-authority).
+- Steps an ADR keeps CLI-only get `components/CopyCommand.tsx`
+  with the exact command, never a button. See [research-integrity § Owner authority](research-integrity.md#owner-authority).
 - Never label local confirmation as verified physical presence. [ADR-0038](../../adr/0038-local-confirmation-and-terminal-archive-charts.md)
 - The crypto/equities profile (`state/settings.ts`, `shell/profiles.ts`) is a display setting. It is never sent to the server and never grants anything.
   Selecting a project confers no research authority either.

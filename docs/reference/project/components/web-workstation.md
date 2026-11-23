@@ -8,7 +8,7 @@ verified: 6a4d2d82a3dd6f31
 
 # Web workstation
 
-The Workstation is ALPHA in a browser on the owner's own computer: price charts, research cases,
+The Workstation is ALPHA in a browser on the owner's own computer: price charts,
 backtest reports, job and provider status, and the results of RD-Agent and Qlib runs.
 
 ## Why it exists

@@ -1,13 +1,11 @@
 import { api } from '../api/client'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { ResearchCase } from '../api/types'
 import {
   authenticationRequestOptions,
   performOwnerAction,
   contentAddressHash,
   registrationCreationOptions,
-  researchCaseRevision,
 } from './ownerAuth'
 
 function bytes(value: BufferSource): number[] {
@@ -35,19 +33,6 @@ describe('owner WebAuthn contract', () => {
     })
     expect(bytes(request.challenge)).toEqual([10, 15, 237])
     expect(bytes(request.allowCredentials?.[0]?.id ?? new Uint8Array())).toEqual([16, 17, 18])
-  })
-
-  it('matches the server case-revision commitment byte for byte', async () => {
-    const researchCase = {
-      project_id: 'p1',
-      active_contract_id: `rc_${'a'.repeat(64)}`,
-      phase: 'exploration_review',
-      execution_state: 'idle',
-      source_pack_id: null,
-    } as unknown as ResearchCase
-    await expect(researchCaseRevision(researchCase)).resolves.toBe(
-      '21d88e6f9eb6240bf3232e4dac297a2adcd8356949bd458b7709e97b60a50080',
-    )
   })
 
   it('accepts only the digest portion of a content-addressed artifact', () => {

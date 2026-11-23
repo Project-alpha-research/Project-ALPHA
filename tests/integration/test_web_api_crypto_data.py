@@ -14,7 +14,6 @@ from alpha_web.api.models import (
     CryptoAcquisitionRequest,
     CryptoAssetMasterCreateRequest,
     CryptoSnapshotCreateRequest,
-    CryptoSnapshotRegisterRequest,
     CryptoSnapshotVerifyRequest,
 )
 from alpha_web.app import create_app
@@ -76,8 +75,6 @@ def test_crypto_route_functions_cover_closed_validation_and_recovery_edges(
         crypto_api.snapshot_verify(
             "bad", CryptoSnapshotVerifyRequest(required_families=[], purpose="research")
         )
-    with pytest.raises(HTTPException, match="snapshot id"):
-        crypto_api.snapshot_register("bad", CryptoSnapshotRegisterRequest(symbol="BTC"))
 
     with pytest.raises(HTTPException, match="unique"):
         crypto_api.snapshot_create(CryptoSnapshotCreateRequest(manifest_ids=["a" * 64, "a" * 64]))

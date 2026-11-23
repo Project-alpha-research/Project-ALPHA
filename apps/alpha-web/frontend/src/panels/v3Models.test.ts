@@ -5,17 +5,13 @@ import type {
   ChartTraceEvent,
   ForecastPaths,
   NativeTearSheetProjection,
-  ProjectDetail,
   RunDetail,
 } from '../api/types'
 import {
-  DEVELOPMENT_STAGES,
   buildCalendarRows,
   buildEvidenceMarkers,
   evidenceForDecision,
   matchesRunScope,
-  projectStageRows,
-  sandboxCandidateSummary,
   visibleEvidenceMarkers,
   terminalReturns,
   type EvidenceMarker,
@@ -305,110 +301,5 @@ describe('native tear-sheet projection', () => {
     expect(rows[0].months[0]).toBe(0.03)
     expect(rows[0].months[1]).toBeNull()
     expect(rows[1].months[1]).toBe(-0.02)
-  })
-})
-
-describe('development lifecycle projection', () => {
-  it('uses the latest backend state for each canonical stage', () => {
-    const project = {
-      project_id: 'project-1',
-      name: 'Mean reversion',
-      hypothesis: 'x',
-      falsification_criterion: 'y',
-      status: 'active',
-      current_version_id: 'sv_1',
-      current_experiment_id: 'ex_1',
-      created_at: '2026-01-01T00:00:00+00:00',
-      updated_at: '2026-01-01T00:00:00+00:00',
-      versions: [],
-      experiments: [],
-      stage_states: [
-        {
-          project_id: 'project-1',
-          experiment_id: 'ex_1',
-          stage: 'baseline',
-          state: 'pass',
-          state_history: [],
-          state_history_truncated: false,
-        },
-      ],
-      stage_run_links: [
-        {
-          link_id: 'link-1',
-          project_id: 'project-1',
-          experiment_id: 'ex_1',
-          stage: 'baseline',
-          run_id: '0123456789abcdef',
-          linked_at: '2026-01-01T00:00:00+00:00',
-          state: 'pass',
-          state_history: [],
-          state_history_truncated: false,
-        },
-      ],
-      attempts: [],
-      holdouts: [],
-      holdout_audit: [],
-      decision_packets: [],
-      monte_carlo_reviews: [],
-      research_gate_state: 'not_required',
-      research_gate_overrides: [],
-      truncated: {
-        versions: false,
-        experiments: false,
-        stage_states: false,
-        stage_run_links: false,
-        attempts: false,
-        holdouts: false,
-        holdout_audit: false,
-        decision_packets: false,
-        monte_carlo_reviews: false,
-        research_gate_overrides: false,
-      },
-      market: 'unknown',
-    } satisfies ProjectDetail
-
-    const stages = projectStageRows(project)
-    expect(stages).toHaveLength(DEVELOPMENT_STAGES.length)
-    expect(stages.find((row) => row.id === 'baseline')).toMatchObject({
-      state: 'pass',
-      runId: '0123456789abcdef',
-    })
-    expect(stages.find((row) => row.id === 'oos')?.state).toBe('not_started')
-
-    const definition = {
-      schema_version: 1,
-      strategy_name: 'hedged_basis_crowding_v1',
-      required_instrument: 'BTCUSDT',
-      required_quote_asset: 'USDT',
-      required_venues: ['bybit', 'binance'],
-      total_round_trip_cost_bps: 40,
-      periods_per_year: 1095,
-      execution_model: 'two_leg_return_replay',
-      deployment_scope: 'sandbox_only',
-      paper_blocker: 'UNSUPPORTED_MULTI_VENUE_PAPER',
-      places_orders: false,
-    }
-    const candidate = {
-      ...project,
-      versions: [{
-        version_id: 'sv_1',
-        strategy_name: 'hedged_basis_crowding_v1',
-        source_fingerprint: 'git:fixture',
-        definition,
-        parameter_space: {},
-        created_at: '2026-01-01T00:00:00+00:00',
-      }],
-      market: 'unknown',
-    } satisfies ProjectDetail
-    expect(sandboxCandidateSummary(candidate)).toMatchObject({
-      perpLeg: 'SHORT BYBIT LINEAR PERPETUAL',
-      spotLeg: 'LONG BINANCE SPOT',
-      totalRoundTripCostBps: 40,
-      paperBlocker: 'UNSUPPORTED_MULTI_VENUE_PAPER',
-    })
-    expect(sandboxCandidateSummary({
-      ...candidate,
-      versions: [{ ...candidate.versions[0], definition: { ...definition, required_quote_asset: 'USD' } }],
-    })).toBeNull()
   })
 })

@@ -14,7 +14,6 @@ import type { PanelHandleProps } from '../../context/panelHandle'
 import type { ValidateManifest } from '../../explain/types'
 import { Placeholder } from '../../components/Placeholder'
 import { usePanelLinked } from '../../context/usePanelLinked'
-import { researchGateWatermark } from '../researchGateModel'
 import { RecordedPanel } from '../RecordedPanel'
 import { FigureCard } from '../../components/FigureCard'
 import { FigureSection } from '../FigureReport'
@@ -144,8 +143,6 @@ export function RunDetail(props: PanelHandleProps) {
     ? tradeState
     : { runId, status: 'loading' }
   const trades = selectedTradeState.status === 'ready' ? selectedTradeState.rows : []
-  // ADR-0026: an override-launched run keeps its exploratory marker on every report surface.
-  const gateWatermark = researchGateWatermark(detail)
   const command = asStr(manifest.command)
   const dailyStudy = command === 'research_daily_rule_native_v1' || command === 'research_daily_rule_projection_v1'
   const isValidate = detail.kind === 'runs' && manifest.verdict !== undefined
@@ -169,7 +166,7 @@ export function RunDetail(props: PanelHandleProps) {
     leaves.push(dailyLeaf)
   }
   const leaf = leaves.find((item) => item.id === view) ?? leaves[0]
-  const chip = watermarkChip(gateWatermark, ruleTest ? null : detail.run_context_watermark)
+  const chip = watermarkChip(null, ruleTest ? null : detail.run_context_watermark)
   // Save PNG hands over the first drawable figure of the current view; nothing is drawn here.
   const firstFigure = ruleTest && leaf.id === 'summary' ? summaryFigures(catalogue?.items ?? [])[0]
     : (catalogue?.items ?? []).find((item) => leaf.figureIds.includes(item.figure_id) && item.available) ?? null
@@ -181,7 +178,7 @@ export function RunDetail(props: PanelHandleProps) {
         return <DailyRuleReport key={runId} runId={runId} panelApi={props.api}/>
       case 'summary':
         if (ruleTest) return <RuleTestReport key={runId} test={ruleTest} manifest={manifest} runId={runId}
-          runName={detail.display_name} figures={catalogue?.items ?? null} watermark={gateWatermark}
+          runName={detail.display_name} figures={catalogue?.items ?? null}
           figureError={typeof figureResult === 'string' ? figureResult : undefined} checks={checksResult} />
         return (
           <div className="report-summary-composition">{backtestResultCard && isBacktestRun(detail) ? <BacktestResultCard key={runId} detail={detail} runId={runId}/> : <table className="blotter summary-table">

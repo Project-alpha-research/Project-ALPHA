@@ -10,7 +10,6 @@ import validateA from '../explain/__fixtures__/validate-a.json'
 import validateB from '../explain/__fixtures__/validate-b.json'
 import validateD from '../explain/__fixtures__/validate-d-kronos.json'
 import { edgeReviewRows } from './edgeReviewModel'
-import { PipelineLatest } from './Pipeline'
 import { paletteHint, toastDetail } from './readingModel'
 import { summaryRows } from './reportModel'
 import { Gates } from './rundetail/Gates'
@@ -124,12 +123,7 @@ describe('the Stress test and risk terms', () => {
   })
 })
 
-describe('the Pipeline', () => {
-  it.each(runs)('shows the evidence word for %s and no chip', (_name, run) => {
-    const html = renderToStaticMarkup(<PipelineLatest run={run} />)
-    assertOwnerText(html)
-    expect(html).not.toMatch(/chip (pass|fail)/)
-  })
+describe('the next steps', () => {
   it('says nothing of a grade in the next steps', () => {
     for (const manifest of [validateA, validateB, validateD]) {
       const text = suggestions(manifest as unknown as ValidateManifest).map(item => `<p>${item.title}</p><p>${item.why}</p>`).join('')

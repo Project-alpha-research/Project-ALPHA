@@ -209,6 +209,8 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
 
     if is_ml_manifest(manifest):
         return _show_ml(home, rdir, manifest, run_id)
+    if manifest.get("command") in ("monte_carlo_classical", "monte_carlo_kronos"):
+        return _show_monte_carlo(home, rdir, manifest, run_id)
     from alpha_cli.toolbox import declarations
     from alpha_cli.toolbox.store import history
 
@@ -326,6 +328,35 @@ def _show_ml(home: Path, rdir: Path, manifest: dict[str, Any], run_id: str) -> d
             for item in stored_tools
         ],
         "tool_counts": declarations.counts(item["labels"] or [] for item in stored_tools),
+        "charts": [
+            entry.definition.figure_id
+            for entry in available_figures(rdir, manifest)
+            if entry.available
+        ],
+    }
+
+
+def _show_monte_carlo(
+    home: Path, rdir: Path, manifest: dict[str, Any], run_id: str
+) -> dict[str, Any]:
+    """A stored Monte Carlo run: where the real run sits among the simulated paths."""
+    from alpha_cli import _mc_reading
+    from alpha_cli.figures import available_figures
+
+    return {
+        "run_id": run_id,
+        "reading": {
+            "kind": "monte_carlo",
+            "sentence": "\n".join(_mc_reading.stored_lines(rdir, manifest)),
+        },
+        "data_health": None,
+        "facts": [],
+        "labels": [],
+        "flags": [],
+        "audit": [],
+        "tool_history": [],
+        "tools": [],
+        "tool_counts": {},
         "charts": [
             entry.definition.figure_id
             for entry in available_figures(rdir, manifest)

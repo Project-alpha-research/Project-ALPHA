@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 from collections.abc import Sequence
 from datetime import datetime
@@ -158,8 +159,9 @@ def test_default_options_work_on_a_test_run(kind: str, stored: dict[str, str], h
     # The boundary rests on about half the warm-up, never on one or two readings.
     assert diagnostics["threshold_observations"] == train - window - 1 >= (train - 1) // 2
     note = (
-        f"Regime window cut from 63 to {window} sessions: the run trains on {train} bars, "
-        f"so the volatility boundary is the median of {train - window - 1} readings."
+        f"The volatility window was shortened from 63 to {window} sessions, because the run "
+        f"trained on only {train} bars; the boundary between calm and busy days rests on "
+        f"{train - window - 1} readings."
     )
     assert note in " ".join(result.output.split())
     assert note in " ".join((_new_run(home, stored[kind]) / "report.md").read_text().split())
@@ -416,3 +418,79 @@ def test_kronos_monte_carlo_replays_fake_ohlcv_paths_through_engine(
     repeated = runner.invoke(app, kronos_args)
     assert repeated.exit_code == 0, repeated.output
     assert {path.name: path.read_bytes() for path in rdir.iterdir()} == before
+
+
+def _kronos_with_fake_model(source: str, home: Path) -> tuple[Any, Path]:
+    evaluation = runner.invoke(
+        app,
+        [
+            "forecast", "eval", "SPY", "--model", "fake", "--context", "8", "--horizon", "4",
+            "--stride", "4", "--samples", "8",
+        ],
+    )  # fmt: skip
+    assert evaluation.exit_code == 0, evaluation.output
+    eval_dir = next((home / "forecast").iterdir())
+    result = runner.invoke(
+        app,
+        [
+            "monte-carlo", "kronos", "--from-run", source, "--forecast-eval-run", eval_dir.name,
+            "--model", "fake", "--context", "20", "--paths", "4", "--seed", "23",
+        ],
+    )  # fmt: skip
+    assert result.exit_code == 0, result.output
+    return result, _new_run(home, source)
+
+
+def test_kronos_monte_carlo_prints_its_reading_and_its_window(
+    stored: dict[str, str], home: Path
+) -> None:
+    result, rdir = _kronos_with_fake_model(stored["rule"], home)
+    text = " ".join(result.output.split())
+    assert re.search(r"median end value [+-]\d+\.\d\d%", text), text
+    assert re.search(r"the middle 90% of the 4 simulated paths end between [+-]\d+\.\d\d%", text)
+    assert re.search(r"The real run ended [+-]\d+\.\d\d%, above \d+% of the simulated paths", text)
+    assert re.search(
+        r"The replay covers \d+ trading days, from \d+ \w+ \d{4} to \d+ \w+ \d{4}", text
+    )
+    assert not {w.strip(".,;:()|`*-").lower() for w in text.split()} & set(_BANNED)
+
+
+def test_results_show_and_report_read_a_kronos_monte_carlo_run_without_a_fault(
+    stored: dict[str, str], home: Path
+) -> None:
+    _, rdir = _kronos_with_fake_model(stored["rule"], home)
+    shown = runner.invoke(app, ["results", "show", rdir.name])
+    assert shown.exit_code == 0, shown.output
+    assert "Fault" not in shown.output and "No reading" not in shown.output
+    assert "median end value" in shown.output
+    report = runner.invoke(app, ["report", rdir.name])
+    assert report.exit_code == 0, report.output
+    assert "Fault" not in report.output and "median end value" in report.output
+
+
+def test_the_real_run_has_one_name_in_the_legend_and_the_note(
+    stored: dict[str, str], home: Path, tmp_path: Path
+) -> None:
+    from alpha_cli.figures import build_figure_spec, resolve_run
+    from alpha_cli.figures.variants import explanation, fixed_text
+
+    _, rdir = _kronos_with_fake_model(stored["rule"], home)
+    run_dir, manifest = resolve_run(rdir.name, data_dir=home)
+    spec = build_figure_spec(
+        "monte_carlo_equity_fans", run_id=rdir.name, rdir=run_dir, manifest=manifest, data_dir=home
+    )
+    labels = {mark.label for panel in spec.panels for mark in panel.marks if hasattr(mark, "label")}
+    assert "Real run" in labels
+    assert not labels & {"Observed OOS", "Original"}
+    note = " ".join(explanation(spec, fixed_text("monte_carlo_equity_fans")))
+    assert "Real run" in note and "Original" not in note and "Observed OOS" not in note
+
+
+def test_a_cut_regime_window_is_a_plain_sentence() -> None:
+    from alpha_cli import _mc_reading
+
+    note = _mc_reading.fit_regime_window(63, 100)["window_note"]
+    assert note == (
+        "The volatility window was shortened from 63 to 49 sessions, because the run trained on "
+        "only 100 bars; the boundary between calm and busy days rests on 50 readings."
+    )

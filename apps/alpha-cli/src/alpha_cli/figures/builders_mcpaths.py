@@ -94,7 +94,7 @@ def monte_carlo_equity_fans(ctx: BuildContext) -> FigureSpec:
                         x=observed_x,
                         y=observed_equity,
                         role="feature",
-                        label="Observed OOS",
+                        label="Real run",
                     ),
                 ),
             )
@@ -107,7 +107,7 @@ def monte_carlo_equity_fans(ctx: BuildContext) -> FigureSpec:
         artifacts=("paths.parquet", "observed_oos.parquet"),
         answer=(
             f"This run contributes {len(panels)} of four required family panels and "
-            f"contains {total_paths:,} simulated account paths; observed OOS equity is overlaid."
+            f"contains {total_paths:,} simulated account paths; the real run is overlaid."
         ),
         panels=tuple(panels),
     )

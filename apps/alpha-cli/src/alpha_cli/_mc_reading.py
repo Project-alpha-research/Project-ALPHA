@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -75,8 +75,9 @@ def fit_regime_window(requested: int, train_size: int) -> dict[str, Any]:
     note = (
         None
         if window == requested
-        else f"Regime window cut from {requested} to {window} sessions: the run trains on "
-        f"{train_size} bars, so the volatility boundary is the median of {observations} readings."
+        else f"The volatility window was shortened from {requested} to {window} sessions, because "
+        f"the run trained on only {train_size} bars; the boundary between calm and busy days "
+        f"rests on {observations} readings."
     )
     return {
         "requested_window": requested,
@@ -168,3 +169,65 @@ def echo_family_lines(
             )
     if len(regime_caveats) > 1:
         typer.echo(f"regime_switching note: {regime_caveats[1]}")
+
+
+READS = ("observed_oos.parquet", "path_metrics.parquet")  # the stored files the reading needs
+
+
+def _percent(value: float) -> str:
+    return f"{value * 100:+.2f}%"
+
+
+def _day(text: str) -> str:
+    moment = datetime.fromisoformat(text)
+    return f"{moment.day} {moment:%B %Y}"
+
+
+def window_sentence(source: Mapping[str, Any]) -> str:
+    """The first and last date of the replayed window, in plain words."""
+    return (
+        f"The replay covers {source['n_returns']} trading days, from {_day(source['first_ts'])} "
+        f"to {_day(source['last_ts'])}."
+    )
+
+
+def _family_reading(
+    row: Mapping[str, Any], real_end: float | None, ends: Sequence[float]
+) -> list[str]:
+    """Where the real run sits among the simulated paths, with units. Numbers, no verdict."""
+    if row.get("status") == "not_estimable":
+        return [f"{row['family']}: not estimable; {row['caveats'][0]}"]
+    loss = row["loss_probability"]["point"]
+    lines = [
+        f"{row['family']}: median end value {_percent(row['terminal_return_q50'])}; the middle 90% "
+        f"of the {row['n_paths']} simulated paths end between "
+        f"{_percent(row['terminal_return_q05'])} and {_percent(row['terminal_return_q95'])}. "
+        f"The worst fall from a peak has a median of {abs(row['maximum_drawdown_q50']):.1%} and "
+        f"is deeper than {abs(row['maximum_drawdown_q95']):.1%} in 5% of paths. "
+        f"{loss:.0%} of paths end with a loss."
+    ]
+    if real_end is not None and ends:
+        below = sum(1 for end in ends if end < real_end) / len(ends)
+        lines.append(
+            f"The real run ended {_percent(real_end)}, above {below:.0%} of the simulated paths."
+        )
+    return lines
+
+
+def stored_lines(rdir: Path, manifest: Mapping[str, Any]) -> list[str]:
+    """A stored Monte Carlo run in plain words: its window, then each family against the real one."""
+    families = manifest.get("families")
+    families = families if isinstance(families, list) else [manifest["family"]]
+    observed = pl.read_parquet(rdir / "observed_oos.parquet").sort("step")["equity"].to_list()
+    real_end = observed[-1] / observed[0] - 1.0 if len(observed) >= 2 else None
+    metrics = pl.read_parquet(rdir / "path_metrics.parquet")
+    lines = [window_sentence(manifest["built_from"])]
+    for row in families:
+        ends = metrics.filter(pl.col("family") == row["family"])["terminal_return"].to_list()
+        lines += _family_reading(row, real_end, ends)
+    return lines
+
+
+def echo_stored(rdir: Path, manifest: Mapping[str, Any]) -> None:
+    for line in stored_lines(rdir, manifest):
+        typer.echo(line)

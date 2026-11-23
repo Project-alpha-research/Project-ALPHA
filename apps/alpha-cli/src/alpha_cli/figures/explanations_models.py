@@ -61,7 +61,7 @@ TEXTS: Final[dict[str, Text]] = {
         ),
         (
             "Each thin coloured line is one simulated path. The thick red line, labelled "
-            "Original, is the real run's path. A black line marks 1.0x."
+            "Real run, is the real run's path. A black line marks 1.0x."
         ),
         (
             "Look at where the red line sits inside the bundle of simulated paths, and how "

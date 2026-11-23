@@ -252,6 +252,11 @@ def report(
             f"max-dd ${_fmt(rules.get('max_drawdown'))}"
         )
     if manifest.get("command") in {"monte_carlo_classical", "monte_carlo_kronos"}:
+        from alpha_cli import _mc_reading
+
+        folder = Path(manifest["__dir"])
+        if all((folder / name).is_file() for name in _mc_reading.READS):
+            _mc_reading.echo_stored(folder, manifest)
         for text in monte_carlo_lines(manifest):
             typer.echo(text)
     if manifest.get("command") == "ml_replay":  # a stored model run: the reading in plain words

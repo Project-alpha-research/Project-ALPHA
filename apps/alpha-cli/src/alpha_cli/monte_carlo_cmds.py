@@ -980,6 +980,7 @@ def kronos(
         f"monte-carlo kronos -> run {identity.run_id}: {paths} full-engine paths over the first "
         f"{source_horizon} out-of-sample days"
     )
+    _mc_reading.echo_stored(rdir, _artifacts.read_manifest(rdir))
     if not np.any(path_matrix):
         typer.echo(
             f"No path made a trade in these {source_horizon} days: the rule did not act on "

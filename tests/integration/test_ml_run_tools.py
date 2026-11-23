@@ -158,6 +158,32 @@ def test_an_old_model_run_says_it_was_made_before_and_to_run_it_again(
         assert "alpha ml run" in str(reasons[figure])
 
 
+def test_an_old_model_run_tells_the_checks_to_run_the_model_again(
+    ml_home: tuple[Path, str], tmp_path: Path
+) -> None:
+    import shutil
+
+    import polars as pl
+
+    home, run_id = ml_home
+    old_home = tmp_path / "old"
+    shutil.copytree(home, old_home)
+    rdir = old_home / "runs" / run_id
+    frame = pl.read_parquet(rdir / "benchmark_comparison.parquet")
+    frame.with_columns(pl.lit(False).alias("available")).write_parquet(
+        rdir / "benchmark_comparison.parquet"
+    )
+    equity = pl.read_parquet(rdir / "equity_curve.parquet")
+    equity.drop("gross_return", "cost_return").write_parquet(rdir / "equity_curve.parquet")
+    for check in ("costs.break_even", "cost_realism.cost_sweep", "regimes.bull_bear"):
+        try:
+            text = json.dumps(runner.run(old_home, check, run_id), default=str)
+        except SpineError as refusal:
+            text = f"{refusal.payload['message']} {refusal.payload['next']}"
+        assert "rule test" not in text.lower(), (check, text)
+        assert "alpha ml run" in text, (check, text)
+
+
 def test_chart_titles_of_a_model_run_are_short_and_plain(
     ml_home: tuple[Path, str], tmp_path: Path
 ) -> None:

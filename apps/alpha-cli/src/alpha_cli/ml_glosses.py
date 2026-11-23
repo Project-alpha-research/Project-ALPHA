@@ -152,7 +152,7 @@ _ROWS = (
         "Fees paid",
         "total_fees",
         _money,
-        "fixed fees over the test days, in account currency",
+        "the fees charged on each trade over the test days, in account currency",
         "not stored",
     ),
     (

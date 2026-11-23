@@ -208,6 +208,12 @@ class Target:
             "store": spine.get("store"),
         }
 
+    def _has_basket(self) -> bool:
+        import polars as pl
+
+        path = self.directory / STORED_FILES["stored_benchmark"]
+        return path.is_file() and all(pl.read_parquet(path, columns=["available"])["available"])
+
     def prepare(
         self, home: Path, needs: tuple[str, ...], settings: dict[str, Any]
     ) -> tuple[Market | None, dict[str, Any]]:
@@ -219,6 +225,12 @@ class Target:
                 f"Run {self.run_id} is a model run, and this check needs one rule's bars or "
                 "settings, which a model run does not have.",
                 "Use a check that needs only equity, returns or trades.",
+            )
+        if self.is_ml and "stored_benchmark" in needs and not self._has_basket():
+            raise SpineError(
+                "MADE_BEFORE",
+                f"Run {self.run_id} is a model run made before the equal-weight basket was stored.",
+                "Run `alpha ml run` again.",
             )
         files = [STORED_FILES[kind] for kind in needs if kind in STORED_FILES]
         for name in files:

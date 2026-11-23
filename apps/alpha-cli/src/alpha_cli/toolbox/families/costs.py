@@ -7,6 +7,7 @@ from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 
 from alpha_cli.toolbox.contract import Output, Result, ToolSpec, Value
+from alpha_cli.toolbox.families.cost_realism_common import old_run
 
 if TYPE_CHECKING:
     from numpy.random import Generator
@@ -15,7 +16,6 @@ if TYPE_CHECKING:
     from alpha_validation import FloatArray
 
 BASIS = "Scored walk-forward returns, with the stored fill costs scaled on each bar."
-OLD_RUN = "This run was made before costs were stored per bar. Run the rule test again."
 NO_COST = "This run charged no costs. There is nothing to scale."
 
 
@@ -160,9 +160,12 @@ def _break_even(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -
     frame = run.table("stored_equity")
     dates = run.dates(frame, "stored_equity")
     if not {"gross_return", "cost_return"} <= set(frame.columns):
+        sentence = old_run(inputs)
         keys = ("zero_multiple", "hold_multiple", "cost_share")
         return Result(
-            {**dict.fromkeys(keys), "sentence": OLD_RUN}, dict.fromkeys(keys, OLD_RUN), basis=BASIS
+            {**dict.fromkeys(keys), "sentence": sentence},
+            dict.fromkeys(keys, sentence),
+            basis=BASIS,
         )
 
     equity = frame["equity"].to_numpy()

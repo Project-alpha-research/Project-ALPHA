@@ -35,7 +35,17 @@ SCHEMA = "AlphaFollowV1"
 ID_LENGTH = 12
 DEFAULT_SIZE_PCT = 10.0
 KINDS = {"rule_test": "rule test", "setup_find": "setup find", "setup_trade": "setup trade"}
-WAITING = "waiting for its first new bar"
+
+
+def waiting_text(started: datetime | str) -> str:
+    """The waiting state in words, with the stored start time (UTC)."""
+    when = datetime.fromisoformat(started) if isinstance(started, str) else started
+    return (
+        "waiting for the first session that closes after it started "
+        f"(started {when.astimezone(UTC).strftime('%Y-%m-%d %H:%M')} UTC)"
+    )
+
+
 PAPER = "This is a paper follow. It places no order and is not advice."
 
 

@@ -27,7 +27,7 @@ downloads nothing. It decides on each close and books a paper fill at the next o
 
 **How to read it**
 - `show <id>` prints the newest 20 entries as plain sentences (`--all`, `--last N`) and how much of the return is price and how much is dividends.
-- `list` shows one state per follow. `show` says "waiting for its first new bar" until a session is recorded.
+- `list` shows one state per follow. `show` says "waiting for the first session that closes after it started" and the start time, until a session is recorded.
 - Changing a followed idea is a new version. The old follow stops and stays. The forward clock restarts.
 - `update` writes one entry per session: the rule's numbers, a plain decision ("would buy at the next open", "holding"), the paper book.
   A session with no stored bar is `late`. One written after the next open is `missed`: it shows what the rule would have signalled.

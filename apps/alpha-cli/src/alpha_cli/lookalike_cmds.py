@@ -340,6 +340,14 @@ def _lookalike_text(
     return "\n".join(lines)
 
 
+def _refuse_ignored(timeframe: str, max_distance: float | None) -> None:
+    if timeframe != "1D" or max_distance is not None:
+        typer.echo(
+            "--today has its own bars and distance. Drop --timeframe and --max-distance.", err=True
+        )
+        raise typer.Exit(2)
+
+
 def _look_today(asset: str, last: int, top: int, horizons: str, json_out: bool) -> None:
     from alpha_cli.follow_lookalike import look_text, look_today
 
@@ -391,6 +399,7 @@ def lookalike(
     """Has price action like the latest N bars happened before? (descriptive, not a forecast)"""
     asset = _one_asset(asset, symbol)
     if today:
+        _refuse_ignored(timeframe, max_distance)
         _look_today(asset, last, top, horizons, json_out)
         return
     from alpha_cli._lookalike_figures import lookalike_figure

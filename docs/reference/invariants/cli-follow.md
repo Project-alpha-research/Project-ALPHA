@@ -120,7 +120,7 @@ and every append fails loud on it. Nothing repairs it on its own, and no data is
 2. Remove only the incomplete last line of `journal.jsonl`, then run `alpha follow verify <id>`. The chain verifies.
 
 ## Update (F2)
-- `follow update <id>` or `--all` reads the bars known at the clock. It downloads nothing. It refuses a stopped follow, a setup
+- `follow update <id>`, or bare / `--all` for every follow, reads the bars known at the clock. It downloads nothing. It refuses a stopped follow, a setup
   find (`FOLLOW_UPDATE_SETUP_NOT_BUILT`) and a follow whose stored spec no longer hashes to the frozen hash (`FOLLOW_SPEC_CHANGED`).
 - One entry per session. A second run on the same session writes nothing and says so. The replay check still runs and is shown.
 - Decide on the close of session t from bars up to t. The paper fill is the open of t+1. The update that first sees that bar books it.

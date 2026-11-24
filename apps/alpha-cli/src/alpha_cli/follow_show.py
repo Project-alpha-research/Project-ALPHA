@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from alpha_cli import follow_store as store
 from alpha_cli.follow_book import PAPER_ACCOUNT
 from alpha_cli.follow_journal import Entry
 from alpha_cli.follow_labels import entry_sentence, plain_readings, readings_text
@@ -98,7 +99,7 @@ def reading(entries: list[Entry]) -> str:
     if entries[-1].kind == "stop":
         return "stopped"
     if not sessions:
-        return "waiting for its first new bar"
+        return store.waiting_text(entries[0].written_at)
     last = sessions[-1]
     if last.kind in LATE_OR_MISSED:
         return LATE_OR_MISSED[last.kind]

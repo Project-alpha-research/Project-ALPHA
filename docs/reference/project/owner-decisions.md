@@ -1,8 +1,8 @@
 ---
 owner: project layer
 sources:
-  - docs/reference/model-routing.md
-verified: 9fe892a33a3d98b0
+  - docs/reference/project/components/delivery-and-agent-tooling.md
+verified: 98ff6f758bf06846
 ---
 
 # Owner decisions log
@@ -76,7 +76,7 @@ for the RD-Agent entry (dated on the triage sheet), the exact day of each was no
 - **Said:** "codex is generally better for implementing code while claude is better at planning
   and decision making"
 - **Governs:** [delivery and agent tooling](components/delivery-and-agent-tooling.md); who does
-  what is kept in [model routing](../model-routing.md), which records it with other words.
+  what is kept on [the build team page](components/delivery-and-agent-tooling.md).
 
 ### 2026-11-14 RD-Agent's AI models
 

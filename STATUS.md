@@ -135,7 +135,6 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Data provider limits not yet written down — small (S)
 - Data questions from the November repository studies — medium (M)
 - Data-directory naming migration — medium (M)
-- Delivery tooling paper cuts found while building the swing-judge stack — small (S)
 - Exact versions for outside projects in the main install's manifests — small (S)
 - Exposure log: correct entries and match ideas by economic family — medium (M)
 - File-system freshness gaps — small (S)
@@ -183,7 +182,7 @@ Ideas not yet planned (no order recorded, so alphabetical):
 
 ## Housekeeping
 
-- Backlog items: 54
+- Backlog items: 53
 - Staged refactors: 5
 
 ## Where things are

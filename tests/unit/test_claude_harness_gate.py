@@ -1,7 +1,7 @@
 """Tests for the Claude Code harness gate runner (scripts/gate.py).
 
 Covers quant-tier path selection, the harness doctor and weakening scanner, the
-ADR awareness, plan checks and the quant-rigor sweeps. Everything here runs
+ADR awareness and the quant-rigor sweeps. Everything here runs
 against throwaway git repos.
 """
 
@@ -184,67 +184,6 @@ class TestAdrAwareness:
         assert harness_awareness.adr_drift(tmp_path) == ["ADR-0002"]
         index.write_text("| [0001](0001-first.md) |\n| [0002](./0002-second.md) |\n")
         assert harness_awareness.adr_drift(tmp_path) == []
-
-
-_VALID_PLAN: dict[str, Any] = {
-    "title": "Add X",
-    "context": "why",
-    "assumptions": [{"statement": "Y holds", "verified_by": "grep Y"}],
-    "alternatives_considered": ["do nothing (rejected: Z)"],
-    "pre_mortem": ["fails if A", "fails if B"],
-    "slices": [
-        {
-            "title": "s1",
-            "verify": "uv run pytest tests/unit/test_x.py",
-            "expected": "1 passed",
-            "rollback": "git checkout -- packages/alpha-core/src/alpha_core/x.py",
-            "files": ["packages/alpha-core/src/alpha_core/x.py"],
-        },
-        {"title": "s2", "verify": "gate.py fast", "expected": "stamp", "rollback": "revert"},
-    ],
-    "tier_impact": ["none"],
-    "docs_to_update": ["CLAUDE.md"],
-    "out_of_scope": ["the SPA"],
-    "files": ["tests/unit/test_x.py"],
-}
-
-
-def _plan_doc(block: dict[str, Any] | str) -> str:
-    body = block if isinstance(block, str) else json.dumps(block, indent=2)
-    return f"# Plan\n\n```json\n{body}\n```\n\n## Slices\n"
-
-
-class TestPlanCheck:
-    def test_valid_plan_passes_and_summarizes(self, tmp_path: Path) -> None:
-        plan = tmp_path / "2026-03-01-x.md"
-        plan.write_text(_plan_doc(_VALID_PLAN))
-        ok, message = harness_awareness.plan_check(plan)
-        assert ok, message
-        assert "2 slice(s), 0 done" in message
-
-    @pytest.mark.parametrize(
-        ("field", "value"),
-        [
-            ("pre_mortem", ["only one"]),
-            ("alternatives_considered", []),
-            ("slices", [_VALID_PLAN["slices"][0]]),
-            ("assumptions", [{"statement": "unverified"}]),
-            ("tier_impact", ["cosmic"]),
-        ],
-    )
-    def test_missing_reasoning_fields_fail(self, tmp_path: Path, field: str, value: Any) -> None:
-        plan = tmp_path / "p.md"
-        plan.write_text(_plan_doc({**_VALID_PLAN, field: value}))
-        ok, message = harness_awareness.plan_check(plan)
-        assert not ok
-        assert "FeaturePlan invalid" in message
-
-    def test_no_front_block_fails(self, tmp_path: Path) -> None:
-        plan = tmp_path / "p.md"
-        plan.write_text("# Plan without a block\n\n```json\nnot json\n```\n")
-        ok, message = harness_awareness.plan_check(plan)
-        assert not ok and "no fenced" in message
-        assert harness_awareness.plan_front_block("no fences at all") is None
 
 
 class TestQuantRigorTooling:

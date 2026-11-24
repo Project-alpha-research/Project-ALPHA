@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - docs/reference/project/owner-decisions.md
-verified: c6e2e7d1be986ea5
+verified: f23dc19226088ee7
 ---
 
 # Owner decisions log, volume 4
@@ -122,7 +122,7 @@ Continues the [owner decisions log](owner-decisions.md), [volume 2](owner-decisi
   Claude usage; (4) the subject matter of RD-Agent's test runs does not matter for now.
 - **Left to the owner:** still undecided: adding the purpose and three paths to CLAUDE.md (N6);
   the idea-family closing rule (N2).
-- **Governs:** [RD-Agent](components/rd-agent.md); [model routing](../model-routing.md);
+- **Governs:** [RD-Agent](components/rd-agent.md); [the build team](components/delivery-and-agent-tooling.md);
   [checklist](../../roadmap/production-scope-2.md#9-rd-agent-and-qlib-engines).
 
 ### 2026-11-18 Orchestrator's plan: the paths are ways of working, and RD-Agent becomes discussable

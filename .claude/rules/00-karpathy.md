@@ -1,7 +1,7 @@
 # Working style (always loaded)
 
-Project rules: `docs/reference/invariants/engineering.md` § Working style; the steps of a change:
-`workflow/CONTEXT.md`.
+Project rules: `docs/reference/invariants/engineering.md` § Working style; how a change is built and landed:
+`docs/reference/project/components/delivery-and-agent-tooling.md`.
 
 1. Think first: state assumptions; name competing readings; if unclear, stop and ask.
 2. Simplicity: minimum code; no unrequested features, configurability or single-use abstractions.

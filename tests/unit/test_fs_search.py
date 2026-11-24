@@ -67,7 +67,7 @@ def test_kind_filter_and_query_bounds(docs_repo: Path) -> None:
     ("rel", "kind"),
     [
         ("docs/work/2026-11-01-live/02-plan.md", "task"),
-        ("workflow/stages/02-plan/CONTEXT.md", "project"),
+        ("scripts/CONTEXT.md", "project"),
         ("docs/roadmap/backlog/options-research.md", "feature"),
         ("docs/roadmap/refactors/split-models.md", "feature"),
         (".claude/rules/docs.md", "reference"),

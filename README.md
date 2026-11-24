@@ -136,7 +136,6 @@ a background job. Start at [RD-Agent in ALPHA](docs/roadmap/rd-agent-in-alpha.md
 | `workers/` | separate environments for Qlib, RD-Agent, literature search and textbook methods |
 | `research/` | the playbook and the tool cards for testing an idea |
 | `docs/` | reference pages, decisions, runbooks and the [roadmap](docs/roadmap/README.md) |
-| `workflow/` | the delivery pipeline: stages a change follows from brief to merge |
 | `scripts/` | the checks and tools: `gate.py`, `fs.py`, generators |
 | `tests/` | unit, integration, end-to-end and honesty tests |
 

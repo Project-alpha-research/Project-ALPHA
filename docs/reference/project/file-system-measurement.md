@@ -51,7 +51,7 @@ By question, majority of three (strict / core):
 
 - The reserved-period page and its routing row: Q8 fell from about 98 KB and search fallbacks to 12 to 28 KB in two hops. The largest single gain.
 - Correcting the Kronos "runs offline" line and amending ADR-0010: no wrong Kronos answers.
-- `ci-ok` and the merge rule in the delivery pipeline page: every reader named both (none did in round 1).
+- `ci-ok` and the merge rule in the build-team page: every reader named both (none did in round 1).
 - Naming the thirds module in the worker page and adding "Thirds and ties" with a do-not-change list: every reader found the code without searching.
 - The toolbox "Adding an entry" recipe, the Setup Lab "To change this screen" section and the Monte Carlo summary: readers now state the names,
   the direct reads and the three resampling families.

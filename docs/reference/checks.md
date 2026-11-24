@@ -91,16 +91,13 @@ mypy and pytest path, not a package; the harness scripts are standard library on
 read owner data, credentials or hidden tests.
 
 - Protected files (change only in a reviewed pull request that lists them): `scripts/gate*.py`,
-  `scripts/git_guard.py`, `scripts/harness_*.py`, `scripts/handoff*.py`, `scripts/codex_bridge.py`.
+  `scripts/git_guard.py`, `scripts/harness_*.py`.
 - Where things are: `gate.py` + `gate_components.py` (CI job steps) + `gate_select.py` (tests mapped
   from changed files); `fs.py` with `fs_orient.py`, `fs_search.py`, `fs_stale.py` (`verify` needs a text edit or a
   `--reason`, kept in `docs/verified-reasons.txt`); generators
   `roadmap_index.py`, `status.py` (STATUS.md), `commands_reference.py`, `generate_web_openapi.py`, `check_openapi_operations.py`;
   machine setup: `setup.sh` (wraps `setup_rdagent.sh`) and the machine section of `gate.py doctor`
-  ([development loop](../operations/development-loop.md#set-up-a-fresh-machine));
-  Codex: `handoff.py` (builds; rules in `docs/reference/model-routing.md`) with `handoff_sandbox.py`
-  (what the build sandbox may reach: its package cache and read-only links) and `handoff_routing.py`
-  (routed reading, the `docs/work/` brief and report, how checks run), `codex_bridge.py` (reviews).
+  ([development loop](../operations/development-loop.md#set-up-a-fresh-machine)).
 - Tests: `tests/unit/test_gate_*.py` (the doctor's machine section is `test_gate_machine_doctor.py`),
   `test_setup_script.py`, `test_git_guard.py`, `test_fs_*.py`, `test_roadmap_index.py`,
   `test_commands_reference.py`, `test_claude_harness_*.py`, `test_mutation_*.py`, `test_code_size.py` (the size limit,

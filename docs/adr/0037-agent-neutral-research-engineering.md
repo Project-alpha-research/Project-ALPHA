@@ -1,6 +1,6 @@
 # ADR-0037: Agent-neutral engineering and reproducible research
 
-**Status:** Accepted; implementation completed (2026-09-16).
+**Status:** Accepted; implementation completed (2026-09-16); superseded in part by ADR-0056.
 
 > **Note (2026-11-13):** [ADR-0039](0039-ci-is-the-merge-gate.md) makes CI on the pull request the merge gate and supersedes this record's local gate-stamp, receipt and commit-guard parts; the decision text below is unchanged.
 

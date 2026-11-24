@@ -1244,7 +1244,7 @@ owner_decision = "DELETE"
 card = "G"
 name = "Delivery-task pilot (Claude/Codex hand-off tool)"
 recommendation = "DELETE"
-# owner's delegation, 2026-11-14 ("Build whatever you believe is the right decision"): delete: backlog item closed, superseded by docs/reference/model-routing.md and scripts/handoff.py
+# owner's delegation, 2026-11-14 ("Build whatever you believe is the right decision"): delete: backlog item closed, superseded by the hand-off rules, since retired by the build team
 owner_decision = "DELETE"
 
 [[decision]]

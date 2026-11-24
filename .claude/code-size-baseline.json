@@ -5,7 +5,6 @@
     "apps/alpha-cli/src/alpha_cli/research_cmds.py": 3537,
     "apps/alpha-cli/src/alpha_cli/research_gate_packet.py": 1568,
     "apps/alpha-web/src/alpha_web/_ml.py": 1739,
-    "scripts/handoff.py": 1576,
     "workers/qlib/src/alpha_qlib_worker/real.py": 1578
   },
   "functions": {

@@ -37,7 +37,7 @@ log and pull requests). This page is the one place that lists what was not done,
   ([decision](../reference/project/owner-decisions-3.md#2026-11-15-build-the-thin-spine-clean-then-switch-over)).
 - Merge commits were kept because documents once pinned commit ids; documents now pin a
   fingerprint of their sources, and merge commits stay the landing rule
-  ([land stage](../../workflow/stages/05-land/CONTEXT.md)).
+  ([the build team](../reference/project/components/delivery-and-agent-tooling.md)).
 
 ## Machine clean-up still owed
 

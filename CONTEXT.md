@@ -30,7 +30,6 @@ Stop when you have what you need: the always rows, then only rows your task matc
 | [scripts](scripts/CONTEXT.md) | — | gate, CI steps, fs tools |
 | [tests](tests/CONTEXT.md) | — | tests, markers, guards, oracles |
 | [docs](docs/CONTEXT.md) | — | docs, ADRs, file system |
-| [workflow](workflow/CONTEXT.md) | — | delivering a change |
 | [research](research/CONTEXT.md) | — | testing an idea (`research/PLAYBOOK.md`) |
 ## How to change it
 Add a row per new workspace.

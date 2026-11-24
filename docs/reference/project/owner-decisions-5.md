@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - docs/reference/project/owner-decisions-4.md
-verified: 0d6d2613d9bbfae7
+verified: 0081ea88c9ee9e4d
 ---
 
 # Owner decisions log, volume 5
@@ -157,7 +157,7 @@ part that owns it can link to one clear entry.
 - **Said:** exact words not recorded; paraphrased by the orchestrating AI agent. The owner named the
   new Codex 6.2 models and asked for Codex to be used more, to save Claude usage.
 - **Decided:** Codex builds with the 6.2 models; Claude plans, orchestrates and reviews.
-- **Governs:** [model routing](../model-routing.md);
+- **Governs:** [the build team](components/delivery-and-agent-tooling.md);
   [delivery and agent tooling](components/delivery-and-agent-tooling.md).
 
 ### 2026-11-18 Request: one data health report
@@ -197,4 +197,4 @@ part that owns it can link to one clear entry.
 - **Said:** exact words not recorded; paraphrased by the orchestrating AI agent. The owner said the Codex
   subscription has expired, and asked for the file system to match the research paper's spec first, to cut reading.
 - **Decided:** until the owner says otherwise, Claude agents build (Sonnet builds, Opus reviews honesty and statistics) or the orchestrator does.
-- **Governs:** [model routing](../model-routing.md); [workflow stages](../../../workflow/CONTEXT.md); [file system](../../CONTEXT.md).
+- **Governs:** [the build team](components/delivery-and-agent-tooling.md); [file system](../../CONTEXT.md).

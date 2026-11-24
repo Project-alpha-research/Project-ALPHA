@@ -28,7 +28,7 @@ Where each kind of document lives, and how long it stays current. Tasks are rout
 | [`governance/`](governance/README.md) | Capability/authority matrix, OpenAPI operation classification, dependency licences, risk register and provenance records. |
 | [`operations/`](operations/README.md) | Living runbooks and operating guides (development loop, harness, research workflows, Monte Carlo guides). |
 | [`operations/retrospectives/`](operations/retrospectives/) | Dated retrospectives `YYYY-MM-DD-<slug>.md` with a `## Watch-outs` section. |
-| `work/` | One folder per build: its `brief.md` and the builder's `report.md` ([task folders](work/CONTEXT.md)); a planned task's stage files live there only while its pull request is open ([delivery pipeline](../workflow/CONTEXT.md)). |
+| `work/` | One folder per build: its `brief.md` and the builder's `report.md` ([task folders](work/CONTEXT.md)). |
 | [`roadmap/`](roadmap/README.md) | Generated index of [backlog](roadmap/backlog/) items (wanted features with no plan yet) and staged [refactors](roadmap/refactors/). |
 | [`archive/research-notes/`](archive/research-notes/README.md) | The owner's research material kept as source (reports, scope checklist, a trade review, a bias investigation); bytes never edited. |
 | [`assets/`](assets/) | Images referenced by documentation. |
@@ -65,7 +65,7 @@ To find a document, run `uv run python scripts/fs.py orient` or `fs.py search "<
 | Current status; history | [STATUS.md](../STATUS.md) (generated); git log and pull requests |
 | How an idea is researched | [research/PLAYBOOK.md](../research/PLAYBOOK.md); the older staged lane: [research method](reference/research-method.md) |
 | Codes and terms | [docs/reference/glossary.md](reference/glossary.md) |
-| Who builds and reviews, which model, limits | [docs/reference/model-routing.md](reference/model-routing.md) |
+| How ALPHA is built: the build team | [delivery-and-agent-tooling](reference/project/components/delivery-and-agent-tooling.md) |
 
 When a fact changes, update its one home and link to it from elsewhere; never copy it.
 
@@ -73,5 +73,5 @@ When a fact changes, update its one home and link to it from elsewhere; never co
 
 A wanted feature with no plan is one short file in [`roadmap/backlog/`](roadmap/backlog/); staged
 structural refactors use [`roadmap/refactors/`](roadmap/refactors/). Turning either into delivered
-work follows the [delivery pipeline](../workflow/CONTEXT.md); the pull request is the hand-off
+work follows [the build team](reference/project/components/delivery-and-agent-tooling.md); the pull request is the
 record. After any change to a backlog item or refactor run `uv run python scripts/roadmap_index.py`.

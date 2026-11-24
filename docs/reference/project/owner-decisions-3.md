@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - docs/reference/project/owner-decisions.md
-verified: c6e2e7d1be986ea5
+verified: f23dc19226088ee7
 ---
 
 # Owner decisions log, volume 3
@@ -172,7 +172,7 @@ the rules for entries are in the first. This volume is full: new entries go in [
   reviews hand-backs and lands pull requests; it does not run as a sub-agent. Every delegated
   agent states its model: a heavier one for judgement, a lighter one for mechanical work. Any
   build that can be written as a brief goes to Codex through the hand-off tool.
-- **Governs:** [model routing](../model-routing.md).
+- **Governs:** [the build team](components/delivery-and-agent-tooling.md).
 
 ### 2026-11-16 Licences are never a criterion for outside projects
 

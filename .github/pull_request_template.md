@@ -12,7 +12,7 @@
 
 ## Who built and who reviewed
 
-<!-- Builder: tool, model, effort, fix rounds, any fallback (from 03-build.json or the handoff.py record).
+<!-- Builder: tool, model, effort, fix rounds, any fallback.
      Reviewers: who reviewed with which model, and how each finding was handled. -->
 
 ## The one document updated

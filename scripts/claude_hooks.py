@@ -110,8 +110,8 @@ def hook_session_start(payload: dict[str, Any], root: Path) -> HookResult:
     return (
         0,
         "Project ALPHA: read CLAUDE.md, then start at CONTEXT.md; it routes the task to one "
-        "workspace CONTEXT.md. A change walks the delivery pipeline in workflow/CONTEXT.md: "
-        "/shape, /plan, /build, /verify, /land. "
+        "workspace CONTEXT.md. How a change is built and landed: "
+        "docs/reference/project/components/delivery-and-agent-tooling.md (the build team). "
         'Find things: uv run python scripts/fs.py orient | search "words". '
         "Fast local check: uv run python scripts/gate.py check; CI on the pull request "
         "is the merge gate. "

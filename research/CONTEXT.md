@@ -12,7 +12,7 @@ verified: f5496061b1230761
 ## Purpose
 Any idea goes through one route: read [the playbook](PLAYBOOK.md), then run `uv run alpha test`. No idea is stopped
 for being of an unknown kind, and no research run needs an approval; integrity shows as labels and flags. The only
-approval gate is before paper or live trading. Changing the research code is a delivery task ([`workflow/`](../workflow/CONTEXT.md)).
+approval gate is before paper or live trading. How a change is built: [the build team](../docs/reference/project/components/delivery-and-agent-tooling.md).
 
 ## Read first
 | Read | Section | When |

@@ -30,7 +30,6 @@ const CATALOG_GROUPS = [
   'results',
   'risk',
   'strategy-candidate',
-  'suite',
   'setup',
   'test',
   'tool',

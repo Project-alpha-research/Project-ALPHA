@@ -44,7 +44,6 @@ table. A capability may serve several rows; a row may be served by several capab
 | `backtest` | Nautilus as the pinned backtest engine |
 | `run-reports` | Reopen any stored run with its report |
 | `rules-and-scans` | Simple rule language ("close above X and Y"), saved and rerun exactly |
-| `strategy-development` | Strategy development workspace (fixed approved steps) |
 | `inverted-signal-control` | Inverted-signal control: the opposite trade must lose, or the edge is a data artefact |
 | `price-noise` | Robustness to noise added to the price series, re-running the rule on perturbed prices |
 | `implausibly-good` | A "too good to be true" label for results far above what a retail swing book plausibly earns after costs |

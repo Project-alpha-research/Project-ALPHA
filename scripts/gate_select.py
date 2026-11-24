@@ -26,6 +26,8 @@ ALWAYS = (
     "tests/unit/test_capabilities.py",
     "tests/unit/test_status_page.py",
     "tests/unit/test_commands_reference.py",
+    "tests/unit/test_filesystem_completeness.py",
+    "tests/unit/test_web_menu_groups.py",
 )
 MAX_MAPPED_TESTS = 400
 LAST_FAILED = Path(".pytest_cache") / "v" / "cache" / "lastfailed"

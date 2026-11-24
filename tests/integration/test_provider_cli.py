@@ -186,6 +186,7 @@ def test_provider_check_cli_records_redacted_receipt(
     from alpha_cli import provider_readiness
 
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("ALPHA_TIINGO_API_KEY", "not-a-real-key")  # the check needs a key to start
     monkeypatch.setattr(
         provider_readiness,
         "_CHECKERS",

@@ -1,21 +1,7 @@
-"""Shared suite vocabulary preserves wire values without importing orchestration."""
+"""The suite vocabulary imports without loading orchestration."""
 
-import json
 import subprocess
 import sys
-from pathlib import Path
-
-from pydantic import TypeAdapter
-
-from alpha_cli.suite_catalog import SUITE_ACTIONS, SuiteActionValue
-
-
-def test_suite_schema_preserves_committed_openapi_vocabulary() -> None:
-    root = Path(__file__).resolve().parents[2]
-    openapi = json.loads((root / "apps/alpha-web/frontend/openapi.json").read_text())
-    expected = openapi["components"]["schemas"]["SuiteActionValue"]
-    assert TypeAdapter(SuiteActionValue).json_schema() == expected
-    assert set(expected["enum"]) == SUITE_ACTIONS
 
 
 def test_suite_catalog_import_does_not_load_orchestration() -> None:

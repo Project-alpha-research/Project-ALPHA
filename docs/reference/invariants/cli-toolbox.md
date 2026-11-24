@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
   - tests/unit/test_toolbox_*.py
-verified: a9b38e6041cf26ee
+verified: de553e6a7d10b2c0
 ---
 
 # Command line toolbox
@@ -16,14 +16,20 @@ tools.md). Why the toolbox exists: [toolbox](../project/components/toolbox.md).
 
 ## Adding a check
 
-1. Write a `ToolSpec` (`toolbox/contract.py`) in a module under `toolbox/families/` (`context`, `costs`, `market`, `overfit`,
-   `overfit_controls`, `parameter_robustness`, `performance`, `resampling`, `robustness`, `trades`).
+1. Write a `ToolSpec` (`toolbox/contract.py`) in a module under `toolbox/families/`. The id prefix is the family; the modules are
+   the `*.py` files and the splits `*_a.py`, `*_b.py` ... (a module holds at most 300 lines).
 2. Add it to the explicit tuple `SPECS` in `toolbox/registry.py`. Nothing is found automatically. The first sixteen
    registered ids: `market.attribution`, `market.vol_regimes`, `market.changepoints`, `performance.downside_ratios`,
    `robustness.start_end_dates`, `trades.side_contribution`, `trades.concentration`, `costs.break_even`,
    `resampling.sharpe_interval`, `resampling.return_interval`, `resampling.drawdown_distribution`,
    `trades.dependence`, `overfit.deflated_sharpe`, `resampling.block_bootstrap_paths`, `resampling.student_t_paths`, `context.published_factors`.
-   The `overfit_controls` family adds eleven more ids (its [card](../../../research/tools/toolbox-overfit-controls.md)).
+   Later batches add the rest of the catalogue (112 ids at the last check; `uv run alpha tool list` is the list). Each batch has one
+   card under `research/tools/`: [overfit controls](../../../research/tools/toolbox-overfit-controls.md),
+   [parameter robustness](../../../research/tools/toolbox-parameter-robustness.md),
+   [cost realism](../../../research/tools/toolbox-cost-realism.md),
+   [performance statistics](../../../research/tools/toolbox-performance-stats.md),
+   [regimes](../../../research/tools/toolbox-regimes.md), [more resampling](../../../research/tools/toolbox-resampling-more.md),
+   [risk and sizing](../../../research/tools/toolbox-risk-sizing.md) and [time series](../../../research/tools/toolbox-timeseries.md).
    Named sets and their execution order live in `toolbox/sets.py`.
 3. The entry declares its id, version, question, kind, required inputs (`needs`), settings, outputs (key, label, unit,
    gloss), reading, caveats, cost class, seeded or not, time safety, look class, a poison test when time order
@@ -49,7 +55,7 @@ equity; the `excess-over-equal-weight-basket` label marks the factor series.
 
 ## Registered checks
 
-Sixteen entries make the first batch. Three describe one recorded rule test. `market.attribution` measures exposure against
+The sixteen entries below are the first batch. Three describe one recorded rule test. `market.attribution` measures exposure against
 full-history buy and hold, including eligible cash dividends. `market.vol_regimes` compares calm and turbulent
 markets. `market.changepoints` identifies when behaviour shifted. The named set `market-context` runs all three. Five
 more read the run's stored walk-forward files instead of replaying it: `performance.downside_ratios` (Sortino, Calmar,
@@ -114,7 +120,9 @@ anything else is "cannot tell". The ticker text is never read. The entry's versi
 
 Each stored file's hash is part of the result's key, and a value that cannot be measured is "unavailable" with a
 reason. Commands: `alpha tool list` (filter by `--for <run>`, `--search`, `--family`, `--kind`), `describe`, `run`,
-`run-set` and `history`. The CLI takes a rule-test run id. The toolbox uses the [shared reserved
+`run-set` and `history`. The CLI takes a rule-test run id or a model run id (`alpha ml run`); a model run refuses a check that needs one rule's bars
+or settings (`NOT_FOR_A_MODEL_RUN`). It refuses the owner's confirmation run (`CONFIRMATION_RUN`): tools never read it again.
+The toolbox uses the [shared reserved
 date](../project/reserved-period.md). Results are stored under the data directory's `diagnostics/<run>/`. See the
 capability on [STATUS.md](../../../STATUS.md).
 
@@ -140,7 +148,7 @@ figures render` and the family DSR reported by `alpha results cite`. Each comman
 proposal discussion, and more input adapters. Other gaps include a Workstation and MCP listing, a generated catalogue, counting sweep variants in
 deflation, a budget for agent-selected checks, exporting causal tools as factor inputs, and remaining first-batch
 entries; and the growth plan. The 480-entry
-catalogue (ALPHA has 149, has part of 103, lacks 228) is the backlog but is not yet in the repository; random-exit
+catalogue is the backlog but is not in the repository; its counts of covered entries are out of date. Random-exit
 control remains among its highest-value gaps.
 
 ## Finding checks and recording the plan

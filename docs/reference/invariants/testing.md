@@ -14,7 +14,7 @@ sources:
   - scripts/claude_hooks.py
   - pyproject.toml
   - .semgrep/alpha.yml
-verified: 3534652e5380cc60
+verified: 281e111cad966f5d
 ---
 
 # Testing invariants
@@ -68,7 +68,8 @@ isolated workers keep their own suites. Tests must never read the guarded
 - What runs where:
   - `gate.py check --all`: `-m "not platform and not network and not slow_oracle"`.
   - `gate.py check`: `-m "not network and not slow_oracle"` over the `gate_select.py` selection.
-  - CI (`gate.py component backend-tests --shard I/4`, four shards of whole files):
+  - CI on main after each merge (`gate.py component backend-tests --shard I/4`, four shards of whole files). A pull request runs
+    the `gate.py check` selection instead (the `quick` job):
     `pytest -q -n auto --dist worksteal -m "not network and not slow_oracle" --cov`. Changed lines of
     product source must be 85% covered (`[tool.diff_cover]`); the global figure is reported, not gated.
     The `quant` job adds `-m slow_oracle` only when a quant source module changed; the mutation gate runs weekly.
@@ -79,7 +80,9 @@ isolated workers keep their own suites. Tests must never read the guarded
   last failures (each recorded id is cut back to `file::function` and kept only while the file still defines that
   function, because a renamed parametrised case would make pytest refuse the whole run).
   Over 400 mapped tests it keeps only files named after the changed modules; a changed
-  `conftest.py` is left to CI. CI still runs everything on the pull request.
+  `conftest.py` is left to the run on main. It also always runs a fixed list of fast whole-repository rules (code size,
+  reserved date, research playbook, file-system contract, spec, capabilities, status page, commands reference).
+  Every test runs on main after the merge; a failure there is fixed or reverted at once.
 - Keep fixes in the test file for the behaviour they cover. New test filenames must avoid `fixups` and numbered suffixes.
 - A new file's name decides its tier: `tests/_tiers.py` moves files with listed prefixes out of
   the fast local tier. Never add the `platform` marker by hand.

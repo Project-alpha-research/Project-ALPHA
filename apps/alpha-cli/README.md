@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: b75b520921d8c168
+verified: 15c9eb9bbab6940f
 ---
 
 # alpha-cli: code map and change loop
@@ -16,11 +16,15 @@ The `alpha` CLI composes data, strategies, the engine, validation, research and 
 receipts). It may import every package below it; nothing but the surfaces' public seams may import it, and the web app and MCP server call it as a subprocess.
 It must never grant authority the owner did not give, and never route live capital.
 
+The Research cases row is being removed (owner decision 2026-11-23): see [owner-decisions-6.md](../../docs/reference/project/owner-decisions-6.md#2026-11-23-remove-the-old-research-case-machinery-export-first).
+
 Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` = command group, wired in `main.py`). Where to look:
 
 | Sub-area | Modules (count) | Tests in `tests/unit/` |
 |---|---|---|
 | Research cases | `research_*` (22), `_research_cmd_parts`, `_research_artifact_io`, `_structural_digest`, `study_semantic` | `test_research_*` |
+| Figures | `figures/` (30 modules: builders, drawing, explanations), `figure_cache`, `figures_cmds`; see [figures invariants](../../docs/reference/invariants/cli-figures.md) | `test_figure*` |
+| Time estimate, progress | `_estimate` (one rate file, measured on this computer, for the long commands), `_progress` (progress lines); `ml_progress` keeps its own `ml_timing.json` | `test_estimate_clock` |
 | Control store | `control_store`, `_control_*`, `owner_auth*`, `durable_lease`, `job_capacity`, `project_*`; kept part: `home_db`, `job_store`, `job_rows`, `reserved_slots` | `test_control_*`, `test_owner_*`, `test_home_db_split` |
 | Rule tests, tools, setups | `{test,results,tool,partner,setup}_cmds`, `spine/`, `toolbox/` | `test_{spine,setup,toolbox}_*`, `test_contact_*`,
 `test_look*` |

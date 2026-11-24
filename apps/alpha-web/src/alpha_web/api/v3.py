@@ -10,7 +10,6 @@ from pydantic import Field, StringConstraints
 
 from alpha_cli import run_projection
 from alpha_core import DataError
-from alpha_web.api import development as development_api
 from alpha_web.api import ml as ml_api
 from alpha_web.api import runs as runs_api
 from alpha_web.api._common import data_dir
@@ -98,9 +97,8 @@ def _api_routes(source: APIRouter) -> list[APIRoute]:
     return [route for route in source.routes if isinstance(route, APIRoute)]
 
 
-for source_router in (development_api.router, ml_api.router):
-    for source_route in _api_routes(source_router):
-        _clone_route(router, source_route)
+for source_route in _api_routes(ml_api.router):
+    _clone_route(router, source_route)
 
 _VERSIONED_RUN_ENDPOINTS = {
     "/api/runs/{run_id}/chart-bundle",

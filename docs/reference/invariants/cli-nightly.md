@@ -7,7 +7,7 @@ sources:
   - tests/unit/test_nightly*.py
   - tests/unit/test_home_backup.py
   - tests/unit/test_recheck*.py
-verified: d81855ca969acd8e
+verified: 2d479a0abb3bfce2
 ---
 
 # Command line nightly run invariants
@@ -29,6 +29,8 @@ verified: d81855ca969acd8e
 - So N1.test, N2.study and N2.trade run `--recheck` first: computed again and compared with the stored result
   ([rule](cli-rule-readings.md#recheck), [setups](cli-setups.md#setup-study)). Nothing stored (night one): the normal command runs once.
   The step keeps a note. A recheck is not a trial: no ledger row, no run folder.
+- A spec that states no costs and finds no stored run is rechecked again with the flat costs it had before 2026-11-22 (fee 1,
+  slippage 2 basis points); a match then carries a note saying so. Fresh runs use the asset-class default.
 - A match is `computed`. The record keeps `seconds` and `code_changed` for the rule test.
 - A difference is a blocking defect: "the same test gave a different result", with the field and both numbers.
   These numbers are the system's own check, not an idea's result. The text then says the code changed since the stored run

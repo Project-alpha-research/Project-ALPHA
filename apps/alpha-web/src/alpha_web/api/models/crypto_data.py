@@ -7,7 +7,6 @@ from typing import Literal
 from pydantic import Field
 
 from ._base import StrictModel
-from .projects import JsonObject
 
 type CryptoFamilyValue = Literal[
     "market_bars",
@@ -383,21 +382,3 @@ class CryptoSnapshotVerifyResponse(StrictModel):
     blockers: list[str]
     next_action: str
     execution_authority: Literal[False]
-
-
-class CryptoSnapshotRegisterRequest(StrictModel):
-    symbol: str = Field(min_length=1, max_length=32, pattern=r"^[A-Za-z0-9-]+$")
-
-
-class CryptoSnapshotRegisterResponse(StrictModel):
-    ref_id: str = Field(pattern=r"^rd_[0-9a-f]{64}$")
-    dataset_kind: Literal["snapshot"]
-    instrument: str
-    provider: Literal["crypto-data-house"]
-    start_ts: str
-    end_ts: str
-    bar_duration_minutes: int | None
-    origin: JsonObject
-    research_only: Literal[True]
-    registered_by: str
-    registered_at: str

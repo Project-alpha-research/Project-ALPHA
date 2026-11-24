@@ -30,7 +30,6 @@ verified: 8a77650b29ee8769
 | [web-frontend.md](web-frontend.md) | Workstation app | editing the browser app |
 | [web-frontend-charts.md](web-frontend-charts.md), [web-frontend-ideas.md](web-frontend-ideas.md) | charts, exports; Ideas | charts; Ideas page |
 | [web-run-detail.md](web-run-detail.md) | run detail, journey, Setup Lab, RD-Agent panel fields | editing the run detail panels |
-| [web-research.md](web-research.md) | assistant, rule conditions, scans, case read plane | editing research surfaces in the web app |
 | [workers.md](workers.md) | shared rules; Qlib, literature, AFML workers | editing anything under workers/ |
 | [rdagent.md](rdagent.md) | RD-Agent worker: boundary, runtimes, gateway, factor loop, memory, viewer | editing workers/rdagent/ |
 

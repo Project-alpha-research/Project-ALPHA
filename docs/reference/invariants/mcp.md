@@ -7,7 +7,7 @@ sources:
   - tests/unit/test_mcp_spine_tools.py
   - tests/unit/test_mcp_front_door_tools.py
   - tests/integration/test_mcp_front_door.py
-verified: 1c5c6923ba029be7
+verified: c04884b24f5ee18f
 ---
 
 # MCP invariants
@@ -146,4 +146,4 @@ D2 confirmation, reveal a holdout or place orders.
   `tests/unit/test_mcp_spine_tools.py` (spine argv and refusals),
   `tests/unit/test_mcp_front_door_tools.py` and `tests/integration/test_mcp_front_door.py` (front door).
 - Check: `uv run python scripts/gate.py check`.
-- Tests: a test that the new tool refuses options outside its allowlist.
+- A new tool needs a test that it refuses options outside its allowlist.

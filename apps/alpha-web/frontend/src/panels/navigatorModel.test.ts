@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { ProjectSummary, RunListItem, StrategyDef } from '../api/types'
+import type { RunListItem, StrategyDef } from '../api/types'
 import { storageRow } from './dataManagerModel'
-import { MARKET_UNKNOWN_LABEL, NAVIGATOR_GROUPS, isStrategyProject, navigatorTree } from './navigatorModel'
+import { MARKET_UNKNOWN_LABEL, NAVIGATOR_GROUPS, isStrategyProject, navigatorTree, type ProjectSummary } from './navigatorModel'
 
 const run = (id: string, market: RunListItem['market'], symbol: string | null, passed: boolean | null = null) =>
   ({ run_id: id, display_name: `Run ${id.slice(0, 4)}`, market, symbol, passed }) as RunListItem

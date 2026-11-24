@@ -10,7 +10,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: 6c092f6a4b3b1b4a
+verified: 4bacc613af7933aa
 ---
 
 # One trial ledger invariants
@@ -30,7 +30,8 @@ their existing records. See the [discussion protocol](../../../workers/rdagent/p
   `[rdagent] factor_ledger = "/absolute/path"` in `<home>/ledger/sources.toml`.
   With neither, the `alpha ledger` commands read the RD-Agent ledger at its default location beside
   the data directory, `<home>/../runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl` (the
-  factor loop's `--trial-ledger`). Absent optional sources stay quiet in human output. Invalid TOML or configuration produces
+  factor loop's `--trial-ledger`); `ALPHA_RDAGENT_RUNS_DIR`, when set, replaces
+  `<home>/../runs`. Absent optional sources stay quiet in human output. Invalid TOML or configuration produces
   `LEDGER_SOURCE_INVALID`; configured files that do not exist are reported as missing.
 - Read each file's bytes once. Acquire a shared `flock` only when its `.lock` exists, opened
   `rb`; never create directories, files or lock files. No writer or historical row is changed.
@@ -53,8 +54,12 @@ their existing records. See the [discussion protocol](../../../workers/rdagent/p
   `setup-studies/<study_id>/manifest.json`; trades use `setup-trades/<trade_id>/manifest.json`. Trade readings count
   completed trades and apply the same conditions; unavailable controls never give `some evidence`. No count reads
   any of these words ([readings](cli-rule-readings.md#ledger-words)).
+- `alpha ledger` alone lists like `list`. Without `--kind`, `list` gives every kind of try an equal share of the rows shown, so none is hidden.
 - Families remain separate: spine rule, tool, setup and other families, `rdagent-factors`,
   and `rule:<family_id>`. Keep recorded family size separate from the reader count.
+- A model run (`other`, subkind `ml_run`) counts once like a study, in family `qlib`; a `repeat` does not count. A
+  `reserved_confirmation` row is the owner's one look at the reserved period: its family is `spine-confirmation:<rule>` and it
+  never counts as a try, so it moves no other family count.
 - Tool rows (`tool:<id>`) come in pairs, `attempted` then `ok` or `error`, and never count for deflation. Rows of the old
   `tool:attribution|regimes|changepoints` kinds map to the `market.*` ids; both keep the family `spine-tool:<old name>`.
 - `family_counts` reuses the existing RD-Agent `trial_family` function. Unknown RD-Agent rows

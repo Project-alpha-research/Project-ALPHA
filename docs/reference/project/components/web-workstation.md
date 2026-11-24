@@ -3,12 +3,12 @@ owner: project layer
 sources:
   - apps/alpha-web/CONTEXT.md
   - docs/adr/0021-research-workstation-read-plane-and-command-center.md
-verified: 6a4d2d82a3dd6f31
+verified: 0763267e5e567dc9
 ---
 
 # Web workstation
 
-The Workstation is ALPHA in a browser on the owner's own computer: price charts, research cases,
+The Workstation is ALPHA in a browser on the owner's own computer: price charts,
 backtest reports, job and provider status, and the results of RD-Agent and Qlib runs.
 
 ## Why it exists

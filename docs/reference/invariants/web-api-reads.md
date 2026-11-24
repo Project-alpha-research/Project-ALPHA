@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - tests/unit/test_web_*.py
   - tests/integration/test_web_api_*.py
-verified: 8459c58a6bf6c4ba
+verified: 360df5b1351a64a6
 ---
 
 # Web API reads and writes invariants
@@ -65,7 +65,8 @@ What the Workstation backend reads, writes and relays. The other backend rules a
 - `GET /api/recent-runs?limit=&spark=` (`api/recent_runs.py`, `_recent_runs.py`) lists the newest stored runs for the recent-tests table. It reads the
   same verified manifests and `equity_curve.parquet` as `/api/runs` and relays, never computes: trades from the stored diagnostics, out-of-sample Sharpe
   from `oos_metrics`, tries from `reading.counts`, the stored evidence word. The sparkline is the stored equity curve thinned to 60 points, both ends
-  kept. At most 200 runs; an unreadable run is skipped. Enforced by `tests/unit/test_web_recent_runs.py`.
+  kept. For an older run with no stored word, the CLI's own `alpha_cli.spine.reading` function works the word out from the stored numbers;
+  it gives null when they are missing. At most 200 runs; an unreadable run is skipped. Enforced by `tests/unit/test_web_recent_runs.py`.
 
 ## Market overview read
 

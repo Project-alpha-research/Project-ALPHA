@@ -5,94 +5,7 @@ import type { DailyRuleEvidence, DailyRuleRole } from './dailyRule'
 
 type Schema = components['schemas']
 
-export type ResearchOriginalPdfStatus = 'available' | 'missing' | 'corrupt' | 'unavailable'
-
-export interface ResearchOriginalPdfInfo {
-  status: ResearchOriginalPdfStatus
-  source_id: string
-  sha256: string | null
-  verified_sha256: string | null
-  byte_count: number | null
-}
-
-export interface ResearchOriginalPdfDownload {
-  bytes: Uint8Array
-  sha256: string
-}
-
-const MAX_RESEARCH_ORIGINAL_PDF_BYTES = 10 * 1024 * 1024
-const SHA256_HEX = /^[0-9a-f]{64}$/
-
-function originalPdfInfo(response: Response, sourceId: string): ResearchOriginalPdfInfo {
-  const status = response.headers.get('x-research-original-pdf-status')
-  const responseSourceId = response.headers.get('x-research-source-id')
-  const sha256 = response.headers.get('x-research-original-pdf-sha256')
-  const verifiedSha256 = response.headers.get('x-research-original-pdf-verified-sha256')
-  const rawByteCount = response.headers.get('x-research-original-pdf-bytes')
-  if (
-    responseSourceId !== sourceId
-    || (status !== 'available' && status !== 'missing' && status !== 'corrupt' && status !== 'unavailable')
-    || (sha256 !== null && !SHA256_HEX.test(sha256))
-  ) {
-    throw new Error('The original PDF status response could not be verified.')
-  }
-  if (status === 'available') {
-    const byteCount = Number(rawByteCount)
-    if (
-      sha256 === null
-      || verifiedSha256 !== sha256
-      || !Number.isInteger(byteCount)
-      || byteCount < 5
-      || byteCount > MAX_RESEARCH_ORIGINAL_PDF_BYTES
-    ) {
-      throw new Error('The original PDF status response could not be verified.')
-    }
-    return { status, source_id: sourceId, sha256, verified_sha256: verifiedSha256, byte_count: byteCount }
-  }
-  if (verifiedSha256 !== null || rawByteCount !== null) {
-    throw new Error('The original PDF status response could not be verified.')
-  }
-  return { status, source_id: sourceId, sha256, verified_sha256: null, byte_count: null }
-}
-
-async function originalPdfDownload(
-  response: Response,
-  sourceId: string,
-): Promise<ResearchOriginalPdfDownload> {
-  const status = response.headers.get('x-research-original-pdf-status')
-  if (!response.ok) {
-    if (status === 'missing' || status === 'corrupt' || status === 'unavailable') {
-      throw new Error(`The original PDF is ${status}.`)
-    }
-    throw await responseError(response)
-  }
-  const info = originalPdfInfo(response, sourceId)
-  if (
-    info.status !== 'available'
-    || response.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase() !== 'application/pdf'
-    || response.headers.get('x-content-type-options')?.toLowerCase() !== 'nosniff'
-    || response.headers.get('cache-control')?.includes('no-store') !== true
-  ) {
-    throw new Error('The original PDF download response could not be verified.')
-  }
-  const bytes = new Uint8Array(await response.arrayBuffer())
-  if (
-    bytes.byteLength !== info.byte_count
-    || bytes.byteLength > MAX_RESEARCH_ORIGINAL_PDF_BYTES
-    || new TextDecoder().decode(bytes.subarray(0, 5)) !== '%PDF-'
-  ) {
-    throw new Error('The original PDF download response could not be verified.')
-  }
-  const digest = await crypto.subtle.digest('SHA-256', bytes)
-  const sha256 = Array.from(new Uint8Array(digest), (part) => part.toString(16).padStart(2, '0')).join('')
-  if (sha256 !== info.sha256 || sha256 !== info.verified_sha256) {
-    throw new Error('The original PDF download hash did not match its verified source.')
-  }
-  return { bytes, sha256 }
-}
-
 import type {
-  AgentBrief,
   Candles,
   MarketOverview,
   FollowToday,
@@ -103,8 +16,6 @@ import type {
   RuleList,
   ChartBundle,
   CommandDef,
-  ControlJob,
-  ControlJobDetail,
   CryptoAcquisitionRequest,
   CryptoAssetMaster,
   CryptoAssetMasters,
@@ -118,17 +29,14 @@ import type {
   CryptoFeatures,
   CryptoQuality,
   CryptoSnapshotCreate,
-  CryptoSnapshotRegister,
   CryptoSnapshotVerify,
   CryptoSnapshotVerifyRequest,
   CryptoStorage,
   CryptoStorageInventory,
   CryptoStorageVerify,
   CryptoCacheClean,
-  EvidencePage,
   EquitySeries,
   RunSeries,
-  ExperimentSpec,
   FirstBar,
   Ticker,
   ForecastOrigins,
@@ -150,35 +58,8 @@ import type {
   PortfolioAnalyticsProjection,
   PropfirmPaths,
   ProviderDefinition,
-  ProjectDetail,
-  ProjectPage,
-  ProjectSummary,
-  StrategyProjectWorkspaceProjection,
-  ResearchCaptureRequest,
-  ResearchCaptureResponse,
-  ResearchCase,
-  ResearchCasePage,
-  ResearchCaseReport,
-  VerifiedBlindSemanticReadV1,
-  ResearchContextPacket,
-  ResearchContextPacketPage,
-  ResearchDatasetPage,
-  ResearchDecisionView,
-  ResearchEvidenceHub,
-  ResearchNote,
-  ResearchNoteAddRequest,
-  ResearchNotePage,
-  ResearchProtocolLibrary,
-  ResearchSourceAddRequest,
-  ResearchClaimAddRequest,
   DataSnapshots,
   DataSourceStatus,
-  ResearchScorecard,
-  ResearchLaunchResponse,
-  ResearchProposalRequest,
-  ResearchProposalOptionsV1,
-  ResearchProposalResponse,
-  ResearchReport,
   FigureCatalogue,
   RunComparison,
   FigureMetadata,
@@ -188,11 +69,6 @@ import type {
   RunDetail,
   RunList,
   StrategyDef,
-  StrategyVersion,
-  SuiteAction,
-  SuiteCancelResponse,
-  SuiteLaunch,
-  SuitePlan,
   TradeRow,
 } from './types'
 
@@ -501,11 +377,6 @@ export const api = {
     body: CryptoSnapshotVerifyRequest,
   ): Promise<CryptoSnapshotVerify> =>
     postJSON(`/api/crypto-data/snapshots/${encodeURIComponent(snapshotId)}/verify`, body),
-  cryptoSnapshotRegister: (
-    snapshotId: string,
-    symbol: string,
-  ): Promise<CryptoSnapshotRegister> =>
-    postJSON(`/api/crypto-data/snapshots/${encodeURIComponent(snapshotId)}/register`, { symbol }),
   jobs: (): Promise<JobSummary[]> => getJSON('/api/jobs'),
   job: (id: string): Promise<JobDetail> => getJSON(`/api/jobs/${id}`),
   async launch(
@@ -525,187 +396,9 @@ export const api = {
   streamUrl: (id: string): string => `/api/jobs/${id}/stream`,
   riskScenario: (runId: string, confidence = 0.95): Promise<RiskReport> =>
     getJSON(`/api/risk/scenario?run_id=${encodeURIComponent(runId)}&confidence=${confidence}&include_metric_basis=true`),
-  researchCompare: (symbol: string, runContext: RunContextV1): Promise<ResearchReport> => {
-    const params = new URLSearchParams({
-      symbol,
-      context_kind: runContext.kind,
-    })
-    if (runContext.kind === 'governed_project') params.set('project_id', runContext.project_id)
-    return getJSON(`/api/research/compare?${params.toString()}`)
-  },
-  researchCapture: (body: ResearchCaptureRequest): Promise<ResearchCaptureResponse> =>
-    postJSON('/api/research/cases', body),
-  researchCase: (projectId: string): Promise<ResearchCase> =>
-    getJSON(`/api/research/cases/${encodeURIComponent(projectId)}`),
-  researchProposalOptions: (projectId: string): Promise<ResearchProposalOptionsV1> =>
-    getJSON(`/api/research/cases/${encodeURIComponent(projectId)}/proposal-options`),
-  researchProposal: (
-    projectId: string,
-    body: ResearchProposalRequest,
-  ): Promise<ResearchProposalResponse> =>
-    postJSON(`/api/research/cases/${encodeURIComponent(projectId)}/proposal`, body),
-  researchPilot: (projectId: string): Promise<ResearchLaunchResponse> =>
-    postJSON(`/api/research/cases/${encodeURIComponent(projectId)}/launch`, { stage: 'pilot' }),
-  researchStatus: (projectId: string): Promise<ResearchCase> =>
-    getJSON(`/api/research/cases/${encodeURIComponent(projectId)}/status`),
-  researchSemanticProjection: (projectId: string): Promise<VerifiedBlindSemanticReadV1> =>
-    getJSON(`/api/research/cases/${encodeURIComponent(projectId)}/semantic-projection`),
-  researchProgressReport: (projectId: string): Promise<ResearchCaseReport> =>
-    getJSON(`/api/research/cases/${encodeURIComponent(projectId)}/report`),
-  researchCases: (query: { limit?: number; offset?: number } = {}): Promise<ResearchCasePage> =>
-    getJSON(`/api/research/cases?limit=${query.limit ?? 50}&offset=${query.offset ?? 0}`),
-  researchEvidenceHub: (projectId: string): Promise<ResearchEvidenceHub> =>
-    getJSON(`/api/research/cases/${encodeURIComponent(projectId)}/evidence-hub`),
-  researchLiteratureDiscover: (
-    projectId: string,
-    body: {
-      query: string
-      unpaywall_email: string
-      max_candidates?: number
-      max_full_texts?: number
-    },
-  ): Promise<LiteratureDiscoveryResult> =>
-    postJSON(`/api/research/cases/${encodeURIComponent(projectId)}/literature/discover`, body),
-  researchLiteratureAcquire: (
-    projectId: string,
-    body: { discovery_id: string; candidate_id: string },
-  ): Promise<LiteratureAcquisitionResult> =>
-    postJSON(`/api/research/cases/${encodeURIComponent(projectId)}/literature/acquire`, body),
-  researchScorecard: (projectId: string): Promise<ResearchScorecard> =>
-    getJSON(`/api/research/cases/${encodeURIComponent(projectId)}/scorecard`),
-  researchDecisionView: (projectId: string): Promise<ResearchDecisionView> =>
-    getJSON(`/api/research/cases/${encodeURIComponent(projectId)}/decision-view`),
-  researchContextPackets: (
-    projectId: string,
-    query: { limit?: number; offset?: number } = {},
-  ): Promise<ResearchContextPacketPage> =>
-    getJSON(
-      `/api/research/cases/${encodeURIComponent(projectId)}/context-packets`
-        + `?limit=${query.limit ?? 50}&offset=${query.offset ?? 0}`,
-    ),
-  researchContextPacket: (packetId: string): Promise<ResearchContextPacket> =>
-    getJSON(`/api/research/context-packets/${encodeURIComponent(packetId)}`),
-  researchNoteAdd: (projectId: string, body: ResearchNoteAddRequest): Promise<ResearchNote> =>
-    postJSON(`/api/research/cases/${encodeURIComponent(projectId)}/notes`, body),
-  researchSourceAdd: (projectId: string, body: ResearchSourceAddRequest): Promise<Record<string, unknown>> =>
-    postJSON(`/api/research/cases/${encodeURIComponent(projectId)}/sources`, body),
-  researchSourceOriginalPdfStatus: async (projectId: string, sourceId: string) => {
-    const response = await fetch(
-      `/api/research/cases/${encodeURIComponent(projectId)}/sources/${encodeURIComponent(sourceId)}/original-pdf`,
-      { method: 'HEAD', cache: 'no-store' },
-    )
-    if (!response.ok) throw await responseError(response)
-    return originalPdfInfo(response, sourceId)
-  },
-  researchSourceOriginalPdfDownload: async (projectId: string, sourceId: string) => {
-    const response = await fetch(
-      `/api/research/cases/${encodeURIComponent(projectId)}/sources/${encodeURIComponent(sourceId)}/original-pdf`,
-      { cache: 'no-store' },
-    )
-    return originalPdfDownload(response, sourceId)
-  },
-  researchClaimAdd: (projectId: string, body: ResearchClaimAddRequest): Promise<Record<string, unknown>> =>
-    postJSON(`/api/research/cases/${encodeURIComponent(projectId)}/claims`, body),
   dataSnapshots: (): Promise<DataSnapshots> => getJSON('/api/data/snapshots'),
   dataSourceStatus: (symbol: string): Promise<DataSourceStatus> =>
     getJSON(`/api/data/source-status?symbol=${encodeURIComponent(symbol)}`),
-  researchNotes: (
-    projectId: string,
-    query: { limit?: number; offset?: number } = {},
-  ): Promise<ResearchNotePage> =>
-    getJSON(
-      `/api/research/cases/${encodeURIComponent(projectId)}/notes`
-        + `?limit=${query.limit ?? 100}&offset=${query.offset ?? 0}`,
-    ),
-  researchProtocols: (): Promise<ResearchProtocolLibrary> => getJSON('/api/research/protocols'),
-  researchDatasets: (
-    query: { symbol?: string; limit?: number; offset?: number } = {},
-  ): Promise<ResearchDatasetPage> => {
-    const params = new URLSearchParams({
-      limit: String(query.limit ?? 100),
-      offset: String(query.offset ?? 0),
-    })
-    if (query.symbol) params.set('symbol', query.symbol)
-    return getJSON(`/api/research/datasets?${params.toString()}`)
-  },
-  projects: (limit = 50, offset = 0): Promise<ProjectPage> =>
-    getJSON(`/api/projects?limit=${limit}&offset=${offset}`),
-  project: (id: string, lineageLimit = 100): Promise<ProjectDetail> =>
-    getJSON(`/api/projects/${encodeURIComponent(id)}?lineage_limit=${lineageLimit}`),
-  projectWorkspace: (id: string): Promise<StrategyProjectWorkspaceProjection> =>
-    getJSON(`/api/projects/${encodeURIComponent(id)}/workspace`),
-  refreshProjectWorkspace: (id: string): Promise<StrategyProjectWorkspaceProjection> =>
-    postJSON(`/api/projects/${encodeURIComponent(id)}/workspace/refresh`, {}),
-  createProject: (body: {
-    name: string
-    hypothesis: string
-    falsification_criterion: string
-  }): Promise<ProjectSummary> => postJSON('/api/projects', body),
-  createStrategyVersion: (
-    projectId: string,
-    body: {
-      strategy_name: string
-      source_fingerprint: string
-      definition: Record<string, unknown>
-      parameter_space: Record<string, unknown>
-    },
-  ): Promise<StrategyVersion> => postJSON(`/api/projects/${encodeURIComponent(projectId)}/versions`, body),
-  linkStageRun: (projectId: string, body: Schema['StageLinkCreateRequest']): Promise<Schema['StageRunLink']> =>
-    postJSON(`/api/projects/${encodeURIComponent(projectId)}/stage-links`, body),
-  updateStageState: (linkId: string, body: Schema['StageStateRequest']): Promise<Schema['StageRunLink']> =>
-    postJSON(`/api/stage-links/${encodeURIComponent(linkId)}/state`, body),
-  recordAttempt: (projectId: string, body: Schema['AttemptCreateRequest']): Promise<Schema['AttemptRecord']> =>
-    postJSON(`/api/projects/${encodeURIComponent(projectId)}/attempts`, body),
-  createExperiment: (
-    projectId: string,
-    body: {
-      version_id: string
-      snapshot_id: string
-      universe: string[]
-      split_policy: Record<string, unknown>
-      costs: Record<string, unknown>
-      seeds: Record<string, unknown>
-      stage_config: Record<string, unknown>
-    },
-  ): Promise<ExperimentSpec> => postJSON(`/api/projects/${encodeURIComponent(projectId)}/experiments`, body),
-  developmentJobs: (limit = 50, offset = 0): Promise<{ items: ControlJob[]; limit: number; offset: number; has_more: boolean }> =>
-    getJSON(`/api/development/jobs?limit=${limit}&offset=${offset}`),
-  suitePlan: (projectId: string, experimentId: string, action: SuiteAction): Promise<SuitePlan> =>
-    getJSON(`/api/projects/${encodeURIComponent(projectId)}/experiments/${encodeURIComponent(experimentId)}/suite/${encodeURIComponent(action)}/plan`),
-  runSuite: (
-    projectId: string,
-    experimentId: string,
-    action: SuiteAction,
-  ): Promise<SuiteLaunch> =>
-    postJSON(`/api/projects/${encodeURIComponent(projectId)}/experiments/${encodeURIComponent(experimentId)}/suite/${encodeURIComponent(action)}/run`, {}),
-  suiteJob: (jobId: string): Promise<ControlJobDetail> =>
-    getJSON(`/api/development/suite-jobs/${encodeURIComponent(jobId)}?event_tail=true`),
-  async cancelDevelopmentJob(jobId: string): Promise<SuiteCancelResponse> {
-    const res = await fetch(`/api/development/jobs/${encodeURIComponent(jobId)}`, { method: 'DELETE' })
-    if (!res.ok) throw await responseError(res)
-    return (await res.json()) as SuiteCancelResponse
-  },
-  agentBrief: (projectId: string, evidenceLimit = 50): Promise<AgentBrief> =>
-    getJSON(`/api/projects/${encodeURIComponent(projectId)}/agent-brief?evidence_limit=${evidenceLimit}`),
-  evidence: (query: {
-    asset?: string | null
-    projectId?: string | null
-    status?: 'draft' | 'corroborated' | 'rejected' | 'superseded' | null
-    asOf?: string | null
-    limit?: number
-    offset?: number
-  } = {}): Promise<EvidencePage> => {
-    const params = new URLSearchParams()
-    if (query.asset) params.set('asset', query.asset)
-    if (query.projectId) params.set('project_id', query.projectId)
-    if (query.status) params.set('status', query.status)
-    if (query.asOf) params.set('as_of', query.asOf)
-    params.set('limit', String(query.limit ?? 50))
-    params.set('offset', String(query.offset ?? 0))
-    return getJSON(`/api/evidence?${params.toString()}`)
-  },
-  developmentJob: (jobId: string): Promise<ControlJobDetail> =>
-    getJSON(`/api/development/jobs/${encodeURIComponent(jobId)}?event_tail=true`),
   mlCapabilities: (): Promise<MlCapabilities> => getJSON('/api/ml/capabilities'),
   mlStatus: (): Promise<MlServiceStatus> => getJSON('/api/ml/status'),
   mlExperiments: (projectId?: string | null): Promise<MlExperimentPage> => {

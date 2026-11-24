@@ -3,7 +3,7 @@ owner: command line advisory assistants
 sources:
   - apps/alpha-cli/src/alpha_cli/assistant_*.py
   - tests/unit/test_assistant_*.py
-verified: 14830c29f5e4c510
+verified: 8bb2bbe6a5b3fe6c
 ---
 
 # Command line assistant invariants
@@ -16,8 +16,8 @@ What must not break when changing the advisory model surfaces: `alpha assistant`
 
 - Assistant sessions never admit evidence, run generated code or exercise owner authority.
 - The browser supplies identifiers only, never evidence or filesystem paths (`assistant_contracts.py`). Context is resolved by the CLI (`assistant_context.py`).
-- `assistant create|show|turn|check` are owner-only in generic launch classification; the web adapter calls this
-  closed CLI vocabulary.
+- Every `assistant` command (`readiness`, `create`, `show`, `turn`, `check`) is owner-only in generic launch classification;
+  the web adapter calls this closed CLI vocabulary.
 
 ## Assistant sessions
 

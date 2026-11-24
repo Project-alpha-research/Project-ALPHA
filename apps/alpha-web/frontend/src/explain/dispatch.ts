@@ -1,5 +1,5 @@
 // The one kind→suggestion-engine mapping. Every surface that wants "next steps for this run"
-// (Run Detail, Pipeline) routes through here — a new run kind is added once, not per panel.
+// (Run Detail) routes through here — a new run kind is added once, not per panel.
 
 import { forecastSuggestions } from './forecast'
 import { optimSuggestions } from './optim'

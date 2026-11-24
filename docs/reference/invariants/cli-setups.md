@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_*.py
   - tests/unit/test_setup_*.py
   - tests/unit/test_reading_ledger_setup.py
-verified: 8b8c6a743cca6299
+verified: f4044f4b7c0f68f9
 ---
 
 # Command line setup invariants
@@ -17,9 +17,10 @@ Rules for `alpha setup find`, `alpha setup study`, `alpha setup trade` and `alph
   It prints the stored outcome's reading ([rule](cli-rule-readings.md#rule-test-readings)).
 
 ## Setup find
-- `alpha setup new` and the direct options (`--when`, `--horizon`, `--stop`, `--target`, `--asset`) build the spec in
+- `alpha setup new` and the direct options (`--when`, `--horizon`, `--stop`, `--target`, `--asset`, `--context`) build the spec in
   `_setup_spec_build.py`, check each option alone and name it in the error, and never overwrite a file. Direct options
   write `specs/quick-<hash>.toml`; the same options give the same file and find id. A file and options together are refused.
+  `setup study` and `setup trade` take the same options in place of a find id and run the find first; `--recheck` needs a find id.
 - `alpha setup find` resolves daily spec assets in order, honours `@store`, and records no outcome after the entry open.
 - Per-asset errors remain visible; all failed assets produce `FIND_FAILED`. Invalid specs and unknown selections fail loud. Events at most ten bars
   apart share a cluster; draw only its first accepted day. Counts and facts retain matching days and occurrences.
@@ -74,7 +75,9 @@ Rules for `alpha setup find`, `alpha setup study`, `alpha setup trade` and `alph
 - Find output derives `outcomes-viewed` from sibling study/trade manifests without rewriting its folder.
 ## Setup context
 - A spec may add `[context]`: alias → `series@key` (a [derived series](data-context.md#derived-series-and-the-one-join); the key is declared, `SELF` is the
-  asset's own symbol). Aliases are number sources in `event`, `filters`, `trigger` and `reference`, not in `[exit]`. An alias may not be a price
+  asset's own symbol). A chart-pattern series binds only with `SELF`
+  ([rule gate](cli-rule-context-gate.md#context-gate-plan)). Aliases are number sources in `event`, `filters`, `trigger` and
+  `reference`, not in `[exit]`. An alias may not be a price
   source, a function or a filter or reference name. Without `[context]` the spec keeps its old identity, ids and files.
 - `spine/setup_context.py` makes the only call to `attach_context` (cut 2023-12-31) and hands plain `ctx_<alias>` columns to `alpha_study`, which
   imports no data code. The rule-test gate (`_context_gate`) uses the same `attach_bindings` call. The used rows hash includes the

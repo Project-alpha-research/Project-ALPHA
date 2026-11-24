@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/**
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
   - scripts/gate_components.py
-verified: d32f6e791522d873
+verified: 6c74a6c4cbbcd96d
 ---
 
 # RD-Agent worker invariants
@@ -16,7 +16,7 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
 - Funding inputs and eligibility: [funding policy](../../../workers/rdagent/judge-rules.md#futures-funding); thirds and ties:
   [rule and do-not-change list](../../../workers/rdagent/judge-rules.md#thirds-and-ties).
 - A development-only probe of pinned RD-Agent native loops on fixed synthetic inputs, plus the ALPHA-judged factor
-  loop below. It has no public research command or production route, and no ALPHA package imports it. Every result stays synthetic,
+  loop below, which `alpha rdagent run` starts. No ALPHA package imports the worker. Every probe result stays synthetic,
   `not_admitted`; no scientific run id or completed D1 attempt is invented.
 - Upstream source stays external at commit `484776c211e4fbbeef03e0ec00d6bbee7362a4f4`; point
   `ALPHA_RDAGENT_SOURCE` at a byte-identical `rdagent/` copy. `source_pin.py` verifies the tree digest before
@@ -75,7 +75,7 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
 
 - ALPHA-judged factor loop ([ADR-0049](../../adr/0049-alpha-judges-rdagent-factors.md), amended by
   [ADR-0050](../../adr/0050-swing-clocks-in-the-factor-judge.md)): the one model-connected real-data route, started by
-  `factor_loop_launch.py` (not yet an `alpha` command). RD-Agent's own factor loop runs unmodified; only the classes
+  `factor_loop_launch.py`, called by `alpha rdagent run`. RD-Agent's own loop runs unmodified; only the classes
   named in its `QLIB_FACTOR_*` settings are ALPHA's (`alpha_factor_judge.py`, and `alpha_factor_coder.py`, which only
   repairs coding memory and guards the per-factor critic), and they import RD-Agent and pandas, never an ALPHA package: the
   evaluator `alpha_cli.rdagent_factor_eval` runs as a subprocess in ALPHA's environment. The loop is never given data

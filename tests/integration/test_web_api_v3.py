@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from alpha_web import _development, _ml
+from alpha_web import _ml
 from alpha_web.app import create_app
 
 
@@ -30,9 +30,7 @@ def test_openapi_publishes_every_v3_alias_without_removing_legacy_routes() -> No
     legacy_paths = [
         path
         for path in paths
-        if path.startswith(("/api/projects", "/api/development", "/api/evidence"))
-        or path.startswith("/api/stage-links")
-        or path.startswith("/api/ml/")  # not /api/ml-runs: the stored-run list has no v3 copy
+        if path.startswith("/api/ml/")  # not /api/ml-runs: the stored-run list has no v3 copy
     ]
     assert legacy_paths
     for legacy_path in legacy_paths:
@@ -60,11 +58,9 @@ def test_openapi_publishes_every_v3_alias_without_removing_legacy_routes() -> No
     )
 
 
-def test_project_and_ml_aliases_use_the_same_typed_handlers(
+def test_ml_aliases_use_the_same_typed_handlers(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    project_page = {"items": [], "limit": 7, "offset": 0, "has_more": False}
-    monkeypatch.setattr(_development, "list_projects", lambda **_: project_page)
     readiness = {
         "schema_version": 1,
         "worker_project_present": True,
@@ -80,11 +76,6 @@ def test_project_and_ml_aliases_use_the_same_typed_handlers(
     }
     monkeypatch.setattr(_ml, "readiness", lambda **_: readiness)
     client = _client(tmp_path, monkeypatch)
-
-    legacy_projects = client.get("/api/projects?limit=7")
-    versioned_projects = client.get("/api/v3/projects?limit=7")
-    assert versioned_projects.status_code == legacy_projects.status_code == 200
-    assert versioned_projects.json() == legacy_projects.json() == project_page
 
     legacy_ml = client.get("/api/ml/readiness")
     versioned_ml = client.get("/api/v3/ml/readiness")

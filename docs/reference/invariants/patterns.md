@@ -11,7 +11,7 @@ sources:
   - tests/bias_guards/test_lookalike_future_poison.py
   - tests/unit/test_lookalike.py
   - apps/alpha-cli/src/alpha_cli/*lookalike*.py
-verified: ec724060a0cafaaa
+verified: 5b44bde8cc47c58d
 ---
 
 # Pattern geometry invariants
@@ -29,8 +29,8 @@ geometry, swing structure and causal indicators over OHLCV bars. Project-wide lo
 - Report what was found and when it was knowable — never whether it "works". Intervals, controls against
   the null, multiplicity and significance belong to `alpha_validation` / `alpha_research`, composed by a
   driver above both.
-- Current consumers are `alpha_strategies` (`rules.py`, `rule_strategy.py`) and `alpha_cli.chart_cmds`
-  (lazily imported). Surfaces (`alpha_web`, `alpha_mcp`) are forbidden by contract from importing this
+- Current consumers are `alpha_strategies` (`rules.py`, `rule_strategy.py`) and `alpha_cli` (the chart, pattern,
+  lookalike and time-series commands). Surfaces (`alpha_web`, `alpha_mcp`) are forbidden by contract from importing this
   package; a new consumer needs an import-linter contract review.
 - A rule operand reads exactly the value the chart draws: `operand_series` must equal the
   `alpha chart overlays` series after warm-up. Enforced by `tests/unit/test_rules_indicators_parity.py`.
@@ -108,9 +108,11 @@ General rule: [research integrity § Decide at close, fill at next open](researc
   distance from the window length alone; the basis is stored beside it). Result folders are keyed by the
   settings and the bars' source fingerprint and never rewritten. Every output carries `N=`,
   "descriptive, not a forecast" and a multiple-looks label. Each folder (`lookalike/<id>/`, `unusual/<id>/`)
-  holds `figure.png`, then `result.json` with spine-shaped facts. A lookalike run appends an exploratory
+  holds `figure.png`, `figure_annotated.png`, then `result.json` with spine-shaped facts. The research read
+  ends at the held-back boundary, not today. A lookalike run appends an exploratory
   `AlphaTrialV1` row (`rule = "lookalike"`, `run_id` null, no Sharpe, so it never enters a deflated Sharpe);
-  `unusual` shows no outcome and records no trial.
+  `unusual` shows no outcome and records no trial. `lookalike --today` is forward use
+  (`follow_lookalike.py`): it reads the newest bars, writes nothing and counts no try.
 - Enforced by `tests/bias_guards/test_lookalike_future_poison.py`: poisoning or cutting every bar after the
   as-of bar leaves matches, outcomes and novelty unchanged; each novelty score equals the score computed with
   as-of at its own last bar; a whole-series search and a two-sided profile (the leaky twins) are caught.

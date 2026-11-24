@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 4886f8c5e04fe3b8
+verified: fd7586220c444ac6
 ---
 
 # alpha-web workspace
@@ -25,7 +25,6 @@ It runs `alpha` as a subprocess for every action, except that Setup Lab reads st
 | [web run detail](../../docs/reference/invariants/web-run-detail.md) | Run detail binding | changing the run detail, journey or Setup Lab panels |
 | [web API invariants](../../docs/reference/invariants/web-api.md) | — | adding a route or changing the API contract |
 | [web frontend invariants](../../docs/reference/invariants/web-frontend.md) | — | changing a panel, chart or the browser app |
-| [web research surfaces](../../docs/reference/invariants/web-research.md) | — | changing the assistant, investigations, rules or scans |
 | [what this part is for](../../docs/reference/project/components/web-workstation.md) | — | why it exists; before you keep, shelve or remove it |
 | [Setup Lab](../../docs/reference/project/components/setup-lab.md) | — | a Setup Lab screen change (page is enough) |
 | [alpha-web README](README.md) | Code map | finding a module or its tests |

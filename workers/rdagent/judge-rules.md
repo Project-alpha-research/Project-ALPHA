@@ -4,8 +4,9 @@ sources:
   - workers/rdagent/alpha_factor_judge.py
   - workers/rdagent/alpha_factor_data.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_membership.py
+  - apps/alpha-cli/src/alpha_cli/_rdagent_judge.py
   - apps/alpha-cli/src/alpha_cli/rdagent_factor_eval.py
-verified: 8d496b5cc1fd5f45
+verified: 9895268aa23ab561
 ---
 
 # RD-Agent worker: judging rules
@@ -17,7 +18,8 @@ The judging rules of the RD-Agent factor loop that were part of the [worker page
 The rule lives in `alpha_cli._rdagent_membership.third_weights`
 (`apps/alpha-cli/src/alpha_cli/_rdagent_membership.py`), not in the worker: `alpha_factor_judge.py` runs inside
 RD-Agent's environment, imports no ALPHA package and calls the evaluator `alpha_cli.rdagent_factor_eval` as a
-subprocess. Tests: `tests/unit/test_rdagent_ties_and_thirds.py`.
+subprocess. The judge core (screen, spread check, `lineage`, `FUNDING_EXCLUSIONS`, tie diagnostics) is `_rdagent_judge.py`,
+re-exported by `rdagent_factor_eval.py`. Tests: `tests/unit/test_rdagent_ties_and_thirds.py`.
 
 Thirds use `k = max(1, round(n/3))` among finite ranks. A tie group crossing a third's boundary receives
 `s/g` membership per name (s remaining slots, g tied names); portfolio weights are `(s/g)/k`.

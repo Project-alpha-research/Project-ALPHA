@@ -48,7 +48,7 @@ Regenerated: `commands.md`, `STATUS.md`, `openapi.json`, `generated.ts`, the Ope
    They are protected, so I left them; the commands no longer exist.
 8. Left `ALPHA_PAPER_ENABLED` env lines in 4 test/script fixtures (`scripts/run_playwright_backend.py` is protected; they are inert).
 9. Left `tests/_tiers.py` (protected): its `test_paper_`, `test_ibkr_` name prefixes now match nothing.
-10. Dated records (ADRs, governance, `CHANGELOG.md`, `docs/work/`) keep their paper text.
+10. Dated records (ADRs, governance, `docs/work/`) keep their paper text.
 11. Browser (Playwright) lanes were not run here.
 
 ## Fail-first evidence

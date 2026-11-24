@@ -3,7 +3,7 @@
 // `symbol` is never read to guess a market — and `unknown` rows always stay visible under their
 // own leaf so nothing the owner produced can disappear. `showAll` lifts the profile filter.
 
-import type { ProjectSummary, RunListItem, StrategyDef } from '../api/types'
+import type { RunListItem, StrategyDef } from '../api/types'
 import type { Profile } from '../state/settings'
 import { profile as manifest } from '../shell/profiles'
 import type { StorageRow } from './dataManagerModel'
@@ -38,6 +38,15 @@ export interface NavigatorGroup {
   leaves: NavigatorLeaf[]
   /** Rows the profile filter would hide but the market is unknown; always shown. */
   unknown: NavigatorLeaf[]
+}
+
+/** The project fields the Navigator reads; no project list is served now. */
+export interface ProjectSummary {
+  project_id: string
+  name: string
+  status: string
+  research_gate_state: string
+  market: 'crypto' | 'equities' | 'unknown'
 }
 
 export interface NavigatorInput {

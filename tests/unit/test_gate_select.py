@@ -140,7 +140,10 @@ def test_check_runs_lint_types_and_selected_tests_and_writes_nothing(
         "[check] pytest",
     ]
     pytest_command = calls[-1]
-    assert pytest_command[-4:] == [*gate_select.ALWAYS, "tests/unit/test_new.py"]
+    assert pytest_command[-len(gate_select.ALWAYS) - 1 :] == [
+        *gate_select.ALWAYS,
+        "tests/unit/test_new.py",
+    ]
     assert "no:cacheprovider" not in pytest_command
     assert calls[4][:6] == list(gate.FULL_GATE_MYPY_COMMAND)
     assert git(repo, "status", "--porcelain") == "?? tests/"

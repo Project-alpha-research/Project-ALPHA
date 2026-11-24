@@ -17,7 +17,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/nightly_follow.py
   - apps/alpha-cli/src/alpha_cli/nightly_refresh.py
   - tests/unit/test_follow_separation.py
-verified: d7b2fc56f2f23b5b
+verified: 9650447e961429c2
 ---
 
 # Command line follow invariants
@@ -30,7 +30,7 @@ A followed setup trade is updated like a rule test (below). A setup find or a fa
 ## Separation (the integrity rule)
 - `<data_dir>/forward/` is one-way. Research writes nothing there and reads nothing from there.
 - Only the modules on the explicit `READERS` list in `tests/unit/test_follow_separation.py` may name the follow store
-  modules or open a path under `forward/`. Today that is the fifteen `follow_*.py` modules, each with a one-line reason in `READER_REASONS`,
+  modules or open a path under `forward/`. Today that is the sixteen `follow_*.py` modules, each with a one-line reason in `READER_REASONS`,
   and `home_backup.py`: `alpha home backup` copies every file of the home byte for byte, parses no journal and feeds no research result.
   A new reader (a Today page) is added on purpose, in review.
   The nightly modules and `next_cmds.py` are not readers: they call `alpha follow ...` as child commands, or `follow_counts`.
@@ -48,7 +48,7 @@ A followed setup trade is updated like a rule test (below). A setup find or a fa
 
 ## The follow record
 - `forward/<follow_id>/follow.toml` is written once and never edited. `follow_id` is the first 12 hex characters of a hash of the rest.
-- Fields: `kind` (`rule_test` or `setup_find`), `source_id` (the run id or find id), `spec_sha256`, `card_id` (the idea card, if any),
+- Fields: `kind` (`rule_test`, `setup_find` or `setup_trade`), `source_id` (the run id or find id), `spec_sha256`, `card_id` (the idea card, if any),
   `assets`, `paper_account_percent`, `started_at` (aware UTC), `version`, `supersedes`.
 - A factor is refused: "Following a factor is not built yet."
 - Size is a percent of a paper account. The default is 10. It must be above 0 and at most 100.
@@ -121,7 +121,7 @@ and every append fails loud on it. Nothing repairs it on its own, and no data is
 
 ## Update (F2)
 - `follow update <id>` or `--all` reads the bars known at the clock. It downloads nothing. It refuses a stopped follow, a setup
-  follow (`FOLLOW_UPDATE_SETUP_NOT_BUILT`) and a follow whose stored spec no longer hashes to the frozen hash (`FOLLOW_SPEC_CHANGED`).
+  find (`FOLLOW_UPDATE_SETUP_NOT_BUILT`) and a follow whose stored spec no longer hashes to the frozen hash (`FOLLOW_SPEC_CHANGED`).
 - One entry per session. A second run on the same session writes nothing and says so. The replay check still runs and is shown.
 - Decide on the close of session t from bars up to t. The paper fill is the open of t+1. The update that first sees that bar books it.
   The test `no decision changes when later bars arrive` replays every prefix of a series.

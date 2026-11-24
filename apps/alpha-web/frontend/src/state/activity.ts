@@ -196,7 +196,7 @@ export function useActivity(): ActivityState {
 
 /** Subscribe to ONE primitive field — the component re-renders only when that field's value
  *  changes (React compares snapshots with Object.is), not on every feed event. Use this in
- *  panels that don't render the feed itself (Navigator, Pipeline, Job Monitor, status). */
+ *  panels that don't render the feed itself (Navigator, Job Monitor, status). */
 /** Re-render only when the given governed area changed on disk (or the stream reconnected). */
 export function useAreaVersion(area: StoreArea): number {
   return useSyncExternalStore(

@@ -5,6 +5,7 @@ The commands only print. The work and its rules are in `home_backup`.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Annotated
 
@@ -16,7 +17,9 @@ from alpha_cli.home_disk import human
 from alpha_cli.home_restore import restore, verify
 from alpha_core.config import AlphaSettings
 
-home_app = typer.Typer(help="Back up the data home, check a backup, restore it to a new folder.")
+home_app = typer.Typer(
+    help="Back up the data home, check a backup, restore it to a new folder, update the product."
+)
 JSON = Annotated[bool, typer.Option("--json", help="Print the same facts as one JSON object.")]
 
 
@@ -96,3 +99,31 @@ def restore_command(
         "point ALPHA_DATA_DIR at the copy. This command never does that for you."
     )
     emit(facts, json_out=json_out, fallback=words)
+
+
+@home_app.command("update")
+def update_command(
+    to: Annotated[
+        str | None, typer.Option("--to", help="Release tag to install (default: newest).")
+    ] = None,
+    check_only: Annotated[
+        bool, typer.Option("--check-only", help="Change nothing; check the installed version.")
+    ] = False,
+    service: Annotated[
+        str | None, typer.Option("--service", help="Service to restart and check.")
+    ] = None,
+    no_restart: Annotated[
+        bool, typer.Option("--no-restart", help="Do not restart the service.")
+    ] = False,
+) -> None:
+    """Install the newest release with every worker, check it, and go back if the check fails."""
+    script = Path(__file__).resolve().parents[4] / "scripts" / "update.sh"
+    if not script.is_file():
+        typer.echo(f"The update script is missing. It should be at {script}.", err=True)
+        raise typer.Exit(2)
+    args = ["bash", str(script)]
+    args += ["--to", to] if to else []
+    args += ["--check-only"] if check_only else []
+    args += ["--service", service] if service else []
+    args += ["--no-restart"] if no_restart else []
+    os.execv("/usr/bin/env", ["/usr/bin/env", *args])

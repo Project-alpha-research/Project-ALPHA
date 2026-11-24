@@ -1,0 +1,26 @@
+name: Release
+
+# Every commit on main already passed the full suite in the merge queue. This workflow only tags it
+# `r<YYYY.MM.DD>.<run number>` and writes a GitHub Release with generated notes. `scripts/update.sh`
+# (`alpha home update`) installs the newest tag. See docs/operations/update-installed-product.md.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Tag the commit and publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          tag="r$(date -u +%Y.%m.%d).${RUN_NUMBER}"
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$SHA" --title "$tag" --generate-notes

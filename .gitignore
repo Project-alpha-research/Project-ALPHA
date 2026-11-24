@@ -67,3 +67,4 @@ tmp/
 
 # Agent-neutral local verification receipts; historical Claude state stays ignored.
 .alpha/state/
+.update/

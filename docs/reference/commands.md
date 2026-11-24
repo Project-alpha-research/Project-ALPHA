@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-260 commands in 42 groups. Options marked (required) are
+261 commands in 42 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -160,10 +160,11 @@ Kronos foundation-model forecasting (probabilistic outcome cones).
 
 ## alpha home
 
-Back up the data home, check a backup, restore it to a new folder.
+Back up the data home, check a backup, restore it to a new folder, update the product.
 
 - `alpha home backup <FOLDER>` — Write one archive of the whole data home, with a manifest and its SHA-256. Options: `--json`
 - `alpha home restore <ARCHIVE> <FOLDER>` — Check a backup, then write it into a NEW EMPTY folder. Options: `--json`
+- `alpha home update` — Install the newest release with every worker, check it, and go back if the check fails. Options: `--to`, `--check-only`, +2 more
 - `alpha home verify-backup <ARCHIVE>` — Read a backup again and check every file against its manifest. Options: `--json`
 
 ## alpha idea

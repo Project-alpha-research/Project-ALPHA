@@ -618,6 +618,7 @@ entry_points = [
   "cli: alpha home backup",
   "cli: alpha home verify-backup",
   "cli: alpha home restore",
+  "cli: alpha home update",
 ]
 proof_synthetic = [
   "tests/unit/test_home_backup.py::test_round_trip_is_byte_identical",

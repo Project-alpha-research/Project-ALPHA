@@ -126,7 +126,7 @@ These still read bars from the date on.
   The verdict that can stop a run covers the rows a test may read.
   A problem found only in held-back rows is stated ("N problems in held-back rows, not used") and does not stop it.
   Its verdict can label or stop a run; its numbers do not enter a result, and neither its verdict nor its fingerprint enters an identity.
-- `alpha project reveal-holdout` is a separate owner-only action on a project's sealed holdout. Whether it is tied to this date: not verified.
+- The old `alpha project reveal-holdout` action is removed.
 
 ## The owner's confirmation
 

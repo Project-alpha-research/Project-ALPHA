@@ -51,7 +51,6 @@
     "apps/alpha-cli/src/alpha_cli/monte_carlo_cmds.py::classical": 240,
     "apps/alpha-cli/src/alpha_cli/monte_carlo_cmds.py::kronos": 315,
     "apps/alpha-cli/src/alpha_cli/optim_cmds.py::grid": 162,
-    "apps/alpha-cli/src/alpha_cli/project_workspace.py::_authority_indexes": 188,
     "apps/alpha-cli/src/alpha_cli/providers.py::provider_definitions": 275,
     "apps/alpha-cli/src/alpha_cli/report_cmds.py::report": 219,
     "apps/alpha-cli/src/alpha_cli/research_d1.py::derive_d1_findings": 315,

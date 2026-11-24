@@ -27,7 +27,6 @@ from alpha_cli.control_store import (
     StageState,
     parse_timestamp,
 )
-from alpha_cli.project_cmds import _agent_brief
 from alpha_core import DataError
 from alpha_research import MarketStateContractV1
 from alpha_validation import ForecastCalibrationContractV1
@@ -190,82 +189,6 @@ def test_agent_brief_uses_the_latest_authoritative_stage_transition_across_runs(
         if row["stage"] == "baseline"
     )
     assert baseline == {"stage": "baseline", "state": "running", "run_id": RUN_ID}
-
-
-def test_agent_brief_scope_and_evidence_share_one_sqlite_snapshot(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    _publish_run(tmp_path)
-    store = _store(tmp_path)
-    _project(store)
-    version = _version(store, at=START + timedelta(minutes=1))
-    experiment = _experiment(
-        store,
-        str(version["version_id"]),
-        at=START + timedelta(minutes=2),
-    )
-    reader_started = threading.Event()
-    release_reader = threading.Event()
-    original = ControlStore._require_project
-
-    def pause_reader(connection: sqlite3.Connection, project_id: str) -> sqlite3.Row:
-        row = original(connection, project_id)
-        if threading.current_thread().name == "agent-brief-snapshot-reader":
-            reader_started.set()
-            assert release_reader.wait(timeout=5)
-        return row
-
-    monkeypatch.setattr(ControlStore, "_require_project", staticmethod(pause_reader))
-    outcome: dict[str, object] = {}
-
-    def read_brief() -> None:
-        try:
-            outcome["brief"] = _agent_brief(
-                store,
-                PROJECT_ID,
-                evidence_limit=10,
-                as_of="2026-07-19T10:10:00Z",
-            )
-        except Exception as exc:  # pragma: no cover - asserted below for a useful thread handoff.
-            outcome["error"] = exc
-
-    reader = threading.Thread(target=read_brief, name="agent-brief-snapshot-reader")
-    reader.start()
-    assert reader_started.wait(timeout=5)
-    store.create_evidence(
-        claim="Committed after the brief snapshot began.",
-        assets=["AAPL"],
-        frozen_universe=["AAPL", "SPY"],
-        timeframe="1d",
-        method="walk_forward_oos",
-        knowledge_at=START + timedelta(minutes=3),
-        author="owner",
-        author_kind="human",
-        project_id=PROJECT_ID,
-        strategy_version_id=str(version["version_id"]),
-        experiment_id=str(experiment["experiment_id"]),
-        source_run_id=RUN_ID,
-        source_artifact="manifest.json",
-        source_field="outcomes.walk_forward_oos",
-        at=START + timedelta(minutes=3),
-    )
-    release_reader.set()
-    reader.join(timeout=5)
-
-    assert not reader.is_alive()
-    assert "error" not in outcome
-    brief = cast(dict[str, object], outcome["brief"])
-    assert brief["evidence"] == []
-    later = _agent_brief(
-        store,
-        PROJECT_ID,
-        evidence_limit=10,
-        as_of="2026-07-19T10:10:00Z",
-    )
-    assert [row["claim"] for row in cast(list[dict[str, object]], later["evidence"])] == [
-        "Committed after the brief snapshot began."
-    ]
 
 
 def test_legacy_agent_brief_scope_fails_closed_before_last_pointer_mutation(
@@ -660,14 +583,6 @@ def test_holdout_reveal_is_one_shot_and_later_change_is_audited_contamination(
     assert [
         row["event"] for row in cast(list[dict[str, object]], pre_reveal["holdout_events"])
     ] == ["sealed"]
-    brief_before_reveal = _agent_brief(
-        store,
-        PROJECT_ID,
-        evidence_limit=10,
-        as_of="2026-07-19T10:59:00Z",
-    )
-    warnings = cast(list[str], brief_before_reveal["warnings"])
-    assert not any("holdout is visible" in warning for warning in warnings)
     post_reveal = store.get_agent_brief_context(
         PROJECT_ID,
         as_of=START + timedelta(hours=1, minutes=1),

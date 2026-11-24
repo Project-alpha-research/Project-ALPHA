@@ -122,7 +122,7 @@ isolated workers keep their own suites. Tests must never read the guarded
 - There is no hidden test suite ([ADR-0041](../../adr/0041-no-hidden-test-suite.md)). The 17 tests in
   `tests/acceptance/` (`test_acceptance_*.py`, no marker) are ordinary visible tests in the fast tier and in
   every `gate.py check`; anyone may read and extend them (`tests/acceptance/README.md`).
-- The research final holdout (`alpha project reveal-holdout`, `tests/integration/test_backtest_holdout_cli.py`)
+- The research final holdout (`tests/integration/test_backtest_holdout_cli.py`)
   is a different thing: an owner-authority research control that agents are denied.
 
 ## Owned test processes

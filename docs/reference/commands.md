@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-286 commands in 43 groups. Options marked (required) are
+260 commands in 42 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -125,15 +125,6 @@ Data ingestion, snapshots, and integrity.
 ## alpha diagnose
 
 - `alpha diagnose <RUN_ID>` — Read the automatic diagnostic pass and audit stored with a rule test. Options: `--json`
-
-## alpha evidence
-
-Append-only cited findings and negative-result memory.
-
-- `alpha evidence add <CLAIM>` — Create a draft evidence record; agent-created findings cannot skip review. Options: `--assets (required)`, +20 more
-- `alpha evidence list` — List current or point-in-time evidence projections. Options: `--asset`, `--project-id`, `--status`, `--as-of`, `--limit`, +2 more
-- `alpha evidence revise <EVIDENCE_ID>` — Append a reviewed evidence revision without mutating its history. Options: `--status (required)`, +10 more
-- `alpha evidence show <EVIDENCE_ID>` — Show current evidence plus immutable revision history. Options: `--json`
 
 ## alpha figures
 
@@ -297,14 +288,8 @@ Self-checks of the AI research partner's honesty tools.
 
 ## alpha project
 
-Strategy projects, immutable versions, experiments, and audit links.
+Durable job commands.
 
-- `alpha project agent-brief <PROJECT_ID>` — Prepare a bounded, evidence-cited scope packet for Codex or another agent. Options: `--evidence-limit`, +2 more
-- `alpha project attempt <PROJECT_ID> <EXPERIMENT_ID>` — Append an immutable attempted, failed, pruned, or completed co… Options: `--stage (required)`, +6 more
-- `alpha project create <NAME>` — Create a governed strategy project and immediately capture its research case. Options: `--hypothesis (required)`, +2 more
-- `alpha project decide <PROJECT_ID> <EXPERIMENT_ID>` — Freeze one sandbox-only accept/reject/revise decision packet. Options: `--verdict (required)`, +4 more
-- `alpha project experiment <PROJECT_ID>` — Create or reuse an immutable, content-addressed experiment specification.
-- `alpha project experiment-show <PROJECT_ID> <EXPERIMENT_ID>` — Show one immutable experiment specification linked to… Options: `--json`
 - `alpha project job-cancel <JOB_ID>` — Persist an idempotent cancellation request for the owning durable worker to obs… Options: `--actor (required)`, +2 more
 - `alpha project job-cancel-requested <JOB_ID>` — Project whether the owning worker must honour an audited cancellation… Options: `--json`
 - `alpha project job-capacity` — Show exact occupancy of the shared Qlib/Kronos heavyweight class. Options: `--json`
@@ -314,22 +299,6 @@ Strategy projects, immutable versions, experiments, and audit links.
 - `alpha project job-reconcile` — Mark only stale-heartbeat queued/running journals failed after confirmed interruption. Options: `--reason`, +2 more
 - `alpha project job-show <JOB_ID>` — Show a durable job and a bounded window of its append-only event journal. Options: `--event-limit`, +3 more
 - `alpha project job-status <JOB_ID> <STATUS>` — Advance a generic durable job lifecycle. Options: `--result-run-id`, `--terminal-error`, `--json`
-- `alpha project link-run <PROJECT_ID> <EXPERIMENT_ID> <RUN_ID>` — Link one completed canonical run to a development st… Options: `--stage (required)`, +2 more
-- `alpha project list` — List strategy projects. Options: `--limit`, `--offset`, `--json`
-- `alpha project override-research-gate <PROJECT_ID>` — Record an append-only owner research-gate override (trusted-loc… Options: `--actor (required)`, +2 more
-- `alpha project research-gate-overrides` — List override events on projects whose research gate is currently overridde… Options: `--limit`, `--offset`, +1 more
-- `alpha project reveal-holdout <PROJECT_ID> <EXPERIMENT_ID>` — Permanently audit a one-shot final-holdout reveal. Options: `--actor (required)`, +2 more
-- `alpha project review-monte-carlo <PROJECT_ID> <EXPERIMENT_ID>` — Append the owner-only continue/revise/reject decisi…
-- `alpha project seal-holdout <PROJECT_ID> <EXPERIMENT_ID>` — Seal an immutable experiment before its final holdout can… Options: `--actor (required)`, +4 more
-- `alpha project show <PROJECT_ID>` — Show bounded version, experiment, attempt, run-link, and holdout lineage. Options: `--lineage-limit`, `--json`
-- `alpha project stage-state <LINK_ID> <STATE>` — Append a legal state transition to a stage/run link. Options: `--reason (required)`, `--json`
-- `alpha project stage-transition <PROJECT_ID> <EXPERIMENT_ID> <STAGE> <STATE>` — Advance an experiment lifecycle stage… Options: `--reason (required)`, +1 more
-- `alpha project version <PROJECT_ID>` — Create or reuse an immutable, content-addressed strategy version. Options: `--strategy (required)`, +5 more
-- `alpha project version-show <PROJECT_ID> <VERSION_ID>` — Show one immutable strategy version linked to a project. Options: `--json`
-- `alpha project workspace recover <PROJECT_ID>` — Quarantine invalid generated state and rebuild from authority. Options: `--json`
-- `alpha project workspace show <PROJECT_ID>` — Read and verify the current workspace projection and staleness. Options: `--json`
-- `alpha project workspace sync <PROJECT_ID>` — Idempotently publish one project workspace from authority. Options: `--json`
-- `alpha project workspace sync-all` — Backfill every governed strategy project workspace. Options: `--json`
 
 ## alpha propfirm
 

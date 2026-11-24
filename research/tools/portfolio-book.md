@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/book.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/follow_cmds.py
-verified: 43519cc7a5a9beb8
+verified: d8f3d6e402ae228f
 ---
 # Portfolio book: several strategies together
 

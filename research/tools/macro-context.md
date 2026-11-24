@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/macro.py
-verified: 03a2da6392acf8a1
+verified: 28e03cae22de6f89
 ---
 
 # Macro context
@@ -27,8 +27,8 @@ alpha context show DGS10 --start 2022-01-01 --end 2022-12-31 --json
   dates you name, as known at the end of the window (`as_of`). Use the dates of a drawdown from
   `drawdowns.episodes` in [diagnose and audit](diagnose-and-audit.md).
 - `macro_window` inside `alpha diagnose` already does this for the worst drawdown, as known on its trough
-  date; `available: false` with a `reason` means no series are stored.
-- `show` lists one series' observations; the `--view` it used is named in the output.
+  date, with `start_value`, `trough_value` and `change`. `available: false` with a `reason` means no series are stored or no drawdown.
+- `show` lists one series' observations as known at `--as-of` (default today); the `--view` it used is named in the output.
 
 **What it cannot tell you**
 

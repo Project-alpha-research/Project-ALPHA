@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/families/robustness.py
   - apps/alpha-cli/src/alpha_cli/toolbox/families/trades.py
   - tests/unit/test_toolbox_run_level_checks.py
-verified: 67c21050f541ec73
+verified: 68db3269a5ebfa8c
 ---
 # Costs, downside risk, date sensitivity and closed trades
 **Reach for these checks when** a rule-test result depends on costs, dates, losses or a few profitable trades.
@@ -28,13 +28,13 @@ verified: 67c21050f541ec73
 - Unavailable with a reason, never zero or infinite: fewer than two returns; no losing bars (Sortino, Calmar, Omega); a fifth percentile that is not a loss.
 - The date check cuts the stored walk-forward curve at five starts and five ends, months apart. Each window has its own buy-and-hold on the run's price basis.
   Use `--param step_months=1` for monthly cuts. Changing the three-month default counts as another setting.
-- Cost share: total costs over before-cost profit, when positive. Trades sum after-cost profit in account currency, uncompounded.
-  A missing side has no measured average. Shares are unavailable when total profit is zero or negative, and can exceed 100% when the other trades lost money.
+- Cost share: the share of summed per-bar gross profit spent on costs, weighted by account size at each bar's start; not the gap between
+  compounded gross and net returns. `result_after_borrow` charges short trades the asset-class borrow rate. Trade sums are uncompounded.
+  A missing side has no measured average. Shares are unavailable when total profit is zero or negative, and can exceed 100%.
 - Removing the best trades needs at least one trade left; the best tenth needs ten trades and rounds up to whole trades.
 - Streaks: wins and losses in entry order. Fewer than random means they bunched, more that they alternated; a p-value below 0.05 says the order
   was probably not random. Needs three trades with a win and a loss. The z-score matches `alpha figures render <run_id> --figure trade_runs_test`.
-
 **What these checks cannot tell you**
-The streak test sees only win or loss, not size or cause. The windows overlap. Neither a window nor a trade-removal calculation tests the rule on fresh data.
-Removing trades cannot predict later sizes. Scaling costs cannot model stressed spreads, partial fills or whole-share rounding.
+The streak test sees only win or loss, not size or cause. The windows overlap. Neither a window nor a trade-removal calculation tests the rule
+on fresh data. Removing trades cannot predict later sizes. Scaling costs cannot model stressed spreads, partial fills or whole-share rounding.
 **Next** Read the [stored results and citation instructions](results-and-cite.md) to quote a finding with its run labels.

@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
-verified: 661aaca963b74726
+verified: 78bcdb536e8cf81b
 ---
 
 # Research tools, by symptom
@@ -49,10 +49,10 @@ Say "not available yet" and name the gap; never invent the output. Planned, not 
 
 - regime detection with models refitted only on the past (today's regime parameters are fitted in sample),
   and change-point detection known on the day (today's change points are hindsight);
-- factor attribution beyond the fixed published set; capacity and size-aware costs (flat basis points today);
+- factor attribution beyond the fixed published set; capacity and size-aware costs in the rule test (flat basis points today);
 - an event calendar (scheduled releases and earnings dates); a lessons search and counted variants;
 - short selling, position sizing and intraday bars in the rule test (long or flat, all-in, daily bars);
-- planned plain verbs (get, idea, vary, learn, promote) that would wrap these tools: none is a command yet, so never type one; use the cards above.
+- planned plain verbs (get, vary, learn, promote) that would wrap these tools: none is a command yet, so never type one; use the cards above.
 
 ## How to change it
 

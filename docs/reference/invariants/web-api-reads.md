@@ -20,7 +20,8 @@ What the Workstation backend reads, writes and relays. The other backend rules a
 - Read runs only through bounded seams (`alpha_cli.run_store`, `artifact_contract.verify_manifest_artifacts`,
   `run_projection`). Operational state needs its own governed public seam — do not scan `RUN_DIRS` for it.
 - The web code writes no file itself. Saved layouts and named workspaces were removed (the screen that saved them is gone).
-- Never reconstruct trading evidence or compute metrics in the backend; relay what the CLI and artifacts record.
+- Never reconstruct trading evidence or compute metrics in the backend; relay what the CLI and artifacts record
+  One exception: the reading word of an older run, worked out by the CLI's own `spine.reading` function (see Recent runs).
 - RD-Agent GETs read bounded receipt/ledger/round/evaluation files; IDs select listed folders, never paths; raw fields are allowlisted/redacted.
   Tasks join trials by evaluation number/name/hash, never loop count; conflicts fail loud; unlinked counts stay unknown; empty dead rounds are disclosed.
   The run detail lists journey availability by evaluation number, name and full code hash. Indexed ideas can be unbuilt after a filtered CLI build.

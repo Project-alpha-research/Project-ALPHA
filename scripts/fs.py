@@ -4,6 +4,7 @@
     uv run python scripts/fs.py search "QUERY" [--kind KIND] [--limit N] [--format text|json]
     uv run python scripts/fs.py stale [--strict] [--format text|json]
     uv run python scripts/fs.py owners PATH... [--json]
+    uv run python scripts/fs.py map WORKSPACE [--find WORDS...]
     uv run python scripts/fs.py verify DOCUMENT... [--reason "WHY IT IS STILL CORRECT"]
 
 ``orient`` lists components, module counts and the routing documents to read first. ``search``
@@ -11,6 +12,7 @@ returns ranked excerpts of tracked documentation (path, heading, line range, kin
 lists living documents whose ``sources`` no longer match their ``verified`` fingerprint; it
 exits 0 (a report) unless ``--strict`` is given or a document's front matter is broken; a
 document whose sources give nothing to fingerprint is a warning ("cannot be checked").
+``map`` prints one line per module of a workspace (path, lines, docstring line), made from the code.
 ``owners`` lists the living documents that describe each path. ``verify`` is the only command
 that writes: after you re-read a document against its sources, it records their fingerprint and
 prints which sources changed by how many lines. It refuses unless the document's own text changed
@@ -26,6 +28,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import fs_map
 import fs_orient
 import fs_search
 import fs_stale
@@ -49,6 +52,9 @@ def build_parser() -> argparse.ArgumentParser:
     owners = sub.add_parser("owners", help="living documents that describe each path")
     owners.add_argument("paths", nargs="+")
     owners.add_argument("--json", action="store_true")
+    code = sub.add_parser("map", help="one line per module of a workspace, made from the code")
+    code.add_argument("workspace", help="for example apps/alpha-cli")
+    code.add_argument("--find", nargs="+", metavar="WORD", help="keep lines holding all words")
     verify = sub.add_parser("verify", help="record that a document matches its sources now")
     verify.add_argument("documents", nargs="+")
     verify.add_argument(
@@ -76,6 +82,8 @@ def main(argv: list[str] | None = None) -> int:
                 if args.json
                 else fs_orient.render_orientation(payload)
             )
+        elif args.command == "map":
+            print(fs_map.code_map(root, _relative(root, args.workspace), args.find))
         elif args.command == "stale":
             reports = fs_stale.stale(root)
             print(

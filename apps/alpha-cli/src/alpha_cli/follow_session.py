@@ -163,7 +163,8 @@ def run_update(
         waiting = last.kind == "start"
         newest = f"The newest completed session, {last.session_date}, is already in the journal."
         message = (
-            "No session has closed since the follow started: waiting for its first new bar."
+            "No session has closed since the follow started: "
+            f"{store.waiting_text(entries[0].written_at)}."
             if waiting
             else newest
         )

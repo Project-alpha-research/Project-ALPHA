@@ -94,6 +94,7 @@ def sentence(found: dict[str, Any]) -> str:
 def reading_count_sentence(family: dict[str, Any], symbol: str) -> str | None:
     """The one paragraph that states the three counts of a stored reading and how they relate.
 
+    It opens with "When this run was stored: ", so the reader knows the counts are the stored ones.
     The deflated Sharpe counts the larger of its rule shape's tests on any asset and the tests on
     the asset, plus the nearby settings it scored. ``family`` is `diagnostics.trials.family`.
     Printed the same wherever a count is shown; the numbers are the stored ones."""
@@ -105,14 +106,15 @@ def reading_count_sentence(family: dict[str, Any], symbol: str) -> str | None:
     unknown = int(family.get("unknown_rows") or 0)
     on_shape = int(family.get("prior_trials") or 0) + this_run + unknown
     on_asset = int(family.get("same_asset_tests") or 0) + this_run
+    lead = "When this run was stored: "
     shape = f"This rule shape [{family.get('family_id')}]"
     first = f"You have tested {_ideas(on_asset)} on {symbol}, counting this asset alone."
     if used != max(on_shape, on_asset) + variants:
-        return f"{first} The luck adjustment counts {used} tries in all."
+        return f"{lead}{first} The luck adjustment counts {used} tries in all."
     times = "time" if on_shape == 1 else "times"
     settings = "setting" if variants == 1 else "settings"
     return (
-        f"{first} {shape} has been tried {on_shape} {times} across all assets, "
+        f"{lead}{first} {shape} has been tried {on_shape} {times} across all assets, "
         "which can be more than the first count. "
         f"It also had {variants} nearby {settings} tried inside this test. "
         "The luck adjustment adds those nearby settings to the larger of the first two counts, "

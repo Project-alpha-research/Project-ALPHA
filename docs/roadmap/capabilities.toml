@@ -277,6 +277,7 @@ see_it = [
   "Workstation: View → Strategy Performance Report",
 ]
 entry_points = [
+  "cli: alpha strategy-candidate run",
   "cli: alpha backtest run",
   "cli: alpha backtest portfolio",
   "cli: alpha backtest cross-sectional",
@@ -818,6 +819,7 @@ see_it = [
 entry_points = [
   "cli: alpha info providers",
   "cli: alpha provider check",
+  "cli: alpha project job-list",
   "api: GET /api/providers",
   "api: GET /api/jobs",
   "panel: apps/alpha-web/frontend/src/panels/JobMonitor.tsx",

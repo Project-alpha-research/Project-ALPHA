@@ -131,7 +131,7 @@ def test_alpha_test_ties_the_headline_to_the_deflated_sharpe_count(home: Path) -
     last = read_trials(home)[-1]
     family = read_json(home / "runs" / last["run_id"] / "diagnostics.json")["trials"]["family"]
     used = family["n_trials_used"]
-    line = next(x for x in text.splitlines() if x.startswith("You have tested"))
+    line = next(x for x in text.splitlines() if x.startswith("When this run was stored:"))
     assert line.endswith(f"which makes {used} tries in all.")
     assert f"{family['variants_scored']} nearby settings" in line
     assert "family counted as" not in text and "Ledger entry" not in text

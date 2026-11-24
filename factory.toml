@@ -1,0 +1,53 @@
+# The law the build team (the separate, private alpha-factory repository) is judged by.
+# The factory reads this file from the BASE commit of a work order, so a builder cannot change the
+# rules that judge its own change. Edits here need the owner's yes.
+
+# No builder may change these, whatever the work order says.
+never_paths = [
+  "tests/holdout/",
+  ".git/",
+  ".claude/settings.json",
+  ".claude/settings.local.json",
+  "scripts/claude_hooks.py",
+  "factory.toml",
+]
+
+# Product lines added per change (tests and deletions do not count).
+size_cap = 400
+# Work orders in flight at once.
+max_in_flight = 3
+# No new features before this date (owner decision 2026-11-24): fixes and removals only.
+feature_freeze_until = 2026-12-08
+
+# A changed line with one of these words is research-integrity text: the change takes the
+# quant-tier route (quant verifier, all guards), whatever its work order says.
+quant_words = [
+  "held-back", "held back", "forward use", "look-ahead", "lookahead", "point-in-time",
+  "as_of", "known_from", "tries", "deflated", "reserved", "out-of-sample", "survivorship",
+]
+
+# Files that only one work order at a time may touch.
+hot_files = ["uv.lock", "pyproject.toml", "docs/roadmap/capabilities.toml", "CONTEXT.md"]
+
+gate_commands = [["uv", "run", "python", "scripts/gate.py", "check"]]
+
+# A builder may change these only when the work order names the path with the owner's yes.
+[guarded_paths]
+"packages/alpha-research/src/" = "hash-bound source bytes (quant tier)"
+"packages/alpha-validation/src/" = "hash-bound source bytes (quant tier)"
+"tests/oracles/" = "protected test (oracles)"
+"tests/bias_guards/" = "protected test (bias guards)"
+"tests/acceptance/" = "visible acceptance tests"
+"tests/unit/test_claude_harness_" = "protected test (harness)"
+"tests/unit/test_filesystem_contract.py" = "protected test (file system)"
+"uv.lock" = "research implementation hash; needs the network"
+"CLAUDE.md" = "protected file"
+"AGENTS.md" = "protected file"
+".claude/" = "protected file"
+".agents/" = "protected file"
+".github/" = "protected file"
+"scripts/gate" = "protected file (the gate)"
+"scripts/harness_" = "protected file (harness)"
+"scripts/git_guard.py" = "protected file (git guard)"
+"scripts/setup.sh" = "protected file (set-up)"
+"workers/" = "isolated worker environments"

@@ -11,7 +11,6 @@ const CATALOG_GROUPS = [
   'crypto-data',
   'data',
   'diagnose',
-  'evidence',
   'forecast',
   'info',
   'labels',

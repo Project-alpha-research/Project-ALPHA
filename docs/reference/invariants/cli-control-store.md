@@ -9,13 +9,11 @@ sources:
   - apps/alpha-cli/src/alpha_cli/job_rows.py
   - apps/alpha-cli/src/alpha_cli/job_store.py
   - apps/alpha-cli/src/alpha_cli/home_db.py
-  - apps/alpha-cli/src/alpha_cli/project_*.py
-  - apps/alpha-cli/src/alpha_cli/evidence_cmds.py
+  - apps/alpha-cli/src/alpha_cli/jobs_cmds.py
   - tests/unit/test_control_*.py
   - tests/unit/test_owner_*.py
   - tests/unit/test_durable_job_lease.py
   - tests/unit/test_job_capacity.py
-  - tests/unit/test_project_workspace.py
   - tests/unit/test_research_control_store.py
   - tests/integration/test_control_cli.py
 verified: fbdddb248ca5e4b0
@@ -76,8 +74,6 @@ workspaces. [ADR-0014](../../adr/0014-cli-owned-development-control-plane.md)
 - Evidence is cited, revisioned and time-aware; experiment and version links must match immutable lineage.
   Each revision records `knowledge_at` separately from `market_data_cutoff`, and `evidence list --as-of` returns only
   what was knowable at that cutoff. [ADR-0015](../../adr/0015-evidence-ledger-not-agent-memory.md)
-- `AgentBrief` (`project agent-brief`) filters selection, stage and link events by timestamp inside one read snapshot,
-  so a later holdout run, reveal, contamination or strategy selection never enters an earlier brief.
 - `project experiment` on a research-governed version must pass the exact `--research-contract-id` already bound to
   that version; a missing or different id fails before the experiment is created.
 
@@ -137,13 +133,6 @@ workspaces. [ADR-0014](../../adr/0014-cli-owned-development-control-plane.md)
   already revealed in the same lineage.
 - Reveal is one-shot and audited. Contaminated holdout evidence cannot complete a gate, and promotion requires an
   uncontaminated one-shot reveal.
-
-## Project workspaces
-
-- `project_workspace.py` writes disposable, hash-only indexes under `data_dir/strategy-workspaces/`. It never rewrites
-  SQLite or immutable artifacts and grants no research, promotion, sandbox, paper, broker or order authority.
-- Project creation commits SQLite first; a failed workspace build cannot roll it back. A revision is verified before the
-  atomic `current.json` swap, and tamper blocks sync until explicit quarantine recovery.
 
 ## Approval-bound bytes
 

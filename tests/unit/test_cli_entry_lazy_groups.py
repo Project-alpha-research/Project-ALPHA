@@ -77,31 +77,6 @@ def test_project_job_commands_do_not_import_research_intake(tmp_path: Path, comm
         assert row["status"] == "running"
 
 
-@pytest.mark.parametrize("valid", [True, False])
-def test_project_create_loads_intake_and_preserves_validation(tmp_path: Path, valid: bool) -> None:
-    result = _run(
-        _RUN,
-        [
-            "project",
-            "create",
-            "Lazy intake fixture",
-            "--hypothesis",
-            "A bounded event may have an effect." if valid else "   ",
-            "--falsification",
-            "Reject when evidence is inconclusive.",
-            "--json",
-        ],
-        tmp_path,
-    )
-    report = json.loads(result.stderr.strip().splitlines()[-1])
-    assert "alpha_cli.research_intake" in report["heavy"]
-    if valid:
-        assert report["code"] == 0, result.stderr
-        assert json.loads(result.stdout)["name"] == "Lazy intake fixture"
-    else:
-        assert report["code"] == 2 and "raw idea" in result.stderr
-
-
 @pytest.mark.parametrize(
     "argv",
     [["data", "symbols", "--json"], ["data", "--help"], ["rules", "--help"], ["info", "--help"]],
@@ -130,7 +105,6 @@ def test_full_app_keeps_every_command_group() -> None:
             "crypto-data",
             "data",
             "diagnose",
-            "evidence",
             "figures",
             "follow",
             "forecast",

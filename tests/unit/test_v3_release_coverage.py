@@ -347,72 +347,10 @@ def test_evidence_citation_and_correlation_guards(tmp_path: Path) -> None:
 def test_project_cli_plain_and_error_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
     runner = CliRunner()
-    empty_projects = runner.invoke(app, ["project", "list"])
-    empty_projects_json = runner.invoke(app, ["project", "list", "--json"])
     empty_jobs = runner.invoke(app, ["project", "job-list"])
     empty_jobs_json = runner.invoke(app, ["project", "job-list", "--json"])
-    assert "no strategy projects" in empty_projects.output
-    assert json.loads(empty_projects_json.output) == []
     assert "no development jobs" in empty_jobs.output
     assert json.loads(empty_jobs_json.output) == []
-
-    created = runner.invoke(
-        app,
-        [
-            "project",
-            "create",
-            "CLI coverage",
-            "--hypothesis",
-            "Signal persists.",
-            "--falsification",
-            "Reject on failed OOS.",
-            "--json",
-        ],
-    )
-    project_id = str(json.loads(created.output)["project_id"])
-    malformed = runner.invoke(
-        app,
-        [
-            "project",
-            "version",
-            project_id,
-            "--strategy",
-            "ts_momentum",
-            "--source-fingerprint",
-            "git:abc",
-            "--definition-json",
-            "[]",
-        ],
-    )
-    assert malformed.exit_code != 0 and "valid JSON object" in malformed.output
-    missing_items = (
-        ("version-show", "sv_" + "a" * 64),
-        ("experiment-show", "ex_" + "a" * 64),
-    )
-    for command, item in missing_items:
-        missing = runner.invoke(app, ["project", command, project_id, item])
-        assert missing.exit_code != 0 and "unknown" in missing.output
-
-    brief = runner.invoke(app, ["project", "agent-brief", project_id, "--json"])
-    warnings = json.loads(brief.output)["warnings"]
-    assert "no immutable strategy version is selected" in warnings
-    assert "no immutable experiment specification is selected" in warnings
-    bad_decision = runner.invoke(
-        app,
-        [
-            "project",
-            "decide",
-            project_id,
-            "ex_" + "a" * 64,
-            "--verdict",
-            "accept",
-            "--actor",
-            "owner",
-            "--reason",
-            "test",
-        ],
-    )
-    assert bad_decision.exit_code != 0
 
 
 def test_legacy_rule_fold_projection_is_typed_and_skips_malformed_entries(

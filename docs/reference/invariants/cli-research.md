@@ -94,7 +94,7 @@ this file holds the command-line specifics.
 - D2 allows the first attempt plus two retries (`attempt_number > 3` is refused) under the identical deterministic run id.
 - Never auto-reconcile a stale D1/D2 job from a local PID check: `ALPHA_DATA_DIR` may be shared and there is no trusted
   owner-host identity. Stale-job reconciliation skips `research:event-study` jobs (`ControlStore`), and
-  `alpha project job-status` refuses to set a terminal status on them (`project_cmds.py`).
+  `alpha project job-status` refuses to set a terminal status on them (`jobs_cmds.py`).
 - Recovery reuses a prior D1 publication only after full immutable-artifact and evidence re-verification.
 - `run deep` journals its content-derived run id before analysis. Recovery finds failed journals by project plus exact
   contract, stage and attempt in one SQLite read snapshot (`list_failed_d1_recovery_journals`), so unrelated job volume

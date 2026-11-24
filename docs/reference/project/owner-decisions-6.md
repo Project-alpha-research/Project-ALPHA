@@ -2,7 +2,6 @@
 owner: project layer
 sources:
   - docs/reference/project/owner-decisions-5.md
-verified: dd75b8fb87318bb2
 ---
 
 # Owner decisions log, volume 6
@@ -31,7 +30,7 @@ entries are in the first. New entries are appended at the end of this file.
   "Yes I approve", and selected all four listed items.
 - **Decided:** (1) The ten-step plan to join the parts is the work order: each step connects one more
   feature to the shared store, the one ledger, RD-Agent, the toolbox or the Workstation. Progress is
-  reported against all capabilities in [STATUS.md](../../../STATUS.md), not one part. (2) Rule tests and
+  reported against all capabilities in `uv run python scripts/status.py`, not one part. (2) Rule tests and
   setups also hold back data from the [reserved date](reserved-period.md) on; later data is used only
   when the owner chooses to confirm an idea. (3) RD-Agent may use chart setups, patterns and lookalike
   as inputs and may work on single assets, not only coin rankings. (4) Protected edits approved for the

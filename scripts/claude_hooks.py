@@ -1,26 +1,22 @@
-"""Thin Claude adapter: orientation, native tool-boundary safety and the document reminder.
+"""Thin Claude adapter: orientation and native tool-boundary safety.
 
 Engineering verification lives in the local check and in CI on the pull request. This adapter never
 writes telemetry, consumes acknowledgments or evaluates task completion. Its one inspection of
 tool input text is a fail-closed substring guard that keeps agent tools away from the owner-action
 endpoints (ADR-0038); it is not a shell parser. Native permissions and process sandboxing remain
-separate controls. After an edit it names the living documents that describe the edited file
-(``fs.py owners``); that reminder is advisory and never blocks or fails an edit, because the
-enforcement is ``fs.py stale --strict`` in the local check and in CI.
+separate controls. The post-edit document hook is retired (it does nothing); pages are checked
+by a weekly sweep.
 """
 
 from __future__ import annotations
 
 import json
 import re
-import subprocess
 import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 from urllib.parse import unquote
-
-import fs_stale
 
 HookResult = tuple[int, str]
 _MCP_OWNER_VERBS = re.compile(
@@ -120,31 +116,8 @@ def hook_session_start(payload: dict[str, Any], root: Path) -> HookResult:
 
 
 def hook_post_edit_documents(payload: dict[str, Any], root: Path) -> HookResult:
-    tool_input = payload.get("tool_input")
-    target = tool_input.get("file_path") if isinstance(tool_input, dict) else None
-    if not isinstance(target, str) or not target:
-        return (0, "")
-    try:
-        top = Path(fs_stale.git(root, "rev-parse", "--show-toplevel").strip()).resolve()
-        rel = (root / target).resolve().relative_to(top).as_posix()
-        documents = fs_stale.owners(top, [rel])[rel]
-    except (OSError, ValueError, subprocess.CalledProcessError):
-        return (0, "")  # outside a checkout, or git unavailable: nothing to say
-    if not documents:
-        return (0, "")
-    listed = " ".join(documents)
-    context = (
-        f"{rel} changed. Living documents that describe it: {', '.join(documents)}. Each is "
-        "stale until it is re-read against this change, corrected where it is now wrong, and "
-        f"stamped with `uv run python scripts/fs.py verify {listed}`; "
-        "`scripts/gate.py check` and CI fail while a document is stale."
-    )
-    return (
-        0,
-        json.dumps(
-            {"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": context}}
-        ),
-    )
+    """Retired: pages are checked by a weekly sweep."""
+    return (0, "")
 
 
 _ADVISORY = frozenset({"session-start", "post-edit-documents"})

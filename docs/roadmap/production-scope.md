@@ -2,7 +2,6 @@
 owner: status page and roadmap
 sources:
   - docs/reference/project/owner-decisions-3.md
-verified: 3fd2dac8724c4b7e
 ---
 
 # Production-ready scope: the one checklist
@@ -10,7 +9,7 @@ verified: 3fd2dac8724c4b7e
 Every capability the owner has asked for, discussed or planned, in one place, so nothing is lost
 while ALPHA is thinned and rebuilt. ALPHA is production ready when each row below is Working,
 shown on a screen, or carries an owner decision that drops it. "Production grade" in the owner's
-words is in the [decisions log][grade]; what works today is on [STATUS.md][status]. This file
+words is in the [decisions log][grade]; what works today is the status page (`uv run python scripts/status.py`, from the [capability map][status]). This file
 changes no capability state: the [capability map](capabilities.toml) stays the source for those.
 Stages 5 to 9 are in [part 2](production-scope-2.md); stages 10 to 12, the lost-feature check
 and the questions put to the owner are in [part 3](production-scope-3.md).
@@ -183,7 +182,7 @@ Simulating the idea with costs, against the right comparison.
 [retail]: ../reference/project/owner-decisions-2.md#2026-11-14-the-retail-traders-fit-is-the-design-brief
 [slim]: ../reference/project/owner-decisions-3.md#2026-11-15-always-slimmer
 [spine]: ../reference/project/owner-decisions-3.md#2026-11-15-build-the-thin-spine-clean-then-switch-over
-[status]: ../../STATUS.md
+[status]: capabilities.toml
 [thin]: ../reference/project/owner-decisions-2.md#2026-11-14-thin-alpha-dramatically-rd-agent-and-qlib-are-the-proven-core
-[triage]: triage-2026-11.md
+[triage]: capabilities.toml
 [ui]: ../reference/project/owner-decisions-2.md#2026-11-14-keep-the-user-interface

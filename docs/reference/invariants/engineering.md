@@ -7,7 +7,6 @@ sources:
   - scripts/gate_components.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_structural_digest.py
-verified: 3483ce76da273598
 ---
 
 # Engineering rules
@@ -147,7 +146,7 @@ Project-wide coding rules. Area files add their own detail and link here. The re
 
 ## Checks and commits
 
-- Loop: edit, then `uv run python scripts/gate.py check` (ruff, living documents, import contracts, mypy,
+- Loop: edit, then `uv run python scripts/gate.py check` (ruff, import contracts, mypy,
   and the tests mapped from changed files), then commit, push, open a draft pull request.
 - CI on the pull request is the merge gate; the orchestrating session merges on green
   (merge commits only; owner's delegation, 2026-11-14). A commit needs only a

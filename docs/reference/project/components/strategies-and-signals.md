@@ -6,7 +6,6 @@ sources:
   - packages/alpha-strategies/CONTEXT.md
   - packages/alpha-patterns/CONTEXT.md
   - packages/alpha-study/CONTEXT.md
-verified: 1a16d256c1b6aef9
 ---
 
 # Strategies and signals
@@ -57,7 +56,7 @@ through one module, `alpha_patterns/lookalike.py`:
 Both draw one figure with the match count and the label "descriptive, not a forecast". Neither is a
 signal or a strategy; a lookalike says nothing about what happens next.
 
-See the capabilities below on [STATUS.md](../../../../STATUS.md).
+See the capabilities below on `uv run python scripts/status.py`.
 
 ## Where it lives
 

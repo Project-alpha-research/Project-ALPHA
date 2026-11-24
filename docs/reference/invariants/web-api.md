@@ -12,7 +12,6 @@ sources:
   - tests/unit/test_owner_auth_api.py
   - tests/unit/test_owner_local_confirmation.py
   - tests/unit/test_run_context_authority.py
-verified: 50b4276c02409dcb
 ---
 
 # Web API invariants

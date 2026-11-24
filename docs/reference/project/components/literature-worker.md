@@ -3,7 +3,6 @@ owner: project layer
 sources:
   - workers/literature/CONTEXT.md
   - docs/adr/0024-literature-acquisition-worker-and-claim-model.md
-verified: 839e4bfc8d94ac16
 ---
 
 # Literature worker
@@ -32,7 +31,7 @@ into [research cases](research-cases-and-approval.md). Its output is advisory.
 
 ## What is real today
 
-See the capabilities below on [STATUS.md](../../../../STATUS.md).
+See the capabilities below on `uv run python scripts/status.py`.
 
 ## Where it lives
 
@@ -51,7 +50,7 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 
 - No owner decision about this part is in the [owner decisions log](../owner-decisions.md) yet.
 - Triage, 2026-11-14 under the owner's delegation
-  ([triage sheet](../../../roadmap/triage-2026-11.md)): card 6 KEEP; card E DELETE (the worker now holds the only
+  ([capability map](../../../roadmap/capabilities.toml)): card 6 KEEP; card E DELETE (the worker now holds the only
   copy of the acquisition code).
 - Decided: use RD-Agent's own paper ingestion where it is enough; the literature worker adds paper
   discovery, exact citations and limitations, and conflicting evidence, and feeds RD-Agent's proposal

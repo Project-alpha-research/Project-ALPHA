@@ -3,7 +3,6 @@ owner: project layer
 sources:
   - packages/alpha-forecast/CONTEXT.md
   - docs/adr/0008-vendored-kronos-and-alpha-forecast-layer.md
-verified: 5a7e922e1892468b
 ---
 
 # Forecasting
@@ -39,7 +38,7 @@ risk study. Its paths are also one family of the path-risk simulation in
 
 ## What is real today
 
-See the capability below on [STATUS.md](../../../../STATUS.md). The command is `alpha forecast run`; the
+See the capability below on `uv run python scripts/status.py`. The command is `alpha forecast run`; the
 Workstation screen is Kronos Studio (View → Forecast, `apps/alpha-web/frontend/src/panels/KronosStudio.tsx`),
 which reads stored forecast runs. Its paths also feed the Kronos family of [Monte Carlo](monte-carlo.md).
 

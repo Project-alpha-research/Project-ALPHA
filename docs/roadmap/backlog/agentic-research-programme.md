@@ -27,4 +27,4 @@ The RD-Agent runtime (triage cards 7, 9 and C), the backlog items
 ## Sources
 
 - [Archived plan](https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/pre-thin-2026-11-14/docs/work/archive/2026-10/2026-10-02-agentic-research-capability-program/02-plan.md)
-- [Triage sheet, card 15](../triage-2026-11.md#15-autonomous-research-agent-programme)
+- [Capability map, triage card 15](../capabilities.toml)

@@ -185,7 +185,6 @@ def _backend_static(root: Path) -> list[Step]:
             ("uv sync", ["uv", "sync", "--locked"]),
             ("ruff check", ["uv", "run", "ruff", "check", "."]),
             ("ruff format", ["uv", "run", "ruff", "format", "--check", "."]),
-            ("living documents", [sys.executable, "scripts/fs.py", "stale"]),
             ("import contracts", ["uv", "run", "lint-imports"]),
             # One mypy run: pyproject's strict config covers packages, apps, tests and harness.
             ("mypy", [*gate.FULL_GATE_MYPY_COMMAND, *harness_files]),

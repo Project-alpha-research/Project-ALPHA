@@ -4,7 +4,6 @@ sources:
   - workers/qlib/CONTEXT.md
   - workers/qlib/README.md
   - docs/adr/0016-isolated-qlib-worker.md
-verified: 9490c217e601c362
 ---
 
 # Qlib
@@ -41,7 +40,7 @@ is the result. The intended next step is for [RD-Agent](rd-agent.md) to drive Ql
 
 ## What is real today
 
-See the capabilities below on [STATUS.md](../../../../STATUS.md). On the Dell the worker's own
+See the capabilities below on `uv run python scripts/status.py`. On the Dell the worker's own
 install (`workers/qlib/.venv`) has `pyqlib` 0.9.7 installed. A fresh checkout or worktree has no
 such install until the worker is set up there, and its tests then use a stand-in. Qlib is not yet
 used in any real research path ([order of work](../owner-decisions-4.md#2026-11-18-working-order-golden-paths-1-and-2-reach-the-screen-first)).
@@ -66,7 +65,7 @@ used in any real research path ([order of work](../owner-decisions-4.md#2026-11-
 ## Decisions and open questions
 
 - Triage, 2026-11-14 under the owner's delegation
-  ([triage sheet](../../../roadmap/triage-2026-11.md)): card 11 KEEP; cards 10, A and F SHELVE, code kept
+  ([capability map](../../../roadmap/capabilities.toml)): card 11 KEEP; cards 10, A and F SHELVE, code kept
   and labelled.
 - Decided: Qlib and Nautilus are engines ALPHA installs and calls, like RD-Agent; their unfinished
   parts are kept or shelved, not deleted. Not every experiment needs Qlib

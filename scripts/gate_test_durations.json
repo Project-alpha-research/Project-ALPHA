@@ -329,7 +329,6 @@
   "tests/unit/test_frontend_browser_lanes.py": 0.3,
   "tests/unit/test_fs_orient.py": 2.2,
   "tests/unit/test_fs_search.py": 0.2,
-  "tests/unit/test_fs_stale.py": 0.4,
   "tests/unit/test_gate_components.py": 1.4,
   "tests/unit/test_gate_preflight.py": 0.8,
   "tests/unit/test_gate_process_supervisor.py": 40.0,

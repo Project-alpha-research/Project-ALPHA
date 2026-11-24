@@ -1,25 +1,21 @@
-"""Generate/check docs/reference/commands.md: one line per `alpha` command, one section per group.
+"""Print the command reference: one line per `alpha` command, one section per group.
 
 The content comes from the CLI itself: the same catalogue that ``alpha info commands --all
 --json`` prints (command id, arguments, options) plus each command's and group's own help text
 for the one-phrase description. Nothing is written by hand, so the page cannot drift from the code.
 
-Run ``uv run python scripts/commands_reference.py`` after adding, renaming or changing a
-command; ``--check`` exits 1 when the committed page is stale
-(``tests/unit/test_commands_reference.py`` runs the same comparison).
+Run ``uv run python scripts/commands_reference.py`` to print it to the terminal; nothing is stored.
 """
 
 from __future__ import annotations
 
 import argparse
 import re
-import sys
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).parents[1]
-OUTPUT = Path("docs/reference/commands.md")
 COMMAND = "uv run python scripts/commands_reference.py"
 MAX_LINE = 160
 _SENTENCE = re.compile(r"^(.+?[.!?])(\s|$)")
@@ -91,18 +87,11 @@ def render(catalog: list[dict[str, Any]], descriptions: dict[str, str]) -> str:
     for entry in catalog:
         groups.setdefault(entry["id"].split(" ", 1)[0], []).append(entry)
     out = [
-        "---",
-        f"generated_by: {COMMAND}",
-        "sources:",
-        "  - apps/alpha-cli/src/alpha_cli/main.py",
-        "  - apps/alpha-cli/src/alpha_cli/*_cmds.py",
-        "---",
-        "",
         "# Command reference",
         "",
         "Every `alpha` command, generated from the CLI's own command tree (the catalogue behind",
-        "`alpha info commands --all --json` plus each command's help text). Do not edit by hand;",
-        f"run `{COMMAND}`. Full options: `alpha <group> <command> --help`.",
+        "`alpha info commands --all --json` plus each command's help text). Made on demand by",
+        f"`{COMMAND}`; not stored. Full options: `alpha <group> <command> --help`.",
         "",
         f"{len(catalog)} commands in {len(groups)} groups. Options marked (required) are",
         "mandatory; `<ARG>` is a positional argument.",
@@ -121,18 +110,8 @@ def render(catalog: list[dict[str, Any]], descriptions: dict[str, str]) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--check", action="store_true", help="exit 1 if the page is stale")
-    args = parser.parse_args(argv)
-    expected = render(*load_cli())
-    target = ROOT / OUTPUT
-    if args.check:
-        current = target.read_text(encoding="utf-8") if target.is_file() else None
-        if current != expected:
-            print(f"commands_reference: {OUTPUT} is stale; run: {COMMAND}", file=sys.stderr)
-            return 1
-        return 0
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(expected, encoding="utf-8")
+    parser.parse_args(argv)
+    print(render(*load_cli()), end="")
     return 0
 
 

@@ -11,7 +11,6 @@ sources:
   - tests/unit/test_native_*.py
   - tests/unit/test_daily_rule_*.py
   - tests/unit/test_daily_native_*.py
-verified: 54ab6cc0a77cd920
 ---
 
 # Command line native invariants

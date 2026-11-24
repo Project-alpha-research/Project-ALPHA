@@ -11,7 +11,6 @@ sources:
   - tests/bias_guards/test_momentum_signal_lookahead.py
   - tests/bias_guards/test_signal_window_boundary.py
   - tests/integration/test_order_rejection.py
-verified: 50e6224fb89c9d5b
 ---
 
 # Strategy invariants

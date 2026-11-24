@@ -16,7 +16,6 @@ COMPONENT_GLOBS = ("packages/*", "apps/*", "workers/*")
 ROUTING_DOCUMENTS = (
     "CLAUDE.md",
     "CONTEXT.md",
-    "STATUS.md",
     "docs/roadmap/README.md",
 )
 DEFAULT_SIZE_CAP = 6_000

@@ -22,7 +22,7 @@ log and pull requests). This page is the one place that lists what was not done,
 | Weekly mutation sweep passing | M4 | Missing | [backlog](backlog/weekly-mutation-sweep.md) |
 | Nightly report of public functions no code calls, shown on the status page | M4 | Missing | [stage 12](production-scope-3.md#12-health-and-hygiene) |
 | Default feature recipe moved to the upstream one after parity and owner yes | M5 | Unproven | [capabilities](capabilities.toml) (`alpha158-v3`) |
-| Dead code removed per the triage sheet (QuantPad code, funding modules, old scaffolding) | M5 | Missing | [triage](triage-2026-11.md) |
+| Dead code removed per the triage sheet (QuantPad code, funding modules, old scaffolding) | M5 | Missing | [capability map](capabilities.toml) |
 | Old local folders on the Dell and the Mac archived or deleted, with owner sign-off | M5 | Missing (owner) | [owner questions](production-scope-3.md#questions-from-the-file-system-audit) |
 | Refactors: JSON and hash helpers, oversized functions, control-store split, CLI subpackages | M6 | Missing | [refactors](README.md) |
 | Refactor of the web app's response models | M6 | Missing | [backlog](backlog/docs-freshness-gaps.md) |

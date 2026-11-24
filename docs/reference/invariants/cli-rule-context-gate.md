@@ -7,7 +7,6 @@ sources:
   - tests/unit/test_rule_context_gate.py
   - tests/unit/test_rule_context_plan.py
   - tests/unit/test_rule_context_identity.py
-verified: 72c574d38aaf4ae5
 ---
 
 # Command line rule context gate invariants

@@ -1,12 +1,11 @@
-"""Generate/check STATUS.md: one plain-English page saying what works, what waits for the owner
-and what is next.
+"""Print the status page: one plain-English page saying what works, what waits for the owner
+and what is next. Nothing is stored; the page is made on demand.
 
 Sources (read-only, all tracked): ``docs/roadmap/capabilities.toml`` (via scripts/capabilities.py),
 ``docs/roadmap/backlog`` and ``docs/roadmap/refactors``. Nothing else: no git history, network or
 clock, so the page is identical on every machine.
 
-Run ``uv run python scripts/status.py`` after changing any source; ``--check`` exits 1 when the
-committed page is stale (``tests/unit/test_status_page.py`` runs the same comparison).
+Run ``uv run python scripts/status.py`` to print it to the terminal.
 """
 
 from __future__ import annotations
@@ -21,8 +20,6 @@ import roadmap_index
 from capabilities import Capability, CapabilityError
 
 ROOT = Path(__file__).parents[1]
-PAGE = Path("STATUS.md")
-TRIAGE_SHEET = "docs/roadmap/triage-2026-11.md"
 COMMAND = "uv run python scripts/status.py"
 MERGED_PRS = "https://github.com/tradingsystem1880-eng/Project-ALPHA/pulls?q=is%3Apr+is%3Amerged"
 
@@ -85,7 +82,7 @@ def _bullets(caps: list[Capability], line: str) -> list[str]:
 
 
 def render(root: Path = ROOT) -> str:
-    """The full expected text of STATUS.md."""
+    """The full text of the status page."""
     try:
         cmap = capabilities.load(root)
     except CapabilityError as exc:
@@ -100,7 +97,7 @@ def render(root: Path = ROOT) -> str:
     out = [
         "# ALPHA status",
         "",
-        f"_Generated — do not edit; run: `{COMMAND}`_",
+        f"_Made on demand by `{COMMAND}`; it is not stored._",
         "",
         "## At a glance",
         "",
@@ -165,8 +162,9 @@ def render(root: Path = ROOT) -> str:
         "",
         "## Waiting for your decision",
         "",
-        f"The full triage sheet, with what each item does and why: [{TRIAGE_SHEET}]"
-        f'({TRIAGE_SHEET}). Write your answer in its "Your decisions" table.',
+        "Each item is a triage entry in the capability map "
+        "([docs/roadmap/capabilities.toml](docs/roadmap/capabilities.toml)); "
+        "your answer is its `owner_decision`.",
     ]
     for key, heading in _GROUPS:
         group = sorted(
@@ -197,9 +195,8 @@ def render(root: Path = ROOT) -> str:
         "",
         "## Where things are",
         "",
-        "- [Roadmap: every plan, idea and refactor](docs/roadmap/README.md)",
+        "- [Roadmap: ideas and refactors](docs/roadmap/README.md)",
         "- [Capability map: the source of this page](docs/roadmap/capabilities.toml)",
-        f"- [Triage sheet: decisions for you]({TRIAGE_SHEET})",
         "- [Glossary: what the codes mean](docs/reference/glossary.md)",
         "- [How work gets done](docs/operations/development-loop.md)",
         f"- [Recently merged pull requests]({MERGED_PRS})",
@@ -209,21 +206,12 @@ def render(root: Path = ROOT) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--check", action="store_true", help="exit 1 if STATUS.md is stale")
-    args = parser.parse_args(argv)
+    parser.parse_args(argv)
     try:
-        expected = render(ROOT)
+        print(render(ROOT), end="")
     except (StatusError, roadmap_index.RoadmapError) as exc:
         print(f"status: {exc}", file=sys.stderr)
         return 1
-    target = ROOT / PAGE
-    if args.check:
-        current = target.read_text(encoding="utf-8") if target.is_file() else None
-        if current != expected:
-            print(f"status: {PAGE} is stale; run: {COMMAND}", file=sys.stderr)
-            return 1
-        return 0
-    target.write_text(expected, encoding="utf-8")
     return 0
 
 

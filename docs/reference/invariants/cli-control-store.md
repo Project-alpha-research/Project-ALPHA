@@ -16,7 +16,6 @@ sources:
   - tests/unit/test_job_capacity.py
   - tests/unit/test_research_control_store.py
   - tests/integration/test_control_cli.py
-verified: fbdddb248ca5e4b0
 ---
 
 # Command line control plane invariants

@@ -6,7 +6,6 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/idea_map.py
   - apps/alpha-cli/src/alpha_cli/follow_counts.py
   - tests/unit/test_idea_file.py
-verified: 5dd97d7f6feb800c
 ---
 
 # Command line idea file invariants

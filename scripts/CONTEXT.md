@@ -9,14 +9,13 @@ sources:
   - scripts/commands_reference.py
   - scripts/roadmap_index.py
   - scripts/setup.sh
-verified: c96c7e398bc08a73
 ---
 
 # scripts workspace
 
 ## Purpose
 
-The developer and CI tooling: the gate, test selection, file-system tools, generators and agent hooks. They never read owner data, credentials or hidden tests.
+The developer and CI tooling: the gate, test selection, file-system tools, printers and hooks. They never read owner data, credentials or hidden tests.
 
 ## Read first
 

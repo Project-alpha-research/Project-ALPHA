@@ -2,7 +2,6 @@
 owner: project layer
 sources:
   - packages/alpha-data/CONTEXT.md
-verified: d1c3a536e0695e17
 ---
 
 # Data layer
@@ -19,7 +18,7 @@ public, the result is worthless, and with live capital at stake that is not acce
 ## Its job in the research loop
 
 Step 2 of the [research loop](../overview.md#the-research-loop): every experiment reads frozen, point-in-time data from here.
-The triage sheet calls getting real history the platform's main bottleneck.
+The owner's triage (November 2026) called getting real history the platform's main bottleneck.
 
 ## Intended design
 
@@ -37,7 +36,7 @@ The triage sheet calls getting real history the platform's main bottleneck.
 
 ## What is real today
 
-See the capabilities below on [STATUS.md](../../../../STATUS.md).
+See the capabilities below on `uv run python scripts/status.py`.
 
 ### Daily data health
 `alpha data health` checks one stored daily series for adjustment, timestamp, gap and survivorship faults, and saves the report
@@ -53,7 +52,7 @@ The command is `alpha context`. Live checks of the SEC and FRED services are not
 
 Everything here is **not yet confirmed**: free sources, not the authoritative stock source of
 ADR-0017, not checked against an independent source, and usable for personal research and backtests
-only. Each capability's real-data line on [STATUS.md](../../../../STATUS.md) starts with
+only. Each capability's real-data line on `uv run python scripts/status.py` starts with
 "not yet confirmed"; on the data itself the existing labels say the same (crypto archives:
 `state: qualified`, which means only that the mechanical checks passed; the CCXT copy in the
 stock store and the Yahoo stock prices: `quality_status: legacy_unqualified`; an Alpaca
@@ -94,7 +93,7 @@ Binance publishes monthly files days late, and Stooq no longer answers its bot c
 
 - The owner no longer uses QuantPad; the unused QuantPad code is removed and old records stay readable
   ([log](../owner-decisions.md#2026-11-14-quantpad-no-longer-used)).
-- Triage 2026-11-14 ([sheet](../../../roadmap/triage-2026-11.md)): cards 1, 3, 4 KEEP; card 2 (download
+- Triage 2026-11-14 ([capability map](../../../roadmap/capabilities.toml)): cards 1, 3, 4 KEEP; card 2 (download
   bookkeeping) was shelved, then deleted 2026-11-21. Card B (Bybit funding download modules)
   was shelved, then deleted 2026-11-18 (PR #261); funding context comes from the Binance importer and Bybit import.
 - [Data health request](../owner-decisions-5.md#2026-11-18-request-one-data-health-report): built for rule tests and setups.

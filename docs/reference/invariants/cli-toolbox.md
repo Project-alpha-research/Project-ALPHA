@@ -5,7 +5,6 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
   - tests/unit/test_toolbox_*.py
-verified: de553e6a7d10b2c0
 ---
 
 # Command line toolbox
@@ -124,7 +123,7 @@ reason. Commands: `alpha tool list` (filter by `--for <run>`, `--search`, `--fam
 or settings (`NOT_FOR_A_MODEL_RUN`). It refuses the owner's confirmation run (`CONFIRMATION_RUN`): tools never read it again.
 The toolbox uses the [shared reserved
 date](../project/reserved-period.md). Results are stored under the data directory's `diagnostics/<run>/`. See the
-capability on [STATUS.md](../../../STATUS.md).
+capability on `uv run python scripts/status.py`.
 
 ## Not built and outstanding
 

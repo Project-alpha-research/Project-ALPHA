@@ -3,7 +3,6 @@ owner: command line advisory assistants
 sources:
   - apps/alpha-cli/src/alpha_cli/assistant_*.py
   - tests/unit/test_assistant_*.py
-verified: 8bb2bbe6a5b3fe6c
 ---
 
 # Command line assistant invariants

@@ -130,10 +130,9 @@ def test_check_runs_lint_types_and_selected_tests_and_writes_nothing(
 
     assert gate.run_check(repo, runner=runner) == 1
     names = [line.split(":")[0] for line in capsys.readouterr().out.splitlines()]
-    assert names[:6] == [
+    assert names[:5] == [
         "[check] ruff check",
         "[check] ruff format",
-        "[check] living documents",
         "[check] import contracts",
     ] + [
         "[check] mypy",
@@ -145,7 +144,7 @@ def test_check_runs_lint_types_and_selected_tests_and_writes_nothing(
         "tests/unit/test_new.py",
     ]
     assert "no:cacheprovider" not in pytest_command
-    assert calls[4][:6] == list(gate.FULL_GATE_MYPY_COMMAND)
+    assert calls[3][:6] == list(gate.FULL_GATE_MYPY_COMMAND)
     assert git(repo, "status", "--porcelain") == "?? tests/"
 
 

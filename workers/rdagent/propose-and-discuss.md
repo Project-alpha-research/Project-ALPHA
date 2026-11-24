@@ -3,7 +3,6 @@ owner: rd-agent worker
 sources:
   - workers/rdagent/discussion.py
   - apps/alpha-cli/src/alpha_cli/rdagent_discussion.py
-verified: d96336e4199154fa
 ---
 
 # RD-Agent worker: propose and discuss

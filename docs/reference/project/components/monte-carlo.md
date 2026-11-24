@@ -5,7 +5,6 @@ sources:
   - apps/alpha-cli/src/alpha_cli/monte_carlo_cmds.py
   - apps/alpha-cli/src/alpha_cli/toolbox/registry.py
   - docs/operations/monte-carlo/README.md
-verified: 44290a76717195da
 ---
 
 # Monte Carlo
@@ -57,7 +56,7 @@ against an independent recomputation on 2026-11-14. `alpha monte-carlo kronos` r
 2026-11-23 (default 8 paths per batch). A negative volume from the model is set to zero and counted in the output
 (owner decision, 2026-11-23).
 The Workstation groups the path figures under
-`monte_carlo` (ADR-0029); Kronos Studio shows forecast runs. See the capability on [STATUS.md](../../../../STATUS.md) and the
+`monte_carlo` (ADR-0029); Kronos Studio shows forecast runs. See the capability on `uv run python scripts/status.py` and the
 [path-risk card](../../../../research/tools/path-risk.md).
 The resampling card explains how to compare the toolbox drawdowns with the classical command.
 

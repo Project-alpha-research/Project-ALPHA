@@ -3,7 +3,6 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: ba04917b90fca42b
 ---
 
 # alpha-cli: code map and change loop
@@ -38,11 +37,11 @@ do not add a private copy.
 
 ## Change loop
 
-- A new or changed command: run `uv run python scripts/commands_reference.py` and commit the page.
+- A new or changed command: the command reference is made on demand (`uv run python scripts/commands_reference.py`).
   If the web or MCP surface exposes it, also run `uv run python scripts/check_openapi_operations.py --write`.
 - The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file (`alpha context` includes offline Bybit import/read:
   [data layer § Context data](../../docs/reference/project/components/data-layer.md#context-data));
-  regenerated `docs/reference/commands.md` when commands change.
+  no stored command page to update.
 
 ## Approvals bind structure
 

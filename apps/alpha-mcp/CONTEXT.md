@@ -3,7 +3,6 @@ owner: model context protocol server
 sources:
   - apps/alpha-mcp/src/**
   - apps/alpha-mcp/pyproject.toml
-verified: 3885866780894092
 ---
 
 # alpha-mcp workspace
@@ -22,7 +21,6 @@ It can never approve or decide research, consume D2 confirmation, reveal a holdo
 | [engineering rules](../../docs/reference/invariants/engineering.md) | Subprocess boundary | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Owner authority | always |
 | [MCP invariants](../../docs/reference/invariants/mcp.md) | — | changing a tool, its inputs, imports or CLI calls |
-| [command reference](../../docs/reference/commands.md) | — | finding the command a tool wraps |
 | [what this part is for](../../docs/reference/project/components/ai-assistants.md) | — | why it exists; before you keep, shelve or remove it |
 | [MCP invariants](../../docs/reference/invariants/mcp.md) | Code map | finding a module or its tests |
 

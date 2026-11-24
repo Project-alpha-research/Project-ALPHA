@@ -55,9 +55,9 @@ file's always rows, then only the rows your task matches; then open the code. St
 what you need. Each fact has one home ([list](docs/README.md#one-home-per-fact)): update it, never copy it.
 
 - Find a module: `uv run python scripts/fs.py map <workspace> --find WORDS`. Find a document:
-  `fs.py search "words"`. Areas: `fs.py orient`. Out-of-date documents: `fs.py stale`.
+  `fs.py search "words"`. Areas: `fs.py orient`.
 - Do not load: other workspaces; whole rule pages when a row names a section; `docs/archive/`;
-  `docs/work/` of other tasks; `workers/rdagent/CHANGE-NOTES.md`; backend rule pages for a
+  `workers/rdagent/CHANGE-NOTES.md`; backend rule pages for a
   display-only change.
 - What a part is for and what the owner decided: [project layer](docs/reference/project/overview.md).
   Testing a trading idea: `research/CONTEXT.md`. Building and landing a change:

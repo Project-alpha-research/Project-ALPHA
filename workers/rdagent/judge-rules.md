@@ -6,7 +6,6 @@ sources:
   - apps/alpha-cli/src/alpha_cli/_rdagent_membership.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_judge.py
   - apps/alpha-cli/src/alpha_cli/rdagent_factor_eval.py
-verified: 9895268aa23ab561
 ---
 
 # RD-Agent worker: judging rules

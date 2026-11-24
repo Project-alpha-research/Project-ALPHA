@@ -2,7 +2,6 @@
 owner: status page and roadmap
 sources:
   - docs/reference/project/owner-decisions-3.md
-verified: 3fd2dac8724c4b7e
 ---
 
 # Production-ready scope, part 3: screens to hygiene, lost features, questions
@@ -59,13 +58,13 @@ Keeping the project tidy, honest and never a mess.
 | Weekly automatic health check that opens small clean-up pull requests | Working | scheduled task | Now | [health] |
 | One gate for every change: look-ahead guards, statistical oracles, repeatable runs | Working | `scripts/`, `tests/` | Now | [precise] |
 | File system that says what each part is for, updated with every change | Working | `docs/reference` | Now | [files] |
-| Generated status page of what works | Working | `STATUS.md` | Now | [mess] |
+| Status page of what works, made on demand | Working | `scripts/status.py` | Now | [mess] |
 | Results on free data labelled not yet confirmed | Working | `alpha-data` | Now | [free] |
 | Old lane deleted when its golden path works; at most two streams in flight | Missing | whole repository | Path 1 | [spine] |
 | Weekly mutation sweep passing | Missing | backlog | Later | [status] |
 | Backup and restore of stored data and results | Missing | backlog | Later | [status] |
 | Never high-frequency trading: nothing built for ticks, order books or speed | Working | scope rule | Now | [no-hft] |
-| Every capability traced to a checklist row, every command to a capability | Working | [trace](capability-trace.md); contract test | Now | [files] |
+| Every command claimed by a capability | Working | contract test | Now | [files] |
 | Stale branches listed and removed with the owner's sign-off | Missing | [health plan](health-plan.md) | Later | [mess] |
 | Changelog generated from pull requests, or dropped | Missing | [health plan](health-plan.md) | Later | [mess] |
 | A fresh agent's navigation measured: bytes read and the right answer | Missing | [health plan](health-plan.md) | Later | [files] |
@@ -155,7 +154,7 @@ Raised on 2026-11-16 by the audit; not yet answered. Each blocks only the item n
 [quantpad]: ../reference/project/owner-decisions.md#2026-11-14-quantpad-no-longer-used
 [slim]: ../reference/project/owner-decisions-3.md#2026-11-15-always-slimmer
 [spine]: ../reference/project/owner-decisions-3.md#2026-11-15-build-the-thin-spine-clean-then-switch-over
-[status]: ../../STATUS.md
+[status]: capabilities.toml
 [struct]: ../reference/project/owner-decisions-2.md#2026-11-14-approvals-follow-code-structure-not-exact-bytes
 [style]: ../reference/project/owner-decisions-2.md#2026-11-14-the-interface-shows-charts-with-text-in-a-quant-style-and-is-finished-later
 [thin]: ../reference/project/owner-decisions-2.md#2026-11-14-thin-alpha-dramatically-rd-agent-and-qlib-are-the-proven-core

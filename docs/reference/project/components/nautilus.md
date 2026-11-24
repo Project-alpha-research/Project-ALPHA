@@ -3,7 +3,6 @@ owner: project layer
 sources:
   - packages/alpha-backtest/CONTEXT.md
   - docs/adr/0003-t+1-fill-encoding.md
-verified: edfd54dfceeaa1a5
 ---
 
 # Nautilus
@@ -36,7 +35,7 @@ here with costs. Its results go to the [statistical checks](validation-and-evide
 
 ## What is real today
 
-See the capability below on [STATUS.md](../../../../STATUS.md).
+See the capability below on `uv run python scripts/status.py`.
 
 ## Where it lives
 

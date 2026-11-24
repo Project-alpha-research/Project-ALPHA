@@ -5,7 +5,6 @@ sources:
   - workers/afml/examples/**
   - workers/afml/pyproject.toml
   - workers/afml/uv.lock
-verified: 16df47f3f9a310df
 ---
 
 # AFML worker workspace

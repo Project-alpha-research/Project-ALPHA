@@ -4,7 +4,6 @@ sources:
   - workers/literature/src/**
   - workers/literature/pyproject.toml
   - workers/literature/uv.lock
-verified: 73db27530f8f2bbe
 ---
 
 # Literature worker workspace

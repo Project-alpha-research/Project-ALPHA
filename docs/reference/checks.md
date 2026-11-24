@@ -8,7 +8,6 @@ sources:
   - scripts/gate.py
   - scripts/gate_components.py
   - pyproject.toml
-verified: 2cafebab56e467aa
 ---
 
 # Checks
@@ -34,7 +33,6 @@ request only when its paths (or the workflow and gate files) change, and always 
 | `changes` job: picks the conditional jobs | a path-filtered job silently skipped (unknown history selects all) | PR | 8 s |
 | `static` job: `uv lock --check`, `uv sync --locked` | a dependency change without its lock file | PR | 7 s (job 1.4 min) |
 | `static`: ruff lint and format | style and simple bug patterns (unused names, bad comparisons) | PR | 1 s |
-| `static`: living documents (`fs.py stale`) | broken front matter or a missing source (blocks); stale documents are listed, not blocked | PR | 1 s |
 | `static`: import contracts (`lint-imports`) | a layer import the DAG forbids; a kept feature reaching old research-case code | PR | 0.4 s |
 | `static`: mypy, one strict run over packages, apps, tests and harness scripts | type errors | PR | 45 s |
 | `static`: harness lint and doctor | a removed deny rule, unwired hook, lowered coverage floor or `-x` in CI | PR | 0.2 s |
@@ -93,9 +91,8 @@ read owner data, credentials or hidden tests.
 - Protected files (change only in a reviewed pull request that lists them): `scripts/gate*.py`,
   `scripts/git_guard.py`, `scripts/harness_*.py`.
 - Where things are: `gate.py` + `gate_components.py` (CI job steps) + `gate_select.py` (tests mapped
-  from changed files); `fs.py` with `fs_orient.py`, `fs_search.py`, `fs_stale.py` (`verify` needs a text edit or a
-  `--reason`, kept in `docs/verified-reasons.txt`); generators
-  `roadmap_index.py`, `status.py` (STATUS.md), `commands_reference.py`, `generate_web_openapi.py`, `check_openapi_operations.py`;
+  from changed files); `fs.py` with `fs_orient.py`, `fs_search.py`; printers made on demand
+  (nothing stored): `roadmap_index.py`, `status.py`, `commands_reference.py`; generators `generate_web_openapi.py`, `check_openapi_operations.py`;
   machine setup: `setup.sh` (wraps `setup_rdagent.sh`) and the machine section of `gate.py doctor`
   ([development loop](../operations/development-loop.md#set-up-a-fresh-machine)).
 - Tests: `tests/unit/test_gate_*.py` (the doctor's machine section is `test_gate_machine_doctor.py`),
@@ -104,6 +101,6 @@ read owner data, credentials or hidden tests.
   [engineering § Code size](invariants/engineering.md#code-size)) (all in `tests/unit/`).
 - Check: `uv run python scripts/gate.py check` (its mypy step covers the harness scripts listed in
   `gate.HARNESS_SCRIPTS`; a new script is type-checked through its test's import).
-- Every generator has a `--check` mode and a freshness test; keep that pattern for new ones.
+- A stored generated file has a `--check` mode and a freshness test. Prefer a printer that stores nothing.
 - A unit test for every new script or subcommand, with throwaway git repositories where it reads git.
-- Regenerated outputs committed with the change (`STATUS.md`, `docs/roadmap/README.md`, `docs/reference/commands.md`).
+- Stored generated outputs are committed with the change (the capability matrix, the OpenAPI classification).

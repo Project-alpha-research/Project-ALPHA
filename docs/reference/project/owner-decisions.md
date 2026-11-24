@@ -2,7 +2,6 @@
 owner: project layer
 sources:
   - docs/reference/project/components/delivery-and-agent-tooling.md
-verified: 98ff6f758bf06846
 ---
 
 # Owner decisions log
@@ -36,7 +35,7 @@ for the RD-Agent entry (dated on the triage sheet), the exact day of each was no
 - **Context:** an agent had recommended shelving the RD-Agent integration because it was not
   installed and its tests were skipped. The owner corrected it.
 - **Governs:** [RD-Agent](components/rd-agent.md); triage cards 7, 8, 9 and C, all now KEEP
-  ([triage sheet](../../roadmap/triage-2026-11.md)).
+  ([capability map](../../roadmap/capabilities.toml)).
 - **Recorded understanding, not yet confirmed by the owner:** RD-Agent (Microsoft's AI research
   agent) is the research loop itself; Qlib is the machine-learning toolkit it uses; Nautilus is
   the backtest engine; ALPHA is the governed shell around them (data, statistical checks,
@@ -175,7 +174,7 @@ for the RD-Agent entry (dated on the triage sheet), the exact day of each was no
   card G as replaced by [Codex builds, Claude plans](#2026-11-14-codex-builds-claude-plans).
   Research approvals, branch protection and credentials stay with the owner.
 - **Governs:** [delivery and agent tooling](components/delivery-and-agent-tooling.md), the
-  [triage sheet](../../roadmap/triage-2026-11.md), [Qlib](components/qlib.md).
+  [capability map](../../roadmap/capabilities.toml), [Qlib](components/qlib.md).
 
 ### 2026-11-14 What the file system is for
 

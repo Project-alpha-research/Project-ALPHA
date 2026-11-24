@@ -63,4 +63,5 @@ def pytest_unconfigure(config: pytest.Config) -> None:  # TEMPORARY m159 probe
             except OSError:
                 continue
             if fields[1] in (str(owner), str(me)) and fields[0] != "Z":
-                print(f"M159-PROBE pid={entry.name} ppid={fields[1]} state={fields[0]} {cmd!r}", file=sys.stderr)
+                line = f"M159-PROBE pid={entry.name} ppid={fields[1]} state={fields[0]} {cmd!r}"
+                print(line, file=sys.stderr)

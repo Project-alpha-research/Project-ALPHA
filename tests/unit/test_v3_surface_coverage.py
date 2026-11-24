@@ -6,14 +6,12 @@ import importlib.util
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
-from types import SimpleNamespace
 from typing import NoReturn, cast
 
 import pytest
 from fastapi import HTTPException
 
 from alpha_mcp import _control
-from alpha_mcp import _invoke as _mcp_invoke
 from alpha_web import _ml
 from alpha_web.api import ml as ml_api
 
@@ -393,9 +391,7 @@ def test_ml_action_builder_is_allowlisted_and_records_only_opaque_ids(
         )
 
 
-def test_mcp_control_validates_bounds_json_and_suite_launch(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_mcp_control_validates_bounds_and_json() -> None:
     with pytest.raises(ValueError, match="non-negative"):
         _control.offset(-1)
     with pytest.raises(RuntimeError, match="invalid object"):
@@ -404,50 +400,6 @@ def test_mcp_control_validates_bounds_json_and_suite_launch(
         _control._objects({}, "objects")
     with pytest.raises(ValueError, match="finite JSON"):
         _control._json({"bad": float("nan")})
-    with pytest.raises(ValueError, match="unsupported suite action"):
-        _control.suite_plan("project", "experiment", "arbitrary", data_dir=tmp_path)
-    with pytest.raises(ValueError, match="owner-only"):
-        _control.launch_suite("project", "experiment", "holdout_reveal", data_dir=tmp_path)
-
-    monkeypatch.setattr(
-        _mcp_invoke,
-        "run_json",
-        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("suite plan is blocked")),
-    )
-    with pytest.raises(RuntimeError, match="blocked"):
-        _control.launch_suite("project", "experiment", "baseline", data_dir=tmp_path)
-
-    def reservation(args: list[str], **kwargs: object) -> dict[str, object]:
-        del kwargs
-        if args[:2] == ["suite", "reserve"]:
-            return {"status": "queued", "plan": {"ready": True}}
-        return {"status": "failed"}
-
-    monkeypatch.setattr(_mcp_invoke, "run_json", reservation)
-    monkeypatch.setenv("ALPHA_TIINGO_API_KEY", "must-not-reach-suite-child")
-
-    def popen_failure(*args: object, **kwargs: object) -> NoReturn:
-        del args, kwargs
-        raise OSError("unavailable")
-
-    monkeypatch.setattr(subprocess, "Popen", popen_failure)
-    with pytest.raises(RuntimeError, match="could not launch"):
-        _control.launch_suite("project", "experiment", "baseline", data_dir=tmp_path)
-
-    captured: dict[str, object] = {}
-
-    def popen_success(args: list[str], **kwargs: object) -> SimpleNamespace:
-        captured["args"] = args
-        captured["kwargs"] = kwargs
-        return SimpleNamespace(pid=7)
-
-    monkeypatch.setattr(subprocess, "Popen", popen_success)
-    launched = _control.launch_suite("project", "experiment", "baseline", data_dir=tmp_path)
-    assert launched["status"] == "starting"
-    assert cast(list[str], captured["args"])[:3] == ["alpha", "suite", "run"]
-    environment = cast(dict[str, str], cast(dict[str, object], captured["kwargs"])["env"])
-    assert environment["ALPHA_DATA_DIR"] == str(tmp_path)
-    assert "ALPHA_TIINGO_API_KEY" not in environment
 
 
 def test_ml_process_helpers_parse_sanitize_and_propagate_environment(

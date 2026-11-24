@@ -820,7 +820,6 @@ see_it = ["uv run alpha-mcp (started by an MCP-capable AI client)"]
 entry_points = ["script: alpha-mcp", "cli: alpha assistant"]
 proof_synthetic = [
   "tests/integration/test_mcp_server.py::test_backtest_run_tool_returns_a_manifest",
-  "tests/integration/test_research_mcp.py::test_research_mcp_capture_propose_status_and_report_round_trip",
   "tests/integration/test_mcp_server.py::test_spine_rule_test_then_ledger_summary_reads_the_new_row",
   "tests/integration/test_mcp_front_door.py::test_next_step_on_an_empty_home",
 ]

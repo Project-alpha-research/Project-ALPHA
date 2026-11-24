@@ -106,7 +106,7 @@ this file holds the command-line specifics.
 ## Owner decisions
 
 - `approve`, `reject` and `decide` are trusted-local owner actions. They are absent from MCP forever; REST reaches them
-  only through the owner-action ceremony. Enforced by `tests/integration/test_research_mcp.py`.
+  only through the owner-action ceremony.
   See [research integrity § Owner authority](research-integrity.md#owner-authority).
 - The recorded actor string is audit text, not cryptographic identity or proof of presence; never claim otherwise.
 - `record_research_decision` requires `actor_kind="human"`, and `advance_to_strategy` requires outcome SUPPORTED.

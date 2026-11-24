@@ -39,29 +39,3 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
         rel = Path(str(item.fspath)).resolve().relative_to(_ROOT).as_posix()
         if classify_platform(rel):
             item.add_marker(pytest.mark.platform)
-
-
-def pytest_unconfigure(config: pytest.Config) -> None:  # TEMPORARY m159 probe
-    import sys
-    import time
-
-    if hasattr(config, "workerinput"):
-        return
-    try:
-        owner = int(os.environ.get("ALPHA_TEST_OWNER", "0:0").split(":")[0])
-    except ValueError:
-        return
-    me = os.getpid()
-    for _ in range(4):
-        time.sleep(0.5)
-        for entry in Path("/proc").iterdir():
-            if not entry.name.isdecimal() or int(entry.name) == me:
-                continue
-            try:
-                fields = (entry / "stat").read_text().rsplit(")", 1)[1].split()
-                cmd = (entry / "cmdline").read_bytes().replace(b"\0", b" ")[:200]
-            except OSError:
-                continue
-            if fields[1] in (str(owner), str(me)) and fields[0] != "Z":
-                line = f"M159-PROBE pid={entry.name} ppid={fields[1]} state={fields[0]} {cmd!r}"
-                print(line, file=sys.stderr)

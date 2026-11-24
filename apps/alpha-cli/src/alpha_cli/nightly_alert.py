@@ -8,9 +8,12 @@ defect removes it. The notice calls the local `notify-send` program only when th
 
 from __future__ import annotations
 
+import os
 import shutil
+import signal
 import subprocess
 import sys
+from contextlib import suppress
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -33,15 +36,24 @@ def notify(summary: str, enabled: bool) -> bool:
     if program is None:
         return False
     try:
-        done = subprocess.run(
+        # Own process group: a stuck notifier and anything it started are stopped together.
+        child = subprocess.Popen(
             [program, "ALPHA nightly run", summary],
-            capture_output=True,
-            timeout=NOTIFY_SECONDS,
-            check=False,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
         )
-    except (OSError, subprocess.SubprocessError):
+    except OSError:
         return False
-    return done.returncode == 0
+    try:
+        return child.wait(timeout=NOTIFY_SECONDS) == 0
+    except subprocess.TimeoutExpired:
+        return False
+    finally:
+        with suppress(ProcessLookupError, PermissionError):
+            os.killpg(child.pid, signal.SIGKILL)
+        child.wait()
 
 
 def _mark(home: Path, day: date, number: int, headline: str, details: list[str]) -> None:

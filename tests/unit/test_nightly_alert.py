@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import os
+import signal
+import time
 from collections import namedtuple
 from collections.abc import Sequence
 from pathlib import Path
@@ -254,12 +256,24 @@ def test_a_hanging_notifier_is_stopped_and_changes_nothing(
     folder = tmp_path / "bin"
     folder.mkdir()
     program = folder / "notify-send"
-    program.write_text("#!/bin/sh\nsleep 30\n")
+    started = folder / "sleeper.pid"
+    program.write_text(f"#!/bin/sh\nsleep 30 &\necho $! > {started}\nwait\n")
     program.chmod(0o755)
     monkeypatch.setenv("PATH", f"{folder}{os.pathsep}{os.environ['PATH']}")
-    monkeypatch.setattr(nightly_alert, "NOTIFY_SECONDS", 0.3)
+    monkeypatch.setattr(nightly_alert, "NOTIFY_SECONDS", 1.0)
     record = run(tmp_path / "slow", FakeRunner(BOOM), notify=True)
     assert record["blocking"] == 1 and marker(tmp_path / "slow").exists()
+    # The program started a child of its own: it must be gone when the notice gives up.
+    sleeper = int(started.read_text())
+    for _ in range(100):
+        try:
+            os.kill(sleeper, 0)
+        except ProcessLookupError:
+            break
+        time.sleep(0.02)
+    else:
+        os.kill(sleeper, signal.SIGKILL)
+        pytest.fail("the notifier's own child was left running")
 
 
 def test_a_failure_while_writing_the_record_still_leaves_the_marker(

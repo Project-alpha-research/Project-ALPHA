@@ -11,7 +11,7 @@ import json
 import re
 import urllib.error
 from collections.abc import Callable, Mapping, Sequence
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Final, Literal
 from zoneinfo import ZoneInfo
@@ -198,7 +198,7 @@ def _failure_from_exception(exc: Exception) -> VerificationState:
 
 
 def _tiingo_check() -> tuple[tuple[str, ...], dict[str, object]]:
-    end = date.today()
+    end = datetime.now(UTC).date()
     result = TiingoAdapter(canonical_symbol="SPY", asset_class="etf").fetch(
         "SPY", end - timedelta(days=14), end
     )

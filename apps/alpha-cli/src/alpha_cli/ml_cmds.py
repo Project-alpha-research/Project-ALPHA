@@ -89,6 +89,43 @@ def _emit(value: dict[str, Any], *, as_json: bool) -> None:
         typer.echo(f"{key}: {item}")
 
 
+def _capability_state(item: dict[str, Any]) -> str:
+    """One plain state phrase: status, reason, then the inspected version names."""
+    parts = [str(item.get("status", "unknown")).replace("_", " ")]
+    reason = item.get("reason")
+    if reason:
+        parts.append(str(reason))
+    versions = item.get("versions") or {}
+    if versions:
+        parts.append(", ".join(f"{name} {version}" for name, version in sorted(versions.items())))
+    return "; ".join(parts)
+
+
+def _capabilities_lines(payload: dict[str, Any]) -> list[str]:
+    """One plain line per backend and per feature recipe; no raw Python dictionaries."""
+    version = payload.get("qlib_version")
+    lines = [
+        f"Qlib version: {version if version is not None else 'unknown'}.",
+        f"Schema version: {payload.get('schema_version')}.",
+    ]
+    for recipe in payload.get("feature_recipes", []):
+        lines.append(
+            f"Feature recipe {recipe['name']} version {recipe['version']} "
+            f"({recipe['scope']}): {_capability_state(recipe)}"
+        )
+    for backend in payload.get("backends", []):
+        lines.append(f"Backend {backend['name']}: {_capability_state(backend)}")
+    return lines
+
+
+def _emit_capabilities(payload: dict[str, Any], *, as_json: bool) -> None:
+    if as_json:
+        _emit(payload, as_json=True)
+        return
+    for line in _capabilities_lines(payload):
+        typer.echo(line)
+
+
 @ml_app.command()
 def capabilities(
     worker_project: Annotated[Path | None, typer.Option("--worker-project")] = None,
@@ -101,7 +138,7 @@ def capabilities(
         try:
             entrypoint.lstat()
         except FileNotFoundError:
-            _emit(
+            _emit_capabilities(
                 {
                     "schema_version": 1,
                     "qlib_version": None,
@@ -167,7 +204,7 @@ def capabilities(
             raise MLContractError("isolated capability inspection returned an invalid contract")
     except (MLContractError, OSError, ValueError, subprocess.TimeoutExpired) as exc:
         raise typer.BadParameter(str(exc)) from exc
-    _emit(payload, as_json=as_json)
+    _emit_capabilities(payload, as_json=as_json)
 
 
 @ml_app.command("export-input")

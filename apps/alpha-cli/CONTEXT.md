@@ -25,7 +25,7 @@ It must never grant authority the owner did not give, and never route live capit
 | [what this part is for](../../docs/reference/project/components/command-line.md) | — | why it exists; before you keep, shelve or remove it |
 | [invariants router](../../docs/reference/invariants/README.md) | Command line | other areas: setups, data, ml, paper, assistant, follow |
 | [toolbox](../../docs/reference/project/components/toolbox.md) | — | `alpha tool`: adding a test; the honesty rules |
-| [alpha-cli README](README.md) | Code map | finding a module or its tests |
+| [alpha-cli README](README.md) | Code map | finding a module (`fs.py map`) |
 
 ## How to change it
 - Code and tests: [code map](README.md#code-map). A new or changed command: [change loop](README.md#change-loop).

@@ -16,31 +16,13 @@ The `alpha` CLI composes data, strategies, the engine, validation, research and 
 receipts). It may import every package below it; nothing but the surfaces' public seams may import it, and the web app and MCP server call it as a subprocess.
 It must never grant authority the owner did not give, and never route live capital.
 
-Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` = command group, wired in `main.py`). Where to look:
+Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` = command group, wired in `main.py`).
+The module list is made from the code, never written here: `uv run python scripts/fs.py map apps/alpha-cli [--find WORDS]`
+prints each module's path, line count and docstring line. Tests share the module's name prefix in `tests/unit/`.
 
-| Sub-area | Modules (count) | Tests in `tests/unit/` |
-|---|---|---|
-| Research cases | `research_*` (22), `_research_cmd_parts`, `_research_artifact_io`, `_structural_digest`, `study_semantic` | `test_research_*` |
-| Control store | `control_store`, `_control_*`, `owner_auth*`, `durable_lease`, `job_capacity`, `project_*`; kept part: `home_db`, `job_store`, `job_rows`, `reserved_slots` | `test_control_*`, `test_owner_*`, `test_home_db_split` |
-| Rule tests, tools, setups | `{test,results,tool,partner,setup}_cmds`, `spine/`, `toolbox/` | `test_{spine,setup,toolbox}_*`, `test_contact_*`,
-`test_look*` |
-| Front door | `next_cmds` (read-only; reuses `spine/stores`, `spine/trial_reader`, `rdagent_discussion`) | `test_next_cmd`, `smoke/test_next_smoke` |
-| Portfolio book | `spine/book` (pure maths); `results correlate` in `results_cmds`, `follow book` in `follow_cmds` | `test_book_math`, `test_results_correlate`, `test_follow_book_view` |
-| Rule-test reading | `spine/reading` (pure), `spine/reading_read` (stored runs); text in `test_cmds`, `results_cmds`, `next_cmds`, `nightly_run` | `test_reading_rule` |
-| Rule context gate (plan only) | `_context_gate` (gate vector), `_context_plan` (`alpha test --plan`); spec fields in `spine/spec` | `test_rule_context_gate`, `test_rule_context_identity`, `test_rule_context_plan` |
-| Idea cards and the idea file | `idea_cmds`, `spine/idea_card` (cards under `<home>/ideas/`; the spec link is in no identity), `spine/idea_file`, `idea_map`, `idea_file_text` (read-only page per idea), `idea_rdagent` (journey links), `idea_notes` | `test_idea_card`, `test_idea_file`, `test_idea_rdagent` |
-| Library of published ideas | `library_cmds`, `spine/library` (records in `research/library/published/`, private notes under `<home>/library/private/`) | `test_library` |
-| Forward follow | `follow_*` (10: `cmds`, `store`, `source`, `journal`, `chain`, `update`, `update_check`, `replay`, `book`, `show`; writes only `<home>/forward/`; no research module may import them) | `test_follow_*`, `smoke/test_follow_smoke` |
-| Nightly real run | `nightly_*` (6: `cmds`, `config`, `run`, `steps`, `record`, `status`; runs real commands in child processes) | `test_nightly`, `smoke/test_nightly_smoke` |
-| Nightly alert, disk, backup | `nightly_alert` (`LAST_FAILED` marker, optional `notify-send`), `home_disk` (size, free space, reserve), `home_cmds` + `home_backup` + `home_restore` (`alpha home backup`, `verify-backup`, `restore`) | `test_nightly_alert`, `test_home_backup`, `test_home_backup_adversarial`, `smoke/test_home_backup_smoke` |
-| Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`,
-`test_suite_*` |
-| Market data, macro | `*crypto_*`, `data_cmds`, `_data_health`, `context*_cmds` | `test_{crypto,tiingo,alpaca,context,data_health}_*` |
-| Native jobs | `_native_*` (20), `native_*` (6), `daily_*` (3) | `test_native_*`, `test_daily_*` |
-| RD-Agent ledger, discussion and `alpha rdagent run`/`status` | `rdagent_*` (incl. `rdagent_cmds`, `rdagent_run_config`, `rdagent_run_status`), `_rdagent_*`, `spine/trial_*`, `ledger_cmds` | `test_rdagent_*`, `test_trial_*`, `test_ledger_cmds` |
-| Machine learning, labels | `ml_*` (6), `_ml_*` (2), `_forecast*` (3), `forecast_cmds`, `labels_cmds` | `test_ml_*`, `test_forecast_*` |
-| Providers | `provider*` (3) | `test_provider_*` |
-| Advisory models | `assistant_*` (6) | `test_assistant_*` |
+- Forward follow (`follow_*`) writes only `<home>/forward/`; no research module may import it. Nightly steps run real commands in child processes.
+- Idea cards live under `<home>/ideas/`; the spec link is in no identity. Published ideas: `research/library/published/`; private notes: `<home>/library/private/`.
+- Rule-test reading text lives in `test_cmds`, `results_cmds`, `next_cmds` and `nightly_run`; the maths is pure, in `spine/reading` and `spine/book`.
 
 Many integration tests in `tests/integration/` use the same prefixes. Shared helpers live once: `_cli_json` (JSON emit and
 option parsing), `_research_artifact_io` (D1/D2 artifact publication and reads) and `alpha_core.atomic` (atomic file writes);

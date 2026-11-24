@@ -22,6 +22,7 @@ contracts "alpha_web imports only public platform surfaces" and "alpha_web sits 
 runs `alpha` as a subprocess for every action. It never runs the engine, reads SQLite itself, or
 grants authority.
 
+- Module list, made from the code: `uv run python scripts/fs.py map apps/alpha-web [--find WORDS]` (backend and frontend).
 - Backend code: `apps/alpha-web/src/alpha_web/` (routes in `api/`; copy a sibling such as `api/native_results.py` with its adapter
   `_native_results.py`; response models are one module per area in `api/models/`, not one big file). Frontend: `frontend/src/` (`panels/`, `shell/`,
   `components/`, `api/`). The built bundle `src/alpha_web/static/app` is

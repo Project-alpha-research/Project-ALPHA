@@ -62,6 +62,7 @@ def orientation(root: Path, *, component: str | None = None) -> dict[str, Any]:
             "complete": "alpha info commands --all --json",
             "procedures": "alpha info procedures --json",
             "search": 'uv run python scripts/fs.py search "QUERY"',
+            "map": "uv run python scripts/fs.py map apps/alpha-cli --find WORDS",
         },
     }
     if component is not None:

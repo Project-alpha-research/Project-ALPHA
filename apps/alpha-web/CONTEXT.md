@@ -27,7 +27,7 @@ It runs `alpha` as a subprocess for every action, except that Setup Lab reads st
 | [web frontend invariants](../../docs/reference/invariants/web-frontend.md) | — | changing a panel, chart or the browser app |
 | [what this part is for](../../docs/reference/project/components/web-workstation.md) | — | why it exists; before you keep, shelve or remove it |
 | [Setup Lab](../../docs/reference/project/components/setup-lab.md) | — | a Setup Lab screen change (page is enough) |
-| [alpha-web README](README.md) | Code map | finding a module or its tests |
+| [alpha-web README](README.md) | Code map | finding a module (`fs.py map`) |
 
 ## How to change it
 - Code, tests and checks: [code map](README.md#code-map), [change loop](README.md#change-loop); `uv run python scripts/gate.py check`.

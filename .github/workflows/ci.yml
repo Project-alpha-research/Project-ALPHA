@@ -9,6 +9,10 @@ on:
   pull_request:
     # `ready_for_review` starts the full run when a draft is marked ready.
     types: [opened, synchronize, reopened, ready_for_review]
+  # The merge queue: GitHub builds the commit that would land (the change on top of main and of the
+  # changes queued before it) and runs this workflow on it. Every job runs, as on a push to main, so
+  # the full suite passes BEFORE a change reaches main.
+  merge_group:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -16,7 +20,7 @@ concurrency:
 
 env:
   # The comparison base: the pull request's base commit, or the previous main on a push.
-  ALPHA_GATE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+  ALPHA_GATE_BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
 
 jobs:
   changes:
@@ -36,8 +40,8 @@ jobs:
       - name: Select conditional jobs
         id: select
         env:
-          ALL: ${{ github.event_name == 'push' && '--all' || '' }}
-        # Standard library only; push to main and an unknown base select every path job.
+          ALL: ${{ github.event_name != 'pull_request' && '--all' || '' }}
+        # Standard library only; push to main, the merge queue and an unknown base select every path job.
         run: python3 scripts/gate.py changes $ALL | tee -a "$GITHUB_OUTPUT"
 
   static:

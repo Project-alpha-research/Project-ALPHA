@@ -719,7 +719,7 @@ entry_points = [
   "cli: alpha owner-auth enroll",
 ]
 proof_synthetic = [
-  "tests/integration/test_research_program_acceptance.py::test_program_golden_path_reaches_the_strategy_brief_losslessly",
+  "tests/integration/test_research_program_acceptance.py::test_parked_pre_d2_case_closes_honestly_and_cannot_claim_support",
 ]
 proof_smoke = [
   "tests/smoke/test_research_smoke.py::test_research_case_advances_to_the_owner_boundary",

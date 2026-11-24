@@ -16,3 +16,8 @@ The brief's `rg` returns only `cancel_development_suite` (MCP tool) and `validat
 `lint-imports`: 14 kept, 0 broken. `gate.py check --base origin/main`: all passed.
 Note: `tests/smoke` shows 44 setup errors in this container; they also occur on unchanged main.
 Fail-first: deletion change, so no new behaviour; the removed `suite` expectation in the lazy-groups test would fail against the old mount.
+
+## Review round (Codex P2, plus one caller my first search missed)
+- `test_gate_process_supervisor.py`: removed the two `test_suite_executor.py` nodes from `ORPHAN_NODES` (real: collection would fail).
+- The brief's `rg` uses `\b`, so it missed `_suite_cli` in `tests/integration/test_research_program_acceptance.py`. That test ran `alpha suite run`. I deleted `test_program_golden_path_reaches_the_strategy_brief_losslessly`, `_suite_cli` and `_scorecard_states`; the other two tests in the file stay.
+- Card `research-cases` in `capabilities.toml`: its synthetic proof now names the parked-case test; `STATUS.md` regenerated.

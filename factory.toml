@@ -31,6 +31,13 @@ hot_files = ["uv.lock", "pyproject.toml", "docs/roadmap/capabilities.toml", "CON
 
 gate_commands = [["uv", "run", "python", "scripts/gate.py", "check"]]
 
+# Mechanical fixes the build team's code applies to the changed Python files before it commits a
+# build: formatting and safe lint fixes cost no model round.
+fix_commands = [
+  ["uv", "run", "ruff", "format", "-q"],
+  ["uv", "run", "ruff", "check", "--fix", "-q"],
+]
+
 # A builder may change these only when the work order names the path with the owner's yes.
 [guarded_paths]
 "packages/alpha-research/src/" = "hash-bound source bytes (quant tier)"

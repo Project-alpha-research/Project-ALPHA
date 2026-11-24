@@ -553,7 +553,6 @@
   "tests/unit/test_strategy_candidate_runtime.py": 0.2,
   "tests/unit/test_strategy_registry.py": 0.0,
   "tests/unit/test_study_semantic_envelope.py": 0.0,
-  "tests/unit/test_suite_catalog.py": 0.2,
   "tests/unit/test_suite_executor.py": 1.9,
   "tests/unit/test_suite_plan_builders.py": 0.7,
   "tests/unit/test_suite_planner.py": 5.8,

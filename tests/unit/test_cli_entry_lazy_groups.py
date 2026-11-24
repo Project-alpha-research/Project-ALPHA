@@ -161,7 +161,6 @@ def test_full_app_keeps_every_command_group() -> None:
             "scan",
             "setup",
             "strategy-candidate",
-            "suite",
             "test",
             "tool",
             "unusual",

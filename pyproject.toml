@@ -305,8 +305,7 @@ source_modules = [
     "alpha_cli.job_capacity",
 ]
 forbidden_modules = [
-    "alpha_cli.suite_cmds", "alpha_cli._suite", "alpha_cli._suite_actions",
-    "alpha_cli._suite_types", "alpha_cli.suite_catalog", "alpha_cli.project_cmds",
+    "alpha_cli.project_cmds",
     "alpha_cli.project_workspace", "alpha_cli.evidence_cmds", "alpha_cli.native_supervisor",
     "alpha_cli._native_fixture_store", "alpha_cli._native_daily_rule_artifacts",
     "alpha_cli._native_daily_rule_container", "alpha_cli._native_daily_rule_projection",

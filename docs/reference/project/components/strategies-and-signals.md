@@ -62,9 +62,9 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 ## Where it lives
 
 - **Workspaces:** `packages/alpha-strategies`, `packages/alpha-patterns`
-- **Capabilities:** `rules-and-scans`, `strategy-development`, `price-lookalikes`, `price-novelty`
+- **Capabilities:** `rules-and-scans`, `price-lookalikes`, `price-novelty`
 - Code: `packages/alpha-strategies/src/`, `packages/alpha-patterns/src/`; the `alpha rules`,
-  `alpha scan`, `alpha suite`, `alpha lookalike`, `alpha unusual` and `alpha setup` commands in
+  `alpha scan`, `alpha lookalike`, `alpha unusual` and `alpha setup` commands in
   `apps/alpha-cli/`.
 - How to change it: [packages/alpha-strategies/CONTEXT.md](../../../../packages/alpha-strategies/CONTEXT.md),
   [packages/alpha-patterns/CONTEXT.md](../../../../packages/alpha-patterns/CONTEXT.md).

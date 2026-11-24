@@ -17,8 +17,6 @@ ORPHAN_NODES = (
     "tests/unit/test_durable_job_lease.py::test_exited_leader_keeps_descendant_group_leased_until_audited_cancellation",
     "tests/unit/test_durable_job_lease.py::test_terminate_and_reap_kills_sigterm_ignoring_nested_child",
     "tests/unit/test_research_execution.py::test_sigterm_reaps_child_and_returns_interrupted",
-    "tests/unit/test_suite_executor.py::test_suite_heartbeats_and_cancels_after_leader_exits_with_live_descendant",
-    "tests/unit/test_suite_executor.py::test_suite_cancellation_kills_and_reaps_nested_worker_group",
     "tests/unit/test_web_invoke.py::test_live_heavyweight_cancel_reaps_a_sigterm_ignoring_nested_child",
     "tests/unit/test_web_invoke.py::test_durable_startup_status_failure_reaps_the_entire_process_group",
 )

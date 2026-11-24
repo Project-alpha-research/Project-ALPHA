@@ -39,7 +39,12 @@ class Run:
         self.checkout = tmp_path / "checkout with spaces"
         (self.checkout / "scripts").mkdir(parents=True)
         shutil.copyfile(SCRIPT, self.checkout / "scripts/setup.sh")
-        for folder in ("apps/alpha-web/frontend", "workers/qlib", "workers/literature"):
+        for folder in (
+            "apps/alpha-web/frontend",
+            "workers/qlib",
+            "workers/literature",
+            "workers/afml",
+        ):
             (self.checkout / folder).mkdir(parents=True)
         (self.checkout / "scripts/setup_rdagent.sh").write_text(
             '#!/usr/bin/env bash\necho "$*" >>"$SETUP_LOG.rdagent"\n'
@@ -99,6 +104,7 @@ DEFAULT_COMMANDS = [
     "npx --no-install playwright install chromium",
     "uv sync --locked",
     "uv sync --locked",
+    "uv sync --locked",
     "uv run python scripts/git_guard.py install",
 ]
 
@@ -115,6 +121,7 @@ def test_default_run_sets_up_everything_in_order_and_nothing_optional(setup: Run
         "apps/alpha-web/frontend",
         "workers/qlib",
         "workers/literature",
+        "workers/afml",
         ".",
     ]
     assert not Path(f"{setup.log}.rdagent").exists()

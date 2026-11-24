@@ -3,6 +3,7 @@
     uv run python scripts/fs.py orient [--component NAME] [--json]
     uv run python scripts/fs.py search "QUERY" [--kind KIND] [--limit N] [--format text|json]
     uv run python scripts/fs.py map WORKSPACE [--find WORDS...]
+    uv run python scripts/fs.py see CAPABILITY_ID [--run]
 
 ``orient`` lists components, module counts and the routing documents to read first. ``search``
 returns ranked excerpts of tracked documentation (path, heading, line range, kind). ``map`` prints
@@ -21,6 +22,7 @@ from pathlib import Path
 import fs_map
 import fs_orient
 import fs_search
+import fs_see
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -38,6 +40,9 @@ def build_parser() -> argparse.ArgumentParser:
     code = sub.add_parser("map", help="one line per module of a workspace, made from the code")
     code.add_argument("workspace", help="for example apps/alpha-cli")
     code.add_argument("--find", nargs="+", metavar="WORD", help="keep lines holding all words")
+    see = sub.add_parser("see", help="a capability card's see_it lines; --run runs alpha commands")
+    see.add_argument("capability_id")
+    see.add_argument("--run", action="store_true", help="run lines that are one alpha command")
     return parser
 
 
@@ -62,6 +67,10 @@ def main(argv: list[str] | None = None) -> int:
             )
         elif args.command == "map":
             print(fs_map.code_map(root, _relative(root, args.workspace), args.find))
+        elif args.command == "see":
+            text, code = fs_see.see(root, args.capability_id, run=args.run)
+            print(text)
+            return code
         else:
             result = fs_search.search(root, args.query, kind=args.kind, limit=args.limit)
             print(

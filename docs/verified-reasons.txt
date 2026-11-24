@@ -5,16 +5,16 @@ apps/alpha-cli/CONTEXT.md
   verified b75b520921d8c168 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 apps/alpha-cli/README.md
-  verified b75b520921d8c168 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified 15c9eb9bbab6940f on 2026-11-24: prose and change loop re-read against the code; the code-map table is replaced by another change
 
 apps/alpha-mcp/CONTEXT.md
-  verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
+  verified 3885866780894092 on 2026-11-24: rows and sections checked; tool counts and seams match code
 
 apps/alpha-web/CONTEXT.md
-  verified 4886f8c5e04fe3b8 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified fd7586220c444ac6 on 2026-11-24: rows and sections checked; imports and subprocess rule match code
 
 apps/alpha-web/README.md
-  verified 4886f8c5e04fe3b8 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified fd7586220c444ac6 on 2026-11-24: all named files exist; routes, anchors and commands checked
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -26,7 +26,7 @@ docs/reference/invariants/README.md
   verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
 
 docs/reference/invariants/cli-control-store.md
-  verified 70adf2e5c99b1a5f on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified fbdddb248ca5e4b0 on 2026-11-24: checked schema version 7, pragmas, challenge lifetime, lease intervals, modules and tests against the code
 
 docs/reference/invariants/cli-cost-classes.md
   verified 48051fd15ae9622c on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
@@ -35,7 +35,7 @@ docs/reference/invariants/cli-crypto-data.md
   verified f031d0d564fa51a8 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/cli-figures.md
-  verified 18bd7eaebe3406f3 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 7a2026cb033c1ed3 on 2026-11-24: checked cache key, variants, builder revision, modules, tests and CLI options against the code
 
 docs/reference/invariants/cli-follow.md
   verified d7b2fc56f2f23b5b on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
@@ -53,7 +53,7 @@ docs/reference/invariants/cli-nightly.md
   verified d81855ca969acd8e on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/cli-research.md
-  verified 87714b0666bd11f9 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified bfaac0680e30a911 on 2026-11-24: removed investigation commands are not named on this page; page is being removed (owner decision 2026-11-23)
 
 docs/reference/invariants/cli-results-check.md
   verified 31a9f5fdd9f3f626 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -74,10 +74,13 @@ docs/reference/invariants/cli-trial-ledger.md
   verified 6c092f6a4b3b1b4a on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/data-context.md
-  verified 96f2fe7a59fd5f97 on 2026-11-21: calendar range sweep; text still correct
+  verified dbd71277c92f2c0b on 2026-11-24: checked against context commands, derived.py, free_http.py and the attach guard; the changed CLI files only changed the table output of show and list
 
 docs/reference/invariants/data-crypto.md
-  verified 31604d0ea6cb98b5 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified 59972857825f7702 on 2026-11-24: only a test file changed (plain coverage-error wording); every named module, test, ADR, limit and reason code still exists
+
+docs/reference/invariants/data-free-sources.md
+  verified 6f2929e8936708ac on 2026-11-24: only data_cmds.py changed (coverage/update commands); pull options, adapters, ADRs and runbook still match
 
 docs/reference/invariants/data-freeze-before-replace.md
   verified 5efe89cf0d49bb54 on 2026-11-20: Only formatting and a mypy-only callback change in the sources after the review edit; the freeze page text already states the reviewed behaviour.
@@ -94,6 +97,9 @@ docs/reference/invariants/documentation.md
 docs/reference/invariants/engineering.md
   verified 0a282d681aa7abfd on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
+docs/reference/invariants/forecast.md
+  verified 232bfab59cdbf01d on 2026-11-24: only tests changed; pin, chunk size, config defaults, signal rule and import contracts re-checked in code
+
 docs/reference/invariants/patterns.md
   verified ec724060a0cafaaa on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
@@ -101,10 +107,10 @@ docs/reference/invariants/rdagent.md
   verified d32f6e791522d873 on 2026-11-23: gate_components.py added a web path filter and dropped the mutation gate from the pull-request quant job; neither page states either fact, and rdagent still has no gate component
 
 docs/reference/invariants/research-integrity.md
-  verified 6da3c17b2fb74ddd on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified 9c83f8d67ee6563e on 2026-11-24: only bias-guard test files changed; the rules and the confirmation text (reserved period) still match
 
 docs/reference/invariants/research.md
-  verified 727d3f5df374816c on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified 3036214161bd1602 on 2026-11-24: only figure tests changed; renderer, cache, theme and plain_spec statements re-checked against the code
 
 docs/reference/invariants/strategies.md
   verified 187c14109a01a7d0 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
@@ -125,28 +131,28 @@ docs/reference/invariants/web-api.md
   verified e437a567bae8eef8 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/web-frontend-charts.md
-  verified 8cd3ea2164dc85ab on 2026-11-23: new page: the Charts, UTC and exact exports and Generated API client sections moved here unchanged from web-frontend.md
+  verified 1f02ad5317a77629 on 2026-11-24: only e2e specs changed; files, components, settings default and tests named on the page still exist
 
 docs/reference/invariants/web-frontend-ideas.md
-  verified 84e09ac30d685a71 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified 66a6437e352fa23d on 2026-11-24: only the e2e spec changed; the 11-step navigator and panel files still match
 
 docs/reference/invariants/web-frontend.md
-  verified 8cd3ea2164dc85ab on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified 1f02ad5317a77629 on 2026-11-24: only test harness and vitest config changed; shell files, menus, screens, lanes and ports re-checked
 
 docs/reference/invariants/web-ideas.md
   verified e24cae1f03437816 on 2026-11-21: new page: the section moved here unchanged except the follow line, which is now true
 
 docs/reference/invariants/web-run-detail.md
-  verified 25d4664ae908e940 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified 80e0b0aea18bfb47 on 2026-11-24: panels and e2e re-read; every named file, route, env variable and ledger path still exists
 
 docs/reference/invariants/workers.md
-  verified c01dbc5e2f18b2e1 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified d08adaa0f124617a on 2026-11-24: gate steps, launch limits, AFML tests, schemas and file names match code
 
 docs/reference/model-routing-codex.md
-  verified 7fb7aae6a6b242b5 on 2026-11-19: AGENTS.md now links the roles and brief template on this page and says the Codex hand-off is paused; both pages already say the same
+  verified f6f028b7feb0cf36 on 2026-11-24: classes, models, caps, sandbox flags, exit codes match handoff.py and handoff_sandbox.py
 
 docs/reference/model-routing.md
-  verified 7fb7aae6a6b242b5 on 2026-11-19: AGENTS.md now links the roles and brief template on this page and says the Codex hand-off is paused; both pages already say the same
+  verified f6f028b7feb0cf36 on 2026-11-24: classes, guarded paths, review tiers and records match handoff.py
 
 docs/reference/owner-rule-language.md
   verified fc4ba062ee9ec61a on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
@@ -158,7 +164,7 @@ docs/reference/project/components/ai-assistants.md
   verified d377e1ecfcdb7a2b on 2026-11-19: Re-read: the playbook's repeat label row now names store and data content; this page only routes to the playbook
 
 docs/reference/project/components/command-line.md
-  verified 29f44436e948e189 on 2026-11-20: merge of main; the follow commands and their rules on this page were checked against this branch
+  verified 529006e65ab4cfa2 on 2026-11-24: checked against alpha --help, capabilities and ADR files; all claims hold
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
@@ -182,34 +188,34 @@ docs/reference/project/components/options-data.md
   verified 814a9b6c19ab1666 on 2026-11-20: Invariants page only split into a new section and rewrapped a line; the component summary (0.14 s solve, 21 s chain) still matches
 
 docs/reference/project/components/paper-and-live.md
-  verified d9b582fb5efee922 on 2026-11-18: the document it names (docs/reference/invariants/cli-paper.md) has the same text as when this page was last verified; the fingerprint now counts it
+  verified c6e2e7d1be986ea5 on 2026-11-24: capabilities, ADRs, runbook and decision anchors exist; no live order path
 
 docs/reference/project/components/qlib.md
-  verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
+  verified 9490c217e601c362 on 2026-11-24: pyqlib 0.9.7 pin, ml_*.py files, capabilities, ADRs and tests all exist
 
 docs/reference/project/components/rd-agent.md
   verified b3b868ba51472ece on 2026-11-19: post-judge set now writes its declaration before running; doc text about checks unchanged
 
 docs/reference/project/components/research-cases-and-approval.md
-  verified 5089fe31329290e9 on 2026-11-19: research routing row added for the library; this page's claims are unchanged
+  verified d7cfd0f79065ae1b on 2026-11-24: being removed; files, ADRs and capabilities still exist; no plain error found
 
 docs/reference/project/components/setup-lab.md
   verified 05b3e2b526bcc1aa on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/project/components/strategies-and-signals.md
-  verified 761d7d0863981395 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified 1a16d256c1b6aef9 on 2026-11-24: lookalike module, capabilities, ADRs and all_in sizing confirmed in code
 
 docs/reference/project/components/toolbox.md
   verified a9b38e6041cf26ee on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 751467f3e2800908 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified f2c9ea7b4cfeb77e on 2026-11-24: --no-diagnose, 25 planted answers, 50 noise copies, cite/check/compare and capabilities confirmed
 
 docs/reference/project/components/web-workstation.md
-  verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
+  verified 0763267e5e567dc9 on 2026-11-24: port 8801, ALPHA_WEB_PORT, theme switch, report sections and capabilities confirmed
 
 docs/reference/project/decisions-by-topic.md
-  verified 8466046f3449a55d on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
+  verified 80c264c3979c5f75 on 2026-11-24: history page; its sources only gained the new volume 6 already linked
 
 docs/reference/project/file-system-measurement.md
   verified 8a77650b29ee8769 on 2026-11-21: ceiling and doc split do not change what this document says
@@ -218,7 +224,7 @@ docs/reference/project/ideas-and-considered.md
   verified 83e6af903a0351b6 on 2026-11-19: Merge of main: the new volume-5 entry is a build-process decision, not an idea weighed; the RD-Agent toolbox row still holds
 
 docs/reference/project/outside-projects.md
-  verified d1815b0f82ab9b2d on 2026-11-21: Checked the ruff mentions: only a one-file ruff exclusion was added in pyproject.toml; the described checks and tools are unchanged.
+  verified 7403440279daae9f on 2026-11-24: register checked against all pyproject files and package.json; no mismatch
 
 docs/reference/project/owner-decisions-2.md
   verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right
@@ -230,7 +236,7 @@ docs/reference/project/owner-decisions-4.md
   verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5, as this volume's own header says
 
 docs/reference/project/owner-decisions-5.md
-  verified 9def06fde73f407c on 2026-11-18: new volume from PR 271; the volume it names (owner-decisions.md) has the same text as then and points new entries here
+  verified 0d6d2613d9bbfae7 on 2026-11-24: history page; its source (volume 4) changed text only, no factual claim here depends on it
 
 docs/reference/project/owner-decisions.md
   verified 9fe892a33a3d98b0 on 2026-11-19: model-routing was restructured; the log's entries are unaffected
@@ -239,7 +245,7 @@ docs/reference/project/rd-agent-detail.md
   verified 949857d7112bc824 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 docs/reference/project/reserved-period.md
-  verified f94caa3050e33424 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified be61e3239a63e5bf on 2026-11-24: file names, slot count 10, confirm subcommands, cut-off and listed commands confirmed
 
 docs/roadmap/production-scope-2.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
@@ -266,13 +272,13 @@ packages/alpha-validation/CONTEXT.md
   verified 6c22cebe38d9a545 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/CONTEXT.md
-  verified ff72adf3b24734b5 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified f5496061b1230761 on 2026-11-24: all linked pages and sections exist; the route (playbook, alpha test, one approval gate) matches the code
 
 research/PLAYBOOK.md
   verified fbc7d9dc2bc1d1ad on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/README.md
-  verified d40f9c3c6086d864 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified 23dc96208f2f23e9 on 2026-11-24: checked against alpha next, alpha test and alpha results --help and the skill folder names; no wrong statement
 
 research/lessons/README.md
   verified 6b5e6d5653188a52 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -287,10 +293,10 @@ research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 23d56ad7ad814512 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified d76253f5cd458f2f on 2026-11-24: claims checked against spine code, facts.py and --help; no wrong statement left
 
 research/tools/charts.md
-  verified 26313c47945d6bb7 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 4088ac8391cd22c7 on 2026-11-24: checked against figures render --help and the figure registry; no wrong statement
 
 research/tools/data-health.md
   verified 26641097485296d3 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
@@ -299,7 +305,7 @@ research/tools/deflated-sharpe-and-trials.md
   verified 891ec5a16067d2ff on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/diagnose-and-audit.md
-  verified 6f65c02a0cb1b6bb on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified 794f8de2d9edb372 on 2026-11-24: claims checked against spine code, facts.py and --help; no wrong statement left
 
 research/tools/follow.md
   verified 03f12254bb58b8f0 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
@@ -308,16 +314,16 @@ research/tools/home-backup.md
   verified a3faa58f0d76f0d5 on 2026-11-21: home_restore now keeps the restored folder at mode 0700 after a good restore too; this page states nothing that this changes, so its text holds
 
 research/tools/idea-card.md
-  verified 3e53a2ada31a328f on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified e76c78af62ceb95d on 2026-11-24: checked against alpha idea --help; no wrong statement
 
 research/tools/inverted-signal-control.md
-  verified 1d2269669bfaf71a on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 3d4d13990e3df21c on 2026-11-24: checked against controls.py and diagnose.py; no wrong statement
 
 research/tools/library.md
-  verified 563e9cc54e1c1da5 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified f7d7d517f742bbdb on 2026-11-24: checked against library --help and the stored records; no wrong statement
 
 research/tools/montecarlo-checks.md
-  verified ab30ac63504a14e1 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
+  verified 649c96b27d241394 on 2026-11-24: checked against the tool description and the Student-t family code; no wrong statement
 
 research/tools/nightly-alert.md
   verified a976f66296419ad5 on 2026-11-21: Re-read after the hard-link helper and the BaseException type fix; the page's claims hold
@@ -325,23 +331,29 @@ research/tools/nightly-alert.md
 research/tools/nightly-run.md
   verified f4762e62775591a8 on 2026-11-21: Merged main and fixed the backup (hard links stored in full, disk-room check, unreadable folders refused, modes kept on restore, written files re-read) and the marker (Ctrl-C, unwritable marker); this page's claims were re-read against the code and hold
 
+research/tools/options-derived.md
+  verified af40a66f9fc71e4a on 2026-11-24: checked against options derived --help and the derived-series code; no wrong statement
+
 research/tools/path-risk.md
   verified 928cb9390bc4690b on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/portfolio-book.md
-  verified 43519cc7a5a9beb8 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
+  verified d8f3d6e402ae228f on 2026-11-24: checked against results correlate --help, spine/book.py and follow book; no wrong statement
 
 research/tools/positioning-short-volume-context.md
-  verified 74383e1154d820da on 2026-11-21: calendar range sweep; text still correct
+  verified 97c7fd6d45e706d1 on 2026-11-24: checked against context --help and the CFTC and FINRA release rules; no wrong statement
 
 research/tools/price-noise.md
   verified 5a1c8e404ca8c88e on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
+research/tools/propfirm.md
+  verified 9c592c23ceab9027 on 2026-11-24: first verification: checked against propfirm run --help and _propfirm.py; no wrong statement
+
 research/tools/published-factors.md
-  verified a5ffcba587102f16 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
+  verified 9a89eb5e39b90b1e on 2026-11-24: checked against toolbox published_parts.py, context.py and factor_attribution.py; no wrong statement
 
 research/tools/quick-screen.md
-  verified 9bab39f345a7e8c9 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 3c0a1028c644ecf4 on 2026-11-24: checked against scan hypotheses --help and _screen_trials.py; no wrong statement
 
 research/tools/random-price-null.md
   verified 5fb05fc5476f8113 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -353,10 +365,13 @@ research/tools/rdagent-model-bench.md
   verified 39466b01fc7203b1 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/resampling-checks.md
-  verified 2645349a67ce29bf on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
+  verified cf0b0361172355c6 on 2026-11-24: checked against tool describe output of the four resampling checks; no wrong statement
+
+research/tools/reserved-confirmation.md
+  verified 5509183abe1c186a on 2026-11-24: first verification: checked against confirm --help, reserved_slots.py and spine/confirm*.py; no wrong statement
 
 research/tools/results-and-cite.md
-  verified dcf452de93fa0890 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified faecdcce5cb9438a on 2026-11-24: claims checked against spine code, facts.py and --help; no wrong statement left
 
 research/tools/rule-test.md
   verified d240366b057727b7 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
@@ -368,7 +383,7 @@ research/tools/sensitivity.md
   verified 891ec5a16067d2ff on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/setup-context.md
-  verified ac071062a7a24370 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
+  verified c74a3d56dbceba87 on 2026-11-24: checked against setup --help and the context code; no wrong statement
 
 research/tools/setup-find.md
   verified 767300ba8e2c3dab on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
@@ -380,7 +395,19 @@ research/tools/setup-trade.md
   verified cdf90b3582b6d226 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/toolbox-by-situation.md
-  verified a1934950ce3233d7 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified 49e0c7a3c85e2782 on 2026-11-24: generated list equals the registry (test_toolbox_find passes); preamble checked against tool declare and find --help
+
+research/tools/toolbox-cost-realism.md
+  verified 78e6a43af39bf282 on 2026-11-24: first verification: all 12 checks and their facts match tool list; caveats match
+
+research/tools/toolbox-performance-stats.md
+  verified de18639e9d077263 on 2026-11-24: checked against tool list and performance_stats_common.py limits; no wrong statement
+
+research/tools/toolbox-regimes.md
+  verified 74999cc055f74880 on 2026-11-24: first verification: 14 checks, questions and seeding match the tool list
+
+research/tools/toolbox-timeseries.md
+  verified 09a7a51a7bcb2dad on 2026-11-24: first verification: checks, questions and seeding match the tool list
 
 research/tools/walk-forward.md
   verified da095a234bc224b3 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -400,6 +427,9 @@ workflow/CONTEXT.md
 workflow/README.md
   verified 79a8cfc6cb6d9b89 on 2026-11-21: ceiling and doc split do not change what this document says
 
+workflow/stages/01-shape/CONTEXT.md
+  verified ce7f36ace08a240b on 2026-11-24: checked against scripts/status.py and roadmap_index.py: STATUS.md headings, backlog fields and the task-folder names still match
+
 workflow/stages/03-build/CONTEXT.md
   verified 4bb90e5006d5dce5 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
 
@@ -407,4 +437,4 @@ workflow/stages/04-verify/CONTEXT.md
   verified b0ecdda77b4d329c on 2026-11-21: price-signal window fix does not change what this document says
 
 workflow/stages/05-land/CONTEXT.md
-  verified 713cf355f0e49f24 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
+  verified b54e1f508d77c80d on 2026-11-24: checked against pull_request_template.md, handoff.py and status.py: headings, record names and the sweep rule still match

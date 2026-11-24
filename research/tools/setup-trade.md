@@ -7,7 +7,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_controls.py
   - apps/alpha-cli/src/alpha_cli/spine/setup_trade_figure.py
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
-verified: cdf90b3582b6d226
+verified: e740e3a94335361a
 ---
 # Setup trade
 
@@ -34,7 +34,7 @@ alpha results cite <trade_id> setup_trade_mean_net_return --json
   The uncounted opposite-direction control compares mean return and mean R on exactly the same entries with mirrored exits and its own costs.
 - The figure shows entries, net returns, random dates and R. Quote the evidence word and "Setup trade K of N" as for a [study](setup-study.md).
 - A new direction or exits counts another trial; a repeat adds none. A find that used reserved bars is refused (`RESERVED_PERIOD_SEEN`).
-The trade run checks the inputs again before simulating exits. A failed report requires a reason on this invocation. [Data health](data-health.md)
+The run checks the inputs again. A failed [data health](data-health.md) report stops it unless `--accept-bad-data` has a reason.
 **What it cannot tell you** Currency position sizing, dividends, actual borrow or funding rates, portfolios or confirmation
 on reserved data. Unusual dates are not proof that the setup can be traded.
 **Next** Cite the stored reading and labels and inspect the halves before proposing another test.

@@ -21,7 +21,7 @@ sources:
   - tests/unit/test_results_correlate.py
   - tests/unit/test_book_math.py
   - tests/unit/test_spine_results_cmds.py
-verified: 31a9f5fdd9f3f626
+verified: ac97f4b31d41e681
 ---
 
 # Command line draft checks and run comparisons invariants
@@ -86,6 +86,8 @@ drafted answer against stored run facts, and the computed differences between ru
   Each metric has per-run `value`, `diff` and `ratio` facts. Difference means run minus first run;
   ratio means run divided by first run. Unavailable/non-finite arithmetic is null with a reason;
   a zero base prevents a ratio. Computed facts carry both run ids and a distinct computed basis.
+- The printed table shows the base run's value only; each later run adds its change from the base and its ratio to it, in the
+  unit of the metric (`spine/compare.py`). The labels of each run print with their plain meaning.
 - Check comparison quotes with `[base~run:metric:diff]` or `[base~run:metric:ratio]`; the checker
   recomputes them from stored facts. Unreadable answer files return `UNREADABLE_FILE` with a next step.
 

@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
-verified: 891ec5a16067d2ff
+verified: 817a1341d6cef8a0
 ---
 
 # Deflated Sharpe and trial counting
@@ -17,7 +17,6 @@ alpha results cite <run_id> trial_dsr
 alpha results cite <run_id> family_trials
 alpha optim grid <SYMBOL> --strategy ma_crossover --grid fast=20,50 --grid slow=100,200
 ```
-
 **How to read it**
 - `trial_dsr` and the verdict's `dsr` use the same inputs (equal after a rule test): spread from the idea
   family's distinct same-bar-size Sharpes and this run, N from the family count; its `trial_basis` names the
@@ -33,8 +32,9 @@ alpha optim grid <SYMBOL> --strategy ma_crossover --grid fast=20,50 --grid slow=
 - `alpha optim grid` sweeps declared settings and prints the best one with its deflated Sharpe, `PBO` (the
   probability that the in-sample winner is below the middle out of sample; high is bad), and the `SPA` and
   `RC` p-values (is the best better than no skill, allowing for the search).
-- Under 30 closed OOS trades: `too-few-trades` shows and the reading says `too little to read`. Noise copies are no trial.**What it cannot tell you**
-- Trials nobody recorded (`alpha validate`, `alpha optim`, `alpha backtest` runs): count by hand; the true number is higher.
-- The one headline count is tries: distinct tests on an asset (`alpha ledger tries SPY`); `ledger summary` splits it by kind and family.
+- Under 30 closed OOS trades: `too-few-trades` shows and the reading says `too little to read`. Noise copies are no trial.
+**What it cannot tell you**
+- Trials not in the ledger (`alpha validate`, `alpha optim`, `alpha backtest` runs): count by hand; the true number is higher.
+  The headline count is tries, the distinct tests on an asset (`alpha ledger tries SPY`); `ledger summary` splits it by kind.
 **Next** A setting that survives: check it against [the random-price null](random-price-null.md) and the
 benchmark. A setting that does not: report it as best-of-many and stop tuning.

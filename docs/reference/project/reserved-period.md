@@ -11,7 +11,7 @@ sources:
   - packages/alpha-data/src/alpha_data/context/daily_funding.py
   - workers/rdagent/alpha_factor_data.py
   - workers/rdagent/alpha_factor_judge.py
-verified: f94caa3050e33424
+verified: be61e3239a63e5bf
 ---
 
 # The reserved period
@@ -83,6 +83,9 @@ Three kinds: the code locks it out (it refuses reserved rows or aborts), only la
   (`RESERVED_PERIOD_SEEN`) and name `alpha labels barrier` as the next step.
 
 ### Locks it out: research cases, ML input and forecasts
+
+The research-case part is being removed (owner decision 2026-11-23): see
+[owner-decisions-6.md](owner-decisions-6.md#2026-11-23-remove-the-old-research-case-machinery-export-first).
 
 - Research-case lane: the weekly classifier (`alpha research diagnostic weekly-classifier`), the data audit (`research_data_audit.py`), the
   run-plan controller (`research_execution.py`) and the crypto crowding and hedged-basis reads cut at the same boundary and say so. The classifier and

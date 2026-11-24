@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: b75b520921d8c168
+verified: ba04917b90fca42b
 ---
 
 # alpha-cli: code map and change loop
@@ -21,7 +21,8 @@ The module list is made from the code, never written here: `uv run python script
 prints each module's path, line count and docstring line. Tests share the module's name prefix in `tests/unit/`.
 
 - Forward follow (`follow_*`) writes only `<home>/forward/`; no research module may import it. Nightly steps run real commands in child processes.
-- Idea cards live under `<home>/ideas/`; the spec link is in no identity. Published ideas: `research/library/published/`; private notes: `<home>/library/private/`.
+- Idea cards live under `<home>/ideas/`; the spec link is in no identity. Published: `research/library/published/`; private notes: `<home>/library/private/`.
+- The `research_*` modules (research cases) are being removed (owner decision 2026-11-23); `ml_progress` keeps its own time file.
 - Rule-test reading text lives in `test_cmds`, `results_cmds`, `next_cmds` and `nightly_run`; the maths is pure, in `spine/reading` and `spine/book`.
 
 Many integration tests in `tests/integration/` use the same prefixes. Shared helpers live once: `_cli_json` (JSON emit and

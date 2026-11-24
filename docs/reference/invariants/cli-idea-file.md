@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/idea_map.py
   - apps/alpha-cli/src/alpha_cli/follow_counts.py
   - tests/unit/test_idea_file.py
-verified: ece293da5c8e23c6
+verified: 5dd97d7f6feb800c
 ---
 
 # Command line idea file invariants
@@ -20,8 +20,9 @@ What must not break when changing `alpha idea file`. The readings it joins are d
 - Read-only: no file under the home changes, no ledger row, no network, no model call.
   The ledger is read with `read_trials_readonly`, which never creates the lock file.
   A test compares the home before and after, with no lock file present.
-- Order: the card; the map; readings oldest first; paper follows; counts; open points.
-  `--json` keys: `card`, `map`, `follows`, `readings`, `counts`, `open_points`.
+- Order: the card; the map; readings oldest first; paper follows; counts; open points; then, only when stored, linked papers,
+  RD-Agent steps and notes. `--json` keys: `card`, `map`, `follows`, `readings`, `counts`, `open_points`, plus `papers`, `rdagent`
+  and `notes` when present.
 - `follows[]` comes from `follow_counts.follows_of_card`, a listed reader: the file never opens `forward/`. The map line `followed forward on paper`
   is `done` when a follow record names the card. Each rule test carries `figures_available`: figure ids only; nothing is drawn.
   `alpha idea list --json` adds `saved_at` and `tests_linked` to each card.
@@ -33,6 +34,6 @@ What must not break when changing `alpha idea file`. The readings it joins are d
   - Baseline: an aim row in a reading. Settings: stored variants tried, or more than one setting of the same rule linked.
   - Costs: a stored `costs.break_even` result. Out-of-sample numbers recorded: stored out-of-sample numbers; this is not an independent replication.
   - A setup study that cannot be read does not count. The study sentence prints; its outcome word does not (old wording), and the page says so once.
-  - Held-back confirmation and following forward on paper read `not built yet`. The forward-use code is not read.
+  - Held-back confirmation reads `not built yet`. The forward-use code is not read.
 - Text caps at 20 readings: the first 10 and last 10 print, the middle is counted. `--json` carries all.
 - Text for the owner never prints a letter grade, "supported", "rejected", "pass", "fail" or "profit". A scan test holds this.

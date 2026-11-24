@@ -9,7 +9,7 @@ sources:
   - tests/unit/test_cost_classes_recheck.py
   - apps/alpha-cli/src/alpha_cli/spine/recheck.py
   - apps/alpha-cli/src/alpha_cli/spine/recheck_compare.py
-verified: 48051fd15ae9622c
+verified: 4036f51efd93d8e9
 ---
 
 # Command line cost classes invariants
@@ -49,8 +49,9 @@ Sources:
 ## Rules
 
 - The class comes from the store's dataset identity (`asset_class` and `venue`): US `etf` is the large ETF row, US `stock` the stock row,
-  `crypto` the spot row. Without an identity, a slash pair or a crypto provider is crypto spot, and a broad US index fund named in
-  `cost_classes.US_LARGE_ETFS` (SPY, QQQ, IWM, DIA, VOO, IVV, VTI) is the large ETF row; a yfinance store records no class.
+  `crypto` the spot row. Without an identity, a slash pair or a crypto provider is crypto spot. When the costs are chosen by class, a
+  broad US index fund named in `cost_classes.US_LARGE_ETFS` (SPY, QQQ, IWM, DIA, VOO, IVV, VTI) is the large ETF row and a ticker ending
+  `-USD` or `-USDT` is crypto spot; a yfinance store records no class.
   A perpetual cannot be told from spot in the record, so no asset maps to it today.
 - A class that is not known takes the most cautious row (highest cost of one side: crypto spot) and the run is labelled `cost-class-assumed`.
 - A spec that states its costs keeps them. Its hash, test key and numbers are as before (`tests/unit/test_cost_classes_pins.py`).

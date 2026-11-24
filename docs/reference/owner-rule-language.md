@@ -6,7 +6,7 @@ sources:
   - packages/alpha-strategies/src/alpha_strategies/rule_paths.py
   - apps/alpha-cli/src/alpha_cli/spine/owner_variants.py
   - apps/alpha-cli/src/alpha_cli/spine/owner_reading.py
-verified: 01af7ad62633b879
+verified: b56c6ddf7e7f341d
 ---
 # Owner rule language in `alpha test`
 
@@ -18,9 +18,10 @@ What an owner rule can say today, and what it cannot. The tool card is [rule tes
 - Today a rule is long while all `long_when` conditions hold, and flat otherwise. All-in sizing, daily bars, as for the old kinds.
 - The spec is stored in one canonical form: parsed, then written with defaults (`history`). The rule `name` is a constant
   inside the hash, so two specs that differ only in that name are one test. The display name is the spec's own `name`.
-- `history` is the number of bars each decision sees. The default is 4 times the longest window. A recursive indicator (`rsi`, `ema`)
+- `history` is the number of bars each decision sees. The default is 4 times the longest window, at least 60 and at most 2,000 (the largest `history` allowed).
+  A recursive indicator (`rsi`, `ema`)
   costs time in proportion to it: set `history` lower, but not below the longest window, to run faster.
-- `history` below the longest window (a lag counts: `lag = 20` needs 21 bars) is refused; it is never cut short.
+- `history` below the longest window (a lag counts: `lag = 20` needs 21 bars) or above 2,000 is refused; it is never cut short.
 - Every indicator starts again on each decision's window. So `rsi` and `ema` differ a little from values over the full price
   history (their recursion starts at the window's first bar). The value is the same on every run and in every place that
   reads it: the engine, the random-price test and `alpha rules`.

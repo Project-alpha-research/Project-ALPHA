@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_mcp_spine_tools.py
   - tests/unit/test_mcp_front_door_tools.py
   - tests/integration/test_mcp_front_door.py
-verified: 1c5c6923ba029be7
+verified: c04884b24f5ee18f
 ---
 
 # MCP invariants
@@ -131,9 +131,6 @@ It is a surface like the web backend: it composes nothing and has no authority o
 - Every new tool must be a read or a draft-write within its typed contract. [ADR-0022](../../adr/0022-codex-collaboration-surface.md)
 - When a CLI command or flag that a tool wraps is added, renamed or removed, update the tool in `server.py` and its
   option allowlist to match. No test catches a stale wrapper until the tool is called.
-- Adding or removing a tool: update the expected tool set in `tests/integration/test_research_mcp.py`,
-  then run `uv run python scripts/check_openapi_operations.py --write` (the capability matrix records
-  the tool count).
 
 ## Code map
 
@@ -150,4 +147,4 @@ D2 confirmation, reveal a holdout or place orders.
   `tests/unit/test_mcp_spine_tools.py` (spine argv and refusals),
   `tests/unit/test_mcp_front_door_tools.py` and `tests/integration/test_mcp_front_door.py` (front door).
 - Check: `uv run python scripts/gate.py check`.
-- Tests: a test that the new tool refuses options outside its allowlist.
+- A new tool needs a test that it refuses options outside its allowlist.

@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/data_health.py
   - apps/alpha-cli/src/alpha_cli/_data_health.py
   - apps/alpha-cli/src/alpha_cli/data_cmds.py
-verified: 26641097485296d3
+verified: 6306f8fa8787833c
 ---
 
 # Daily data health
@@ -31,10 +31,10 @@ The run takes the worst: fail, out-of-date, unchecked, warn, pass. Its label is 
 out-of-date uses `data-health-unchecked`. The run makes no report itself unless you add `--check-data`, which makes
 missing or out-of-date reports first; for a stock it compares up to 20 stock series in the same store and calendar.
 A fail stops the run before any test work. Fix the data, or run again with `--accept-bad-data "reason"` (one command only).
-The verdict covers all stored bars at the report time shown. Older runs read "Data health: not recorded."
+The report covers all stored bars. A run sets aside a problem whose rows are all from 2024-01-01 on ("held-back rows, not used").
+Older runs read "Data health: not recorded."
 
-**What it cannot tell you**
-- A clean report only means these faults were not found. The prices can still be wrong.
+**What it cannot tell you** A clean report only means these faults were not found. The prices can still be wrong.
 - `alpha data health SYMBOL` compares no other series. Peers are used only under a run's `--check-data`.
 - Prices are raw. It does not check dividends, which are separate cash events.
-**Next** Check flagged dates against another source. RD-Agent panels remain the next integration.
+**Next** Check flagged dates against another source.

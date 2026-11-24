@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - docs/reference/project/owner-decisions.md
-verified: d9b582fb5efee922
+verified: c6e2e7d1be986ea5
 ---
 
 # Paper and live trading

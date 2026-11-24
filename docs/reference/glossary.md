@@ -4,7 +4,7 @@ sources:
   - scripts/capabilities.py
   - scripts/status.py
   - docs/archive/research-notes/feature-readiness-checklist-2026-10-27.md
-verified: 61981a16822579d5
+verified: 80af149da953ded4
 ---
 
 # Glossary
@@ -140,7 +140,7 @@ The stages of one governed research case. Data is split by date groups, 60/20/20
 
 - **ALPHA Quant Platform** — The owner's name for ALPHA as a whole. A name only: it adds no scope or authority.
 - **Component (gate)** — One named group of checks run by `scripts/gate.py component NAME`. The names
-  are backend, frontend, literature and qlib.
+  are afml, backend (and its parts backend-static, backend-tests, backend-quant), frontend, frontend-full, literature and qlib.
 - **ControlStore** — The program part that keeps the project's control database and its append-only ledger.
 - **Gate** — `scripts/gate.py`: the local check tool. The real merge gate is CI on the pull request.
 - **Codex** — OpenAI's coding assistant, used inside ALPHA as an advisory research assistant. Its answers

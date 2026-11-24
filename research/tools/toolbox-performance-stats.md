@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/families/performance_stats*.py
   - tests/unit/test_toolbox_performance_stats.py
-verified: 0000000000000000
+verified: de18639e9d077263
 ---
 
 # Performance statistics of one rule test

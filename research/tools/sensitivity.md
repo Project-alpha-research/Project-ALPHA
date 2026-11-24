@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
-verified: 891ec5a16067d2ff
+verified: 817a1341d6cef8a0
 ---
 
 # Sensitivity: costs, delay and nearby settings
@@ -12,7 +12,6 @@ verified: 891ec5a16067d2ff
 setting. Every rule test already made the cheap re-runs.
 
 **Commands**
-
 ```text
 alpha diagnose <run_id> --json
 alpha results cite <run_id> delayed_sharpe
@@ -23,18 +22,19 @@ alpha test --rule ma_cross --param fast=50 --param slow=200 --asset SPY --fee-bp
 
 - `sensitivity.variants` holds full re-runs: `costs_x2` (fee and slippage doubled) and each rule number moved
   down and up by a fifth (`kind` is `costs` or `parameter`), each with its own Sharpe, return and drawdown.
+  An owner rule moves each window and constant one at a time, at most 8 variants, with no best pick.
 - `delay` compares `base_sharpe` with `delayed_sharpe` (every position taken one bar later). It is a
   returns-level approximation, not a full re-run: compare the two with each other, not with `oos_sharpe`.
-- Flags: `fragile-to-costs`, `fragile-to-parameters`, `fragile-to-delay` fire when a variant's Sharpe is at or
-  below zero, or under half the base.
+- Flags: `fragile-to-costs` and `fragile-to-parameters` fire when a variant's Sharpe is at or below zero, or under
+  half a positive base. `fragile-to-delay` fires when the delayed Sharpe is under half a positive base.
 - For other cost levels, run the rule test again with `--fee-bps` and `--slippage-bps`. Each is a counted
   trial; say you changed the costs and why.
 
 **What it cannot tell you**
 
 - For the scored break-even cost, use the [run-level check](run-level-checks.md). Costs here are flat and do not model trade capacity.
-- An owner rule gets only `costs_x2` (`sensitivity.note`). Wider parameter ranges: the re-runs are one step each side only. A sweep is
-  [deflated Sharpe and trials](deflated-sharpe-and-trials.md), and it must be reported as a search.
+- A reserved-period confirmation runs only the frozen rule and `costs_x2` (`sensitivity.note`). Wider ranges: the re-runs
+  are one step each side only. A sweep is [deflated Sharpe and trials](deflated-sharpe-and-trials.md); report it as a search.
 
 **Next** Fragile to costs: state the holding period and trade count beside it. Fragile to delay: treat the
 result as depending on the exact bar and check `fills-after-decisions` in the audit.

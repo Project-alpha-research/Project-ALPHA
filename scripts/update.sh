@@ -42,6 +42,7 @@ done
 
 cd "$root"
 state_dir="$root/.update"
+log="$state_dir/update.log"
 
 unit_exists() { systemctl --user cat "$service" >/dev/null 2>&1; }
 
@@ -55,17 +56,21 @@ current_label() {
 }
 
 install_here() { # install the checked-out version: root, every worker with a lock, the web app
-    uv sync --locked || { fail 'The root environment did not install.'; return 1; }
+    mkdir -p "$state_dir"
+    : >"$log"
+    uv sync --locked >>"$log" 2>&1 || { fail "The root environment did not install. Details: $log"; return 1; }
     local lock folder
     for lock in "$root"/workers/*/uv.lock; do
         [ -e "$lock" ] || continue
         folder="$(dirname -- "$lock")"
         say "Installing the worker environment ${folder##*/}."
-        (cd "$folder" && uv sync --locked) || { fail "The worker environment ${folder##*/} did not install."; return 1; }
+        (cd "$folder" && uv sync --locked) >>"$log" 2>&1 ||
+            { fail "The worker environment ${folder##*/} did not install. Details: $log"; return 1; }
     done
     if [ -f "$root/apps/alpha-web/frontend/package-lock.json" ]; then
         say 'Building the web app.'
-        (cd "$root/apps/alpha-web/frontend" && npm ci && npm run build) || { fail 'The web app did not build.'; return 1; }
+        (cd "$root/apps/alpha-web/frontend" && npm ci && npm run build) >>"$log" 2>&1 ||
+            { fail "The web app did not build. Details: $log"; return 1; }
     fi
 }
 
@@ -124,8 +129,8 @@ smoke_check() {
     if [ -z "$data" ] && unit_exists; then data="$(unit_env ALPHA_DATA_DIR)"; fi
     if [ -z "$data" ] && [ -d "$root/data" ]; then data="$root/data"; fi
     if [ -n "$data" ] && [ -d "$data" ]; then
-        # `alpha data coverage` only reads. --metadata-only skips the slow file check.
-        ALPHA_DATA_DIR="$data" "$root/.venv/bin/alpha" data coverage --metadata-only >/dev/null 2>&1 ||
+        # `alpha data coverage` only reads: one line per stored symbol.
+        ALPHA_DATA_DIR="$data" "$root/.venv/bin/alpha" data coverage >/dev/null 2>&1 ||
             { fail 'The command "alpha data coverage" failed on the data home.'; return 1; }
         say 'Checked: the data home can be read.'
     else

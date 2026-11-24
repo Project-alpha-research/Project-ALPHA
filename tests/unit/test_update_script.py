@@ -129,7 +129,7 @@ def test_happy_path_installs_every_locked_worker_in_order(fx: Fixture) -> None:
     assert calls.index(
         "systemctl --user restart alpha-workstation.service @ checkout"
     ) > calls.index("uv sync --locked @ d")
-    assert "alpha data coverage --metadata-only @ checkout" in calls
+    assert "alpha data coverage @ checkout" in calls
     assert "from r1 to r2" in result.stdout and "releases/tag/r2" in result.stdout
 
 

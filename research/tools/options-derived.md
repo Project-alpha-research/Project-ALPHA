@@ -3,7 +3,6 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/options_cmds.py
   - packages/alpha-data/src/alpha_data/options/derived.py
-verified: af40a66f9fc71e4a
 ---
 
 # Options derived series

@@ -3,9 +3,7 @@ owner: documentation
 sources:
   - docs/README.md
   - scripts/roadmap_index.py
-  - scripts/fs_stale.py
   - tests/unit/test_docs_links.py
-verified: b36f8d92f0d80d3c
 ---
 
 # docs workspace
@@ -30,8 +28,8 @@ Documents describe the code; they never grant authority. Every fact has one home
 
 ## How to change it
 
-- Contract: `tests/unit/test_filesystem_contract.py`. When code changes, re-read the document and run
-  `uv run python scripts/fs.py verify <document>`: [document lifecycle](reference/invariants/documentation.md#document-lifecycle).
+- Contract: `tests/unit/test_filesystem_contract.py`. A page holds purpose, reasoning and limits; a weekly
+  sweep fixes drift: [document lifecycle](reference/invariants/documentation.md#document-lifecycle).
 - Check: `uv run pytest -q tests/unit/test_docs_links.py tests/unit/test_filesystem_contract.py`,
   then `uv run python scripts/gate.py check`.
 

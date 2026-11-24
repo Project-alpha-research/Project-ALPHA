@@ -5,7 +5,6 @@ sources:
   - apps/alpha-cli/src/alpha_cli/reserved_slots.py
   - apps/alpha-cli/src/alpha_cli/spine/confirm.py
   - apps/alpha-cli/src/alpha_cli/spine/confirm_run.py
-verified: 5509183abe1c186a
 ---
 # Confirm one idea on the reserved period
 

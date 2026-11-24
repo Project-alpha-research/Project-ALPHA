@@ -6,7 +6,6 @@ sources:
   - .github/workflows/ci.yml
   - .github/workflows/release.yml
   - scripts/update.sh
-verified: fc78b5602ae6b5e3
 ---
 
 # The build team
@@ -51,6 +50,9 @@ The build team lives in a separate private repository, `alpha-factory`. The prod
 Stays in this product: `scripts/gate.py check` (the one check); `factory.toml` (the law the team is judged by: protected paths, the size limit, three
 changes in flight, the freeze date); the hooks; `.claude/agents/` (reviewer, quant verifier, navigator); CI and the merge queue; `scripts/update.sh`.
 The map tools `scripts/fs*.py` stay too.
+Ledgers kept: `docs/roadmap/capabilities.toml` (one entry per feature) and link-checked routing.
+Work orders are Issues in the build team's repository, not task folders.
+Pages are checked by a weekly sweep; nothing is stamped.
 
 Rules for any agent that works in this repository directly:
 

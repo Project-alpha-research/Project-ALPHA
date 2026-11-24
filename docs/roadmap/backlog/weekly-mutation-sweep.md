@@ -27,4 +27,4 @@ harness, never in those bytes.
 ## Sources
 
 - [Closed tidy-up programme](https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/pre-thin-2026-11-14/docs/work/archive/2026-10/2026-10-08-repository-hygiene/02-plan.md) (slice "Validate and finish weekly mutation workflow")
-- [Triage sheet, card 14](../triage-2026-11.md#14-old-clean-up-programmes)
+- [Capability map, triage card 14](../capabilities.toml)

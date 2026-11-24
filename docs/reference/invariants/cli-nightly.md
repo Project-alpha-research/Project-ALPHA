@@ -7,7 +7,6 @@ sources:
   - tests/unit/test_nightly*.py
   - tests/unit/test_home_backup.py
   - tests/unit/test_recheck*.py
-verified: 2d479a0abb3bfce2
 ---
 
 # Command line nightly run invariants

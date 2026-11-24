@@ -4,7 +4,6 @@ sources:
   - workers/afml/CONTEXT.md
   - workers/afml/README.md
   - docs/adr/0054-afml-worker.md
-verified: 3854309f04792fb6
 ---
 
 # AFML worker
@@ -44,7 +43,7 @@ Its output is advisory; ALPHA's own code decides what a label means.
 
 ## What is real today
 
-See the capability below on [STATUS.md](../../../../STATUS.md).
+See the capability below on `uv run python scripts/status.py`.
 
 ## Where it lives
 

@@ -79,7 +79,7 @@ def test_gate_orient_and_fs_orient_print_the_same(capsys: pytest.CaptureFixture[
     assert gate.main(["orient"]) == 0
     assert capsys.readouterr().out == from_fs
     assert from_fs.startswith("Repository orientation (source index; authority: none)")
-    assert "Documents: CLAUDE.md, CONTEXT.md, STATUS.md" in from_fs
+    assert "Documents: CLAUDE.md, CONTEXT.md" in from_fs
     assert fs.main(["orient", "--component", "nope"]) == 2
 
 

@@ -6,7 +6,6 @@ sources:
   - packages/alpha-strategies/src/alpha_strategies/rule_paths.py
   - apps/alpha-cli/src/alpha_cli/spine/owner_variants.py
   - apps/alpha-cli/src/alpha_cli/spine/owner_reading.py
-verified: b56c6ddf7e7f341d
 ---
 # Owner rule language in `alpha test`
 

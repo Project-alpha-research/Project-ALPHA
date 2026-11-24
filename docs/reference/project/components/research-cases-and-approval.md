@@ -5,7 +5,6 @@ sources:
   - packages/alpha-study/CONTEXT.md
   - research/CONTEXT.md
   - docs/reference/invariants/cli-research.md
-verified: d7cfd0f79065ae1b
 ---
 
 # Research cases and owner approval
@@ -43,7 +42,7 @@ never sees).
 
 ## What is real today
 
-See the capabilities below on [STATUS.md](../../../../STATUS.md).
+See the capabilities below on `uv run python scripts/status.py`.
 
 ## Where it lives
 

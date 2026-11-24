@@ -17,13 +17,12 @@ sources:
   - apps/alpha-cli/src/alpha_cli/nightly_follow.py
   - apps/alpha-cli/src/alpha_cli/nightly_refresh.py
   - tests/unit/test_follow_separation.py
-verified: 9650447e961429c2
 ---
 
 # Command line follow invariants
 
 Rules for `alpha follow`. A tested idea is followed on paper as new bars arrive. Options are in the
-[command reference](../commands.md#alpha-follow). F1: the frozen record and the journal. F2: `follow update` for a followed
+`uv run python scripts/commands_reference.py`. F1: the frozen record and the journal. F2: `follow update` for a followed
 rule test (below). F3: `follow today` and the nightly steps N4 and N0 (below).
 A followed setup trade is updated like a rule test (below). A setup find or a factor cannot be updated. Every screen says "paper".
 

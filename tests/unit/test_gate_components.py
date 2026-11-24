@@ -15,7 +15,6 @@ STATIC = [
     "uv sync",
     "ruff check",
     "ruff format",
-    "living documents",
     "import contracts",
     "mypy",
     "harness lint",

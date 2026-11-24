@@ -7,7 +7,6 @@ sources:
   - tests/unit/test_corporate_actions.py
   - tests/unit/test_universe_store.py
   - tests/unit/test_forecast_settings.py
-verified: f33f39f773362c9b
 ---
 
 # Core invariants

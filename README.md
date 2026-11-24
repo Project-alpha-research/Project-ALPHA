@@ -1,6 +1,6 @@
 # Project ALPHA
 
-**Status:** [what works today](STATUS.md) · [what the codes mean](docs/reference/glossary.md)
+**Status:** what works today: `uv run python scripts/status.py` · [what the codes mean](docs/reference/glossary.md)
 
 ALPHA is a private research workstation for one person, a retail swing trader. It helps you ask
 whether a trading idea is real, or just luck in a chart. You give it an idea, it tests the idea on
@@ -39,7 +39,7 @@ real money: there is no live-trading route and no broker connection.
 
 ## What works today
 
-The honest scoreboard is [STATUS.md](STATUS.md), generated from [`docs/roadmap/capabilities.toml`](docs/roadmap/capabilities.toml).
+The honest scoreboard is `uv run python scripts/status.py`, made on demand from [`docs/roadmap/capabilities.toml`](docs/roadmap/capabilities.toml).
 
 ## How to see it
 
@@ -91,7 +91,7 @@ runs. Demo case.*
 ## How to run it
 
 All commands run from the repository root. The full list is
-[docs/reference/commands.md](docs/reference/commands.md) (generated), or ask `uv run alpha --help`.
+`uv run python scripts/commands_reference.py` (made on demand), or ask `uv run alpha --help`.
 
 ```bash
 uv run alpha info                                   # what is installed and where data lives
@@ -140,8 +140,8 @@ a background job. Start at [RD-Agent in ALPHA](docs/roadmap/rd-agent-in-alpha.md
 | `tests/` | unit, integration, end-to-end and honesty tests |
 
 Start with [`CONTEXT.md`](CONTEXT.md): it routes any task to the folder that owns it. To find a
-document, run `uv run python scripts/fs.py search "words"`; `fs.py stale` lists documents whose
-code has changed since they were checked. See the [architecture](docs/ARCHITECTURE.md) and the
+document, run `uv run python scripts/fs.py search "words"`; pages are checked by a weekly
+sweep. See the [architecture](docs/ARCHITECTURE.md) and the
 [purpose of each part](docs/reference/project/overview.md).
 
 ## Implemented scope and limits

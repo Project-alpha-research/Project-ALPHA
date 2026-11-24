@@ -2,7 +2,6 @@
 owner: project layer
 sources:
   - docs/reference/project/owner-decisions.md
-verified: f23dc19226088ee7
 ---
 
 # Paper and live trading
@@ -31,7 +30,7 @@ strategy. Forward paper records never become research evidence.
 
 ## What is real today
 
-See the capabilities below on [STATUS.md](../../../../STATUS.md). No code path can place a live
+See the capabilities below on `uv run python scripts/status.py`. No code path can place a live
 order today.
 
 ## Where it lives

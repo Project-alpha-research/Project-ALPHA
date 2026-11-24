@@ -5,7 +5,6 @@ sources:
   - docs/reference/invariants/cli-assistant.md
   - research/PLAYBOOK.md
   - .agents/skills/*/SKILL.md
-verified: fac32ad38215c9c1
 ---
 
 # AI assistants
@@ -63,7 +62,7 @@ Since 2026-11-18 the report skill and `CLAUDE.md` also set a writing style for t
 answer first, short sentences, one idea in each, one name for one thing. No test enforces it yet.
 The research-case protocol library (`.agents/skills/alpha-research-protocols/`) is still loaded
 by the program and the tool server. For the rest see the capabilities below on
-[STATUS.md](../../../../STATUS.md).
+`uv run python scripts/status.py`.
 
 ## Where it lives
 

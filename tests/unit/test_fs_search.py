@@ -29,7 +29,7 @@ def docs_repo(tmp_path: Path) -> Path:
             "CLAUDE.md": "# ALPHA\nResearch precedes strategy.\n",
             "docs/roadmap/backlog/features.md": "# Feature scope\n## H26 context filesystem\n"
             "Queryable intent and task context. NOT_TESTED; backup is separate.\n",
-            "docs/work/2026-11-01-task/02-plan.md": "# Context task\n## Verification\n"
+            "docs/governance/task.md": "# Context task\n## Verification\n"
             "Context filesystem implementation remains pending.\n",
             "docs/adr/0001-context.md": "# ADR-0001: Context\n## Decision\n"
             "Context filesystem must preserve provenance.\n",
@@ -44,7 +44,7 @@ def docs_repo(tmp_path: Path) -> Path:
 def test_search_keeps_line_ranges_headings_and_skips_private_paths(docs_repo: Path) -> None:
     # Any-term search: the three pages with both words rank first, then pages with one.
     found = search_sections(read_sources(docs_repo), "context filesystem")[:3]
-    assert {row.kind for row in found} == {"feature", "task", "decision"}
+    assert {row.kind for row in found} == {"feature", "reference", "decision"}
     feature = next(row for row in found if "H26" in row.heading)
     assert (feature.start, feature.end) == (2, 3)
     assert feature.heading == "Feature scope / H26 context filesystem"
@@ -54,7 +54,9 @@ def test_search_keeps_line_ranges_headings_and_skips_private_paths(docs_repo: Pa
 
 def test_kind_filter_and_query_bounds(docs_repo: Path) -> None:
     sources = read_sources(docs_repo)
-    assert {row.kind for row in search_sections(sources, "context", kind="task")} == {"task"}
+    assert {row.kind for row in search_sections(sources, "context", kind="reference")} == {
+        "reference"
+    }
     assert search_sections(sources, "no_such_feature") == []
     for bad in ("   ", "x" * 161, " ".join(f"w{i}" for i in range(13))):
         with pytest.raises(ValueError, match="query"):
@@ -66,17 +68,14 @@ def test_kind_filter_and_query_bounds(docs_repo: Path) -> None:
 @pytest.mark.parametrize(
     ("rel", "kind"),
     [
-        ("docs/work/2026-11-01-live/02-plan.md", "task"),
         ("scripts/CONTEXT.md", "project"),
         ("docs/roadmap/backlog/options-research.md", "feature"),
         ("docs/roadmap/refactors/split-models.md", "feature"),
         (".claude/rules/docs.md", "reference"),
         ("CONTEXT.md", "project"),
-        ("STATUS.md", "project"),
         ("packages/alpha-data/CONTEXT.md", "project"),
         ("apps/alpha-web/CONTEXT.md", "project"),
         ("tests/CONTEXT.md", "project"),
-        ("docs/reference/commands.md", "reference"),
         ("docs/reference/invariants/data.md", "reference"),
         ("docs/archive/research-notes/2026-06/00-SYNTHESIS.md", "research"),
         ("docs/archive/research-notes/feature-readiness-checklist-2026-10-27.md", "research"),
@@ -89,8 +88,7 @@ def test_families(rel: str, kind: str) -> None:
 @pytest.mark.parametrize(
     "rel",
     [
-        "docs/work/2026-11-01-x/deep/x.md",
-        "docs/work/2026-11-01-x/data.json",
+        "docs/work/2026-11-01-x/02-plan.md",
         "docs/roadmap/README.md",
         "docs/roadmap/backlog/image.png",
         "docs/archive/research-notes/mizerxbt-eth/mizerxbt_eth_short_1h.py",
@@ -112,13 +110,13 @@ def test_heading_matches_rank_ahead_of_text_matches(docs_repo: Path) -> None:
         docs_repo,
         {
             "docs/adr/0002-ledger.md": "# Ledger rotation\nLedger rotation plan.\n",
-            "docs/work/2026-11-01-new/02-plan.md": "# New plan\nThe ledger rotation plan.\n",
+            "docs/operations/new-plan.md": "# New plan\nThe ledger rotation plan.\n",
         },
     )
     found = search_sections(read_sources(docs_repo), "ledger rotation")
     assert [row.path for row in found] == [
         "docs/adr/0002-ledger.md",
-        "docs/work/2026-11-01-new/02-plan.md",
+        "docs/operations/new-plan.md",
     ]
 
 

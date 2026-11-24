@@ -1,23 +1,13 @@
-"""The file system's command line: orientation, document search and staleness.
+"""The file system's command line: orientation and document search.
 
     uv run python scripts/fs.py orient [--component NAME] [--json]
     uv run python scripts/fs.py search "QUERY" [--kind KIND] [--limit N] [--format text|json]
-    uv run python scripts/fs.py stale [--strict] [--format text|json]
-    uv run python scripts/fs.py owners PATH... [--json]
     uv run python scripts/fs.py map WORKSPACE [--find WORDS...]
-    uv run python scripts/fs.py verify DOCUMENT... [--reason "WHY IT IS STILL CORRECT"]
 
 ``orient`` lists components, module counts and the routing documents to read first. ``search``
-returns ranked excerpts of tracked documentation (path, heading, line range, kind). ``stale``
-lists living documents whose ``sources`` no longer match their ``verified`` fingerprint; it
-exits 0 (a report) unless ``--strict`` is given or a document's front matter is broken; a
-document whose sources give nothing to fingerprint is a warning ("cannot be checked").
-``map`` prints one line per module of a workspace (path, lines, docstring line), made from the code.
-``owners`` lists the living documents that describe each path. ``verify`` is the only command
-that writes: after you re-read a document against its sources, it records their fingerprint and
-prints which sources changed by how many lines. It refuses unless the document's own text changed
-since its last stamp or ``--reason`` says why it is still correct (kept in
-``docs/verified-reasons.txt``).
+returns ranked excerpts of tracked documentation (path, heading, line range, kind). ``map`` prints
+one line per module of a workspace (path, lines, docstring line), made from the code. Nothing here
+writes: pages are checked by a weekly sweep, not by a stored stamp.
 """
 
 from __future__ import annotations
@@ -31,7 +21,6 @@ from pathlib import Path
 import fs_map
 import fs_orient
 import fs_search
-import fs_stale
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -46,20 +35,9 @@ def build_parser() -> argparse.ArgumentParser:
     search.add_argument("--kind", choices=fs_search.KINDS, default="all")
     search.add_argument("--limit", type=int, default=8, help="excerpts to show (1-20)")
     search.add_argument("--format", choices=("text", "json"), default="text")
-    stale = sub.add_parser("stale", help="living documents whose sources changed since verified")
-    stale.add_argument("--strict", action="store_true", help="exit 1 when any document is stale")
-    stale.add_argument("--format", choices=("text", "json"), default="text")
-    owners = sub.add_parser("owners", help="living documents that describe each path")
-    owners.add_argument("paths", nargs="+")
-    owners.add_argument("--json", action="store_true")
     code = sub.add_parser("map", help="one line per module of a workspace, made from the code")
     code.add_argument("workspace", help="for example apps/alpha-cli")
     code.add_argument("--find", nargs="+", metavar="WORD", help="keep lines holding all words")
-    verify = sub.add_parser("verify", help="record that a document matches its sources now")
-    verify.add_argument("documents", nargs="+")
-    verify.add_argument(
-        "--reason", default="", help="why the document is still correct without an edit"
-    )
     return parser
 
 
@@ -84,33 +62,6 @@ def main(argv: list[str] | None = None) -> int:
             )
         elif args.command == "map":
             print(fs_map.code_map(root, _relative(root, args.workspace), args.find))
-        elif args.command == "stale":
-            reports = fs_stale.stale(root)
-            print(
-                json.dumps([r.as_dict() for r in reports], sort_keys=True, indent=2)
-                if args.format == "json"
-                else fs_stale.render_text(reports)
-            )
-            if any(r.problems for r in reports):
-                return 1
-            if args.strict and any(r.stale for r in reports):
-                return 1
-        elif args.command == "owners":
-            found = fs_stale.owners(root, [_relative(root, name) for name in args.paths])
-            if args.json:
-                print(json.dumps(found, sort_keys=True))
-            else:
-                for path, documents in found.items():
-                    print(f"{path}: {', '.join(documents) or 'no living document describes it'}")
-        elif args.command == "verify":
-            documents = [_relative(root, name) for name in args.documents]
-            for report in fs_stale.verify(root, documents, reason=args.reason):
-                if not report.stale:
-                    print(f"already current {report.path}")
-                    continue
-                print(f"verified {report.path}: {report.verified} -> {report.fingerprint}")
-                for name, added, removed in report.source_changes:
-                    print(f"  - source changed: {name} (+{added} -{removed})")
         else:
             result = fs_search.search(root, args.query, kind=args.kind, limit=args.limit)
             print(

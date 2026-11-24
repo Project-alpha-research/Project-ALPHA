@@ -13,7 +13,6 @@ sources:
   - tests/unit/test_options_american.py
   - tests/unit/test_options_american_implied.py
   - tests/unit/test_options_derived.py
-verified: 2f74fb28e9f0f764
 ---
 
 # Data layer invariants: options

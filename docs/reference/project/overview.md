@@ -2,7 +2,6 @@
 owner: project layer
 sources:
   - README.md
-verified: 93d91a02e0d833af
 ---
 
 # ALPHA: what it is for and how the parts fit
@@ -56,7 +55,7 @@ meant to trade real money one day, so there is no room for error and no silent l
 Decided on 2026-11-15 ([clean spine](owner-decisions-3.md#2026-11-15-build-the-thin-spine-clean-then-switch-over),
 [production grade](owner-decisions-3.md#2026-11-15-what-production-grade-means),
 [research partner](owner-decisions-3.md#2026-11-15-the-ai-must-be-a-research-partner-not-an-instruction-follower)).
-This is where the project is going; [STATUS.md](../../../STATUS.md) says what works today.
+This is where the project is going; `uv run python scripts/status.py` says what works today.
 
 | Layer | What it is | Its job |
 |---|---|---|

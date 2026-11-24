@@ -5,7 +5,6 @@ sources:
   - apps/alpha-web/src/alpha_web/api/setup_runs.py
   - apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx
   - packages/alpha-study/src/alpha_study/setup/**/*.py
-verified: 381f91517a179169
 ---
 
 # Setup Lab
@@ -53,7 +52,7 @@ look at it, measure it, then trade it with declared exits. It is a way of workin
 
 All commands run; find, study and trade each have a smoke test. The screen exists and is read-only. Not built:
 sizing, the owner's setup library and the daily scan with export, and starting a find from the screen. See the
-capabilities on [STATUS.md](../../../../STATUS.md) and the tool cards for [find](../../../../research/tools/setup-find.md),
+capabilities on `uv run python scripts/status.py` and the tool cards for [find](../../../../research/tools/setup-find.md),
 [study](../../../../research/tools/setup-study.md) and [trade](../../../../research/tools/setup-trade.md).
 
 ### To change this screen

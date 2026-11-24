@@ -4,7 +4,6 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/families/regimes.py
   - apps/alpha-cli/src/alpha_cli/toolbox/families/regimes_*.py
   - tests/unit/test_toolbox_regimes.py
-verified: 74999cc055f74880
 ---
 
 # Regime and conditional checks

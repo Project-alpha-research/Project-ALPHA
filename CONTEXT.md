@@ -2,7 +2,6 @@
 owner: file system routing
 sources:
   - "*/*/pyproject.toml"
-verified: fe23863d02ebd749
 ---
 # ALPHA: start here
 ## Purpose

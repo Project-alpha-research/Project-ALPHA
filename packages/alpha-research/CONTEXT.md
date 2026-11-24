@@ -3,7 +3,6 @@ owner: research primitives
 sources:
   - packages/alpha-research/src/**
   - packages/alpha-research/pyproject.toml
-verified: a6e89f5ba34a6607
 ---
 
 # alpha-research workspace

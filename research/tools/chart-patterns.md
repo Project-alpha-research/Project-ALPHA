@@ -5,7 +5,6 @@ sources:
   - apps/alpha-cli/src/alpha_cli/chart_pattern_picture.py
   - apps/alpha-cli/src/alpha_cli/pattern_events.py
   - apps/alpha-cli/src/alpha_cli/spine/pattern_context.py
-verified: 1c4d645032d0a671
 ---
 # Chart patterns: see one, then test one
 

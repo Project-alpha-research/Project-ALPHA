@@ -1,6 +1,6 @@
 # Capability map: every user-facing workflow of ALPHA, in plain English.
 #
-# STATUS.md is generated from this file (uv run python scripts/status.py); the schema is
+# The status page is made from this file on demand (uv run python scripts/status.py); the schema is
 # enforced by scripts/capabilities.py and tests/unit/test_capabilities.py.
 #
 # Fields per [[capability]]:
@@ -29,7 +29,7 @@
 #   missing          a few words on what stops it being Working (required unless Working);
 #                    "tested in-process only; no end-to-end smoke check yet" when only
 #                    proof_synthetic exists (the page lists those together)
-#   triage           {card, recommendation, owner_decision} for items on the triage sheet;
+#   triage           {card, recommendation, owner_decision} for items the owner decides (the old triage sheet is gone; the decisions live here);
 #                    owner_decision is "undecided" until the owner answers (TOML has no null)
 #   docs             plain-English documents for the owner (repo-relative .md paths; optional)
 #

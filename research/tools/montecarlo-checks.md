@@ -3,7 +3,6 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/families/montecarlo.py
   - tests/unit/test_toolbox_montecarlo_checks.py
-verified: 649c96b27d241394
 ---
 
 # Fat-tail histories

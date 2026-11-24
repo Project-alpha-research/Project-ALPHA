@@ -10,7 +10,6 @@ sources:
   - tests/unit/test_options_american.py
   - tests/unit/test_options_american_implied.py
   - tests/unit/test_options_derived.py
-verified: 051c334efe60cdb8
 ---
 
 # Options data

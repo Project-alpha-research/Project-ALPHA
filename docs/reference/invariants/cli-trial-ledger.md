@@ -10,14 +10,13 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: 4bacc613af7933aa
 ---
 
 # One trial ledger invariants
 
 `alpha ledger` reads the spine ledger and the external RD-Agent factor/rule ledger as one
 model. [ADR-0053](../../adr/0053-one-trial-ledger-read-model.md) owns the outcome mappings and
-counting decision. Options are in the [command reference](../commands.md#alpha-ledger).
+counting decision. Options are in the `uv run python scripts/commands_reference.py`.
 
 The run-folder commands `proposal` and `reply` exchange build choices with a waiting worker.
 Between proposals, the command reads the worker's phase and its latest decision.

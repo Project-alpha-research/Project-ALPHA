@@ -3,7 +3,6 @@ owner: project layer
 sources:
   - packages/alpha-validation/CONTEXT.md
   - apps/alpha-cli/src/alpha_cli/spine/**
-verified: f2c9ea7b4cfeb77e
 ---
 
 # Validation and evidence
@@ -67,7 +66,7 @@ questions the flags raise, on one recorded rule test. They are entries of the
 ruptures, write no new statistics, log every attempt, and label what they cannot avoid:
 `hindsight`, `parameters-fit-in-sample`, `benchmark-is-same-asset`, `non-default-params`.
 
-See the capabilities below on [STATUS.md](../../../../STATUS.md).
+See the capabilities below on `uv run python scripts/status.py`.
 
 ## Where it lives
 
@@ -86,7 +85,7 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 
 ## Decisions and open questions
 
-- Triage card 5 (risk numbers): KEEP, 2026-11-14 under the owner's delegation ([triage sheet](../../../roadmap/triage-2026-11.md)).
+- Triage card 5 (risk numbers): KEEP, 2026-11-14 under the owner's delegation ([capability map](../../../roadmap/capabilities.toml)).
 - Path-risk simulation has its own page, [Monte Carlo](monte-carlo.md); the investigation tools are in the [toolbox](toolbox.md).
 
 ## Never

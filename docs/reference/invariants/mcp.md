@@ -7,7 +7,6 @@ sources:
   - tests/unit/test_mcp_spine_tools.py
   - tests/unit/test_mcp_front_door_tools.py
   - tests/integration/test_mcp_front_door.py
-verified: c04884b24f5ee18f
 ---
 
 # MCP invariants

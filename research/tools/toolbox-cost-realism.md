@@ -2,7 +2,6 @@
 owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/families/cost_realism*.py
-verified: 78e6a43af39bf282
 ---
 # Cost and execution realism checks
 **Reach for these checks when** a result may depend on fees, spreads, size, tax or how orders fill.

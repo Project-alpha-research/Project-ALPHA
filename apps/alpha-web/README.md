@@ -6,7 +6,6 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: fd7586220c444ac6
 ---
 
 # alpha-web: code map and change loop
@@ -84,6 +83,6 @@ grants authority.
 ## Also read
 | Read | Section | When |
 |---|---|---|
-| [command reference](../../docs/reference/commands.md) | — | finding the `alpha` command a route should call |
+| `uv run python scripts/commands_reference.py` | — | finding the `alpha` command a route should call |
 | [Setup Lab](../../docs/reference/project/components/setup-lab.md) | To change this screen | any Setup Lab screen work: files, loop, tests, screenshots |
 | [frontend README](frontend/README.md) | — | taking or checking screenshots of any other screen (2% tolerance, Linux container, test backend port 8802) |

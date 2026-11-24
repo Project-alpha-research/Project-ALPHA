@@ -5,7 +5,6 @@ sources:
   - workers/rdagent/README.md
   - workers/rdagent/CHANGE-NOTES.md
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
-verified: b3b868ba51472ece
 ---
 
 # RD-Agent
@@ -46,7 +45,7 @@ studies. [Walk-through](../../../roadmap/rd-agent-in-alpha.md).
 
 ## What is real today
 
-See the capabilities below on [STATUS.md](../../../../STATUS.md), and
+See the capabilities below on `uv run python scripts/status.py`, and
 [what is real today](../../../roadmap/rd-agent-in-alpha.md#what-is-real-today) and
 [what is still made-up](../../../roadmap/rd-agent-in-alpha.md#what-is-still-made-up).
 Being uninstalled somewhere, or having skipped tests, means work is left, not that it should go.

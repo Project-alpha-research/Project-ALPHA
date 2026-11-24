@@ -16,12 +16,11 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-KINDS = ("all", "project", "feature", "task", "decision", "reference", "research")
+KINDS = ("all", "project", "feature", "decision", "reference", "research")
 _ROOT_FILES = {
     "AGENTS.md",
     "CLAUDE.md",
     "CONTEXT.md",
-    "STATUS.md",
     "docs/ARCHITECTURE.md",
 }
 # Workspace routing files: one CONTEXT.md per code area (never under the hidden test suite).
@@ -39,8 +38,6 @@ _FAMILIES = {
     "docs/operations": "reference",
     ".claude/rules": "reference",
 }
-# A task folder (docs/work/<task>/) holds a build's stage files while its pull request is open.
-_TASK_FOLDER = re.compile(r"docs/work/[^/]+")
 _TOKENS = re.compile(r"[a-z0-9]+")
 _HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
 _EXCERPT_LINES = 40
@@ -90,10 +87,7 @@ def family(rel: str) -> str | None:
         return "research" if path.suffix == ".md" else None
     if path.suffix not in {".md", ".txt", ".json"}:
         return None
-    parent = path.parent.as_posix()
-    if _TASK_FOLDER.fullmatch(parent):
-        return "task" if path.suffix == ".md" else None
-    return _FAMILIES.get(parent)
+    return _FAMILIES.get(path.parent.as_posix())
 
 
 def read_sources(root: Path) -> dict[str, Source]:

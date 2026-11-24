@@ -26,5 +26,5 @@ blocked [W11 refit plan](https://github.com/tradingsystem1880-eng/Project-ALPHA/
 
 - [Checklist W11](../../archive/research-notes/feature-readiness-checklist-2026-10-27.md#w11-qualify-retraining-and-sizing-risk-experiments) and [W12](../../archive/research-notes/feature-readiness-checklist-2026-10-27.md#w12-migrate-qlib-and-deliver-model-waves)
 - [Checklist: All 25 declared model entries](../../archive/research-notes/feature-readiness-checklist-2026-10-27.md#all-25-declared-model-entries)
-- [STATUS: what works today](../../../STATUS.md)
+- What works today: `uv run python scripts/status.py`
 - [Qlib worker README](../../../workers/qlib/README.md)

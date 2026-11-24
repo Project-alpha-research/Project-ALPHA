@@ -4,12 +4,11 @@ sources:
   - scripts/capabilities.py
   - scripts/status.py
   - docs/archive/research-notes/feature-readiness-checklist-2026-10-27.md
-verified: 80af149da953ded4
 ---
 
 # Glossary
 
-This page explains the short codes and technical words you may see on an ALPHA status page.
+This page explains the short codes and technical words you may see on an ALPHA status page (`uv run python scripts/status.py`).
 Each entry gives the plain meaning in a line or two. Meanings come from the project's own
 documents, not from general usage.
 

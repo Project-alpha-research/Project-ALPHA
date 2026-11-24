@@ -125,18 +125,8 @@ def _document_reminder(file_path: str, cwd: Path) -> subprocess.CompletedProcess
     )
 
 
-def test_document_reminder_names_the_documents_and_the_stamp_command() -> None:
-    result = _document_reminder(str(REPO_ROOT / "scripts/fs_stale.py"), REPO_ROOT / "scripts")
-    assert result.returncode == 0 and not result.stderr
-    output = json.loads(result.stdout)["hookSpecificOutput"]
-    assert output["hookEventName"] == "PostToolUse"
-    context = output["additionalContext"]
-    assert context.startswith("scripts/fs_stale.py changed.")
-    assert "scripts/fs.py verify docs/CONTEXT.md scripts/CONTEXT.md" in context
-
-
 @pytest.mark.parametrize("file_path", ["docs/CONTEXT.md", "uv.lock", "/etc/hostname"])
-def test_document_reminder_is_silent_when_no_document_describes_the_file(file_path: str) -> None:
+def test_retired_document_hook_is_silent(file_path: str) -> None:
     result = _document_reminder(file_path, REPO_ROOT)
     assert (result.returncode, result.stdout, result.stderr) == (0, "", "")
 

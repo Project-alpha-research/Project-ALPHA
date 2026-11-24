@@ -3,7 +3,6 @@ owner: project layer
 sources:
   - apps/alpha-web/CONTEXT.md
   - docs/adr/0021-research-workstation-read-plane-and-command-center.md
-verified: 0763267e5e567dc9
 ---
 
 # Web workstation
@@ -29,7 +28,7 @@ start supported actions. It never does the work itself: each action is a call to
 
 ## What is real today
 
-See the capabilities below on [STATUS.md](../../../../STATUS.md). Start it with `uv run alpha-web`.
+See the capabilities below on `uv run python scripts/status.py`. Start it with `uv run alpha-web`.
 It serves on `http://127.0.0.1:8801`; `ALPHA_WEB_PORT` sets the port and `ALPHA_DATA_DIR` sets the data folder. `alpha-web --help` prints this and exits.
 
 A run made by `alpha test` (a rule test) opens with its own first section, above the summary:

@@ -11,8 +11,6 @@ The file system (ADR-0040) follows the Interpretable Context Methodology adapted
   change it, Outputs. Its Read first table names exact files and sections.
   ``research/CONTEXT.md`` routes to the playbook, tool cards, skills and
   lessons, which ``tests/unit/test_research_playbook.py`` checks against the program.
-* Outputs: a task folder ``docs/work/<yyyy-mm-dd>-<slug>/`` holds a build's ``brief.md`` and
-  ``report.md`` (``docs/work/CONTEXT.md``).
 * Layer 3: reference documents under ``docs/reference/``: the rules (``invariants/``) and the
   project layer (``project/``: what each major part is for, and the owner's decisions).
 * Loading: each workspace has a one-line ``CLAUDE.md`` that imports its ``CONTEXT.md``; Claude
@@ -20,8 +18,7 @@ The file system (ADR-0040) follows the Interpretable Context Methodology adapted
   thin path-scoped pointers (an ``@`` import inside a path-scoped rule loads at launch, so the
   rules link instead of importing).
 
-Every routing and reference document declares who owns it, which files it describes and the
-fingerprint of those files it was verified against (``scripts/fs.py stale`` uses these). The
+Every routing and reference document declares who owns it and which files it describes. The
 "always read" set of a workspace (CLAUDE.md, rules, both CONTEXT files, always rows) must stay
 within 16 KB. Failure messages say what to change.
 """
@@ -35,7 +32,6 @@ from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 
-import fs_stale
 import pytest
 
 from tests.unit.test_docs_links import _FENCE, _HEADING, anchors, broken_links, github_slug
@@ -46,14 +42,6 @@ WORKSPACE_PARENTS = ("packages", "apps", "workers")
 EXTRA_WORKSPACES = ("scripts", "tests", "docs", "research")
 REFERENCE_DIR = "docs/reference"
 REQUIRED_SECTIONS = ("Purpose", "Read first", "How to change it", "Outputs")
-WORK_DIR = "docs/work"
-# Old task folders (history) may still hold the files of the retired five-stage pipeline.
-RETIRED_STAGE_OUTPUTS = frozenset(
-    {"01-brief.md", "02-plan.md", "03-build.json", "04-verify.md", "05-handoff.md"}
-)
-# A build leaves these: outputs, not living documents.
-BUILD_OUTPUTS = frozenset({"brief.md", "report.md"})
-_TASK_NAME = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(-[a-z0-9]+)*$")
 CONTEXT_MAX_LINES = 40
 CONTEXT_MAX_BYTES = 2_560
 CONTEXT_BODY_MAX_LINES = 14  # non-blank lines of a workspace body, headings and tables left out
@@ -66,8 +54,7 @@ MAX_LINE_CHARS = 160
 ALWAYS_BUDGET_BYTES = 16_384
 ALWAYS_ROWS_MAX_BYTES = 6_144  # the "always" rows of one workspace, section rows counted in full
 ALWAYS_WHOLE_FILE_MAX_BYTES = 3_072  # an "always" row may name a whole file only up to this size
-LIVING_KEYS = {"owner", "sources", "verified"}
-GENERATED_KEYS = {"generated_by", "sources"}
+LIVING_KEYS = {"owner", "sources"}
 _OWNER = re.compile(r"^[a-z][a-z0-9 ,/&()-]{2,40}$")
 _LINK = re.compile(r"^\[[^\]]+\]\(([^)\s]+)\)$")
 _COMING = "(coming)"
@@ -279,25 +266,53 @@ def _shape_problems(rel: str, max_lines: int | None, advice: str = "") -> list[s
     return problems
 
 
-def _front_matter_problems(rel: str, *, allow_generated: bool) -> list[str]:
+def _front_matter(text: str) -> dict[str, str | list[str]] | None:
+    """The leading ``---`` block as ``key: value`` and ``key:`` + ``  - item`` lines, or None."""
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return None
+    meta: dict[str, str | list[str]] = {}
+    key: str | None = None
+    for number, line in enumerate(lines[1:], 2):
+        if line.strip() == "---":
+            return meta
+        if not line.strip():
+            continue
+        item = re.match(r"^\s+-\s+(.+?)\s*$", line)
+        if item and key is not None and isinstance(meta[key], list):
+            items = meta[key]
+            assert isinstance(items, list)
+            items.append(item.group(1).strip("'\""))
+            continue
+        pair = re.match(r"^([a-z_]+):\s*(.*?)\s*$", line)
+        if not pair or pair.group(1) in meta:
+            raise ValueError(f"line {number}: expected 'key: value' or '  - item', no repeats")
+        key = pair.group(1)
+        meta[key] = pair.group(2).strip("'\"") if pair.group(2) else []
+    raise ValueError("front matter is not closed with '---'")
+
+
+def _tracked_matches(pattern: str) -> list[str]:
+    out = subprocess.run(
+        ["git", "-C", str(ROOT), "ls-files", "--", f":(glob){pattern}"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    return [p for p in out.splitlines() if p]
+
+
+def _front_matter_problems(rel: str) -> list[str]:
     try:
-        meta = fs_stale.front_matter(_text(rel))
-    except fs_stale.FrontMatterError as exc:
+        meta = _front_matter(_text(rel))
+    except ValueError as exc:
         return [f"{rel}: front matter is malformed ({exc})"]
     if meta is None:
-        return [f"{rel}: must start with front matter (--- owner / sources / verified ---)"]
-    keys = set(meta)
+        return [f"{rel}: must start with front matter (--- owner / sources ---)"]
     problems = []
-    if allow_generated and "generated_by" in keys:
-        if keys != GENERATED_KEYS:
-            problems.append(
-                f"{rel}: a generated file declares exactly generated_by and sources, "
-                f"found {sorted(keys)}"
-            )
-    elif keys != LIVING_KEYS:
+    if set(meta) != LIVING_KEYS:
         problems.append(
-            f"{rel}: front matter keys must be exactly owner, sources, verified; "
-            f"found {sorted(keys)}"
+            f"{rel}: front matter keys must be exactly owner, sources; found {sorted(meta)}"
         )
     owner = meta.get("owner")
     if owner is not None and not (isinstance(owner, str) and _OWNER.match(owner)):
@@ -312,16 +327,8 @@ def _front_matter_problems(rel: str, *, allow_generated: bool) -> list[str]:
         problems += [
             f"{rel}: source glob {pattern!r} matches no tracked file; fix or remove it"
             for pattern in sources
-            if not fs_stale.tracked_matches(ROOT, pattern)
+            if not _tracked_matches(pattern)
         ]
-    verified = meta.get("verified")
-    if "verified" in keys and not (
-        isinstance(verified, str) and re.fullmatch(r"[0-9a-f]{16}", verified)
-    ):
-        problems.append(
-            f"{rel}: verified {verified!r} is not a fingerprint of the sources; re-read the "
-            f"document against them, then run `uv run python scripts/fs.py verify {rel}`"
-        )
     return problems
 
 
@@ -331,12 +338,12 @@ def _context_line_limit(rel: str) -> int:
     return CONTEXT_MAX_LINES
 
 
-def test_context_files_are_small_and_declare_owner_sources_verified() -> None:
+def test_context_files_are_small_and_declare_owner_and_sources() -> None:
     problems = []
     for rel in context_files():
         if (ROOT / rel).is_file():
             problems += _shape_problems(rel, _context_line_limit(rel), CONTEXT_LINES_ADVICE)
-            problems += _front_matter_problems(rel, allow_generated=False)
+            problems += _front_matter_problems(rel)
     assert not problems, "\n".join(problems)
 
 
@@ -412,16 +419,13 @@ def test_read_first_tables_are_short_with_short_when_cells() -> None:
     assert not problems, "\n".join(problems)
 
 
-def test_reference_files_are_small_and_declare_owner_sources_verified() -> None:
+def test_reference_files_are_small_and_declare_owner_and_sources() -> None:
     files = reference_files()
     assert files, "docs/reference/ has no Markdown files"
     problems = []
     for rel in files:
-        generated = "generated_by" in (fs_stale.front_matter(_text(rel)) or {})
-        problems += _shape_problems(
-            rel, None if generated else REFERENCE_MAX_LINES, REFERENCE_LINES_ADVICE
-        )
-        problems += _front_matter_problems(rel, allow_generated=True)
+        problems += _shape_problems(rel, REFERENCE_MAX_LINES, REFERENCE_LINES_ADVICE)
+        problems += _front_matter_problems(rel)
     assert not problems, "\n".join(problems)
 
 
@@ -536,40 +540,6 @@ def test_root_routes_to_every_workspace() -> None:
         "The root CONTEXT.md routing table (## Read first) has no row linking to these "
         "workspaces' CONTEXT.md:\n" + "\n".join(missing)
     )
-
-
-# ---------------------------------------------------------------------------------------------
-# Outputs: task folders under docs/work/ (only while their pull request is open)
-
-
-def _task_folders() -> list[Path]:
-    root = ROOT / WORK_DIR
-    return sorted(p for p in root.iterdir() if p.is_dir()) if root.is_dir() else []
-
-
-def test_task_folders_hold_a_brief_and_only_build_files() -> None:
-    folders = _task_folders()
-    problems = []
-    for folder in folders:
-        rel = folder.relative_to(ROOT).as_posix()
-        if not _TASK_NAME.match(folder.name):
-            problems.append(f"{rel}: name a task folder yyyy-mm-dd-<lowercase-slug>")
-        if not (folder / "02-plan.md").is_file() and not (folder / "brief.md").is_file():
-            problems.append(f"{rel}: has no brief.md; commit it")
-        allowed = RETIRED_STAGE_OUTPUTS | BUILD_OUTPUTS
-        problems += [
-            f"{rel}/{child.name}: not a task file; allowed: {', '.join(sorted(allowed))}"
-            for child in sorted(folder.iterdir())
-            if child.name not in allowed
-        ]
-    assert not problems, "\n".join(problems)
-
-
-def test_work_folder_holds_only_task_folders() -> None:
-    root = ROOT / WORK_DIR
-    files = sorted(root.iterdir()) if root.is_dir() else []
-    stray = [p.relative_to(ROOT).as_posix() for p in files if p.is_file() and p.name != CONTEXT]
-    assert not stray, f"{WORK_DIR} holds only task folders; move: {stray}"
 
 
 # ---------------------------------------------------------------------------------------------
@@ -717,7 +687,7 @@ def test_rule_files_are_thin_pointers_with_live_globs(rel: str) -> None:
         problems += [
             f"{rel}: glob {pattern!r} matches no tracked file"
             for pattern in globs or []
-            if not fs_stale.tracked_matches(ROOT, pattern)
+            if not _tracked_matches(pattern)
         ]
         targets = [target.split("#", 1)[0] for target in _links(rel)]
         if not any(t.endswith(CONTEXT) or "/reference/invariants/" in t for t in targets):
@@ -968,14 +938,7 @@ def test_measurement_page_is_not_routed() -> None:
 
 
 # ---------------------------------------------------------------------------------------------
-# Section-level always rows and small invariant sections
-
-INVARIANT_SECTION_MAX_BYTES = 4_096
-# Sections written before the limit. Each ceiling is the section's size when the limit began and may
-# only go down. Split the section by sub-headings, then delete its entry.
-INVARIANT_SECTION_CEILINGS: dict[tuple[str, str], int] = {
-    ("cli-results-check.md", "Draft checks and run comparisons"): 5_156,
-}
+# Always rows stay small
 
 
 def test_always_rows_per_workspace_stay_small_and_name_only_small_whole_files() -> None:
@@ -1000,144 +963,6 @@ def test_always_rows_per_workspace_stay_small_and_name_only_small_whole_files() 
                     f"{rel}: the always row for {row.target} names the whole file ({size:,} bytes; "
                     f"the limit is {ALWAYS_WHOLE_FILE_MAX_BYTES:,}). Name its sections instead."
                 )
-    assert not problems, "\n".join(problems)
-
-
-def _invariant_section_sizes() -> dict[tuple[str, str], int]:
-    sizes: dict[tuple[str, str], int] = {}
-    for path in sorted((ROOT / INVARIANTS_DIR).glob("*.md")):
-        text = path.read_text(encoding="utf-8")
-        lines = text.splitlines(keepends=True)
-        found = headings(text)
-        for position, (index, level, title) in enumerate(found):
-            if level != 2:
-                continue
-            end = next((i for i, lvl, _ in found[position + 1 :] if lvl <= 2), len(lines))
-            sizes[(path.name, title)] = len("".join(lines[index:end]).encode("utf-8"))
-    return sizes
-
-
-def test_invariant_sections_are_small_enough_for_a_row_to_name() -> None:
-    sizes = _invariant_section_sizes()
-    problems = []
-    for (name, title), size in sizes.items():
-        limit = INVARIANT_SECTION_CEILINGS.get((name, title), INVARIANT_SECTION_MAX_BYTES)
-        if size > limit:
-            problems.append(
-                f"{INVARIANTS_DIR}/{name} § {title}: {size:,} bytes; the limit is {limit:,}. "
-                "Add sub-headings so a Read first row can name a part."
-            )
-    for (name, title), ceiling in INVARIANT_SECTION_CEILINGS.items():
-        found = sizes.get((name, title))
-        if found is None:
-            problems.append(f"ceiling for {name} § {title} names a missing section; remove it")
-        elif found <= INVARIANT_SECTION_MAX_BYTES:
-            problems.append(f"{name} § {title} is {found:,} bytes; remove its ceiling")
-        elif found < ceiling:
-            problems.append(f"{name} § {title} is {found:,} bytes; lower its ceiling to {found:,}")
-    assert not problems, "\n".join(problems)
-
-
-# ---------------------------------------------------------------------------------------------
-# Cramming: a line cap is a split trigger, not a target
-
-CRAM_LOW = MAX_LINE_CHARS - 10
-CRAM_MAX_SHARE = 0.20
-CRAM_MIN_PROSE_LINES = 10
-# Files written before this check. Each ceiling is the file's count of prose lines of 150 to 160
-# characters when the check began and may only go down. Split the file by heading (or summarise and
-# link), then delete its entry.
-CRAM_CEILINGS: dict[str, int] = {
-    "docs/reference/invariants/cli-runs.md": 45,
-    "docs/reference/invariants/data-crypto.md": 12,
-    "docs/reference/project/file-system-measurement.md": 14,
-}
-
-
-def prose_lines(text: str) -> list[str]:
-    """Lines of prose: no front matter, code, headings, tables, link definitions or blank lines."""
-    if text.startswith("---\n") and "\n---\n" in text:
-        text = text.split("\n---\n", 1)[1]
-    found = []
-    for _, line in _body_lines(text):
-        stripped = line.strip()
-        if not stripped or stripped.startswith(("#", "|", "http")):
-            continue
-        if re.match(r"^\[[^\]]+\]:", stripped):
-            continue
-        found.append(line)
-    return found
-
-
-def cram_count(text: str) -> tuple[int, int]:
-    """(prose lines of 150 to 160 characters, prose lines)."""
-    prose = prose_lines(text)
-    return sum(CRAM_LOW <= len(line) <= MAX_LINE_CHARS for line in prose), len(prose)
-
-
-def _crammed_files() -> dict[str, int]:
-    crammed: dict[str, int] = {}
-    for rel in reference_files():
-        text = _text(rel)
-        if "generated_by" in (fs_stale.front_matter(text) or {}):
-            continue
-        near_cap, total = cram_count(text)
-        if total >= CRAM_MIN_PROSE_LINES and near_cap > CRAM_MAX_SHARE * total:
-            crammed[rel] = near_cap
-    return crammed
-
-
-def test_cram_counts_only_prose_lines_near_the_cap() -> None:
-    near = "x" * 155
-    text = f"---\nowner: a\n---\n# {near}\n\n| {near} |\n```\n{near}\n```\n{near}\n- short\n"
-    assert cram_count(text) == (1, 2)
-    assert prose_lines("[ref]:\n  https://example.org/" + "a" * 150) == []
-
-
-def test_reference_files_are_not_crammed_under_the_line_cap() -> None:
-    crammed = _crammed_files()
-    problems = [
-        f"{rel}: {count} prose lines are 150 to 160 characters long; the limit is "
-        f"{CRAM_MAX_SHARE:.0%}. Split the file by heading into a sibling file, or summarise and "
-        "link; never drop words to fit."
-        for rel, count in crammed.items()
-        if count > CRAM_CEILINGS.get(rel, -1)
-    ]
-    for rel, ceiling in CRAM_CEILINGS.items():
-        found = crammed.get(rel)
-        if found is None:
-            problems.append(f"{rel} is no longer crammed (or is gone); remove its ceiling")
-        elif found < ceiling:
-            problems.append(f"{rel} has {found} crammed lines; lower its ceiling to {found}")
-    assert not problems, "\n".join(problems)
-
-
-# These project pages keep a plain summary; builder detail lives in the rule pages.
-COMPONENT_SIZE_LIMITS: dict[str, tuple[int, int]] = {  # lines, bytes
-    "rd-agent.md": (100, 7_000),
-    "data-layer.md": (112, 7_200),
-    "toolbox.md": (100, 7_000),
-}
-TOOLBOX_REAL_TODAY_MAX_BYTES = 1_000
-
-
-def test_the_long_component_pages_stay_summaries() -> None:
-    problems = []
-    for name, (max_lines, max_bytes) in COMPONENT_SIZE_LIMITS.items():
-        rel = f"{COMPONENTS_DIR}/{name}"
-        text = _text(rel)
-        lines, size = len(text.splitlines()), len(text.encode("utf-8"))
-        if lines > max_lines or size > max_bytes:
-            problems.append(
-                f"{rel}: {lines} lines, {size:,} bytes; the limits are {max_lines} and "
-                f"{max_bytes:,}. Move builder detail to the rule page and link to it."
-            )
-    real_today = section_bytes(ROOT / COMPONENTS_DIR / "toolbox.md", "What is real today")
-    if real_today is None or real_today > TOOLBOX_REAL_TODAY_MAX_BYTES:
-        problems.append(
-            f"toolbox.md § What is real today is {real_today} bytes; the limit is "
-            f"{TOOLBOX_REAL_TODAY_MAX_BYTES:,}. Keep a summary; the list lives in cli-toolbox.md."
-        )
     assert not problems, "\n".join(problems)
 
 

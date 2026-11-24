@@ -7,7 +7,6 @@ sources:
   - docs/reference/project/owner-decisions-4.md
   - docs/reference/project/owner-decisions-5.md
   - docs/reference/project/owner-decisions-6.md
-verified: d7e110fdb4705759
 ---
 
 # Owner decisions by topic

@@ -2,7 +2,6 @@
 owner: project layer
 sources:
   - docs/reference/project/owner-decisions-4.md
-verified: 0081ea88c9ee9e4d
 ---
 
 # Owner decisions log, volume 5
@@ -82,7 +81,7 @@ part that owns it can link to one clear entry.
   and no unprompted design proposals. Only the RD-Agent view is reshaped, to the journey layout in the
   next entry. When UI work resumes, ask the owner for reference screenshots rather than guess.
 - **Left to the owner:** when to resume Workstation design (open item N5 in the
-  [triage sheet](../../roadmap/triage-2026-11.md)).
+  [capability map](../../roadmap/capabilities.toml)).
 - **Governs:** [Workstation](components/web-workstation.md); the 2026-11-14 entry
   [the interface shows charts with text](owner-decisions-2.md#2026-11-14-the-interface-shows-charts-with-text-in-a-quant-style-and-is-finished-later),
   which this entry changes: the quant style is now light, not all dark.

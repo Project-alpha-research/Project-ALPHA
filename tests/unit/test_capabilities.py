@@ -17,17 +17,6 @@ def test_committed_capability_map_is_valid() -> None:
     assert capabilities.main([]) == 0
 
 
-def test_map_and_triage_sheet_list_the_same_cards_and_recommendations() -> None:
-    sheet = (ROOT / "docs/roadmap/triage-2026-11.md").read_text(encoding="utf-8")
-    table = sheet.split("## Your decisions", 1)[1].split("\n---", 1)[0]
-    rows = [line.split("|") for line in table.splitlines() if line.startswith("| ")][2:]
-    on_sheet = {cells[1].strip(): cells[3].strip().upper() for cells in rows}
-    in_map = {t.card: t.recommendation.upper() for _, t in capabilities.load(ROOT).triage_items()}
-    assert set(on_sheet) == set(in_map)
-    for card, recommendation in in_map.items():
-        assert on_sheet[card].startswith(recommendation.split(" ")[0]), card
-
-
 # --- schema checks on a minimal synthetic tree --------------------------------------------
 
 

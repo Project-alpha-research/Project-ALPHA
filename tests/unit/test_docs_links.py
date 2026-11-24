@@ -28,14 +28,27 @@ ALLOWLIST: dict[tuple[str, str], str] = {
         "docs/roadmap/backlog/intraday-equity-timeframe.md",
         "../../context/feature-readiness-checklist-2026-10-27.md#explicit-exclusions-and-boundaries",
     ): "owner keeps this file untouched; checklist now in docs/archive/research-notes/",
+    (
+        "docs/adr/0018-quantpad-external-research-data-boundary.md",
+        "../roadmap/triage-2026-11.md#d-quantpad-code",
+    ): "ADR text is history; the triage sheet was deleted (decisions live in capabilities.toml)",
+    (
+        "docs/adr/0023-research-dataset-registration-and-quantpad-lane.md",
+        "../roadmap/triage-2026-11.md#d-quantpad-code",
+    ): "ADR text is history; the triage sheet was deleted (decisions live in capabilities.toml)",
+    (
+        "docs/adr/0024-literature-acquisition-worker-and-claim-model.md",
+        "../roadmap/triage-2026-11.md#e-duplicate-copy-of-the-literature-download-code",
+    ): "ADR text is history; the triage sheet was deleted (decisions live in capabilities.toml)",
+    (
+        "docs/adr/README.md",
+        "../../STATUS.md",
+    ): "ADR text is history; STATUS.md is no longer stored (scripts/status.py prints it)",
 }
 
 # The owner's research notes keep their bytes exactly (docs/archive/research-notes/README.md), so
 # links inside them are not checked; links *to* them are.
 RESEARCH_NOTES = "docs/archive/research-notes/"
-# A build's brief and report (docs/work/CONTEXT.md) are copies of text written elsewhere: outputs,
-# so their links are not checked.
-_TASK_OUTPUT = re.compile(r"^docs/work/[^/]+/(?:brief|report)\.md$")
 
 _FENCE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")
 _INLINE_CODE = re.compile(r"(`+)(?:(?!\1).)+?\1")
@@ -123,7 +136,7 @@ def links(text: str) -> list[tuple[int, str]]:
 
 
 def broken_links(rel: str) -> list[str]:
-    if rel.startswith(RESEARCH_NOTES) or _TASK_OUTPUT.match(rel):
+    if rel.startswith(RESEARCH_NOTES):
         return []
     source = ROOT / rel
     problems: list[str] = []

@@ -2,7 +2,6 @@
 owner: status page and roadmap
 sources:
   - docs/reference/project/owner-decisions-3.md
-verified: 3fd2dac8724c4b7e
 ---
 
 # Production-ready scope, part 2: overfit tests to engines
@@ -163,8 +162,8 @@ The pinned upstream engines and how much of each ALPHA uses.
 [precise]: ../reference/project/owner-decisions.md#2026-11-14-precision-and-live-capital
 [rd-all]: ../reference/project/owner-decisions-3.md#2026-11-15-adopt-everything-rd-agent-has-memory-first
 [slim]: ../reference/project/owner-decisions-3.md#2026-11-15-always-slimmer
-[status]: ../../STATUS.md
+[status]: capabilities.toml
 [team]: ../reference/project/owner-decisions.md#2026-11-14-the-autonomous-research-team
 [thin]: ../reference/project/owner-decisions-2.md#2026-11-14-thin-alpha-dramatically-rd-agent-and-qlib-are-the-proven-core
-[triage]: triage-2026-11.md
+[triage]: capabilities.toml
 [ui]: ../reference/project/owner-decisions-2.md#2026-11-14-keep-the-user-interface

@@ -5,7 +5,6 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - tests/unit/test_toolbox_*.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
-verified: de553e6a7d10b2c0
 ---
 
 # Toolbox
@@ -64,7 +63,7 @@ The catalogue holds 112 entries in 15 families (`alpha tool list`). The [toolbox
 list what they constrain. `alpha tool` lists, finds, describes and runs them, and records the owner's plan before a look
 (`declare`). Every attempt is logged and stored answers are reused. Two predeclared sets exist (`sets.py`): `market-context`
 and `rdagent-post-judge`, which runs two fixed checks after each judged RD-Agent idea and never changes the verdict. Not built:
-agent-chosen checks and the rest of the 480-candidate catalogue ([STATUS.md](../../../../STATUS.md)).
+agent-chosen checks and the rest of the 480-candidate catalogue (`uv run python scripts/status.py`).
 To add a check, see [Adding a check](../../invariants/cli-toolbox.md#adding-a-check).
 
 ## Where it lives

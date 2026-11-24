@@ -12,6 +12,9 @@ verified: 87714b0666bd11f9
 
 # Command line research invariants
 
+Being removed (owner decision 2026-11-23): see
+[owner-decisions-6.md](../project/owner-decisions-6.md#2026-11-23-remove-the-old-research-case-machinery-export-first).
+
 What must not break when changing the governed Research Case commands (`alpha research ...`) and the
 `research_*` modules (command bodies in `research_cmds.py`, shared helpers in `_research_cmd_parts.py`) that
 capture ideas, freeze contracts, run the D0/D1/D2 phases and project gate packets.

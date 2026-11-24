@@ -59,3 +59,33 @@ entries are in the first. New entries are appended at the end of this file.
 - **Governs:** [reserved period](reserved-period.md); the
   [card](../../../research/tools/reserved-confirmation.md);
   [owner authority](../invariants/research-integrity.md#owner-authority).
+
+### 2026-11-19 Redirect: front door, three golden paths, nightly real run, wider universe, idea card
+
+- **Said:** "Yes I approve the re direction", after a review of the project against the researched creators' way of building and testing strategies.
+- **Decided:** stop adding checks and features. Order of work: (1) one front door, where an idea is stated in plain words and the system runs it
+  and shows it; (2) three golden paths: the owner's own rule, the owner's own chart setup, an RD-Agent idea; (3) all three run every night on real
+  data (`alpha nightly`) as the alarm, and the universe widens only after two full runs in a row with no blocking defect; (4) a real universe
+  with delisted names; (5) the idea card as the form in which ideas are proposed. The card is an addition to RD-Agent, never a cut.
+- **Context:** the review found a strict judge with thin ideas and thin data, many capabilities only partly working, and no front door.
+- **Governs:** [project overview](overview.md); the [nightly run card](../../../research/tools/nightly-run.md); [RD-Agent](components/rd-agent.md).
+
+### 2026-11-19 Forward test: follow a tested idea on paper
+
+- **Said:** exact words not recorded; the owner approved a forward test (paper, live data) among five items after a review of where more edge lies.
+- **Decided:** a tested idea can be followed forward on paper: `alpha follow` freezes the idea, then records each new session. There is no
+  broker paper trading and no order. A follow is not a test, and its records never become research evidence.
+- **Context:** a test on past data cannot show how an idea behaves on new bars.
+- **Governs:** [follow card](../../../research/tools/follow.md); [paper and live](components/paper-and-live.md).
+
+### 2026-11-23 Remove the old research-case machinery, export first
+
+- **Said:** exact words not recorded; the owner approved "export then delete" for the old research-case machinery.
+- **Decided:** research cases, projects, evidence, the control-store tables that hold them, `alpha research`, `alpha suite` and the native case
+  lane are deleted in twelve ordered steps, after a private export of the stored data. Three cards that only run inside cases are retired:
+  read a native job result, the daily rule study, and Qlib in research cases. The link from a paper claim to an experiment is dropped; the
+  `alpha library` shelf stays. A step that edits a protected file still needs the owner's yes for that file. The replacing path is
+  `alpha test`, ideas, Setup Lab, `alpha follow` and `alpha confirm`.
+- **Context:** the new pipeline replaced the case lane, and the owner wants a thin system.
+- **Governs:** [research cases page](components/research-cases-and-approval.md); [command line research](../invariants/cli-research.md);
+  [reserved period](reserved-period.md).

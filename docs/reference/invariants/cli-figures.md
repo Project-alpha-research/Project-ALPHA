@@ -33,6 +33,7 @@ How `alpha figures` builds, caches and draws the figure pack. The drawing itself
   stored marks) and `explanations_*.py` (fixed sentences). The protected renderer in `alpha_research.figures`
   is no longer used for display. Setup trade and event-study sheets and journey figures use the same white
   look; stored setup runs keep one PNG each because their manifests hash an exact file set.
+- A new chart also needs an entry in `packages/alpha-research/src/alpha_research/figures/catalog.py`; that package is hash-bound and a quant-tier edit.
 - `figure_cache.BUILDER_REVISION` is part of every key. Bump it when a builder changes what a figure shows:
   `RENDERER_VERSION` lives in a protected package and moves only with the drawing code.
 - The return-distribution figure reads its mean and spread from the stored daily returns (the Q-Q points), never from histogram bin centres.

@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - docs/reference/project/owner-decisions-4.md
   - docs/reference/project/owner-decisions-5.md
-verified: de2b413e17ec60ef
+verified: 298a4d9cad55fbfa
 ---
 
 # Ideas and things considered
@@ -34,9 +34,9 @@ something is considered, rejected or left open.
 
 Not yet decided; each needs the owner or a measurement before it is built.
 
-- **Reserve policy for rule tests and setups.** Today `alpha test` and `alpha setup` hold nothing back
-  and only RD-Agent's judge locks 2024 onward. Options: one held-back period for everything, a held-back
-  tail chosen per idea, or the status quo with labels. See the [toolbox](components/toolbox.md).
+- **Reserve policy for rule tests and setups.** Today `alpha test` and `alpha setup` cut every read at 2023-12-31
+  ([reserved period](reserved-period.md)). Options: one held-back period for everything, a held-back
+  tail chosen per idea, or labels only. See the [toolbox](components/toolbox.md).
 - **Near-duplicate ideas.** Should two near-identical ideas count once toward a family's failed tries?
 - **Minimum track record.** The validation package has no function for the shortest history that
   supports a given Sharpe ratio.

@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_free_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_derived_cmds.py
-verified: 96f2fe7a59fd5f97
+verified: dbd71277c92f2c0b
 ---
 
 # Data layer invariants: context data

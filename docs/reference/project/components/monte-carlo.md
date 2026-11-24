@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/monte_carlo_cmds.py
   - apps/alpha-cli/src/alpha_cli/toolbox/registry.py
   - docs/operations/monte-carlo/README.md
-verified: 1dda58e7854fb24a
+verified: 44290a76717195da
 ---
 
 # Monte Carlo
@@ -15,7 +15,7 @@ A Monte Carlo result is never proof of an edge; it measures path risk. "How bad 
 The owner counts the four as tools for RD-Agent and the assistant to use, never to be slimmed away.
 **A Monte Carlo warning pauses progression until the owner records a decision.** Each family is graded on its own and never majority-voted.
 Three families resample the strategy's own recorded returns (`alpha monte-carlo classical --from-run <run>`). The fourth, Kronos, generates
-new price bars and has run only with a stand-in model. Of the four, the toolbox exposes two on stored returns: IID empirical
+new price bars and replays the strategy on them. Of the four, the toolbox exposes two on stored returns: IID empirical
 (`resampling.drawdown_distribution`) and Student-t (`resampling.student_t_paths`, same function and seed as the command,
 but on a rule test's stored equity), plus block bootstrap ([resampling card](../../../../research/tools/resampling-checks.md)).
 Both commands read bars with the source run's cut-off, never later than 2023-12-31 ([reserved period](../reserved-period.md)).
@@ -54,8 +54,8 @@ Each family gets its own grade and is never majority-voted; a warning pauses unt
 
 `alpha monte-carlo classical --from-run <run>` publishes the three classical families together and was checked
 against an independent recomputation on 2026-11-14. `alpha monte-carlo kronos` ran with the real model on
-2026-11-23: the default 8 paths over the first test window take about 3 minutes on a CPU. A negative volume
-from the model (seen on 3 to 4 bars in 2,000) is set to zero and counted in the output (owner decision, 2026-11-23).
+2026-11-23 (default 8 paths per batch). A negative volume from the model is set to zero and counted in the output
+(owner decision, 2026-11-23).
 The Workstation groups the path figures under
 `monte_carlo` (ADR-0029); Kronos Studio shows forecast runs. See the capability on [STATUS.md](../../../../STATUS.md) and the
 [path-risk card](../../../../research/tools/path-risk.md).

@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_crypto_*.py
   - tests/integration/test_crypto_*.py
   - tests/integration/test_data_*.py
-verified: f031d0d564fa51a8
+verified: cb44b532de7626a9
 ---
 
 # Command line data invariants
@@ -83,8 +83,6 @@ and [research integrity § Invalid data fails loud](research-integrity.md#invali
 ## Research-bound acquisition
 
 - `alpha crypto-data acquire` takes no case option: every family, including derivative trades and books, works on the data home alone.
-- A Binance one-minute research selection binds 1 to 50 unique markets to one case revision and re-checks the revision
-  after publishing its receipt.
 
 ## Backfill
 

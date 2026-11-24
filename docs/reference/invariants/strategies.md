@@ -11,7 +11,7 @@ sources:
   - tests/bias_guards/test_momentum_signal_lookahead.py
   - tests/bias_guards/test_signal_window_boundary.py
   - tests/integration/test_order_rejection.py
-verified: 187c14109a01a7d0
+verified: 50e6224fb89c9d5b
 ---
 
 # Strategy invariants
@@ -103,9 +103,9 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
   balance and the equity-sizing reduction above cannot apply. The close-time target is kept and an
   `ExecutionRejectionTrace` is appended. Sells and MARGIN
   orders are not limited by this check. `tests/integration/test_order_rejection.py`.
-- `prime_history` is for paper warm-up only: the caller first enforces snapshot provenance and the
+- `prime_history` warms indicators before the first scored bar (the engine step and the follow replay): the caller first enforces snapshot provenance and the
   knowledge cutoff; timestamps must strictly increase; it creates no target and no order.
-- Paper risk (`configure_paper_risk`) requires a durable `ExecutionEventSink`. Order authority stays
+- Paper risk (`configure_paper_risk`; no command calls it today) requires a durable `ExecutionEventSink`. Order authority stays
   withheld until `mark_paper_reconciled` after exact broker-state reconciliation, and each order passes the
   freshness, cutoff, open-order, daily-loss and notional limits. Deterministic backtests leave both unset.
   [research integrity § No live capital](research-integrity.md#no-live-capital).

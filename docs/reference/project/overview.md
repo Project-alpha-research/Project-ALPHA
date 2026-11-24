@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - README.md
-verified: 616a53750d178d99
+verified: e8ffad7d466dc813
 ---
 
 # ALPHA: what it is for and how the parts fit
@@ -73,9 +73,8 @@ gate is before paper or live trading.
 The spine is built clean inside this repository, one golden path at a time. Each path runs from
 a plain-English prompt to a result on a screen, and the old lane it replaces is deleted when it
 works. At most two streams of work are in flight. Path 1 runs from a prompt to a recorded,
-audited result through the playbook and `alpha test`, and a first report screen shows it; what
-remains is the benchmark on that screen's chart and the honesty traps, the check that an AI
-following the playbook stays honest.
+audited result through the playbook and `alpha test`, and a report screen shows it. Not yet proven: that an AI
+following the playbook stays honest (`alpha partner selftest` checks the answer checker, not the AI).
 
 The three paths are general ways of working, not strategies: ALPHA is a general tool, not built around one
 strategy, market or data source, and the ideas tested today are throwaway material to prove it works
@@ -84,7 +83,7 @@ the plan is the orchestrator's and reversible).
 
 | Golden path | The prompt it must serve | State |
 |---|---|---|
-| 1. Rule test | "Test this trend rule on these assets" | command line working ([route](../../../research/CONTEXT.md)); report screen partly built |
+| 1. Rule test | "Test this trend rule on these assets" | command line working ([route](../../../research/CONTEXT.md)); report screen reads the stored result |
 | 2. Chart setup | "Show every match of this setup and what happened after" | command line working; read-only [Setup Lab](components/setup-lab.md) screen |
 | 3. Factor mining | "Mine factors on this universe", through RD-Agent with memory | run by hand, judged, no candidate yet; not a supervised job |
 

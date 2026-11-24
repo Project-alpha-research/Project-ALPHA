@@ -10,7 +10,7 @@ sources:
   - tests/bias_guards/test_pit_*.py
   - tests/bias_guards/test_source_future_poison.py
   - tests/bias_guards/test_universe_survivorship.py
-verified: 663c4103493f9199
+verified: 09be7979a3472fb1
 ---
 
 # Data layer invariants
@@ -45,6 +45,7 @@ General rule: [research integrity § Point-in-time reads](research-integrity.md#
   read the host zone.
 - Typed reads validate bars only after cutoff filtering: an invalid future bar cannot break a past read; an
   invalid visible bar raises chained `DataError` with symbol, timestamp and reason. Never skip or coerce it.
+  The `last` option of `PointInTimeSource.as_of` keeps the newest bars after that cutoff filter, before validation.
   Enforced by `tests/bias_guards/test_source_future_poison.py`.
 - A UTC cutoff says nothing about when a provider published or revised a value.
 - The store holds raw, unadjusted bars and does not enforce `Bar` invariants (zero volume is legal).

@@ -24,6 +24,7 @@ from alpha_cli._runner import (
 )
 from alpha_cli.validate_cmds import validate
 from alpha_core import DataError, ExecutionRejectionTrace
+from alpha_data.timeframe import parse_timeframe
 from alpha_validation import walk_forward_splits
 
 
@@ -328,3 +329,35 @@ def test_scoped_execution_keeps_only_in_window_pretrade_rejections() -> None:
     assert scoped.rejected == 2  # one venue denial plus one pre-submit affordability rejection
     assert len(scoped.execution_rejections) == 1
     assert scoped.execution_rejections[0].ts == jan2
+
+
+def test_all_bars_in_the_held_back_period_say_so_in_plain_words(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: object
+) -> None:
+    import polars as pl
+
+    from alpha_cli import _runner
+    from alpha_core.reserve import RESERVED_INSTANT
+
+    stamps = [RESERVED_INSTANT + timedelta(days=i) for i in range(3)]
+
+    class _Reader:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            pass
+
+        def as_of(self, symbol: str, when: datetime) -> pl.DataFrame:
+            return pl.DataFrame({"ts": stamps})
+
+    monkeypatch.setattr("alpha_data.pit.PointInTimeReader", _Reader)
+    stored = parse_timeframe("5m")
+    when = RESERVED_INSTANT - timedelta(microseconds=1)
+    text = _runner._few_bars_message("SPY", when, 0, object(), {}, stored, None)
+    assert text.startswith("need >= 2 bars for 'SPY' as of 2023-12-31, got 0")
+    assert "held-back period" in text and "pull earlier history" in text
+    later = _runner._few_bars_message(
+        "SPY", RESERVED_INSTANT + timedelta(days=9), 0, object(), {}, stored, None
+    )
+    assert "held-back" not in later
+    stamps[:] = [RESERVED_INSTANT - timedelta(days=5), *stamps]
+    earlier = _runner._few_bars_message("SPY", when, 0, object(), {}, stored, None)
+    assert "held-back" not in earlier

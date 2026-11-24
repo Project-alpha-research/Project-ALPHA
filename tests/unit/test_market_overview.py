@@ -202,4 +202,4 @@ def test_the_text_overview_states_the_period_beside_each_percent(data_dir: Path)
     result = runner.invoke(app, ["data", "market-overview", "--window", "30", "--limit", "2"])
     assert result.exit_code == 0, result.output
     lines = [line for line in result.stdout.splitlines() if "%" in line]
-    assert lines and all("over the last 30 days" in line for line in lines)
+    assert lines and all("over the last 30 bars" in line for line in lines)

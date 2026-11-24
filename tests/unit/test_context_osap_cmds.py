@@ -65,6 +65,7 @@ def test_pull_show_and_list_name_the_vintage(home: Path) -> None:
         "show-osap-portfolios", "--as-of", "2023-12-20", "--signal", "SynthMom", "--json"
     )
     assert early["release"] is None and early["rows"] == []
+    assert "the stored release is dated 2023-12-20, after the as-of date" in early["note"]
     late = invoke(
         "show-osap-portfolios", "--as-of", "2023-12-21", "--signal", "SynthAccrual", "--json"
     )

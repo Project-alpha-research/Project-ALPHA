@@ -158,7 +158,7 @@ def run_market_overview(store: str, window: int, limit: int, json_out: bool) -> 
         f" data to {result['data_to']}"
     )
     for row in result["assets"]:
-        period = f"over the last {result['window']} {result['bar_unit']}s"
+        period = f"over the last {result['window']} bars"
         typer.echo(
             f"{row['asset']}: {row['last_close']:g} ({row['change_window_pct']:+.1f}% {period})"
         )

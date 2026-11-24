@@ -572,7 +572,10 @@ def run(
     ] = None,
     as_json: Annotated[bool, typer.Option("--json", help="emit machine-readable JSON")] = False,
 ) -> None:
-    """Train a Qlib model from a plain spec and replay it with costs; store one ordinary run."""
+    """Train a Qlib model from a plain spec and replay it with costs; store one ordinary run.
+
+    It uses Alpha158 feature version 1. To use another version, go through `alpha ml prepare`.
+    """
     from alpha_cli import ml_run
 
     try:

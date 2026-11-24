@@ -70,7 +70,9 @@ def _read(spec_path: Path) -> dict[str, Any]:
     if len(set(assets)) < MIN_SYMBOLS:
         raise MlRunError(
             f"A model needs at least {MIN_SYMBOLS} assets; the spec has {len(set(assets))}. "
-            "Add more symbols to `assets`; see research/examples/ml-gbm-etfs.toml."
+            "The model ranks assets against each other each day, and the starter contract needs "
+            "enough of them to rank. Add more symbols to `assets`; "
+            "see research/examples/ml-gbm-etfs.toml."
         )
     if spec.get("model", MODELS[0]) not in MODELS:
         raise MlRunError(f"The model must be {' or '.join(MODELS)}. The worker offers no other.")

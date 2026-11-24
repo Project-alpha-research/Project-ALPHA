@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 
 import typer
 
@@ -19,6 +20,13 @@ def check(
     json_out: bool = typer.Option(False, "--json", help="emit the redacted receipt as JSON"),
 ) -> None:
     """Run one bounded check. Merely listing or refreshing providers never calls this command."""
+    missing = provider_readiness.missing_key_variables(provider_id, os.environ)
+    if missing:
+        typer.echo(
+            f"{provider_id.strip().lower()}: no key set. Set {' and '.join(missing)} "
+            "in the environment, then run the check again. No check was made."
+        )
+        raise typer.Exit(1)
     try:
         receipt = provider_readiness.run_explicit_check(AlphaSettings().data_dir, provider_id)
     except DataError as exc:

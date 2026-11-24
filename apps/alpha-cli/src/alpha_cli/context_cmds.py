@@ -14,6 +14,7 @@ from alpha_cli import context_derived_cmds as derived_cmds
 from alpha_cli import context_free_cmds as free
 from alpha_cli import context_sources_cmds as sources
 from alpha_cli._cli_json import emit
+from alpha_cli.context_rows import LIMIT, SHOW_ALL, trim_rows
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 from alpha_data.context.fred import (
@@ -151,6 +152,8 @@ def show(
     end: str | None = typer.Option(None, help="Last observation date, inclusive."),
     view: str = typer.Option("known", help="known, first or latest; non-known views are explicit."),
     json_out: bool = typer.Option(False, "--json"),
+    limit: LIMIT = None,
+    show_all: SHOW_ALL = False,
 ) -> None:
     """Show stored observations with the selected vintage view named in the output."""
     cutoff = _date(as_of, datetime.now(UTC).date())
@@ -184,7 +187,9 @@ def show(
         "as_of": str(cutoff) if view == "known" else None,
         "rows": rows,
     }
-    emit(payload, json_out=json_out, fallback=_show_table(payload))
+    note = trim_rows(payload, limit=limit, show_all=show_all, json_out=json_out)
+    table = _show_table(payload)
+    emit(payload, json_out=json_out, fallback=f"{table}\n{note}" if note else table)
 
 
 def _endpoint(df: pl.DataFrame, when: date, cutoff: date) -> float | None:

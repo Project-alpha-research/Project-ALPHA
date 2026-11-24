@@ -10,6 +10,7 @@ import polars as pl
 import typer
 
 from alpha_cli._cli_json import emit
+from alpha_cli.context_rows import LIMIT, SHOW_ALL, echo_note, trim_rows
 from alpha_cli.context_sources_cmds import _cutoff, _rows
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
@@ -138,6 +139,8 @@ def show_cftc_cot(
     market: str = typer.Option(..., help="CFTC contract market code."),
     as_of: str | None = typer.Option(None, help="UTC date or minute; default now."),
     json_out: bool = typer.Option(False, "--json"),
+    limit: LIMIT = None,
+    show_all: SHOW_ALL = False,
 ) -> None:
     """Show stored CFTC positioning known at the cutoff (a row appears only once published)."""
     cutoff = _cutoff(as_of)
@@ -148,16 +151,16 @@ def show_cftc_cot(
         )
     except (DataError, OSError) as exc:
         raise _fail(exc, pull="pull-cftc-cot --market <CODE>") from None
-    _emit(
-        dict(
-            market_code=market,
-            view="as_known",
-            as_of=cutoff.isoformat(),
-            known_from_rule=cftc_cot.KNOWN_RULE,
-            rows=_rows(df.sort("report_date")),
-        ),
-        json_out,
+    payload = dict(
+        market_code=market,
+        view="as_known",
+        as_of=cutoff.isoformat(),
+        known_from_rule=cftc_cot.KNOWN_RULE,
+        rows=_rows(df.sort("report_date")),
     )
+    note = trim_rows(payload, limit=limit, show_all=show_all, json_out=json_out)
+    _emit(payload, json_out)
+    echo_note(note, json_out)
 
 
 @free_app.command("show-finra-short-volume")
@@ -165,6 +168,8 @@ def show_finra_short_volume(
     symbol: str = typer.Option(...),
     as_of: str | None = typer.Option(None, help="UTC date or minute; default now."),
     json_out: bool = typer.Option(False, "--json"),
+    limit: LIMIT = None,
+    show_all: SHOW_ALL = False,
 ) -> None:
     """Show stored FINRA short volume known at the cutoff; FINRA-reported trades only."""
     cutoff = _cutoff(as_of)
@@ -175,17 +180,17 @@ def show_finra_short_volume(
         )
     except (DataError, OSError) as exc:
         raise _fail(exc, pull="pull-finra-short-volume --symbol <S>") from None
-    _emit(
-        dict(
-            symbol=symbol,
-            view="as_known",
-            as_of=cutoff.isoformat(),
-            known_from_rule=finra_short.KNOWN_RULE,
-            caveat=finra_short.CAVEAT,
-            rows=_rows(df.sort(pl.col("trade_date"))),
-        ),
-        json_out,
+    payload = dict(
+        symbol=symbol,
+        view="as_known",
+        as_of=cutoff.isoformat(),
+        known_from_rule=finra_short.KNOWN_RULE,
+        caveat=finra_short.CAVEAT,
+        rows=_rows(df.sort(pl.col("trade_date"))),
     )
+    note = trim_rows(payload, limit=limit, show_all=show_all, json_out=json_out)
+    _emit(payload, json_out)
+    echo_note(note, json_out)
     if not json_out:
         typer.echo(finra_short.CAVEAT)
 
@@ -215,6 +220,22 @@ def pull_osap_portfolios(
         typer.echo(osap_portfolios.CAVEAT)
 
 
+def _no_release_note(cutoff: datetime, release: str | None) -> str | None:
+    """Why nothing came back: the stored release is dated after the as-of date."""
+    stored = osap_portfolios.describe(AlphaSettings().data_dir)
+    dates = [
+        str(row["released"] or row["last_known_from"])[:10]
+        for row in stored
+        if release in (None, row["key"])
+    ]
+    if not dates:
+        return None
+    return (
+        f"No rows are known on {cutoff.date()}: the stored release is dated {min(dates)}, "
+        f"after the as-of date {cutoff.date()}."
+    )
+
+
 @free_app.command("show-osap-portfolios")
 def show_osap_portfolios(
     as_of: str | None = typer.Option(None, help="UTC date or minute; default now."),
@@ -233,6 +254,7 @@ def show_osap_portfolios(
     except (DataError, OSError) as exc:
         raise _fail(exc, pull="pull-osap-portfolios --release <R> --released <DATE>") from None
     shown = df.filter(pl.col("signal").is_in(signal)) if signal else df.head(0)
+    note = _no_release_note(cutoff, release) if not df.height else None
     _emit(
         dict(
             view="as_known",
@@ -244,6 +266,9 @@ def show_osap_portfolios(
             signals=df["signal"].n_unique(),
             months=df["month"].n_unique(),
             rows=_rows(shown.sort(["signal", "month"])),
+            **({"note": note} if note else {}),
         ),
         json_out,
     )
+    if note and not json_out:
+        typer.echo(note)

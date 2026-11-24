@@ -150,10 +150,14 @@ def status(
     """Say where a run is: working, waiting for you, finished or stopped, and what to type next."""
     folder = run_dir
     if folder is None:
-        root = runs_root(_load(config))
+        root = runs_root(_load(config, runtime=[]))
         records = list(root.glob("*/launch-command.json")) if root.is_dir() else []
         if not records:
-            typer.echo(f"No RD-Agent run was found in {root}.", err=True)
+            typer.echo(
+                f"No RD-Agent run was found in {root}. Pass the run folder: "
+                "alpha rdagent status --run-dir <folder>.",
+                err=True,
+            )
             raise typer.Exit(2)
         folder = max(records, key=lambda record: record.stat().st_mtime_ns).parent
     try:

@@ -88,7 +88,8 @@ def run_coverage(json_out: bool) -> None:
 
     typer.echo(
         f"Dates and bars stop before {RESERVED_START}: later bars are stored but held back "
-        "for the final check (alpha confirm)."
+        "for the final check (alpha confirm). Market and the price chart still show them, "
+        "because viewing is not a test."
     )
     typer.echo(f"{'symbol':<14}{'first date':<12}{'last date':<12}{'bars':>6}  health")
     for row in rows:

@@ -147,7 +147,7 @@ fi
 run_in "$root/apps/alpha-web/frontend" env -u PLAYWRIGHT_BROWSERS_PATH npx --no-install playwright install chromium
 done_steps+=('test browser (Chromium)')
 
-for worker in qlib literature; do
+for worker in qlib literature afml; do
     step "Worker environment: $worker (uv sync --locked)"
     run_in "$root/workers/$worker" uv sync --locked
     done_steps+=("$worker worker environment")

@@ -46,7 +46,7 @@ families — on registered `research_only` datasets.
 ## Implementation anchors
 
 - Spec: `docs/records/specs/2026-08-07-research-first-workstation-design.md` §9
-- Phase plan: `docs/work/archive/2026-08/2026-08-07-research-first-R5-experiment-engine.md`
+- Phase plan: [R5 experiment engine](https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/pre-thin-2026-11-14/docs/work/archive/2026-08/2026-08-07-research-first-R5-experiment-engine.md)
 - Phase/evidence-zone admission: `apps/alpha-cli/src/alpha_cli/control_store.py`
 - Reserved kind: `apps/alpha-cli/src/alpha_cli/job_capacity.py`; reserved command mapping:
   `_require_research_run` in `control_store.py`

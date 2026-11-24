@@ -3,7 +3,7 @@
 - **Reviewed:** 2026-09-12
 - **Scope:** every public repository of GitHub user `neurotrader888` and how each technique is
   carried into Project ALPHA under the port plan
-  `docs/work/archive/2026-09/2026-09-12-neurotrader888-port.md`
+  [`2026-09-12-neurotrader888-port.md`](https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/pre-thin-2026-11-14/docs/work/archive/2026-09/2026-09-12-neurotrader888-port.md)
 - **Status:** engineering inventory; not legal advice
 
 ## Licence and permission

@@ -81,7 +81,7 @@ no screening, pack-freeze, approval, launch, strategy-rule, profitability, or va
 ## Implementation anchors
 
 - Spec: `docs/records/specs/2026-08-07-research-first-workstation-design.md` §7
-- Phase plan: `docs/work/archive/2026-08/2026-08-07-research-first-R4-source-plane.md`
+- Phase plan: [R4 source plane](https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/pre-thin-2026-11-14/docs/work/archive/2026-08/2026-08-07-research-first-R4-source-plane.md)
 - Existing primitives: `apps/alpha-cli/src/alpha_cli/research_acquisition.py`
 - Existing records: `research_source_records` / `research_source_packs` in
   `apps/alpha-cli/src/alpha_cli/control_store.py`

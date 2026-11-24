@@ -49,7 +49,7 @@ but must never be the in-product research or strategy AI.
 ## Implementation anchors
 
 - Spec: `docs/records/specs/2026-08-07-research-first-workstation-design.md` §3, §14
-- Phase plan: `docs/work/archive/2026-08/2026-08-07-research-first-R2-codex-desk.md`
+- Phase plan: [R2 codex desk](https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/pre-thin-2026-11-14/docs/work/archive/2026-08/2026-08-07-research-first-R2-codex-desk.md)
 - Existing brief pattern: `apps/alpha-cli/src/alpha_cli/project_cmds.py` (`agent-brief`),
   `apps/alpha-cli/src/alpha_cli/control_store.py` (`get_agent_brief_context`)
 - Codex registration: `.codex/config.toml`; skills: `.agents/skills/`

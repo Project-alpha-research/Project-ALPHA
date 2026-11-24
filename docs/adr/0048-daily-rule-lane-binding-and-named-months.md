@@ -103,7 +103,7 @@ approvals once.
   other coins are ignored (the snapshot id still binds them); same-coin members are checked.
 - A multi-year daily-rule study can be drafted on monthly Binance archives; a read-only proof on a
   copy of the Dell's data folder is recorded in
-  `docs/work/archive/2026-11/2026-11-14-daily-rule-binding-and-months/04-verify.md`.
+  [`04-verify.md`](https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/pre-thin-2026-11-14/docs/work/archive/2026-11/2026-11-14-daily-rule-binding-and-months/04-verify.md).
 
 Tests: `tests/unit/test_daily_guard_boundary.py`, `tests/unit/test_daily_guard_binding.py`,
 `tests/unit/test_crypto_price_snapshot_months.py`, `tests/unit/test_daily_rule_months_study.py`,

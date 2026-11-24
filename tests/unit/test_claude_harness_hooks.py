@@ -158,3 +158,13 @@ def test_source_paths_named_owner_auth_remain_inspectable(tmp_path: Path) -> Non
         "tool_input": {"command": "git diff -- apps/alpha-cli/src/alpha_cli/owner_auth.py"},
     }
     assert claude_hooks.hook_pre_owner_action_guard(payload, tmp_path) == (0, "")
+
+
+def test_session_start_is_silent_about_the_queue_when_no_build_team_sits_beside(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "product"
+    root.mkdir()
+    assert claude_hooks._build_queue(root) == ""
+    code, message = claude_hooks.hook_session_start({}, root)
+    assert code == 0 and "Build queue" not in message

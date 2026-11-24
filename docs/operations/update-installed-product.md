@@ -16,7 +16,8 @@ depend on the Python environment it replaces. Steps:
 2. Save the current commit in `.update/last-good`.
 3. Check out the tag. Install the root environment, every `workers/*` folder that has a `uv.lock`, and the web app.
 4. Restart the service (default `alpha-workstation.service`), unless `--no-restart`.
-5. Check: `alpha --help`, `alpha next`, one environment per worker, the service on its port, the Workstation page, and `alpha data coverage --metadata-only` (reads only).
+5. Check: `alpha --help`, `alpha next`, one environment per worker, the service on its port, the Workstation page,
+   and `alpha data coverage` (reads only). Install details go to `.update/update.log`.
 
 ## "Returned to the last good version"
 

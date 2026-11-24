@@ -99,10 +99,10 @@ proof_synthetic = [
   "tests/integration/test_web_api_market.py::test_overview_ranks_assets_and_lists_short_ones",
   "apps/alpha-web/frontend/e2e/market-overview.spec.ts::Market overview reads the real backend store of synthetic bars",
 ]
-real_data = "not yet confirmed (to check on the Mac later)"
+real_data = "Recorded: the market view, in 1D, 5m and 1h ran on a copy of the owner's real data home on the Dell on 2026-11-24 (acceptance sweep 6; private notes, kept outside the repository)."
 needs = []
 state = "Partial"
-missing = "tested in-process and in a browser against a test server; no end-to-end smoke check yet"
+missing = "ran on real data through the installed program on 2026-11-24; tested in-process and in a browser against a test server; no end-to-end smoke check yet"
 
 [[capability]]
 id = "stock-data"
@@ -139,8 +139,8 @@ what = "Download, store, freeze, read point-in-time, resample and backtest stock
 see_it = [
   "uv run alpha data pull SPY --source alpaca --asset-class etf --timeframe 5m --start 2026-08-03 --end 2026-11-13",
   "uv run alpha data candles SPY --timeframe 1h --from-timeframe 5m --json",
-  "uv run alpha backtest run SPY --timeframe 5m --strategy breakout --param window=12, then uv run alpha report <run>",
-  "Workstation: the Navigator lists the intraday run, and its report opens from there",
+  "uv run alpha data market-overview --store 5m",
+  "A backtest needs intraday bars from before 2024-01-01; bars from that date on are held back from tests. The stored intraday bars all start in 2026, so a backtest on them stops with a plain message.",
 ]
 entry_points = [
   "cli: alpha data pull",
@@ -158,7 +158,7 @@ real_data = "not yet confirmed (free sources): on 2026-11-14 the Dell holds SPY 
 real_data_needs = "Confirmation of real data on the Mac."
 needs = []
 state = "Partial"
-missing = "proven in-process and by hand on real data, with no smoke test yet; oos, portfolio and holdout backtests, research registration and the Workstation chart toolbar are still daily"
+missing = "no real intraday bars before 2024-01-01 are stored, so no real-data backtest can run (the stored bars all lie in the held-back period); proven in-process, with no smoke test yet; oos, portfolio and holdout backtests, research registration and the Workstation chart toolbar are still daily"
 docs = ["docs/reference/invariants/data-bar-timeframes.md"]
 
 [[capability]]
@@ -455,10 +455,10 @@ proof_synthetic = [
   "apps/alpha-web/frontend/e2e/idea-workspace.spec.ts::the list opens one page that tells the whole story, and a click on a test changes the charts",
 ]
 docs = ["docs/reference/invariants/web-frontend-ideas.md", "docs/reference/invariants/web-api-reads.md", "docs/reference/invariants/cli-idea-file.md"]
-real_data = "not yet confirmed (to check on the Mac later)"
+real_data = "Recorded: idea new, list, show, note and file ran on a copy of the owner's real data home on the Dell on 2026-11-24 (acceptance sweep 6; private notes, kept outside the repository)."
 needs = []
 state = "Partial"
-missing = "Proven on synthetic records and a fixture browser run only; no end-to-end smoke check. Step 9 (RD-Agent work) is not linked to an idea yet. A follow change shows within a minute (the page looks again on a timer), not at once. The tear sheet is not mounted yet."
+missing = "Proven on synthetic records and a fixture browser run; the command line also ran on real data on 2026-11-24; no end-to-end smoke check. Step 9 (RD-Agent work) is not linked to an idea yet. A follow change shows within a minute (the page looks again on a timer), not at once. The tear sheet is not mounted yet."
 
 [[capability]]
 id = "forward-follow"
@@ -578,7 +578,7 @@ proof_synthetic = [
 proof_smoke = [
   "tests/smoke/test_library_smoke.py::test_a_library_record_becomes_an_idea_card",
 ]
-real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository); library list, show and card ran again on a copy of the owner's real data home on the Dell on 2026-11-24 (acceptance sweep 6; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 
@@ -677,7 +677,7 @@ entry_points = ["cli: alpha propfirm run", "api: GET /api/runs/{run_id}/propfirm
 proof_synthetic = [
   "tests/integration/test_propfirm_cli.py::test_propfirm_fresh_backtest_writes_manifest",
 ]
-real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository); the check from a stored rule test ran again on a copy of the owner's real data home on the Dell on 2026-11-24 (acceptance sweep 6; private notes, kept outside the repository)."
 needs = []
 state = "Partial"
 missing = "ran on real data from a stored rule test on 2026-11-23; no end-to-end smoke check yet"
@@ -699,7 +699,7 @@ entry_points = [
 proof_synthetic = [
   "tests/integration/test_forecast_cli.py::test_forecast_run_writes_manifest_paths_quantiles",
 ]
-real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository); forecast run and forecast eval ran again on a copy of the owner's real data home on the Dell on 2026-11-24 (acceptance sweep 6; private notes, kept outside the repository)."
 needs = []
 state = "Partial"
 missing = "forecast and forecast check ran on real data with the real Kronos model on 2026-11-23; no end-to-end smoke check yet"
@@ -854,7 +854,7 @@ proof_synthetic = [
 proof_smoke = [
   "tests/smoke/test_ml_smoke.py::test_ml_upstream_alpha158_train_import_evaluate_replay",
 ]
-real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository)."
+real_data = "Recorded: run end to end through the installed program on a copy of the owner's real data on the Dell on 2026-11-23 (acceptance sweep, run 4; private notes, kept outside the repository); one model run with its results, report and figures ran again on a copy of the owner's real data home on the Dell on 2026-11-24 (acceptance sweep 6; private notes, kept outside the repository)."
 needs = []
 state = "Working"
 
@@ -1067,10 +1067,10 @@ proof_synthetic = [
   "tests/unit/test_rdagent_journey.py::test_journeys_from_stored_evidence",
   "tests/unit/test_rdagent_journey_figures.py::test_plotted_numbers_and_reserved_boundary",
 ]
-real_data = "not yet confirmed on a recorded market-data run"
+real_data = "Recorded: ledger proposal and ledger journey, on a stored run folder, ran on a copy of the owner's real data home on the Dell on 2026-11-24 (acceptance sweep 6; private notes, kept outside the repository)."
 needs = []
 state = "Partial"
-missing = "tested in-process only; no end-to-end smoke check yet"
+missing = "ran on a stored real run folder on 2026-11-24; no end-to-end smoke check yet"
 docs = ["research/tools/rdagent-journey.md", "docs/roadmap/backlog/research-loop-screen.md"]
 
 [[capability]]
@@ -1105,6 +1105,7 @@ name = "RD-Agent's run viewer"
 codes = ["RD-Agent"]
 what = "Watch an RD-Agent research run step by step in RD-Agent's own viewer: each idea, the code it wrote, the feedback, and ALPHA's numbers."
 see_it = [
+  "export ALPHA_VIEWER_PYTHON=$PWD/.alpha/state/runtime/rdagent-ui-py311/venv/bin/python ALPHA_RDAGENT_SOURCE=$PWD/.alpha/state/runtime/rdagent-source (built by: bash scripts/setup_rdagent.sh --with-ui)",
   ".venv/bin/python workers/rdagent/rdagent_viewer.py serve --run-dir /abs/runs/<date>-<slug>",
   "http://127.0.0.1:19899",
 ]
@@ -1445,7 +1446,7 @@ see_it = ["alpha context show-cftc-cot --market 13874A --as-of 2024-03-15T21:00 
 entry_points = ["cli: alpha context"]
 proof_synthetic = ["tests/unit/test_context_cftc_cot.py::test_early_read_cannot_see_a_late_known_row", "tests/unit/test_context_finra_short.py::test_early_read_cannot_see_a_late_known_row", "tests/unit/test_context_free_cmds.py::test_pull_show_list_cftc"]
 proof_smoke = ["tests/smoke/test_context_free_smoke.py::test_context_free_local_reads"]
-real_data = "confirmed 2026-11-19: CFTC legacy futures for 3 markets, 104 weeks each (2024-11-19 to 2026-11-10), and FINRA short volume for SPY and QQQ, 5 days 2026-11-09 to 2026-11-13, pulled live into a scratch home and read as known"
+real_data = "Recorded: show and pull for CFTC and FINRA ran on a copy of the owner's real data home on the Dell on 2026-11-24 (acceptance sweep 6; private notes, kept outside the repository). Earlier: confirmed 2026-11-19: CFTC legacy futures for 3 markets, 104 weeks each (2024-11-19 to 2026-11-10), and FINRA short volume for SPY and QQQ, 5 days 2026-11-09 to 2026-11-13, pulled live into a scratch home and read as known"
 real_data_needs = "network; no key"
 needs = []
 state = "Partial"
@@ -1460,7 +1461,7 @@ see_it = ["alpha context import-bybit --from <restored-store> --json", "alpha co
 entry_points = ["cli: alpha context"]
 proof_synthetic = ["tests/unit/test_context_bybit_import.py::test_open_interest_future_poison_and_leaky_clock", "tests/unit/test_context_sources_cmds.py::test_bybit_import_show_and_future_poison", "tests/unit/test_context_binance_bulk.py::test_cache_missing_and_overlap", "tests/unit/test_context_sources_cmds.py::test_show_sources_and_future_poison"]
 proof_smoke = ["tests/smoke/test_context_bybit_smoke.py::test_context_bybit_offline_import_and_read", "tests/smoke/test_context_sources_smoke.py::test_context_sources_local_reads"]
-real_data = "confirmed 2026-11-16: BTCUSDT funding Jan-Feb 2024 (180 rows) and metrics 2024-01-02/03 (576 rows) pulled live, checksum-verified and read as known; 2026-11-17: restored Bybit store imported offline, 50 symbols funding (287,857 rows) and 51 hourly open interest (2,027,681 rows) Jan 2022-Sep 2026, 0 conflicts, read as known"
+real_data = "Recorded: Binance and Bybit show, and a Binance funding pull, ran on a copy of the owner's real data home on the Dell on 2026-11-24 (acceptance sweep 6; private notes, kept outside the repository). Earlier: confirmed 2026-11-16: BTCUSDT funding Jan-Feb 2024 (180 rows) and metrics 2024-01-02/03 (576 rows) pulled live, checksum-verified and read as known; 2026-11-17: restored Bybit store imported offline, 50 symbols funding (287,857 rows) and 51 hourly open interest (2,027,681 rows) Jan 2022-Sep 2026, 0 conflicts, read as known"
 real_data_needs = "network for Binance; restored crypto store for offline Bybit import"
 needs = []
 state = "Partial"
@@ -1640,7 +1641,7 @@ docs = ["research/tools/data-health.md"]
 id = "published-factor-reference"
 name = "Published factor catalogue and returns (reference)"
 what = "Browse 212 published predictor signals as facts-only library records, and read their published monthly long-short returns, by release, using only rows known at a UTC cutoff."
-see_it = ["uv run alpha library list --tier imported", "uv run alpha context show-osap-portfolios --as-of 2026-10-25 --signal Mom12m --json"]
+see_it = ["uv run alpha library list --tier imported", "uv run alpha context show-osap-portfolios --as-of 2026-11-20 --signal Mom12m --json"]
 entry_points = ["cli: alpha library", "cli: alpha context"]
 proof_synthetic = ["tests/unit/test_library_osap_import.py::test_import_writes_facts_only_records_for_predictors", "tests/unit/test_context_osap_portfolios.py::test_early_read_returns_nothing_and_known_rows_appear_at_the_release", "tests/unit/test_context_osap_portfolios.py::test_a_second_release_is_a_new_vintage_and_the_first_is_untouched"]
 real_data = "confirmed 2026-11-19: release 2026.10 pulled live into a scratch home: 212 signals, 1,200 months (1926-01 to 2025-12), 175,529 returns, 1.4 MB"

@@ -11,6 +11,7 @@ import polars as pl
 import typer
 
 from alpha_cli._cli_json import emit
+from alpha_cli.context_rows import LIMIT, SHOW_ALL, echo_note, trim_rows
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 from alpha_data.context import binance_bulk, bybit_import, edgar
@@ -93,8 +94,8 @@ def pull_edgar(
 def pull_binance(
     symbol: str = typer.Option(...),
     kind: str = typer.Option(...),
-    start: str = typer.Option(...),
-    end: str = typer.Option(...),
+    start: str = typer.Option(..., help="funding: month YYYY-MM; metrics: day YYYY-MM-DD."),
+    end: str = typer.Option(..., help="funding: month YYYY-MM; metrics: day YYYY-MM-DD."),
     json_out: bool = typer.Option(False, "--json"),
 ) -> None:
     """Pull checksum-verified funding months or metrics days (at most 400 days)."""
@@ -119,6 +120,8 @@ def show_edgar(
     view: str = typer.Option(..., help="filings, earnings or insider."),
     as_of: str | None = typer.Option(None, help="UTC date or minute; default now."),
     json_out: bool = typer.Option(False, "--json"),
+    limit: LIMIT = None,
+    show_all: SHOW_ALL = False,
 ) -> None:
     """Show locally stored EDGAR events as known at the cutoff."""
     cutoff = _cutoff(as_of)
@@ -139,12 +142,12 @@ def show_edgar(
             df = edgar.earnings(df)
     except (DataError, OSError) as exc:
         raise _fail(exc, pull="pull-edgar --ticker <T>") from None
-    _emit(
-        dict(
-            cik=identifier, dataset=view, view="as_known", as_of=cutoff.isoformat(), rows=_rows(df)
-        ),
-        json_out,
+    payload = dict(
+        cik=identifier, dataset=view, view="as_known", as_of=cutoff.isoformat(), rows=_rows(df)
     )
+    note = trim_rows(payload, limit=limit, show_all=show_all, json_out=json_out)
+    _emit(payload, json_out)
+    echo_note(note, json_out)
 
 
 @sources_app.command("show-binance")
@@ -155,6 +158,8 @@ def show_binance(
     start: str | None = typer.Option(None),
     end: str | None = typer.Option(None),
     json_out: bool = typer.Option(False, "--json"),
+    limit: LIMIT = None,
+    show_all: SHOW_ALL = False,
 ) -> None:
     """Show stored funding or metrics as known, with optional inclusive UTC date bounds."""
     cutoff = _cutoff(as_of)
@@ -172,10 +177,12 @@ def show_binance(
         df = df.filter(pl.col(key).dt.date() >= lower)
     if upper is not None:
         df = df.filter(pl.col(key).dt.date() <= upper)
-    _emit(
-        dict(symbol=symbol, kind=kind, view="as_known", as_of=cutoff.isoformat(), rows=_rows(df)),
-        json_out,
+    payload = dict(
+        symbol=symbol, kind=kind, view="as_known", as_of=cutoff.isoformat(), rows=_rows(df)
     )
+    note = trim_rows(payload, limit=limit, show_all=show_all, json_out=json_out)
+    _emit(payload, json_out)
+    echo_note(note, json_out)
 
 
 @sources_app.command("import-bybit")
@@ -206,6 +213,8 @@ def show_bybit(
     kind: str = typer.Option(..., help="funding or open-interest."),
     as_of: str | None = typer.Option(None, help="UTC date or minute; default now."),
     json_out: bool = typer.Option(False, "--json"),
+    limit: LIMIT = None,
+    show_all: SHOW_ALL = False,
 ) -> None:
     """Show imported Bybit context known at the UTC cutoff."""
     cutoff = _cutoff(as_of)
@@ -219,7 +228,9 @@ def show_bybit(
         raise typer.BadParameter(
             f"{exc}. Next: check options or run alpha context import-bybit --from <store>."
         ) from None
-    _emit(
-        dict(symbol=symbol, kind=kind, view="as_known", as_of=cutoff.isoformat(), rows=_rows(df)),
-        json_out,
+    payload = dict(
+        symbol=symbol, kind=kind, view="as_known", as_of=cutoff.isoformat(), rows=_rows(df)
     )
+    note = trim_rows(payload, limit=limit, show_all=show_all, json_out=json_out)
+    _emit(payload, json_out)
+    echo_note(note, json_out)

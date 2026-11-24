@@ -306,6 +306,15 @@ def test_status_reads_only_and_refuses_a_folder_that_is_not_a_run(tmp_path: Path
     assert result.exit_code != 0 and "not an RD-Agent run folder" in result.output
 
 
+def test_status_with_no_run_folder_names_run_dir_even_when_the_runtime_is_missing(
+    layout: Layout,
+) -> None:
+    layout.python.unlink()
+    result = RUNNER.invoke(rdagent_app, ["status", "--config", str(layout.config())])
+    assert result.exit_code == 2
+    assert "--run-dir" in result.output and "factor_python" not in result.output
+
+
 def test_status_text_says_round_and_next_command(tmp_path: Path) -> None:
     run = make_run(tmp_path, discussion__status_json={"state": "applying", "round": 0})
     result = RUNNER.invoke(rdagent_app, ["status", "--run-dir", str(run)])

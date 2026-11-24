@@ -44,7 +44,7 @@ def forecast_fan(ctx: BuildContext) -> FigureSpec:
         panels=(
             Panel(
                 panel_id="cone",
-                y_label="Close (native quote)",
+                y_label="Close price",
                 y_unit="price",
                 marks=(
                     BandMark(

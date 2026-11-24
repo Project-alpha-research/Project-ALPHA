@@ -61,13 +61,13 @@ Point-in-time macro, SEC filings, Binance derivatives, CFTC and FINRA context.
 - `alpha context pull-edgar` — Pull filings and insider transactions with the declared ALPHA_SEC_USER_AGENT. Options: `--ticker`, `--cik`, `--forms`, +2 more
 - `alpha context pull-finra-short-volume` — Pull FINRA daily short sale volume; no key. Options: `--symbol (required)`, `--start (required)`, +2 more
 - `alpha context pull-osap-portfolios` — Pull one release of published long-short factor returns; no key. Options: `--release (required)`, +3 more
-- `alpha context show <SERIES_ID>` — Show stored observations with the selected vintage view named in the output. Options: `--as-of`, `--start`, +3 more
-- `alpha context show-binance` — Show stored funding or metrics as known, with optional inclusive UTC date bounds. Options: `--symbol (required)`, +5 more
-- `alpha context show-bybit` — Show imported Bybit context known at the UTC cutoff. Options: `--symbol (required)`, `--kind (required)`, `--as-of`, `--json`
-- `alpha context show-cftc-cot` — Show stored CFTC positioning known at the cutoff (a row appears only once published). Options: `--market (required)`, +2 more
+- `alpha context show <SERIES_ID>` — Show stored observations with the selected vintage view named in the output. Options: `--as-of`, `--start`, +5 more
+- `alpha context show-binance` — Show stored funding or metrics as known, with optional inclusive UTC date bounds. Options: `--symbol (required)`, +7 more
+- `alpha context show-bybit` — Show imported Bybit context known at the UTC cutoff. Options: `--symbol (required)`, `--kind (required)`, `--as-of`, +3 more
+- `alpha context show-cftc-cot` — Show stored CFTC positioning known at the cutoff (a row appears only once published). Options: `--market (required)`, +4 more
 - `alpha context show-derived` — Show a derived COT or FINRA series on an asset's daily bars (value, known_from, age). Options: `--series (required)`, +4 more
-- `alpha context show-edgar` — Show locally stored EDGAR events as known at the cutoff. Options: `--view (required)`, `--ticker`, `--cik`, `--as-of`, `--json`
-- `alpha context show-finra-short-volume` — Show stored FINRA short volume known at the cutoff; FINRA-reported trades o… Options: `--symbol (required)`, +2 more
+- `alpha context show-edgar` — Show locally stored EDGAR events as known at the cutoff. Options: `--view (required)`, `--ticker`, `--cik`, `--as-of`, +3 more
+- `alpha context show-finra-short-volume` — Show stored FINRA short volume known at the cutoff; FINRA-reported trades o… Options: `--symbol (required)`, +4 more
 - `alpha context show-osap-portfolios` — Show stored factor returns known at the cutoff, naming the vintage used. Options: `--as-of`, `--release`, +2 more
 - `alpha context window` — Summarise the macro window; endpoints use values knowable at each boundary. Options: `--start (required)`, +4 more
 

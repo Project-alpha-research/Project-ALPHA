@@ -28,6 +28,7 @@ def test_provider_check_cli_supports_json_human_and_safe_error(
         "receipt_id": "a" * 64,
         "content_sha256": "a" * 64,
     }
+    monkeypatch.setenv("ALPHA_TIINGO_API_KEY", "set")
     monkeypatch.setattr(
         provider_readiness,
         "run_explicit_check",
@@ -47,3 +48,25 @@ def test_provider_check_cli_supports_json_human_and_safe_error(
     rejected = runner.invoke(app, ["provider", "check", "unknown"])
     assert rejected.exit_code != 0
     assert "unsupported provider" in rejected.output
+
+
+def test_provider_check_says_no_key_set_and_names_the_variable_never_a_value(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    for name in ("APCA_API_KEY_ID", "APCA_API_SECRET_KEY"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("APCA_API_KEY_ID", "id-value-never-shown")
+    called: list[str] = []
+    monkeypatch.setattr(
+        provider_readiness, "run_explicit_check", lambda *args, **kwargs: called.append("x")
+    )
+    result = runner.invoke(app, ["provider", "check", "alpaca"])
+    assert result.exit_code == 1 and not called
+    assert "alpaca: no key set" in result.output and "APCA_API_SECRET_KEY" in result.output
+    assert "id-value-never-shown" not in result.output and "schema_drift" not in result.output
+
+
+def test_provider_check_for_a_provider_with_no_check_lists_those_that_have_one() -> None:
+    result = runner.invoke(app, ["provider", "check", "yfinance"])
+    assert result.exit_code != 0
+    assert "alpaca, coingecko, defillama, tiingo" in result.output

@@ -152,7 +152,9 @@ def test_bad_spec_fails_loud(home: Path, tmp_path: Path, extra: str, words: str)
 def test_too_few_assets_say_how_many_are_needed(home: Path, tmp_path: Path) -> None:
     spec = tmp_path / "few.toml"
     spec.write_text('assets = ["S00", "S01", "S02"]\n', encoding="utf-8")
-    with pytest.raises(ml_run.MlRunError, match=r"at least 20 assets.*has 3.*ml-gbm-etfs\.toml"):
+    with pytest.raises(
+        ml_run.MlRunError, match=r"at least 20 assets.*has 3.*rank.*ml-gbm-etfs\.toml"
+    ):
         ml_run.run_spec(spec, data_dir=home)
 
 

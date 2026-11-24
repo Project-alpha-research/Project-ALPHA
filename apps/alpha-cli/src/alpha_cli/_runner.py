@@ -294,8 +294,33 @@ def load_bars(
             except ValidationError as exc:
                 raise DataError(f"invalid bar for {symbol!r} at {row['ts']}: {exc}") from exc
     if len(bars) < 2:
-        raise DataError(f"need >= 2 bars for {symbol!r} as of {when.date()}, got {len(bars)}")
+        raise DataError(
+            _few_bars_message(symbol, when, len(bars), store, actions, stored, calendar)
+        )
     return bars, snapshot_id
+
+
+def _few_bars_message(
+    symbol: str, when: datetime, got: int, store: Any, actions: Any, stored: Any, calendar: Any
+) -> str:
+    """The "too few bars" error; it says so when every stored bar lies in the held-back period."""
+    from alpha_core.reserve import RESERVED_INSTANT
+
+    plain = f"need >= 2 bars for {symbol!r} as of {when.date()}, got {got}"
+    if when > RESERVED_INSTANT:
+        return plain
+    from alpha_data.pit import PointInTimeReader
+
+    frame = PointInTimeReader(store, actions, timeframe=stored, calendar=calendar).as_of(
+        symbol, datetime(2999, 1, 1, tzinfo=UTC)
+    )
+    if frame.height < 2 or min(frame["ts"].to_list()) < RESERVED_INSTANT:
+        return plain
+    return (
+        f"{plain}. All stored {stored.canonical} bars for {symbol!r} fall in the held-back period "
+        f"(from {RESERVED_INSTANT.date()}). A test may not read that period. "
+        "To test, pull earlier history for this symbol and timeframe."
+    )
 
 
 def load_dividends(

@@ -137,3 +137,22 @@ def test_list_prints_a_table_with_a_plain_market_name(home: Path) -> None:
     assert "source" in plain.stdout.splitlines()[0] or "source" in plain.stdout
     listed = invoke("list", "--json")["free_context"]
     assert listed[0]["name"] == "E-Mini S&P 500 (Chicago Mercantile Exchange)"
+
+
+def test_show_keeps_the_newest_rows_and_says_how_many_there_are(home: Path) -> None:
+    invoke("pull-cftc-cot", "--market", "13874A", "--since", "2024-01-01", "--json")
+    cut = invoke(
+        "show-cftc-cot", "--market", "13874A", "--as-of", "2024-02-01", "--limit", "1", "--json"
+    )
+    assert [r["report_date"] for r in cut["rows"]] == ["2024-01-23"] and cut["rows_in_all"] == 3
+    whole = invoke("show-cftc-cot", "--market", "13874A", "--as-of", "2024-02-01", "--json")
+    assert len(whole["rows"]) == 3 and "rows_in_all" not in whole
+    text = CliRunner().invoke(
+        context_app,
+        ["show-cftc-cot", "--market", "13874A", "--as-of", "2024-02-01", "--limit", "2"],
+    )
+    assert "3 rows in all; use --all (or --limit N) to see more" in text.output
+    full = CliRunner().invoke(
+        context_app, ["show-cftc-cot", "--market", "13874A", "--as-of", "2024-02-01", "--all"]
+    )
+    assert "rows in all" not in full.output

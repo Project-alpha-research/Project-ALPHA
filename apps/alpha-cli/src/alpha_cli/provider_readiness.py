@@ -270,12 +270,28 @@ _CHECKERS: dict[str, Callable[[], tuple[tuple[str, ...], dict[str, object]]]] = 
 }
 
 
+_KEY_VARIABLES: Final = {
+    "tiingo": ("ALPHA_TIINGO_API_KEY",),
+    "alpaca": ("APCA_API_KEY_ID", "APCA_API_SECRET_KEY"),
+    "coingecko": ("ALPHA_COINGECKO_API_KEY",),
+}
+
+
+def missing_key_variables(provider_id: str, env: Mapping[str, str]) -> tuple[str, ...]:
+    """Names (never values) of the environment variables a provider needs and ``env`` lacks."""
+    names = _KEY_VARIABLES.get(provider_id.strip().lower(), ())
+    return tuple(name for name in names if not env.get(name, "").strip())
+
+
 def run_explicit_check(data_dir: Path, provider_id: str) -> dict[str, object]:
     """Perform exactly one bounded provider check requested by an owner click or CLI command."""
     provider = provider_id.strip().lower()
     checker = _CHECKERS.get(provider)
     if checker is None:
-        raise DataError("explicit checks are available only for supported providers")
+        raise DataError(
+            "explicit checks are available only for supported providers: "
+            + ", ".join(sorted(_CHECKERS))
+        )
     try:
         capabilities, details = checker()
     except ProviderCheckFailure as exc:
@@ -323,6 +339,7 @@ def run_explicit_check(data_dir: Path, provider_id: str) -> dict[str, object]:
 __all__ = [
     "classify_failure",
     "last_check_status",
+    "missing_key_variables",
     "record_check_receipt",
     "run_explicit_check",
 ]

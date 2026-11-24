@@ -157,7 +157,11 @@ def test_a_follow_two_sessions_behind_is_shown_behind_not_as_nothing(tmp_path: P
     row = facts["rows"][0]
     assert row["group"] == "late_or_missed" and row["sessions_ago"] == 2 and row["behind"]
     out = follow_today.text(facts)
-    assert "Behind it: 1 of 1" in out and "NOTHING TODAY" not in out and "2 sessions ago" in out
+    assert (
+        "Of 1 follow(s): 0 up to date, 1 behind, 0 waiting for the first session." in out
+        and "NOTHING TODAY" not in out
+        and "2 sessions ago" in out
+    )
 
 
 def test_without_an_idea_card_the_row_shows_the_rule_in_words_and_keeps_the_id(
@@ -176,3 +180,10 @@ def test_the_count_facade_passes_counts_only(tmp_path: Path) -> None:
     assert counts is not None
     assert set(counts) == {"active", "new_signal", "open_position", "late_or_missed"}
     assert all(isinstance(v, int) for v in counts.values())
+
+
+def test_the_count_line_separates_up_to_date_behind_and_waiting() -> None:
+    facts = {"followed": 5, "behind": 1, "groups": [{"key": "waiting", "count": 2}]}
+    assert follow_today._count_line(facts) == (
+        "Of 5 follow(s): 2 up to date, 1 behind, 2 waiting for the first session."
+    )

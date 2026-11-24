@@ -180,9 +180,10 @@ def test_list_and_show_text_say_paper_and_waiting(tmp_path: Path, clock: Now) ->
     _rule_test(home, RUN_A, "1" * 64)
     follow_id = str(_start(home, "--test", RUN_A)["follow_id"])
     _, listing = _cli(home, "list")
-    assert follow_id in listing and "waiting for its first new bar" in listing
+    waits = "waiting for the first session that closes after it started (started 20"
+    assert follow_id in listing and waits in listing and "UTC)" in listing
     _, shown = _cli(home, "show", follow_id)
-    assert "waiting for its first new bar" in shown and "paper" in shown.lower()
+    assert waits in shown and "paper" in shown.lower()
     assert "profit" not in (listing + shown).lower()
     assert json.loads(_cli(home, "list", "--json")[1])["follows"][0]["follow_id"] == follow_id
 

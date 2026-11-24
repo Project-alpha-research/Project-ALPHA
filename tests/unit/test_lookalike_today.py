@@ -121,3 +121,15 @@ def test_the_symbol_is_needed_and_the_two_ways_must_agree(
     assert missing.exit_code != 0 and "Name the asset" in missing.output
     clash = RUNNER.invoke(app(), ["QQQ", "--asset", "SPY", "--today"])
     assert clash.exit_code != 0 and "once" in clash.output
+
+
+@pytest.mark.parametrize("option", [["--timeframe", "1h"], ["--max-distance", "0.5"]])
+def test_today_refuses_options_it_would_ignore(
+    option: list[str], home: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(today, "forward_bars", lambda *a, **k: (bars(), None))
+
+    result = RUNNER.invoke(app(), ["--asset", "SPY", "--last", "20", "--today", *option])
+
+    assert result.exit_code == 2
+    assert "Drop --timeframe and --max-distance" in result.output

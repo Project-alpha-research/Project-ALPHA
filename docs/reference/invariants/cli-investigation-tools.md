@@ -10,7 +10,7 @@ sources:
   - packages/alpha-validation/src/alpha_validation/regimes.py
   - packages/alpha-validation/src/alpha_validation/changepoints.py
   - tests/smoke/test_rule_tools_smoke.py
-verified: b28fd7207a0b9e52
+verified: 77936cfd94a7c34b
 ---
 
 # Investigation tools invariants
@@ -19,7 +19,7 @@ Follow-up questions on a recorded rule test or judged factor replay; part of [co
 
 ## Rules
 
-- These three `market-context` entries (`alpha tool run-set market-context <run_id>`; `alpha tool list` shows all entries) describe one recorded rule test.
+- These three `market-context` entries (`alpha tool run-set market-context <run_id>`) describe one recorded rule test.
   They rebuild its full-sample equity through the diagnostic pass's own path
   (`spine/diagnose.py:full_sample`), fail loud with `RUN_DATA_CHANGED` when the stored bars no
   longer reproduce it, and never re-run a walk-forward. Statistics are thin glue over statsmodels
@@ -49,7 +49,7 @@ Follow-up questions on a recorded rule test or judged factor replay; part of [co
   Each attempt writes an `attempted` ledger row before computing and an `ok` or `error` row (with `error_code`) after; an identical
   request (inputs, settings, seed, version) returns the stored file with no new row. Rows carry `tool_kind` and `look`. A setting off its
   default, or a re-rolled seed of a seeded entry, adds `non-default-params`; `alpha tool history <run_id>` lists every attempt.
-  Outputs live under `diagnostics/<run_id>/<id>@v<version>-<sha8>.json`. Tool rows have a null verdict and contribute zero deflation trials.
+  Outputs live under `diagnostics/<run_id>/<id>@v<version>-<sha8>.json`. Tool rows add no try, but a new `parameters.*` settings re-run adds one.
 - `alpha results show` includes stored files and attempt history. Cite a value by its tool id and output key, e.g. `market.attribution.beta`.
   Earlier metric names and stored files remain citable. Use `--tool-output <id>` for multiple outputs or any non-default setting.
   Copy the output-specific tag and settings count into the draft. The checker reads the same fact.

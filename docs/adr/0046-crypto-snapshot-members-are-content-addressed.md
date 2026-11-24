@@ -60,7 +60,7 @@ agreement.
 
 - The Dell's stuck snapshot `c8ab0d2a…6226` verifies under the corrected rule, without editing any
   receipt, manifest or snapshot; `storage-verify` passes on the real data folder (recorded in
-  `docs/work/archive/2026-11/2026-11-14-crypto-snapshot-duplicates/04-verify.md`).
+  [`04-verify.md`](https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/pre-thin-2026-11-14/docs/work/archive/2026-11/2026-11-14-crypto-snapshot-duplicates/04-verify.md)).
 - A later capture of the same bytes whose provenance differs (for example a correction lineage
   that appeared because the provider changed the file in between) makes every snapshot holding
   those bytes fail verification. That is intended: the provider's history is no longer one story.

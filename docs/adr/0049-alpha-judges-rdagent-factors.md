@@ -162,4 +162,4 @@ What the pinned source offers, read file by file:
 - `workers/rdagent/alpha_factor_judge.py`: `AlphaFactorScenario`, `AlphaFactorRunner`,
   `AlphaFactorFeedback`, the prefix-invariance check.
 - `apps/alpha-cli/src/alpha_cli/rdagent_factor_eval.py`: panel freezing and evaluation.
-- Task record: [2026-11-14 ALPHA-judged RD-Agent loop](https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/094ce61213923cf9b74661013703cd6ebad16ecc/docs/work/archive/2026-11/2026-11-14-rdagent-alpha-judged-loop/01-brief.md).
+- Task record: [2026-11-14 ALPHA-judged RD-Agent loop](https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/pre-thin-2026-11-14/docs/work/archive/2026-11/2026-11-14-rdagent-alpha-judged-loop/01-brief.md).

@@ -313,8 +313,8 @@ the receipt rebuild twice.
 
 ## Staged implementation
 
-The dated FeaturePlan at
-`docs/work/archive/2026-08/2026-08-21-generic-study-composition.md` is normative for
+The dated
+[FeaturePlan](https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/pre-thin-2026-11-14/docs/work/archive/2026-08/2026-08-21-generic-study-composition.md) is normative for
 execution order, verification, rollback, and scope. Its slices are:
 
 1. S0: plan and ADR only.

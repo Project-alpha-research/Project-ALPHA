@@ -41,7 +41,7 @@ behind `gate.py orient`.
   - `fs.py search` (`scripts/fs_search.py:search`) returns ranked excerpts of Git-tracked,
     allow-listed documentation with path, heading, line range, kind and lifecycle. Live
     documents rank ahead of archived history (`docs/archive/`, `docs/records/`,
-    `docs/build-status/`, `docs/work/archive/`, `docs/BUILD-STATUS.md`). Untracked
+    `docs/build-status/`, [the work archive](https://github.com/tradingsystem1880-eng/Project-ALPHA/tree/pre-thin-2026-11-14/docs/work/archive), `docs/BUILD-STATUS.md`). Untracked
     files, symlinks, owner data and tests are never read. There are no receipts.
 - **One name.** The single documentation and routing system is called **the file system**. A
   following change restructures it on the Interpretable Context Methodology, adapted to a

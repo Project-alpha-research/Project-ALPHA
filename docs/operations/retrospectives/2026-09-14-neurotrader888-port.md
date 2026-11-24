@@ -1,6 +1,6 @@
 # Retrospective — neurotrader888 technique port (2026-09-12..14)
 
-Plan `docs/work/archive/2026-09/2026-09-12-neurotrader888-port.md` (Completed, 26/26 slices, PR #50,
+[Plan](https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/pre-thin-2026-11-14/docs/work/archive/2026-09/2026-09-12-neurotrader888-port.md) (Completed, 26/26 slices, PR #50,
 branch `claude/integrate-trader-github-xy6rxs`); provenance
 `docs/governance/2026-09-12-neurotrader888-provenance.md`; delivery record in `docs/BUILD-STATUS.md`
 ("neurotrader888 technique port"). Audit window 2026-09-12T01:25 → 2026-09-14T03:38

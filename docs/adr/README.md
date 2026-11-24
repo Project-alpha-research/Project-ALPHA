@@ -39,10 +39,10 @@ This folder records the **load-bearing decisions** behind Project ALPHA's archit
 | [0031](0031-provider-readiness-and-paper-acceptance-v2.md) | Separate provider checks, paper acceptance, and IBKR what-if previews | Accepted | 2026-08-13 |
 | [0032](0032-governed-crypto-data-house.md) | Govern crypto data by dataset family | Accepted; storage reserve made owner-settable by 0043; snapshot members defined by 0046 | 2026-08-14 |
 | [0033](0033-governed-crypto-crowding-research-and-sandbox-basis.md) | Govern crypto crowding research separately from sandbox basis development | Accepted | 2026-08-15 |
-| [0034](0034-agent-operating-system-v2.md) | Agent operating system v2 — owner-token authorization, oracle test tiers, second-model review seam | Accepted; engineering ceremony superseded by 0037, local stamps by 0039, hidden suite by 0041 | 2026-08-19 |
+| [0034](0034-agent-operating-system-v2.md) | Agent operating system v2 — owner-token authorization, oracle test tiers, second-model review seam | Accepted; engineering ceremony superseded by 0037, local stamps by 0039, hidden suite by 0041; superseded in part by 0056 | 2026-08-19 |
 | [0035](0035-generic-study-composition-and-external-capability-adapters.md) | Govern generic study composition as a projection layer | Accepted; RD-Agent row superseded by 0044, 0049 | 2026-08-21 |
 | [0036](0036-defillama-tvl-supplemental-research-family.md) | Add DefiLlama chain TVL as a supplemental crypto research family | Accepted | 2026-09-14 |
-| [0037](0037-agent-neutral-research-engineering.md) | Agent-neutral engineering, shared component gates and reproducible research | Accepted; local stamps superseded by 0039, Atlas views by 0040, hidden suite by 0041 | 2026-09-16 |
+| [0037](0037-agent-neutral-research-engineering.md) | Agent-neutral engineering, shared component gates and reproducible research | Accepted; local stamps superseded by 0039, Atlas views by 0040, hidden suite by 0041; superseded in part by 0056 | 2026-09-16 |
 | [0038](0038-local-confirmation-and-terminal-archive-charts.md) | Local action confirmation and terminal archive charts | Accepted | 2026-09-30 |
 | [0039](0039-ci-is-the-merge-gate.md) | CI on the pull request is the merge gate; local commits need only a well-formed message | Accepted | 2026-11-13 |
 | [0040](0040-one-file-system-atlas-retired.md) | One file system; the Atlas graph, viewer and gate component are retired | Accepted | 2026-11-13 |
@@ -61,6 +61,7 @@ This folder records the **load-bearing decisions** behind Project ALPHA's archit
 | [0053](0053-one-trial-ledger-read-model.md) | One trial ledger, read as one model | Accepted | 2026-11-16 |
 | [0054](0054-afml-worker.md) | A pinned AFML worker runs RiskLabAI and quantowl side by side; they must agree; ALPHA's high/low barrier convention is the headline | Accepted | 2026-11-16 |
 | [0055](0055-spread-check-family-brief-and-universe-file.md) | The factor judge checks that the top third beats the bottom third before the replay; the proposer sees idea families; the universe is a file; model calls have a time limit | Accepted | 2026-11-16 |
+| [0056](0056-the-build-team-replaces-the-delivery-pipeline.md) | The build team replaces the Software Team and the delivery pipeline | Accepted | 2026-11-24 |
 
 ## Conventions
 

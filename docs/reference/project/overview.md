@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - README.md
-verified: e8ffad7d466dc813
+verified: 93d91a02e0d833af
 ---
 
 # ALPHA: what it is for and how the parts fit
@@ -10,8 +10,8 @@ verified: e8ffad7d466dc813
 This is the project layer of the file system. It holds what does not change from task to task:
 why ALPHA exists, what each major part is for, and what the owner has decided. Read it before you
 recommend keeping, changing, shelving or removing any part. Rules for changing code live in
-[`invariants/`](../invariants/research-integrity.md); delivery steps live in the
-[delivery pipeline](../../../workflow/CONTEXT.md).
+[`invariants/`](../invariants/research-integrity.md); how ALPHA is built is on the
+[build team page](components/delivery-and-agent-tooling.md).
 
 ## Components
 

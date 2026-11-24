@@ -1,6 +1,6 @@
 # ADR-0034: Agent operating system v2 — owner-token authorization, oracle test tiers, second-model review seam
 
-**Status:** Accepted
+**Status:** Accepted; superseded in part by ADR-0056
 **Date:** 2026-08-19
 **Deciders:** Project ALPHA owner and AI build agents
 

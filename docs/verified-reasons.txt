@@ -17,7 +17,7 @@ apps/alpha-web/README.md
   verified fd7586220c444ac6 on 2026-11-24: all named files exist; routes, anchors and commands checked
 
 docs/CONTEXT.md
-  verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
+  verified b36f8d92f0d80d3c on 2026-11-24: m170: links now point to the build-team page; the page's own claims are unchanged
 
 docs/reference/checks.md
   verified 8196fa71e1d308a1 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
@@ -92,7 +92,7 @@ docs/reference/invariants/data.md
   verified 663c4103493f9199 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/documentation.md
-  verified ceb51c1ae476edc9 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+  verified 274aa9f299c5d5e4 on 2026-11-24: m170: feature-plan rules removed with the old plan check; other rules unchanged
 
 docs/reference/invariants/engineering.md
   verified 0a282d681aa7abfd on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
@@ -148,12 +148,6 @@ docs/reference/invariants/web-run-detail.md
 docs/reference/invariants/workers.md
   verified d08adaa0f124617a on 2026-11-24: gate steps, launch limits, AFML tests, schemas and file names match code
 
-docs/reference/model-routing-codex.md
-  verified f6f028b7feb0cf36 on 2026-11-24: classes, models, caps, sandbox flags, exit codes match handoff.py and handoff_sandbox.py
-
-docs/reference/model-routing.md
-  verified f6f028b7feb0cf36 on 2026-11-24: classes, guarded paths, review tiers and records match handoff.py
-
 docs/reference/owner-rule-language.md
   verified fc4ba062ee9ec61a on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
@@ -188,7 +182,7 @@ docs/reference/project/components/options-data.md
   verified 814a9b6c19ab1666 on 2026-11-20: Invariants page only split into a new section and rewrapped a line; the component summary (0.14 s solve, 21 s chain) still matches
 
 docs/reference/project/components/paper-and-live.md
-  verified c6e2e7d1be986ea5 on 2026-11-24: capabilities, ADRs, runbook and decision anchors exist; no live order path
+  verified f23dc19226088ee7 on 2026-11-24: m170: links now point to the build-team page; the page's own claims are unchanged
 
 docs/reference/project/components/qlib.md
   verified 9490c217e601c362 on 2026-11-24: pyqlib 0.9.7 pin, ml_*.py files, capabilities, ADRs and tests all exist
@@ -215,31 +209,37 @@ docs/reference/project/components/web-workstation.md
   verified 0763267e5e567dc9 on 2026-11-24: port 8801, ALPHA_WEB_PORT, theme switch, report sections and capabilities confirmed
 
 docs/reference/project/decisions-by-topic.md
-  verified 80c264c3979c5f75 on 2026-11-24: history page; its sources only gained the new volume 6 already linked
+  verified d7e110fdb4705759 on 2026-11-24: m170: build-team pointers; claims unchanged
 
 docs/reference/project/file-system-measurement.md
   verified 8a77650b29ee8769 on 2026-11-21: ceiling and doc split do not change what this document says
 
 docs/reference/project/ideas-and-considered.md
-  verified 83e6af903a0351b6 on 2026-11-19: Merge of main: the new volume-5 entry is a build-process decision, not an idea weighed; the RD-Agent toolbox row still holds
+  verified ba7be86ab3df1ac4 on 2026-11-24: m170: links now point to the build-team page; the page's own claims are unchanged
 
 docs/reference/project/outside-projects.md
   verified 7403440279daae9f on 2026-11-24: register checked against all pyproject files and package.json; no mismatch
 
+docs/reference/project/overview.md
+  verified 93d91a02e0d833af on 2026-11-24: m170: links now point to the build-team page; the page's own claims are unchanged
+
 docs/reference/project/owner-decisions-2.md
-  verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right
+  verified f23dc19226088ee7 on 2026-11-24: m170: links now point to the build-team page; the page's own claims are unchanged
 
 docs/reference/project/owner-decisions-3.md
-  verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right
+  verified f23dc19226088ee7 on 2026-11-24: m170: links now point to the build-team page; the page's own claims are unchanged
 
 docs/reference/project/owner-decisions-4.md
-  verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5, as this volume's own header says
+  verified f23dc19226088ee7 on 2026-11-24: m170: links now point to the build-team page; the page's own claims are unchanged
 
 docs/reference/project/owner-decisions-5.md
-  verified 0d6d2613d9bbfae7 on 2026-11-24: history page; its source (volume 4) changed text only, no factual claim here depends on it
+  verified 0081ea88c9ee9e4d on 2026-11-24: m170: links now point to the build-team page; the page's own claims are unchanged
+
+docs/reference/project/owner-decisions-6.md
+  verified dd75b8fb87318bb2 on 2026-11-24: m170: links now point to the build-team page; the page's own claims are unchanged
 
 docs/reference/project/owner-decisions.md
-  verified 9fe892a33a3d98b0 on 2026-11-19: model-routing was restructured; the log's entries are unaffected
+  verified 98ff6f758bf06846 on 2026-11-24: m170: build-team pointers; the page's claims are unchanged
 
 docs/reference/project/rd-agent-detail.md
   verified 949857d7112bc824 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
@@ -248,16 +248,16 @@ docs/reference/project/reserved-period.md
   verified be61e3239a63e5bf on 2026-11-24: file names, slot count 10, confirm subcommands, cut-off and listed commands confirmed
 
 docs/roadmap/production-scope-2.md
-  verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
+  verified 3fd2dac8724c4b7e on 2026-11-24: m170: links now point to the build-team page; the page's own claims are unchanged
 
 docs/roadmap/production-scope-3.md
-  verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
+  verified 3fd2dac8724c4b7e on 2026-11-24: m170: links now point to the build-team page; the page's own claims are unchanged
 
 docs/roadmap/production-scope.md
-  verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
+  verified 3fd2dac8724c4b7e on 2026-11-24: m170: links now point to the build-team page; the page's own claims are unchanged
 
 docs/work/CONTEXT.md
-  verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
+  verified 98ff6f758bf06846 on 2026-11-24: m170: build-team pointers; the page's claims are unchanged
 
 packages/alpha-data/CONTEXT.md
   verified ce00c08a576e3208 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
@@ -420,21 +420,3 @@ tests/CONTEXT.md
 
 workers/rdagent/CONTEXT.md
   verified 095f2f22bb96915a on 2026-11-19: Re-read after merging main: the launcher change from main only removes a stopped gateway's own session files, and this page's discussion text still matches the worker
-
-workflow/CONTEXT.md
-  verified 4da938fdf3e92d0d on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
-
-workflow/README.md
-  verified 79a8cfc6cb6d9b89 on 2026-11-21: ceiling and doc split do not change what this document says
-
-workflow/stages/01-shape/CONTEXT.md
-  verified ce7f36ace08a240b on 2026-11-24: checked against scripts/status.py and roadmap_index.py: STATUS.md headings, backlog fields and the task-folder names still match
-
-workflow/stages/03-build/CONTEXT.md
-  verified 4bb90e5006d5dce5 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
-
-workflow/stages/04-verify/CONTEXT.md
-  verified b0ecdda77b4d329c on 2026-11-21: price-signal window fix does not change what this document says
-
-workflow/stages/05-land/CONTEXT.md
-  verified b54e1f508d77c80d on 2026-11-24: checked against pull_request_template.md, handoff.py and status.py: headings, record names and the sweep rule still match

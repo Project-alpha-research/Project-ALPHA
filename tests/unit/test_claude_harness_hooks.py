@@ -87,7 +87,7 @@ def test_session_points_to_shared_orientation_and_instructions(tmp_path: Path) -
     assert code == 0
     assert "CLAUDE.md" in message
     assert "fs.py orient" in message
-    assert "workflow/CONTEXT.md" in message
+    assert "delivery-and-agent-tooling.md" in message
     assert len(message.encode()) < 2_000
     assert list(tmp_path.iterdir()) == []
 

@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - docs/reference/project/owner-decisions-5.md
-verified: 1757d88ca7f87a5c
+verified: dd75b8fb87318bb2
 ---
 
 # Owner decisions log, volume 6
@@ -23,7 +23,7 @@ entries are in the first. New entries are appended at the end of this file.
 - **Context:** a discussion change had withheld RD-Agent's own written feedback from later prompts after
   a round with a dropped idea. The owner had it restored.
 - **Governs:** `workers/rdagent`; the [RD-Agent component page](components/rd-agent.md);
-  [model routing](../model-routing.md).
+  [the build team](components/delivery-and-agent-tooling.md).
 
 ### 2026-11-19 All features work together as one system; four approvals
 
@@ -89,3 +89,16 @@ entries are in the first. New entries are appended at the end of this file.
 - **Context:** the new pipeline replaced the case lane, and the owner wants a thin system.
 - **Governs:** [research cases page](components/research-cases-and-approval.md); [command line research](../invariants/cli-research.md);
   [reserved period](reserved-period.md).
+
+### 2026-11-24 The build team replaces the Software Team and the delivery pipeline
+
+- **Said:** "We had in this project at one point, I think it was called the software team, that was meant to be the team we're trying to build now.
+  Can we ensure there's no confusion, that the old software team that we built is removed, and it's noted everywhere that it's replaced by the team
+  we're building now."
+- **Decided:** the Software Team (October 2026) and the five-stage delivery pipeline are deleted: the `workflow/` folder, the stage slash commands,
+  the Codex hand-off tool and the model-routing pages. The build team (a separate private repository, `alpha-factory`) replaces them.
+  One page in the product says how ALPHA is built.
+- **Context:** a third of merged changes were repairs, `main` was red six times in one day, and a builder inverted a research-integrity sentence
+  that review passed.
+- **Governs:** [the build team](components/delivery-and-agent-tooling.md);
+  [ADR-0056](../../adr/0056-the-build-team-replaces-the-delivery-pipeline.md).

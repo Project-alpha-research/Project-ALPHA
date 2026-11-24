@@ -60,4 +60,5 @@ what you need. Each fact has one home ([list](docs/README.md#one-home-per-fact))
   `docs/work/` of other tasks; `workers/rdagent/CHANGE-NOTES.md`; backend rule pages for a
   display-only change.
 - What a part is for and what the owner decided: [project layer](docs/reference/project/overview.md).
-  Testing a trading idea: `research/CONTEXT.md`. Building and landing a change: `workflow/CONTEXT.md`.
+  Testing a trading idea: `research/CONTEXT.md`. Building and landing a change:
+  [the build team](docs/reference/project/components/delivery-and-agent-tooling.md).

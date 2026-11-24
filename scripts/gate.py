@@ -17,7 +17,6 @@ CLI:
     python3 scripts/gate.py orient [--json]    # source orientation (same as scripts/fs.py orient)
     python3 scripts/gate.py lint-harness       # weakening scanner vs .claude/harness-baseline.json
     python3 scripts/gate.py baseline           # rewrite that baseline (reviewed in the PR)
-    python3 scripts/gate.py plan-check PLAN.md # validate a plan's ```json FeaturePlan front block
     python3 scripts/gate.py doctor [--json]    # verify the harness wiring itself
     python3 scripts/gate.py mutate [MODULES|--all] [--json --write-baseline --require-measured]
     python3 scripts/gate.py semgrep [--changed] # .semgrep/alpha.yml banned constructs
@@ -292,8 +291,6 @@ HARNESS_SCRIPTS = (
     "scripts/mutation_legacy.py",
     "scripts/mutation_fragment.py",
     "scripts/check_mutation_report.py",
-    "scripts/codex_bridge.py",
-    "scripts/handoff.py",
     ".claude/statusline.py",
 )
 
@@ -726,8 +723,7 @@ def machine_readiness(
             False,
             codex_ok,
             codex_detail,
-            "install the Codex CLI (docs/operations/codex-second-model-runbook.md), "
-            "then run: codex login"
+            "install the Codex CLI, then run: codex login"
             if "not on PATH" in codex_detail
             else "codex login",
         )
@@ -932,7 +928,7 @@ def all_quant_source_modules(root: Path) -> list[str]:
 def _reexec_with_pydantic(root: Path) -> None:
     """Re-exec under the project venv when pydantic is unavailable.
 
-    ``baseline`` and ``plan-check`` validate with pydantic, but the stdlib-only commands
+    ``baseline`` validates with pydantic, but the stdlib-only commands
     must keep working when invoked as plain ``python3``.
     """
     try:
@@ -1003,8 +999,6 @@ def build_parser() -> argparse.ArgumentParser:
     orient_p.add_argument("--json", action="store_true")
     sub.add_parser("lint-harness")
     sub.add_parser("baseline", help="rewrite .claude/harness-baseline.json from the tree")
-    plan_p = sub.add_parser("plan-check")
-    plan_p.add_argument("plan", help="docs/work/<task>/02-plan.md with a ```json front block")
     doctor_p = sub.add_parser("doctor")
     doctor_p.add_argument("--json", action="store_true")
     mutate_p = sub.add_parser("mutate")
@@ -1042,7 +1036,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(report, indent=2, sort_keys=True) if args.json else render_report(report))
         return code
     root = repo_root()
-    if args.command in ("baseline", "plan-check"):
+    if args.command == "baseline":
         _reexec_with_pydantic(root)
     if args.command == "check":
         return run_check(root, run_all=args.all, base=args.base)
@@ -1091,12 +1085,6 @@ def main(argv: list[str] | None = None) -> int:
         write_baseline(root)
         print(f"harness baseline rewritten at {BASELINE_FILE}; commit it for review.")
         return 0
-    if args.command == "plan-check":
-        from harness_awareness import plan_check
-
-        ok, message = plan_check(Path(args.plan))
-        print(message, file=sys.stdout if ok else sys.stderr)
-        return 0 if ok else 1
     if args.command == "doctor":
         code, report = doctor(root)
         if args.json:

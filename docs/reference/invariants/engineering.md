@@ -91,7 +91,7 @@ Project-wide coding rules. Area files add their own detail and link here. The re
   So while such an approval may be live, make no cosmetic edits in those files; change them only when
   the behaviour must change, and say in the pull request that approvals will need renewing. Never
   edit `_structural_digest.py` casually: any edit to it invalidates every scheme-2 approval, so a
-  builder may change it only under a plan that declares the quant tier (`handoff.py` `GUARDED`).
+  change it only in a pull request that the owner has approved.
 - Run identity also fingerprints source bytes (`apps/alpha-cli/src/alpha_cli/_identity.py`), so
   edits to engine, strategy and CLI code change run ids. Details: `cli-runs.md` and `cli-native.md`
   in this folder.
@@ -108,8 +108,7 @@ Project-wide coding rules. Area files add their own detail and link here. The re
 - Growth of `# noqa` or `type: ignore` in quant modules is blocked by `gate.py lint-harness`
   against `.claude/harness-baseline.json`.
 - Float-literal equality is banned in quant code (semgrep rule `alpha-float-literal-equality`).
-- The `quant-verifier` and `reviewer` agents report on the pull request and are advisory
-  ([stage 04](../../../workflow/stages/04-verify/CONTEXT.md)).
+- The `quant-verifier` and `reviewer` agents report on the pull request and are advisory.
 
 ## Reproducible code
 
@@ -144,7 +143,7 @@ Project-wide coding rules. Area files add their own detail and link here. The re
 - One agent mutates the working tree per slice; others read or review.
 - Evidence before claims: say a check passes only after running it on this tree and reading its result;
   an agent's report of success is checked against the diff before it is repeated.
-- How a change is shaped, planned, built, verified and landed: the [delivery pipeline](../../../workflow/CONTEXT.md).
+- How a change is built and landed: [the build team](../project/components/delivery-and-agent-tooling.md).
 
 ## Checks and commits
 

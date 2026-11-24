@@ -16,8 +16,7 @@ series ends, a verify message). Whether each is fixed on main has not been check
 
 ## Where it would live
 
-`.claude/agents/reviewer.md` and the review step of `scripts/handoff.py` (both protected: a
-reviewed pull request).
+`.claude/agents/reviewer.md` (protected: a reviewed pull request).
 
 ## What "done" looks like
 

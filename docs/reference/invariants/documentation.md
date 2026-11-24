@@ -8,13 +8,13 @@ sources:
   - tests/unit/test_docs_links.py
   - tests/unit/test_repo_awareness_drift.py
   - tests/unit/test_roadmap_index.py
-verified: ceb51c1ae476edc9
+verified: 274aa9f299c5d5e4
 ---
 
 # Documentation invariants
 
-What must hold when adding or changing documents under `docs/`: decision records, feature plans and their
-delivery states, the generated roadmap index, append-only records, and relative links.
+What must hold when adding or changing documents under `docs/`: decision records, the generated roadmap index,
+append-only records, and relative links.
 
 ## Document lifecycle
 
@@ -99,34 +99,6 @@ other files link to it.
   in [the newest decisions volume](../project/owner-decisions-6.md) in the same pull request as the work it
   changes, or in a documentation pull request the same day; an idea considered but not decided goes in
   [ideas and things considered](../project/ideas-and-considered.md).
-
-## Feature plans
-
-- A plan is `docs/work/YYYY-MM-DD-<slug>/02-plan.md` (the task folder of the
-  [delivery pipeline](../../../workflow/CONTEXT.md), on the task branch only) with a `FeaturePlan` object in the first
-  fenced `json` code block. It must validate against `scripts/harness_models.py::FeaturePlan`
-  (`schema_version` 1, at least one alternative, at least two pre-mortem items, at least two slices each
-  with `verify`, `expected`, `rollback`, and a closed `tier_impact` list). Check with
-  `uv run python scripts/gate.py plan-check docs/work/<task>/02-plan.md`; `scripts/handoff.py build --task`
-  runs the same check.
-- Every plan has exactly one `**Delivery state:** <state>` line within its first 12 lines.
-  States: `Completed`, `Implemented – qualification pending` (en dash), `In progress`, `Blocked`, `Planned`,
-  `Superseded by <relative path>`. Text may follow after ` — `, `(`, `.`, `;`, `,` or a date.
-- A plan written from 2026-11-14 also states `**Build class:** small|standard|hard — <reason>` in its first
-  12 lines and lists every file in scope in the front block's `files`
-  ([model routing](../model-routing.md#task-classes)); `scripts/handoff.py` builds and checks from them.
-- By convention the state line sits under the title, or on line 1 when a JSON block leads the file, and
-  reads `**Delivery state:** <state> — <evidence>` (the test checks only the first 12 lines).
-- The task folder is removed before its pull request merges; the pull request is the record.
-
-1. `# <title>`, then within the first 12 lines one `**Delivery state:** Planned — <note>` line
-   (vocabulary in the Feature plans rules; `In progress` once stage 03 starts), and one `**Build class:** small|standard|hard — <reason>` line.
-2. `## For the owner` — at most 10 plain-English lines: what will change for them, how they will
-   see it, what it will not do, anything they must decide.
-3. The first fenced `json` block: a `FeaturePlan` (`scripts/harness_models.py`).
-4. `## Read first` — a table `| Read | Section | When |` naming the exact files and sections the
-   builder must read for this task (workspace files, invariants, the code it changes).
-5. `## Slices`, `## Test plan`, `## Look-ahead, determinism and import impact` — short prose.
 
 ## Roadmap index
 

@@ -40,7 +40,7 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   [Point-in-time reads](research-integrity.md#point-in-time-reads); [fills](research-integrity.md#decide-at-close-fill-at-next-open).
 - `_gauntlet.py`, `_optim.py`, `_runner.py`, `_synth.py`, `_surrogate.py`, `_seeds.py` and `_identity.py` are high-risk statistical or identity code; follow
   [engineering § Quant tier](engineering.md#quant-tier). They sit outside `gate.py::matches_quant` (packages only), so CI runs no mutation gate on them: their
-  tests and the oracles are the binding check; ask the `reviewer` agent to review the diff (advisory, ADR-0039; stage 04 of the delivery pipeline).
+  tests and the oracles are the binding check; ask the `reviewer` agent to review the diff (advisory, ADR-0039).
 - `_schemas.py` is the one canonical home of strategy parameter definitions, bounds and defaults; `_strategies.py` and `_runner.parse_strategy_params` read
   from it, and values are normalised to the stable floats stored in `RunSpec`.
 - Slash symbols (`BTC/USD`) are crypto pairs and need `--account-type MARGIN`; a CASH account fails loud (`_runner.py`).

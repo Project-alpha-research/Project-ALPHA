@@ -75,9 +75,6 @@ extend-exclude = [
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF100"]
 
 [tool.ruff.lint.per-file-ignores]
-# protected control-plane script (scripts/gate.py _PROTECTED_EXACT): its two stale
-# suppressions are left for an acknowledged edit rather than removed here.
-"scripts/codex_bridge.py" = ["RUF100"]
 # Source bytes bound into runtime identities: the alpha_research tree feeds the research
 # implementation "code" hash that owner-approved contracts are checked against, and these
 # alpha_data modules feed comparison_acquisition._policy_hash. Their stale suppressions are

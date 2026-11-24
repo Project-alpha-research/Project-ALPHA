@@ -1,5 +1,5 @@
-"""Pydantic schemas for harness JSON: doctor reports, the harness baseline, feature plans,
-review and quant-verification reports, and Codex second opinions.
+"""Pydantic schemas for harness JSON: doctor reports, the harness baseline,
+review and quant-verification reports.
 
 Review and quant reports are advisory output shapes for the reviewer agents; nothing records
 or enforces them locally. Hooks never import this module; ``gate.py`` imports it lazily so the
@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class _Strict(BaseModel):
@@ -110,36 +110,6 @@ class HarnessBaseline(_Strict):
     quant_suppressions: int
 
 
-class PlanSlice(_Strict):
-    title: str
-    verify: str
-    expected: str
-    rollback: str
-    files: list[str] = []
-    status: Literal["pending", "in_progress", "done"] = "pending"
-
-
-class PlanAssumption(_Strict):
-    statement: str
-    verified_by: str
-
-
-class FeaturePlan(_Strict):
-    """Machine-checked front block of a task plan, docs/work/<task>/02-plan.md."""
-
-    schema_version: Literal[1] = 1
-    title: str
-    context: str
-    assumptions: list[PlanAssumption]
-    alternatives_considered: list[str] = Field(min_length=1)
-    pre_mortem: list[str] = Field(min_length=2)
-    slices: list[PlanSlice] = Field(min_length=2)
-    tier_impact: list[Literal["quant", "risk", "protected", "dag", "bias", "determinism", "none"]]
-    docs_to_update: list[str]
-    out_of_scope: list[str]
-    files: list[str] = []
-
-
 class InvariantFinding(_Strict):
     family: Literal["look_ahead", "determinism", "architecture"]
     severity: Literal["high", "medium", "low"]
@@ -161,37 +131,3 @@ class Counterexample(_Strict):
 
 class Counterexamples(_Strict):
     counterexamples: list[Counterexample]
-
-
-class CodexFinding(_Strict):
-    severity: Literal["high", "medium", "low"]
-    file: str
-    line: int | None = None
-    summary: str
-    axis: str
-
-
-class CodexReview(_Strict):
-    schema_version: Literal[1] = 1
-    model: str
-    available: bool
-    unavailable_reason: str | None = None
-    findings: list[CodexFinding] = []
-    summary: str = ""
-
-
-class CodexClaim(_Strict):
-    claim: str
-    source: str
-    quote: str
-    confidence: Literal["high", "medium", "low"]
-
-
-class CodexResearch(_Strict):
-    schema_version: Literal[1] = 1
-    model: str
-    available: bool
-    unavailable_reason: str | None = None
-    question: str
-    claims: list[CodexClaim] = []
-    summary: str = ""

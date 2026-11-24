@@ -6,15 +6,13 @@ The file system (ADR-0040) follows the Interpretable Context Methodology adapted
   other agents) are small and send the reader to the root ``CONTEXT.md``.
 * Layer 1: the root ``CONTEXT.md`` routes every kind of task to a workspace.
 * Layer 2: every workspace (each project under ``packages/``, ``apps/``, ``workers/``,
-  plus ``scripts/``, ``tests/``, ``docs/``, the delivery pipeline ``workflow/`` and the research
+  plus ``scripts/``, ``tests/``, ``docs/`` and the research
   route ``research/``) has a ``CONTEXT.md`` with the sections Purpose, Read first, How to
-  change it, Outputs. Its Read first table names exact files and sections. Each stage of the
-  delivery pipeline, ``workflow/stages/NN-name/``, has a ``CONTEXT.md`` with Purpose, Inputs,
-  Read first, Process, Outputs, Checkpoint, and the pipeline's ``CONTEXT.md`` links every stage.
-  Research is not staged: ``research/CONTEXT.md`` routes to the playbook, tool cards, skills and
+  change it, Outputs. Its Read first table names exact files and sections.
+  ``research/CONTEXT.md`` routes to the playbook, tool cards, skills and
   lessons, which ``tests/unit/test_research_playbook.py`` checks against the program.
-* Outputs: a task folder ``docs/work/<yyyy-mm-dd>-<slug>/`` holds a planned task's stage files
-  and its ``02-plan.md``, or a build's ``brief.md`` and ``report.md`` (``docs/work/CONTEXT.md``).
+* Outputs: a task folder ``docs/work/<yyyy-mm-dd>-<slug>/`` holds a build's ``brief.md`` and
+  ``report.md`` (``docs/work/CONTEXT.md``).
 * Layer 3: reference documents under ``docs/reference/``: the rules (``invariants/``) and the
   project layer (``project/``: what each major part is for, and the owner's decisions).
 * Loading: each workspace has a one-line ``CLAUDE.md`` that imports its ``CONTEXT.md``; Claude
@@ -45,23 +43,19 @@ from tests.unit.test_docs_links import _FENCE, _HEADING, anchors, broken_links, 
 ROOT = Path(__file__).parents[2]
 CONTEXT = "CONTEXT.md"
 WORKSPACE_PARENTS = ("packages", "apps", "workers")
-EXTRA_WORKSPACES = ("scripts", "tests", "docs", "workflow", "research")
+EXTRA_WORKSPACES = ("scripts", "tests", "docs", "research")
 REFERENCE_DIR = "docs/reference"
 REQUIRED_SECTIONS = ("Purpose", "Read first", "How to change it", "Outputs")
-PIPELINES = ("workflow",)  # each has <pipeline>/stages/NN-name/CONTEXT.md; research is not staged
-STAGES = "stages"
-STAGE_SECTIONS = ("Purpose", "Inputs", "Read first", "Process", "Outputs", "Checkpoint")
-_STAGE_NAME = re.compile(r"^\d{2}-[a-z]+$")
 WORK_DIR = "docs/work"
-TASK_PLAN = "02-plan.md"
-BUILD_RECORD = "03-build.json"  # written by scripts/handoff.py, committed with the build
-STAGE_OUTPUTS = frozenset({"01-brief.md", TASK_PLAN, BUILD_RECORD, "04-verify.md", "05-handoff.md"})
-# A build from a brief leaves these (scripts/handoff_routing.py): outputs, not living documents.
+# Old task folders (history) may still hold the files of the retired five-stage pipeline.
+RETIRED_STAGE_OUTPUTS = frozenset(
+    {"01-brief.md", "02-plan.md", "03-build.json", "04-verify.md", "05-handoff.md"}
+)
+# A build leaves these: outputs, not living documents.
 BUILD_OUTPUTS = frozenset({"brief.md", "report.md"})
 _TASK_NAME = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(-[a-z0-9]+)*$")
 CONTEXT_MAX_LINES = 40
 CONTEXT_MAX_BYTES = 2_560
-STAGE_CONTEXT_MAX_LINES = 60  # a stage file keeps its Process, which is a contract
 CONTEXT_BODY_MAX_LINES = 14  # non-blank lines of a workspace body, headings and tables left out
 READ_FIRST_MAX_ROWS = 12
 WHEN_MAX_CHARS = 60
@@ -107,22 +101,8 @@ def workspaces() -> list[str]:
     return [*found, *EXTRA_WORKSPACES]
 
 
-def stage_files(pipeline: str | None = None) -> list[str]:
-    """``<pipeline>/stages/NN-name/CONTEXT.md`` for every stage folder of one or all pipelines."""
-    return [
-        f"{name}/{STAGES}/{path.name}/{CONTEXT}"
-        for name in ((pipeline,) if pipeline else PIPELINES)
-        for path in sorted((ROOT / name / STAGES).iterdir())
-        if path.is_dir()
-    ]
-
-
-def is_stage_file(rel: str) -> bool:
-    return any(rel.startswith(f"{name}/{STAGES}/") for name in PIPELINES)
-
-
 def context_files() -> list[str]:
-    return [CONTEXT, *(f"{ws}/{CONTEXT}" for ws in workspaces()), *stage_files()]
+    return [CONTEXT, *(f"{ws}/{CONTEXT}" for ws in workspaces())]
 
 
 @cache
@@ -348,7 +328,7 @@ def _front_matter_problems(rel: str, *, allow_generated: bool) -> list[str]:
 def _context_line_limit(rel: str) -> int:
     if rel == CONTEXT:
         return ROOT_MAX_LINES
-    return STAGE_CONTEXT_MAX_LINES if is_stage_file(rel) else CONTEXT_MAX_LINES
+    return CONTEXT_MAX_LINES
 
 
 def test_context_files_are_small_and_declare_owner_sources_verified() -> None:
@@ -366,7 +346,6 @@ def test_workspace_context_files_stay_within_the_byte_limit() -> None:
         f"{CONTEXT_LINES_ADVICE.capitalize()}."
         for rel in context_files()
         if rel != CONTEXT
-        and not is_stage_file(rel)
         and (ROOT / rel).is_file()
         and (size := (ROOT / rel).stat().st_size) > CONTEXT_MAX_BYTES
     ]
@@ -451,7 +430,7 @@ def test_context_sections_appear_in_order() -> None:
     for rel in context_files():
         if not (ROOT / rel).is_file():
             continue
-        required = STAGE_SECTIONS if is_stage_file(rel) else REQUIRED_SECTIONS
+        required = REQUIRED_SECTIONS
         titles = [title for _, level, title in headings(_text(rel)) if level == 2]
         present = [title for title in titles if title in required]
         if present != list(required):
@@ -560,43 +539,6 @@ def test_root_routes_to_every_workspace() -> None:
 
 
 # ---------------------------------------------------------------------------------------------
-# The staged pipeline (delivery): numbered stages, each routed from <pipeline>/CONTEXT.md
-
-
-@pytest.mark.parametrize("pipeline", PIPELINES)
-def test_stage_folders_are_numbered_and_each_has_a_context_file(pipeline: str) -> None:
-    stages_dir = f"{pipeline}/{STAGES}"
-    folders = sorted(p for p in (ROOT / stages_dir).iterdir() if p.is_dir())
-    assert folders, f"{stages_dir} has no stage folders"
-    problems = [
-        f"{stages_dir}/{p.name}: name a stage NN-word (for example 03-build)"
-        for p in folders
-        if not _STAGE_NAME.match(p.name)
-    ]
-    problems += [f"{rel} is missing" for rel in stage_files(pipeline) if not (ROOT / rel).is_file()]
-    numbers = [int(p.name[:2]) for p in folders if _STAGE_NAME.match(p.name)]
-    if numbers != list(range(1, len(numbers) + 1)):
-        problems.append(
-            f"{stages_dir}: stages must be numbered 01, 02, ... without gaps: {numbers}"
-        )
-    assert not problems, "\n".join(problems)
-
-
-@pytest.mark.parametrize("pipeline", PIPELINES)
-def test_pipeline_routing_links_every_stage(pipeline: str) -> None:
-    text = _text(f"{pipeline}/{CONTEXT}")
-    missing = [rel for rel in stage_files(pipeline) if rel.removeprefix(f"{pipeline}/") not in text]
-    assert not missing, f"{pipeline}/{CONTEXT} must link every stage: {missing}"
-
-
-def test_every_pipeline_is_a_routed_workspace() -> None:
-    missing = [name for name in PIPELINES if name not in EXTRA_WORKSPACES]
-    assert not missing, (
-        f"add these pipelines to EXTRA_WORKSPACES so the root routes them: {missing}"
-    )
-
-
-# ---------------------------------------------------------------------------------------------
 # Outputs: task folders under docs/work/ (only while their pull request is open)
 
 
@@ -605,16 +547,16 @@ def _task_folders() -> list[Path]:
     return sorted(p for p in root.iterdir() if p.is_dir()) if root.is_dir() else []
 
 
-def test_task_folders_hold_a_plan_and_only_stage_files() -> None:
+def test_task_folders_hold_a_brief_and_only_build_files() -> None:
     folders = _task_folders()
     problems = []
     for folder in folders:
         rel = folder.relative_to(ROOT).as_posix()
         if not _TASK_NAME.match(folder.name):
             problems.append(f"{rel}: name a task folder yyyy-mm-dd-<lowercase-slug>")
-        if not (folder / TASK_PLAN).is_file() and not (folder / "brief.md").is_file():
-            problems.append(f"{rel}: has no {TASK_PLAN} or brief.md; commit it with one of them")
-        allowed = STAGE_OUTPUTS | BUILD_OUTPUTS
+        if not (folder / "02-plan.md").is_file() and not (folder / "brief.md").is_file():
+            problems.append(f"{rel}: has no brief.md; commit it")
+        allowed = RETIRED_STAGE_OUTPUTS | BUILD_OUTPUTS
         problems += [
             f"{rel}/{child.name}: not a task file; allowed: {', '.join(sorted(allowed))}"
             for child in sorted(folder.iterdir())
@@ -784,29 +726,6 @@ def test_rule_files_are_thin_pointers_with_live_globs(rel: str) -> None:
 
 
 # ---------------------------------------------------------------------------------------------
-# Model routing: one home for who builds and reviews, kept in step with scripts/handoff.py
-
-ROUTING = "docs/reference/model-routing.md"
-
-
-def test_model_routing_has_its_home_and_matches_the_handoff_tool() -> None:
-    import handoff
-
-    home = "docs/README.md"  # the One home per fact table moved here from the root
-    assert f"](reference/{Path(ROUTING).name})" in _text(home), (
-        f"{home}: add {ROUTING} to One home per fact"
-    )
-    text = _text(ROUTING)
-    problems = [
-        f"{ROUTING}: class {name!r} must name model {p.model!r} and effort {p.effort!r}"
-        for name, p in handoff.PROFILES.items()
-        if not re.search(rf"`{name}`.*`{re.escape(p.model)}`, `{p.effort}`", text)
-    ]
-    assert handoff.RECORD_NAME == BUILD_RECORD, "scripts/handoff.py writes the task's build record"
-    assert not problems, "\n".join(problems)
-
-
-# ---------------------------------------------------------------------------------------------
 # The project layer: what each part is for, kept apart from how to change it
 #
 # ``docs/reference/project/`` is Layer 3 reference material about purpose (the paper's "configure
@@ -832,7 +751,6 @@ COMPONENT_SECTIONS = (
 )
 _CLAIM = re.compile(r"^- \*\*(Workspaces|Capabilities):\*\*\s*(.*)$")
 _DATED = re.compile(r"^\d{4}-\d{2}-\d{2} \S")
-FIRST_STAGE = f"workflow/{STAGES}/01-shape/{CONTEXT}"
 
 
 def component_files() -> list[str]:
@@ -952,7 +870,7 @@ def test_every_workspace_is_claimed_once_and_links_up_to_its_component() -> None
     assert not problems, "\n".join(problems)
 
 
-def test_the_project_layer_is_routed_from_the_root_and_the_shape_stage() -> None:
+def test_the_project_layer_is_routed_from_the_root() -> None:
     problems = []
     overview_links = {
         (ROOT / OVERVIEW).parent.joinpath(t.split("#", 1)[0]).resolve().relative_to(ROOT).as_posix()
@@ -963,10 +881,6 @@ def test_the_project_layer_is_routed_from_the_root_and_the_shape_stage() -> None
     ]
     if OVERVIEW not in {row.target for row in read_first_rows(CONTEXT)}:
         problems.append(f"root {CONTEXT}: add a Read first row for {OVERVIEW} (what a part is for)")
-    if not any(
-        (row.target or "").startswith(PROJECT_DIR + "/") for row in read_first_rows(FIRST_STAGE)
-    ):
-        problems.append(f"{FIRST_STAGE}: add a Read first row for the component file of the part")
     if not any(OVERVIEW.rsplit("/", 1)[1] in t for t in _links(IDENTITY)):
         problems.append(f"{IDENTITY}: name the project layer ({OVERVIEW})")
     assert not problems, "\n".join(problems)

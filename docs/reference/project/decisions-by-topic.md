@@ -7,7 +7,7 @@ sources:
   - docs/reference/project/owner-decisions-4.md
   - docs/reference/project/owner-decisions-5.md
   - docs/reference/project/owner-decisions-6.md
-verified: 80c264c3979c5f75
+verified: d7e110fdb4705759
 ---
 
 # Owner decisions by topic
@@ -101,6 +101,7 @@ Six volumes hold the log: [volume 1](owner-decisions.md),
 | Documents can never be stale | Staleness is detected by fingerprints and the gate refuses work; an AI still re-reads and fixes | [vol. 3][e47] |
 | A directional statement lands in the log | A directional statement lands in the log in the same change | [vol. 5][e48] |
 | Open owner decisions in one place (N1 to N6) | Open owner decisions N1 to N6 are listed in one place | [vol. 4][e49] |
+| The build team replaces the Software Team | The old pipeline is deleted; one page says how ALPHA is built | [vol. 6][e57] |
 | Writing style for text the owner reads | Answer first, short sentences, one name for one thing; write less too | [vol. 5][e50] |
 
 [e1]: owner-decisions-4.md#2026-11-18-what-the-owner-said-about-the-purpose-of-alpha
@@ -159,3 +160,4 @@ Six volumes hold the log: [volume 1](owner-decisions.md),
 [e54]: owner-decisions-6.md#2026-11-19-redirect-front-door-three-golden-paths-nightly-real-run-wider-universe-idea-card
 [e55]: owner-decisions-6.md#2026-11-19-forward-test-follow-a-tested-idea-on-paper
 [e56]: owner-decisions-6.md#2026-11-23-remove-the-old-research-case-machinery-export-first
+[e57]: owner-decisions-6.md#2026-11-24-the-build-team-replaces-the-software-team-and-the-delivery-pipeline

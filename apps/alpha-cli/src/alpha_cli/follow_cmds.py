@@ -29,6 +29,7 @@ def utc_now() -> datetime:
     return datetime.now(tz=UTC)
 
 
+NO_CARD = "none linked (optional; a card is the saved write-up of the idea)"
 CLOCK = utc_now  # tests replace this; the journal never reads the wall clock itself
 
 
@@ -41,7 +42,7 @@ def _row(f: dict[str, Any]) -> str:
         return (
             f"  {f['follow_id']}  paper follow, broken: run `alpha follow verify {f['follow_id']}`"
         )
-    state = store.WAITING if f["state"] == "waiting" else f["state"]
+    state = store.waiting_text(f["started_at"]) if f["state"] == "waiting" else f["state"]
     return (
         f"  {f['follow_id']}  {store.KINDS[f['kind']]}  {', '.join(f['assets'])}  "
         f"version {f['version']}  {f.get('reading', state)}"
@@ -56,7 +57,7 @@ def _show_text(facts: dict[str, Any]) -> str:
         f"  What: {store.KINDS[r['kind']]} {r['source_id']}",
         f"  Assets: {', '.join(r['assets'])}",
         f"  Spec hash: {r['spec_sha256']}",
-        f"  Idea card: {r['card_id'] or 'none linked'}",
+        f"  Idea card: {r['card_id'] or NO_CARD}",
         f"  Paper size: {r['paper_account_percent']:g}% of a paper account",
         f"  Started: {r['started_at']}",
     ]
@@ -67,7 +68,7 @@ def _show_text(facts: dict[str, Any]) -> str:
     if facts["state"] == "stopped":
         lines.append(f"State: stopped. Reason: {facts['stop_reason'] or 'none given'}.")
     elif facts["waiting_for_first_bar"]:
-        lines.append(f"State: {store.WAITING}.")
+        lines.append(f"State: {store.waiting_text(r['started_at'])}.")
     else:
         lines.append("State: active.")
     lines.append(store.PAPER)
@@ -132,7 +133,10 @@ def start(
             f"This is version {facts['version']}. It replaces follow {facts['replaced']}, now "
             "stopped and kept. The forward clock restarts."
         )
-    lines += [f"State: {store.WAITING}.", f"See it: alpha follow show {facts['follow_id']}"]
+    lines += [
+        f"State: {store.waiting_text(facts['started_at'])}.",
+        f"See it: alpha follow show {facts['follow_id']}",
+    ]
     emit(facts, json_out=json_out, fallback="\n".join(lines))
 
 
@@ -285,7 +289,8 @@ def _update_text(row: dict[str, Any]) -> list[str]:
 def update(
     follow_id: Annotated[str, typer.Argument(help="Follow id or prefix.")] = "",
     all_follows: Annotated[
-        bool, typer.Option("--all", help="Update every active rule follow.")
+        bool,
+        typer.Option("--all", help="Update every active rule follow."),
     ] = False,
     json_out: JSON = False,
 ) -> None:
@@ -296,13 +301,13 @@ def update(
     nothing."""
     home = AlphaSettings().data_dir
     try:
-        if bool(follow_id) == all_follows:
+        if follow_id and all_follows:
             raise SpineError(
                 "FOLLOW_UPDATE_TARGET",
-                "Name one follow, or use --all.",
+                "Name one follow, or use --all, not both.",
                 "Example: alpha follow update <follow id>",
             )
-        if all_follows:
+        if not follow_id:
             rows = follow_update.update_all(home, clock=_clock)
         else:
             identity = store.resolve(home, follow_id)

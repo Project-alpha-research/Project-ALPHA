@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import polars as pl
@@ -110,6 +110,8 @@ def test_update_runs_the_pull_for_each_symbol_and_reports_a_failure(
     code, out = _run(_home(tmp_path), "update")
     assert code == 1 and "AAA: failed (exit 2). provider said no" in out
     assert "pull" in calls[0] and "AAA" in calls[0]
+    yesterday = (datetime.now(UTC).date() - timedelta(days=1)).isoformat()
+    assert f"The newest day asked for is {yesterday} (UTC). Today's bar arrives" in out
 
 
 def test_update_keeps_the_pull_report_lines(

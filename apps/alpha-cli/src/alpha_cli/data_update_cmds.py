@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import subprocess
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import typer
@@ -141,5 +141,9 @@ def run_update(dry_run: bool) -> None:
             "A pull replaces the whole stored series (after freezing it), so each of these "
             "re-pulls every day from the first stored bar, not only the new days."
         )
+    typer.echo(
+        f"The newest day asked for is {today - timedelta(days=1)} (UTC). Today's bar arrives "
+        "with the next update after the UTC day ends."
+    )
     if failed:
         raise typer.Exit(1)

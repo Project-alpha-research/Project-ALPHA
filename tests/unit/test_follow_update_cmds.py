@@ -64,12 +64,14 @@ def test_update_json_and_a_second_run_says_so(
     assert world.stored == 5 and row["follow_id"] == follow
 
 
-def test_update_needs_one_target_and_refuses_a_stopped_follow(
+def test_update_without_a_target_updates_all_and_refuses_a_stopped_follow(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _, follow = _five_sessions(tmp_path, monkeypatch)
     code, out = _cli(tmp_path, "update")
-    assert code != 0 and "Name one follow" in out
+    assert code == 0 and follow in out
+    code, out = _cli(tmp_path, "update", follow, "--all")
+    assert code != 0 and "not both" in out
     _cli(tmp_path, "stop", follow, "--reason", "test")
     code, out = _cli(tmp_path, "update", follow)
     assert code != 0 and "stopped" in out

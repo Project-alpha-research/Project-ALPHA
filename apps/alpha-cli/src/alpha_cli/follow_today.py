@@ -94,7 +94,7 @@ def _place(
     if not sessions:
         if session_close(cal, closed) > record.started_at:
             return "late_or_missed", f"no entry for the newest closed session ({closed}) yet", True
-        return "waiting", "waiting for its first new bar", False
+        return "waiting", store.waiting_text(record.started_at), False
     last = sessions[-1]
     if last.session_date < closed:
         said = (
@@ -218,6 +218,15 @@ def _row_text(r: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _count_line(facts: dict[str, Any]) -> str:
+    wait = next(g["count"] for g in facts["groups"] if g["key"] == "waiting")
+    up = facts["followed"] - facts["behind"] - wait
+    return (
+        f"Of {facts['followed']} follow(s): {up} up to date, {facts['behind']} behind, "
+        f"{wait} waiting for the first session."
+    )
+
+
 def text(facts: dict[str, Any]) -> str:
     when = datetime.fromisoformat(facts["as_of"]).strftime("%Y-%m-%d %H:%M UTC")
     if not facts["rows"]:
@@ -236,7 +245,7 @@ def text(facts: dict[str, Any]) -> str:
     lines = [
         f"Followed on paper, as of {when}.",
         f"Newest closed session: {closed}.",
-        f"Behind it: {facts['behind']} of {facts['followed']} follow(s).",
+        _count_line(facts),
     ]
     for group in facts["groups"]:
         mine = [r for r in facts["rows"] if r["group"] == group["key"]]

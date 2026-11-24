@@ -72,11 +72,12 @@ extend-exclude = [
 ]
 
 [tool.ruff.lint]
-# DTZ: every read is at an aware-UTC as_of, so a naive datetime is a bug. DTZ007 (strptime) and
-# DTZ011 (date.today) each have one product hit today and are left out until they are fixed.
+# DTZ: every read is at an aware-UTC as_of, so a naive datetime is a bug. DTZ007 (strptime) is
+# fixed in context_sources_cmds._cutoff; DTZ011 (date.today) still has one product hit and is left
+# out until it is fixed.
 select = [
     "E", "F", "I", "B", "UP", "SIM", "RUF100",
-    "DTZ001", "DTZ002", "DTZ003", "DTZ004", "DTZ005", "DTZ006", "DTZ012",
+    "DTZ001", "DTZ002", "DTZ003", "DTZ004", "DTZ005", "DTZ006", "DTZ007", "DTZ012",
     "TID251",
 ]
 

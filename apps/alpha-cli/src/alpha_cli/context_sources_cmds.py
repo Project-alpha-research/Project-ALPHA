@@ -37,10 +37,10 @@ def _cutoff(raw: str | None) -> datetime:
         return datetime.now(UTC)
     try:
         fmt = "%Y-%m-%d" if len(raw) == 10 else "%Y-%m-%dT%H:%M"
-        value = datetime.strptime(raw, fmt)
+        value = datetime.strptime(raw, fmt).replace(tzinfo=UTC)
         if value.strftime(fmt) != raw:
             raise ValueError
-        return value.replace(tzinfo=UTC)
+        return value
     except ValueError:
         raise typer.BadParameter("expected YYYY-MM-DD or YYYY-MM-DDTHH:MM (UTC)") from None
 

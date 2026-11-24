@@ -347,27 +347,6 @@ state = "Partial"
 missing = "tested in-process only; the Builder and Scanner windows were removed from the Workstation, the commands remain; no end-to-end smoke check yet"
 
 [[capability]]
-id = "strategy-development"
-name = "Strategy development workspace"
-what = "Run fixed, approved strategy-development steps on a project and keep a full record of each run."
-see_it = [
-  "uv run alpha suite plan <project-id> <experiment-id> <action>",
-]
-entry_points = [
-  "cli: alpha suite plan",
-  "cli: alpha suite run",
-  "cli: alpha strategy-candidate run",
-  "cli: alpha project create",
-]
-proof_synthetic = [
-  "tests/integration/test_suite_cli.py::test_suite_cli_previews_then_runs_the_exact_resolved_baseline",
-]
-real_data = "not yet confirmed (to check on the Mac later)"
-needs = []
-state = "Partial"
-missing = "tested in-process only; no end-to-end smoke check yet"
-
-[[capability]]
 id = "validation-gauntlet"
 name = "Statistical checks on a strategy"
 codes = ["gauntlet", "DSR", "PBO", "CPCV"]

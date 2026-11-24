@@ -1135,7 +1135,7 @@ CRAM_MIN_PROSE_LINES = 10
 # characters when the check began and may only go down. Split the file by heading (or summarise and
 # link), then delete its entry.
 CRAM_CEILINGS: dict[str, int] = {
-    "docs/reference/invariants/cli-runs.md": 47,
+    "docs/reference/invariants/cli-runs.md": 45,
     "docs/reference/invariants/data-crypto.md": 12,
     "docs/reference/project/file-system-measurement.md": 14,
 }

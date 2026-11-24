@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-323 commands in 45 groups. Options marked (required) are
+286 commands in 43 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -38,7 +38,7 @@ Run the v1 strategy through the backtest engine.
 
 Chart overlays (indicators, swings, trendlines, Fibonacci levels).
 
-- `alpha chart overlays <SYMBOL>` — Indicator series and pattern annotations over the PIT candle window of SYMBOL. Options: `--indicator`, `--pattern`, +4 more
+- `alpha chart overlays <SYMBOL>` — Indicator series and pattern annotations over the PIT candle window of SYMBOL. Options: `--indicator`, `--pattern`, +5 more
 
 ## alpha confirm
 
@@ -46,8 +46,7 @@ Confirm one tested idea on the reserved period (2024-01-01 on): once, 10 slots i
 
 - `alpha confirm list` — Slots used and left, and each receipt in plain words. Options: `--json`
 - `alpha confirm plan <RUN_ID>` — Show exactly what would be tested and what it costs. Options: `--json`
-- `alpha confirm request <RUN_ID>` — Ask for the owner's Touch ID yes: prints a local link that works for 60 seconds. Options: `--reason (required)`, `--json`
-- `alpha confirm run <RUN_ID>` — Run the confirmed test on the reserved period once, or resume it. Options: `--authorization`, `--json`
+- `alpha confirm run <RUN_ID>` — Print the plan, then spend 1 slot and test once on the reserved period (or resume). Options: `--json`
 - `alpha confirm show <WHICH>` — One receipt and its result, as stored. Options: `--json`
 
 ## alpha context
@@ -76,9 +75,7 @@ Point-in-time macro, SEC filings, Binance derivatives, CFTC and FINRA context.
 
 Provider-native crypto acquisition, qualification, snapshots, and storage.
 
-- `alpha crypto-data acquire <PROVIDER> <FAMILY> <INSTRUMENT>` — Acquire one bounded public provider page; this grants… Options: `--base (required)`, +15 more
-- `alpha crypto-data asset <SYMBOL>` — Inspect one reviewed native-asset identity and provider-symbol lineage. Options: `--as-of (required)`, `--json`
-- `alpha crypto-data asset-contract <NETWORK> <CONTRACT_ADDRESS>` — Resolve one contract by exact network and address;…
+- `alpha crypto-data acquire <PROVIDER> <FAMILY> <INSTRUMENT>` — Acquire one bounded public provider page; this grants… Options: `--base (required)`, +12 more
 - `alpha crypto-data asset-master-create` — Freeze exact cross-provider contract identities; ticker joins remain prohib…
 - `alpha crypto-data asset-master-verify <VERSION>` — Rederive a frozen asset master's content identity before snapshot… Options: `--json`
 - `alpha crypto-data asset-masters` — List verified asset masters without exposing internal paths or requiring opaque i… Options: `--json`
@@ -87,31 +84,18 @@ Provider-native crypto acquisition, qualification, snapshots, and storage.
 - `alpha crypto-data cache-clean` — Delete only the explicitly disposable external cache; immutable data is untouched. Options: `--confirm`, `--json`
 - `alpha crypto-data capabilities` — Project discovered support and recorded qualification without hashing data artifac… Options: `--json`
 - `alpha crypto-data catalog` — List the exact provider authority for every supported dataset family. Options: `--json`
-- `alpha crypto-data compare` — Persist non-substituting cross-venue close-price divergence diagnostics. Options: `--primary-manifest-id (required)`, +4 more
 - `alpha crypto-data coverage` — Show exact normalized family coverage and qualification without provider probes. Options: `--json`, `--metadata-only`
 - `alpha crypto-data estimate <FAMILY>` — Estimate a bounded acquisition before any network or storage write. Options: `--instruments`, `--days`, +2 more
 - `alpha crypto-data feature-create <FEATURE_NAME>` — Materialize one immutable provenance-bound research feature. Options: `--input`, `--available-at`, +1 more
 - `alpha crypto-data feature-show <MANIFEST_ID>` — Reverify one immutable derived feature and its exact input lineage. Options: `--json`
 - `alpha crypto-data features` — List immutable derived crypto features after full lineage re-verification. Options: `--json`
-- `alpha crypto-data liquidity-freeze <PROFILE_ID>` — Freeze one complete prior-day top-liquidity scope without cross-u…
 - `alpha crypto-data market-catalog` — Search the latest qualified Binance spot listing catalog without network access. Options: `--query`, `--limit`, `--json`
-- `alpha crypto-data profile-batches` — List bounded coverage batch checkpoints without exposing provider bytes. Options: `--json`
-- `alpha crypto-data profile-create` — Freeze the default coverage tasks from exact qualified Bybit catalogs. Options: `--as-of`, `--json`
-- `alpha crypto-data profile-resume <BATCH_ID>` — Resume exactly one failed or interrupted coverage batch. Options: `--confirm`, `--json`
-- `alpha crypto-data profile-run <PROFILE_ID>` — Run and checkpoint one bounded cadence page from an immutable profile. Options: `--cadence (required)`, +4 more
-- `alpha crypto-data profile-select-one-minute <PROFILE_ID>` — Bind at most 50 exact one-minute markets to a fresh rese…
-- `alpha crypto-data profile-show <PROFILE_ID>` — Inspect a bounded page of one immutable coverage profile. Options: `--offset`, `--limit`, +6 more
-- `alpha crypto-data profiles` — List immutable coverage profiles without exposing their full task membership. Options: `--json`
 - `alpha crypto-data quality <MANIFEST_ID>` — Reverify and display one normalized artifact's mechanical quality report. Options: `--json`, +9 more
 - `alpha crypto-data snapshot-create` — Freeze qualified membership in canonical order; the id is independent of option…
-- `alpha crypto-data snapshot-query <SNAPSHOT_ID>` — Read one bounded DefiLlama TVL page from an exact frozen snapshot… Options: `--limit`, `--offset`, +3 more
 - `alpha crypto-data snapshot-verify <SNAPSHOT_ID>` — Reverify every external byte and current qualification before res… Options: `--required-family`, +2 more
-- `alpha crypto-data snapshot-verify-crowding <SNAPSHOT_ID>` — Verify exact Bybit BTCUSDT crowding-research compatibili… Options: `--json`
-- `alpha crypto-data snapshot-verify-hedged-basis <SNAPSHOT_ID>` — Verify the exact two-venue candidate bundle without… Options: `--json`
 - `alpha crypto-data storage` — Verify the configured bulk identity and inventory without probing providers. Options: `--json`, `--metadata-only`
 - `alpha crypto-data storage-inventory` — Inventory immutable artifacts and removable cache without exposing private pa… Options: `--json`
 - `alpha crypto-data storage-verify` — Re-hash every manifest artifact and rederive every frozen snapshot membership. Options: `--json`
-- `alpha crypto-data yield-pools` — Search a bounded selection from the latest verified stored yield-pool catalog. Options: `--query`, `--limit`, `--json`
 
 ## alpha data
 
@@ -120,6 +104,7 @@ Data ingestion, snapshots, and integrity.
 - `alpha data audit <PROVIDER> <RECEIPT_ID>` — Read one immutable candidate/quarantine quality report. Options: `--json`, `--timeframe`
 - `alpha data candles <SYMBOL>` — Point-in-time OHLCV candles for SYMBOL (split-adjusted; ''--end'' is an as-of cutoff). Options: `--start`, `--end`, +7 more
 - `alpha data chart-datasets` — Discover qualified external archive chart datasets without hashing all artifacts. Options: `--json`
+- `alpha data coverage` — Per stored symbol: first date, last date, bars and the last health result. Options: `--json`
 - `alpha data first-bar <SYMBOL>` — Report when SYMBOL was first listed on a CCXT exchange (read-only; needs network). Options: `--source`, +2 more
 - `alpha data health <ASSET>` — Check daily bars for adjustment, timestamp, gap and survivorship faults. Options: `--universe`, `--stored`, `--json`
 - `alpha data market-overview` — Read-only market overview of stored bars. Options: `--store`, `--window`, `--limit`, `--json`
@@ -134,6 +119,7 @@ Data ingestion, snapshots, and integrity.
 - `alpha data ticker <SYMBOL>` — Report SYMBOL's current last-trade price on a CCXT venue (read-only; needs network). Options: `--source`, `--exchange`, +1 more
 - `alpha data universe import <NAME> <CSV_PATH>` — Import symbol,effective_from,effective_to,delisting_return,reason ro… Options: `--json`
 - `alpha data universe show <NAME>` — List the members of universe NAME as of a date, including names that later left. Options: `--as-of (required)`, `--json`
+- `alpha data update` — Pull every stored symbol up to today, from the source recorded for it. Options: `--dry-run`
 - `alpha data verify <SNAPSHOT_ID>` — Re-hash a snapshot and confirm it matches its manifest.
 
 ## alpha diagnose
@@ -155,7 +141,7 @@ Render publication-quality figures for a stored run.
 
 - `alpha figures clean <RUN_ID>` — Delete cached figures. Options: `--all`, `--json`
 - `alpha figures export <RUN_ID>` — Write one figure outside the cache, for a paper or a deck. Options: `--figure (required)`, `--out (required)`, +3 more
-- `alpha figures list` — Show the figure catalogue, optionally with per-run availability. Options: `--run`, `--json`
+- `alpha figures list <RUN_ARG>` — Show the figure catalogue, optionally with per-run availability. Options: `--run`, `--json`
 - `alpha figures path <RUN_ID>` — Print a figure's cache key and path without rendering it. Options: `--figure (required)`, `--format`, `--variant`, +2 more
 - `alpha figures render <RUN_ID>` — Render figures for a run into the derived cache. Options: `--figure`, `--format`, `--force`, `--variant`, `--dark`, `--json`
 - `alpha figures theme` — Emit the canonical figure theme document. Options: `--json`
@@ -178,7 +164,7 @@ Follow a tested idea forward on paper.
 
 Kronos foundation-model forecasting (probabilistic outcome cones).
 
-- `alpha forecast eval <SYMBOL>` — Score SYMBOL's forecaster at rolling origins vs realized outcomes + baselines. Options: `--horizon`, `--stride`, +16 more
+- `alpha forecast eval <SYMBOL>` — Score SYMBOL's forecaster at rolling origins vs realized outcomes + baselines. Options: `--horizon`, `--stride`, +15 more
 - `alpha forecast run <SYMBOL>` — Sample future OHLCV paths for SYMBOL and write the outcome-cone artifacts. Options: `--horizon`, `--samples`, +12 more
 
 ## alpha home
@@ -196,7 +182,7 @@ Write an idea card before you test an idea.
 - `alpha idea file <CARD_ID>` — One page for one idea: the card, the map, every reading, the counts, the open points. Options: `--json`
 - `alpha idea link <CARD_ID>` — Link a stored RD-Agent journey to a card, or remove the link. Options: `--rdagent (required)`, `--unlink`, `--json`
 - `alpha idea list` — List every card with its idea and whether a test is linked to it. Options: `--json`
-- `alpha idea new` — Save a card. Options: `--claim`, `--mechanism`, `--other-side`, `--disproved-by`, `--baseline`, `--signal-forms`, `--held-for`, +7 more
+- `alpha idea new <TEXT>` — Save a card. Options: `--claim`, `--mechanism`, `--other-side`, `--disproved-by`, `--baseline`, `--signal-forms`, +8 more
 - `alpha idea note <CARD_ID> <TEXT>` — Add a note to a card. Options: `--decision`, `--json`
 - `alpha idea show <CARD_ID>` — Print one card, and name the fields that are not stated. Options: `--json`
 
@@ -230,6 +216,7 @@ Read all recorded trials through one unchanged-ledger view.
 - `alpha ledger reply` — Answer RD-Agent's proposal. Options: `--run-dir (required)`, `--as (required)`, `--accept`, `--drop`, `--revise`, `--idea`, `--note`
 - `alpha ledger show <TRIAL_ID>` — Show a record, its raw row and a fresh evidence hash check. Options: `--rdagent-ledger`, `--json`
 - `alpha ledger summary` — Summarise mapped trials, unknown rows and missing sources. Options: `--rdagent-ledger`, `--json`
+- `alpha ledger tries <ASSET>` — How many tries on one asset, in one sentence (the count the deflated Sharpe uses). Options: `--rdagent-ledger`, `--json`
 
 ## alpha library
 
@@ -240,12 +227,12 @@ Browse published ideas and turn one into an idea card.
 - `alpha library import-pdf <FILE_PATH>` — Keep the text of one PDF as a paper. Options: `--title`, `--author`, `--year`, `--json`
 - `alpha library list` — List the records. Options: `--market`, `--tier`, `--json`
 - `alpha library papers` — List the papers kept from searches and PDF imports. Options: `--json`
-- `alpha library search <WORDS>` — Search the literature sources and keep the hits as papers. Options: `--unpaywall-email (required)`, +2 more
+- `alpha library search <WORDS>` — Search the shipped seed ideas and the kept papers offline. Options: `--online`, `--unpaywall-email`, +2 more
 - `alpha library show <RECORD_ID>` — Print one record and the idea cards already made from it. Options: `--json`
 
 ## alpha lookalike
 
-- `alpha lookalike` — Has price action like the latest N bars happened before? Options: `--asset (required)`, `--last`, `--timeframe`, `--top`, +3 more
+- `alpha lookalike <SYMBOL>` — Has price action like the latest N bars happened before? Options: `--asset`, `--last`, `--timeframe`, `--top`, +4 more
 
 ## alpha ml
 
@@ -254,13 +241,14 @@ Prepare and validate isolated cross-sectional ML worker exchanges.
 - `alpha ml capabilities` — Inspect installed isolated model capabilities without training or installation. Options: `--worker-project`, `--json`
 - `alpha ml compare <EXCHANGES>` — Compare lineage-bound predictions on identical frozen research inputs. Options: `--output`, `--json`
 - `alpha ml evaluate <EXCHANGE>` — Compute portable score diagnostics; this is not an ALPHA verdict. Options: `--json`
-- `alpha ml export-input <PROJECT_ID> <EXPERIMENT_ID> <OUTPUT>` — Generate a validated Alpha158 starter bundle from one… Options: `--as-of`, `--json`
+- `alpha ml export-input <OUTPUT>` — Generate a validated Alpha158 starter bundle from one frozen ALPHA snapshot. Options: `--spec (required)`, +2 more
 - `alpha ml import <EXCHANGE>` — Validate a completed worker result without publishing an ALPHA run. Options: `--json`
 - `alpha ml prepare <SPEC> <PANEL> <EXCHANGE>` — Validate and atomically publish a worker request bundle. Options: `--worker-lock`, `--model`, +2 more
 - `alpha ml prepare-replay <EXCHANGE> <OUTPUT>` — Publish the causal top-quintile signal handoff for canonical ALPHA re… Options: `--json`
 - `alpha ml refit-plan <ORIGINAL> <CHANGED>` — Verify frozen engineering inputs; no fits, admission or acceptance. Options: `--protocol (required)`, +3 more
 - `alpha ml refit-status <RECORD> <ORIGINAL> <CHANGED>` — Reverify a plan against current bytes; no dispatch or continu…
 - `alpha ml replay <EXCHANGE>` — Replay validated OOS predictions through ALPHA and publish an immutable v3 run. Options: `--starting-cash`, +3 more
+- `alpha ml run <SPEC>` — Train a Qlib model from a plain spec and replay it with costs; store one ordinary run. Options: `--as-of`, `--json`
 - `alpha ml train <EXCHANGE>` — Run the separately locked worker and validate its portable result. Options: `--mode`, `--worker-project`, `--no-sync`, +2 more
 
 ## alpha monte-carlo
@@ -268,7 +256,7 @@ Prepare and validate isolated cross-sectional ML worker exchanges.
 Required scenario/path-risk Monte Carlo evidence from a completed validation run.
 
 - `alpha monte-carlo classical` — Publish IID, causal regime-Markov, and Student-t OOS account-return paths. Options: `--from-run (required)`, +6 more
-- `alpha monte-carlo kronos` — Generate synthetic OHLCV tails and fully replay the unchanged canonical strategy. Options: `--from-run (required)`, +12 more
+- `alpha monte-carlo kronos` — Generate synthetic OHLCV tails and fully replay the unchanged canonical strategy. Options: `--from-run (required)`, +13 more
 
 ## alpha next
 
@@ -300,25 +288,6 @@ Enroll or recover the local Touch ID owner credential.
 
 - `alpha owner-auth enroll` — Issue a short-lived localhost registration URL; browser enrollment cannot self-start. Options: `--reason (required)`, +2 more
 - `alpha owner-auth recover` — Begin a trusted credential-replacement ceremony without weakening browser authority. Options: `--reason (required)`, `--json`
-
-## alpha paper
-
-Nautilus paper trading: local crypto sandbox and fail-closed IBKR Paper.
-
-- `alpha paper ibkr-preflight <INSTRUMENT_ID>` — Construct native IB clients offline in read-only paper mode; never con… Options: `--asset-class`, +3 more
-- `alpha paper ibkr-run <SYMBOL>` — Run one long-only stock/ETF decision cycle through native IBKR Paper execution.
-- `alpha paper ibkr-what-if-execute <PLAN_HASH>` — Execute one SPY preview; never creates an order or earns paper credi…
-- `alpha paper ibkr-what-if-plan` — Freeze the exact offline SPY what-if contract; never connects or submits an order.
-- `alpha paper preflight <SYMBOL>` — Construct the Binance-data/sandbox-execution wiring offline without connecting. Options: `--strategy`, +2 more
-- `alpha paper readiness` — Generate the evidence-only paper acceptance report; elapsed time never passes it. Options: `--json`
-- `alpha paper reconcile <SESSION_ID>` — Report the machine-derived reconciliation state; this command cannot approve i… Options: `--json`
-- `alpha paper run <SYMBOL>` — Run ''BASE/USDT'' on Binance public data with local sandbox fills only. Options: `--snapshot (required)`, `--provider`, +9 more
-- `alpha paper scheduler-repair <SYMBOL> <SESSION>` — Clear one known crash marker; immutable outcomes and canonical pr… Options: `--config (required)`, +1 more
-- `alpha paper scheduler-status` — Inspect due/completed/interrupted daily work without contacting providers. Options: `--config (required)`
-- `alpha paper scheduler-tick` — Run one short wake-safe daily scheduler tick (intended for launchd every five minutes). Options: `--config (required)`
-- `alpha paper sessions` — List durable operational paper sessions, newest first. Options: `--json`
-- `alpha paper show <SESSION_ID>` — Show one durable paper session (never signals its recorded PID). Options: `--json`
-- `alpha paper stop <SESSION_ID>` — Request safe cooperative stop: cancel ALPHA orders, never flatten positions.
 
 ## alpha partner
 
@@ -381,12 +350,13 @@ Start RD-Agent with one command and watch the run.
 - `alpha rdagent bench plan` — Print the number of calls and the cost estimate. Options: `--prompts (required)`, `--models (required)`, +4 more
 - `alpha rdagent bench report` — Print readings per model and per pair. Options: `--prompts (required)`, `--models (required)`, `--store (required)`, +3 more
 - `alpha rdagent bench run` — Send each stored prompt to each model. Options: `--prompts (required)`, `--models (required)`, `--prices (required)`, +6 more
-- `alpha rdagent run` — Start the RD-Agent factor loop from rdagent.toml. Options: `--config`, `--dry-run`, `--run-id`
+- `alpha rdagent init` — Write a config with every path filled in; say which ones are not installed yet. Options: `--config`
+- `alpha rdagent run` — Start the RD-Agent factor loop. Options: `--config`, `--dry-run`, `--run-id`
 - `alpha rdagent status` — Say where a run is: working, waiting for you, finished or stopped, and what to type next. Options: `--run-dir`, `--config`, `--json`
 
 ## alpha report
 
-- `alpha report <RUN_ID>` — Print the stored result for RUN_ID (any run type: gauntlet, backtest, portfolio, etc.). Options: `--json`, +4 more
+- `alpha report <RUN_ID>` — Print a plain summary of the stored result for RUN_ID (any run type). Options: `--json`, `--daily-rule-evidence`, `--role`, +2 more
 
 ## alpha research
 
@@ -406,12 +376,8 @@ Governed research cases, contracts, sources, and bounded runs.
 - `alpha research data register-crypto <SNAPSHOT_ID>` — Register an eligible CryptoSnapshotV1 after re-verifying every… Options: `--symbol (required)`, +2 more
 - `alpha research decide <PROJECT_ID>` — Record the owner-only research outcome/disposition and close the case. Options: `--outcome (required)`, +4 more
 - `alpha research decision-view <PROJECT_ID>` — Assemble the owner decision view: checklist, full scorecard, packet, an… Options: `--json`
-- `alpha research diagnostic acquire-comparisons <CASE> <PLAN>` — Execute one frozen comparison acquisition batch in private case storage.
-- `alpha research diagnostic acquisition-plan <CASE>` — Draft a bounded Tiingo comparison request for an inspected case… Options: `--symbol (required)`, +2 more
 - `alpha research diagnostic check-review <PATH>` — Check a typed advisory review and its local JSON evidence hashes/selectors.
 - `alpha research diagnostic execution-digest <RUN_ID>` — Verify existing baseline/validation execution, including fill… Options: `--as-of (required)`
-- `alpha research diagnostic investigate <CASE>` — Investigate one verified recorded run with Codex; persists budget an… Options: `--run-id`, `--as-of`, +5 more
-- `alpha research diagnostic investigation-tool <CASE> <ACTION>` — Fixed-case diagnostic seam used by the restricted MCP service.
 - `alpha research diagnostic native-result` — Recover owner-observed synthetic receipt/result; never launch, resume or…
 - `alpha research diagnostic run-plan <PATH>` — Run a frozen momentum baseline and validation; always read the terminal receipt.
 - `alpha research diagnostic suggest <RUN_ID>` — Act as a research teammate: suggest useful next tests over verified ex… Options: `--as-of (required)`, +1 more
@@ -422,13 +388,6 @@ Governed research cases, contracts, sources, and bounded runs.
 - `alpha research evidence-hub <PROJECT_ID>` — Project the eleven-section Evidence Hub with honest NOT_TESTED empty sta… Options: `--json`
 - `alpha research export <PROJECT_ID>` — Generate a deterministic Markdown dossier from authority projections. Options: `--output-dir`, `--json`
 - `alpha research import-pdf <PROJECT_ID>` — Import text from one owner-selected local PDF; no links are followed. Options: `--file (required)`, +2 more
-- `alpha research investigations acquire <IDENTIFIER>` — (no description) Options: `--request (required)`
-- `alpha research investigations create` — (no description) Options: `--request (required)`
-- `alpha research investigations draft <IDENTIFIER>` — (no description) Options: `--request (required)`
-- `alpha research investigations eligibility <RUN_ID>` — (no description)
-- `alpha research investigations list` — (no description) Options: `--run-id (required)`
-- `alpha research investigations run <IDENTIFIER>` — (no description) Options: `--request`
-- `alpha research investigations show <IDENTIFIER>` — (no description)
 - `alpha research list` — List bounded research-case backlog rows, newest research activity first. Options: `--limit`, `--offset`, `--json`
 - `alpha research note add <PROJECT_ID>` — Append one commentary note — structurally outside the evidence model. Options: `--kind (required)`, +5 more
 - `alpha research note list <PROJECT_ID>` — List this case's commentary notes, newest first (never evidence). Options: `--limit`, `--offset`, `--json`
@@ -503,10 +462,11 @@ Rule scans over stored symbols and their deduplicated alerts.
 
 Find every match of a chart setup.
 
-- `alpha setup find <SPEC>` — Record every match and draw contact sheets ending at the entry open. Options: `--asset`, `--context-bars`, `--max-sheets`, +3 more
+- `alpha setup find <SPEC>` — Record every match and draw contact sheets ending at the entry open. Options: `--when`, `--horizon`, `--stop`, `--target`, +7 more
+- `alpha setup new <NAME>` — Write a complete, commented spec file from options; print its path and the command to run. Options: `--asset`, `--when`, +5 more
 - `alpha setup show <RUN_IDS>` — Read stored studies or trades: each evidence word and its place in the setup's family. Options: `--json`
-- `alpha setup study <FIND_ID>` — Measure forward returns and honest controls; record one exploratory trial. Options: `--check-data`, +3 more
-- `alpha setup trade <FIND_ID>` — Trade recorded occurrences with their exits and matched controls; one counted test. Options: `--check-data`, +3 more
+- `alpha setup study <FIND_ID>` — Measure forward returns and honest controls; record one exploratory trial. Options: `--asset`, `--when`, `--horizon`, +7 more
+- `alpha setup trade <FIND_ID>` — Trade recorded occurrences with their exits and matched controls; one counted test. Options: `--asset`, `--when`, +8 more
 
 ## alpha strategy-candidate
 
@@ -514,16 +474,6 @@ Sandbox-only multi-leg candidate evaluation; no paper or order authority.
 
 - `alpha strategy-candidate paper-preflight` — Report the permanent unsupported multi-venue paper boundary without conn… Options: `--json`
 - `alpha strategy-candidate run <SNAPSHOT_ID>` — Evaluate a frozen candidate stream; never constructs either venue adap…
-
-## alpha suite
-
-Preview and run immutable, allowlisted Strategy Development workflows.
-
-- `alpha suite actions` — List the fixed public action identifiers. Options: `--json`
-- `alpha suite plan <PROJECT_ID> <EXPERIMENT_ID> <ACTION>` — Resolve immutable inputs, readiness, governance, commands,… Options: `--json`
-- `alpha suite reserve <PROJECT_ID> <EXPERIMENT_ID> <ACTION>` — Persist the exact queued journal before a detached suit… Options: `--job-id (required)`, +1 more
-- `alpha suite run <PROJECT_ID> <EXPERIMENT_ID> <ACTION>` — Execute exactly one ready allowlisted plan and persist its… Options: `--job-id`, +3 more
-- `alpha suite status <JOB_ID>` — Read one durable job and its bounded journal. Options: `--event-limit`, `--event-offset`, `--event-tail`, `--json`
 
 ## alpha test
 
@@ -539,7 +489,7 @@ Discover and run investigation tools.
 - `alpha tool history <TARGET>` — List successful, failed and unfinished attempts in ledger order. Options: `--json`
 - `alpha tool list` — Find tools by target, question, family or kind. Options: `--for`, `--search`, `--family`, `--kind`, `--json`
 - `alpha tool results <RUN_ID>` — List the stored check results of a run, each marked declared or exploratory. Options: `--json`
-- `alpha tool run <TOOL_ID> <TARGET>` — Run one tool with repeatable key=value parameters. Options: `--param`, `--seed`, `--json`
+- `alpha tool run <TOOL_ID> <TARGET>` — Run one tool with repeatable key=value parameters. Options: `--param`, `--seed`, `--run`, `--json`
 - `alpha tool run-set <NAME> <TARGET>` — Run each member of a predeclared set and report every outcome. Options: `--json`
 - `alpha tool situations` — List each situation with its checks, cheapest first. Options: `--json`, `--markdown`
 
@@ -549,4 +499,4 @@ Discover and run investigation tools.
 
 ## alpha validate
 
-- `alpha validate <SYMBOL>` — Validate SYMBOL end-to-end and write the run artifacts (manifest, parquet, tear sheet). Options: `--strategy`, +32 more
+- `alpha validate <SYMBOL>` — Validate SYMBOL end-to-end and write the run artifacts (manifest, parquet, tear sheet). Options: `--strategy`, +31 more

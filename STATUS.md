@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 37 working, 36 partly working, 0 demo only, 2 shelved, 1 not started.
+- **Capabilities:** 37 working, 35 partly working, 0 demo only, 2 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 2.
 
@@ -86,7 +86,6 @@ Tested piece by piece inside the test suite, but not yet run from start to finis
 - **Price charts with indicators and patterns** — chart pictures and pattern marks ran on real data through the installed program on 2026-11-23; the Workstation chart was tested in a browser against a test server only (a real run is recorded).
 - **Market overview of stored bars** — tested in-process and in a browser against a test server.
 - **Write trading rules and scan markets** — tested in-process only; the Builder and Scanner windows were removed from the Workstation, the commands remain.
-- **Strategy development workspace** — tested in-process only.
 - **Prop-firm challenge check** — ran on real data from a stored rule test on 2026-11-23 (a real run is recorded).
 - **Price forecasts with the Kronos model** — forecast and forecast check ran on real data with the real Kronos model on 2026-11-23 (a real run is recorded).
 - **Let an AI assistant use ALPHA's tools (MCP)** — tested in-process only.

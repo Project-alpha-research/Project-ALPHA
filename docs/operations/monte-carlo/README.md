@@ -57,7 +57,6 @@ governed confirmation, or sealed holdout requirements.
 ```text
 alpha monte-carlo classical --from-run RUN_ID
 alpha monte-carlo kronos --from-run RUN_ID --forecast-eval-run EVALUATION_RUN_ID
-alpha suite run PROJECT EXPERIMENT monte_carlo
 ```
 
 `RUN_ID` is the id of an `alpha test` run (rule or owner rule) or of a validation run. The output names

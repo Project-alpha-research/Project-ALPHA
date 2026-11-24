@@ -12,7 +12,6 @@ sources:
   - apps/alpha-cli/src/alpha_cli/_synth.py
   - apps/alpha-cli/src/alpha_cli/_surrogate.py
   - apps/alpha-cli/src/alpha_cli/run_*.py
-  - apps/alpha-cli/src/alpha_cli/*suite*.py
   - apps/alpha-cli/src/alpha_cli/rules_cmds.py
   - apps/alpha-cli/src/alpha_cli/scan_cmds.py
   - apps/alpha-cli/src/alpha_cli/chart_cmds.py
@@ -26,7 +25,6 @@ sources:
   - tests/smoke/test_rule_*_smoke.py
   - tests/unit/test_run*.py
   - tests/unit/test_gauntlet*.py
-  - tests/unit/test_suite_*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
 verified: 670e832df801ec82
@@ -145,12 +143,6 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   fails. Ledger schema stays `AlphaTrialV1`; optional `variants_evaluated` counts sensitivity re-runs apart from the append-only row index.
 ## Draft checks, lookalikes and novelty
 - `results check|compare`: [checks](cli-results-check.md); `lookalike|unusual`: [patterns](patterns.md#lookalikes-and-novelty).
-## Suites
-- `alpha suite` runs only the declared actions in `SUITE_ACTIONS` through durable attempt and job lineage; it polls heartbeat and cancellation every 5 seconds
-  and reaps child process groups. Plan building lives in `_suite.py` (`build_suite_plan`), the step and plan types in `_suite_types.py`, per-action step
-  builders in `_suite_actions.py`.
-- Suite Qlib, Kronos and Monte Carlo kinds share the heavyweight capacity class; see [command line control plane § Jobs, leases and
-  capacity](cli-control-store.md#jobs-leases-and-capacity).
 ## Figures
 Figure cache, themes and builders: [command line figures](cli-figures.md).
 - A rule test saves no snapshot. `alpha data run-price <run_id> --json` (`run_price_cmds.py`; the web calls it through

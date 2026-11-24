@@ -19,6 +19,12 @@ files (CLI, web, frontend, tests, docs) so the work survives a restart.
 Find a module fast: `uv run python scripts/fs.py map apps/alpha-cli --find WORDS`. At the end of your report add one line:
 "What the file system got wrong:" with any routing row or page that misled you (or "nothing").
 
+Lesson from the step before this one: a test can call a removed command by its words, not by an import, so the import search
+misses it and main breaks after the merge. Also search `tests/` for every command word you remove, for example
+`rg -n '"(project|evidence|native-result|suite)"' tests`, and for every deleted module name in strings. Fix or delete each
+test you find (a test of a removed command goes with it; a test of a kept feature must keep passing), and remove deleted
+tests from every proof list in `docs/roadmap/capabilities.toml`.
+
 ## Plan text: the units
 ### 3.1 CLI groups and modules (`apps/alpha-cli/src/alpha_cli/`)
 

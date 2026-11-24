@@ -1,4 +1,4 @@
-"""Proof change for the merge queue. It must never land: the pull request is closed after the proof."""
+"""Proof change for the merge queue. It must never land; the pull request is closed after."""
 
 import os
 

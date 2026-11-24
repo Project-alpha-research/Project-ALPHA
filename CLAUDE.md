@@ -1,12 +1,10 @@
 # Project ALPHA
 
-ALPHA is one person's private, non-commercial quant-research platform: it tests whether a market
-idea survives point-in-time data, costs and out-of-sample statistics, and records the owner's
-decisions. Python 3.12 with uv; there is no hosting, no distribution and no live trading.
-
-Purpose: one retail swing trader tells luck from edge before money is at risk. The owner is not a
-coder: they prompt an AI, the AI runs the pipeline, and the Workstation shows the result. Three
-golden paths must always work end to end on real data:
+One retail swing trader's private quant-research platform: it tells luck from edge before money is
+at risk, with point-in-time data, costs, out-of-sample statistics and an honest count of every try.
+Python 3.12 with uv; no hosting, no distribution, no live trading. The owner is not a coder: they
+prompt an AI, the AI runs the pipeline, the Workstation shows the result. Three golden paths must
+always work end to end on real data:
 
 1. Test an idea: `alpha test` gives a reading, the try count and charts.
 2. Study a chart setup: `alpha setup find|study|trade` (Setup Lab).
@@ -44,31 +42,22 @@ golden paths must always work end to end on real data:
 
 ## Check and land
 
-- One check: `uv run python scripts/gate.py check`.
-- Loop: branch → check → commit (`type(scope): summary`) → pull request → CI green → merge commit.
-  CI on the pull request is the merge gate; `ci-ok` is the one required check
-  ([ADR-0039](docs/adr/0039-ci-is-the-merge-gate.md)).
-- Text the owner reads (replies, reports, screen labels, pull-request summaries) follows Simplified
-  Technical English (ASD-STE100) about 80% of the way: answer first; short sentences; one idea per
-  sentence; one name for one thing; active voice; steps as numbered lists.
+- One check: `uv run python scripts/gate.py check`. Loop: branch → check → commit
+  (`type(scope): summary`) → pull request → CI green → merge commit. `ci-ok` is the one required
+  check ([ADR-0039](docs/adr/0039-ci-is-the-merge-gate.md)).
+- Text the owner reads follows Simplified Technical English about 80% of the way: answer first;
+  short sentences; one idea per sentence; one name for one thing; active voice; numbered steps.
 
 ## What to load
 
-Start at [`CONTEXT.md`](CONTEXT.md). It routes the task to one workspace `CONTEXT.md`. Read that
-file's always rows, then only the rows your task matches. Stop when you have what you need; then
-open the code. Each fact has one home ([list](docs/README.md#one-home-per-fact)): update it, never copy it.
+Start at [`CONTEXT.md`](CONTEXT.md): it routes the task to one workspace `CONTEXT.md`. Read that
+file's always rows, then only the rows your task matches; then open the code. Stop when you have
+what you need. Each fact has one home ([list](docs/README.md#one-home-per-fact)): update it, never copy it.
 
-| Task | Start at | Do NOT load |
-|---|---|---|
-| Change package, worker or app code | that workspace's `CONTEXT.md` | other workspaces; whole rule pages |
-| RD-Agent loop or judge | `workers/rdagent/CONTEXT.md` | `CHANGE-NOTES.md`; other workers |
-| An `alpha` command or toolbox check | `apps/alpha-cli/CONTEXT.md` | `cli-*` pages your rows do not name |
-| A Workstation screen | `apps/alpha-web/CONTEXT.md` | backend rule pages for a display-only change |
-| Tests or guards | `tests/CONTEXT.md` | — |
-| Docs or this file system | `docs/CONTEXT.md` | `docs/archive/`; `docs/work/` of other tasks |
-| What a part is for; what the owner decided | [project layer](docs/reference/project/overview.md) | rule pages; code |
-| Test a trading idea | `research/CONTEXT.md` | code |
-| Build, review or land a change | `workflow/CONTEXT.md` | stages you are not in |
-
-Tools: `uv run python scripts/fs.py orient` lists the areas, `fs.py search "words"` finds documents,
-`fs.py stale` lists documents whose sources changed since they were verified.
+- Find a module: `uv run python scripts/fs.py map <workspace> --find WORDS`. Find a document:
+  `fs.py search "words"`. Areas: `fs.py orient`. Out-of-date documents: `fs.py stale`.
+- Do not load: other workspaces; whole rule pages when a row names a section; `docs/archive/`;
+  `docs/work/` of other tasks; `workers/rdagent/CHANGE-NOTES.md`; backend rule pages for a
+  display-only change.
+- What a part is for and what the owner decided: [project layer](docs/reference/project/overview.md).
+  Testing a trading idea: `research/CONTEXT.md`. Building and landing a change: `workflow/CONTEXT.md`.

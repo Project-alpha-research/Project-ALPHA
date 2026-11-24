@@ -218,7 +218,7 @@ def _announce(
         f"({samples} paths), P(up) {out.prob_up:.0%}\n"
         f"  model {prov.get('model_id')}@{prov.get('model_revision')} "
         f"device={prov.get('device')} determinism={prov.get('determinism')}\n"
-        f"  manifest at {rdir / 'manifest.json'} (no held-back bars were read)\n"
+        f"  manifest at {rdir / 'manifest.json'} (forward use: the newest bars are read)\n"
         f"  Picture: {pictures[0]}\n"
         f"  Picture with notes: {pictures[1]}"
     )

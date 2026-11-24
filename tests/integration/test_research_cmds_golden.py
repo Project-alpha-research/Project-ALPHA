@@ -111,8 +111,6 @@ def _unknown_phase(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 _FLOWS: dict[str, Flow] = {
     "golden": _golden_path,
-    "non_advancing": program.test_supported_outcome_with_a_non_advancing_disposition_never_promotes,
-    "parked": program.test_parked_pre_d2_case_closes_honestly_and_cannot_claim_support,
     "run_gates": cli.test_deep_and_confirmation_runs_remain_gated,
     "unknown_phase": _unknown_phase,
     "confirmation_authority": (

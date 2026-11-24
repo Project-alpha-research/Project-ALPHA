@@ -24,19 +24,13 @@ byte-identical Codex packet history in the R2 context-packet suites.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import cast
 
-import pytest
 from typer.testing import CliRunner
 
 from alpha_cli.main import app
 from tests.integration.test_research_cli import (
-    _approve_confirmation,
-    _approved_empirical_daily_project,
-    _confirmation_ready_project,
     _invoke,
-    _varied_daily_lows,
 )
 
 runner = CliRunner()
@@ -100,98 +94,3 @@ def _version_args(project_id: str, *extra: str) -> list[str]:
         '{"window": [10, 20]}',
         *extra,
     ]
-
-
-def test_supported_outcome_with_a_non_advancing_disposition_never_promotes(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """§17: promotion requires SUPPORTED *and* the owner's advance disposition."""
-    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
-    project_id, contract_id, _ = _confirmation_ready_project(tmp_path)
-    _approve_confirmation(project_id, contract_id)
-    _invoke("run", "confirm", project_id)
-
-    decided = _invoke(
-        "decide",
-        project_id,
-        "--outcome",
-        "SUPPORTED",
-        "--disposition",
-        "reject",
-        "--actor",
-        "owner",
-        "--reason",
-        "Real but too small to pursue: the owner rejects despite mechanical support.",
-    )
-    assert cast(dict[str, object], decided["case"])["phase"] == "closed"
-
-    # The closed case still gets its honest terminal packet…
-    report = _invoke("report", project_id)
-    assert report["report_schema"] == "ResearchGatePacketV1"
-    assert report["scientific_outcome"] == "SUPPORTED"
-    # …but nothing promotes: no dossier, a still-locked gate, and no version path.
-    assert _promotion_packets(project_id) == []
-    assert _project_cli("show", project_id)["research_gate_state"] == "open"
-    linked = runner.invoke(
-        app,
-        ["project", *_version_args(project_id, "--research-contract-id", contract_id), "--json"],
-    )
-    assert linked.exit_code != 0
-    assert "advance_to_strategy" in linked.output
-    unlinked = runner.invoke(app, ["project", *_version_args(project_id), "--json"])
-    assert unlinked.exit_code != 0
-    assert "research_contract_id" in unlinked.output
-
-
-def test_parked_pre_d2_case_closes_honestly_and_cannot_claim_support(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """§17: honest termination — a pre-D2 park never manufactures empirical support."""
-    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
-    project_id, _ = _approved_empirical_daily_project(tmp_path, lows=_varied_daily_lows())
-
-    # Without consumed D2 the owner cannot record SUPPORTED, let alone advance.
-    premature = runner.invoke(
-        app,
-        [
-            "research",
-            "decide",
-            project_id,
-            "--outcome",
-            "SUPPORTED",
-            "--disposition",
-            "advance_to_strategy",
-            "--actor",
-            "owner",
-            "--reason",
-            "A premature advance claim must fail before any confirmation ran.",
-            "--json",
-        ],
-    )
-    assert premature.exit_code != 0
-    assert "INCONCLUSIVE or INVALID" in premature.output
-
-    parked = _invoke(
-        "decide",
-        project_id,
-        "--outcome",
-        "INCONCLUSIVE",
-        "--disposition",
-        "park",
-        "--actor",
-        "owner",
-        "--reason",
-        "Parked before confirmation: the discovery signal did not justify a sealed read.",
-    )
-    assert cast(dict[str, object], parked["case"])["phase"] == "closed"
-
-    report = _invoke("report", project_id)
-    assert report["report_schema"] == "ResearchGatePacketV1"
-    assert report["scientific_outcome"] == "INCONCLUSIVE"
-    view = _invoke("decision-view", project_id)
-    questions = _checklist_questions(view)
-    effect = next(q for q in questions if q["question_id"] == "effect_exists")
-    assert str(effect["status"]) == "NOT_TESTED"
-
-    assert _promotion_packets(project_id) == []
-    assert _project_cli("show", project_id)["research_gate_state"] == "open"

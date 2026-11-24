@@ -47,12 +47,7 @@
     "research_case_revision"
   ],
   "module_names_imported_elsewhere": [
-    "AttemptStatus",
-    "AuthorKind",
     "ControlStore",
-    "DecisionVerdict",
-    "EvidenceStatus",
-    "MonteCarloReviewDecision",
     "OWNER_ACTION_TYPES",
     "OwnerActionType",
     "ResearchContractScope",
@@ -61,7 +56,6 @@
     "ResearchOutcome",
     "ResearchPhase",
     "ResearchResponsibility",
-    "StageState",
     "_MAX_OWNER_PDF_BYTES",
     "_at",
     "_canonical_json",
@@ -71,7 +65,6 @@
     "_d1_native_spec",
     "_required_text",
     "_research_review_state",
-    "parse_timestamp",
     "research_case_revision"
   ],
   "patched_attribute_readers": {

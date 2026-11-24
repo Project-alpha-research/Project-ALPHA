@@ -5,14 +5,15 @@ sources:
   - apps/alpha-web/src/alpha_web/api/setup_runs.py
   - apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx
   - packages/alpha-study/src/alpha_study/setup/**/*.py
-verified: 05b3e2b526bcc1aa
+verified: 381f91517a179169
 ---
 
 # Setup Lab
 
 Setup Lab is golden path 2: the owner describes a chart setup ("a double bottom", "a pullback in an
 uptrend") and sees every past match, and then what happened after, before any trading rule is fixed. It has
-three commands and one Workstation screen. The screen shows the data health finding beside each result that is not a pass.
+four commands (`find`, `study`, `trade`, `show`), a spec writer (`new`) and one Workstation screen.
+The screen shows the data health finding beside each result that is not a pass.
 Older runs read “Data health: not recorded.”
 
 ## Why it exists
@@ -50,8 +51,7 @@ look at it, measure it, then trade it with declared exits. It is a way of workin
 
 ## What is real today
 
-All three commands run; each has a smoke test, and on 2026-11-17 a double-bottom spec ran on stored SPY and
-BTC/USDT daily bars as a system test, not evidence of an edge. The screen exists and is read-only. Not built:
+All commands run; find, study and trade each have a smoke test. The screen exists and is read-only. Not built:
 sizing, the owner's setup library and the daily scan with export, and starting a find from the screen. See the
 capabilities on [STATUS.md](../../../../STATUS.md) and the tool cards for [find](../../../../research/tools/setup-find.md),
 [study](../../../../research/tools/setup-study.md) and [trade](../../../../research/tools/setup-trade.md).
@@ -61,9 +61,9 @@ capabilities on [STATUS.md](../../../../STATUS.md) and the tool cards for [find]
 - Each study and trade shows a reading block: its evidence word with a four-step scale,
   the stored sentence and its place in the idea's family; old records say "(old wording)".
 - Files: the panel `apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx` and its model `setupLabModel.ts` (registered in `shell/documents.ts`); the
-  backend `apps/alpha-web/src/alpha_web/api/setup_runs.py` with `_setup_runs.py`.
-- The routes (`GET /api/setup/runs` and `/{find_id}`) read stored files directly through `_setup_runs` (bounded, allowlisted, no `alpha` subprocess, unlike most
-  routes). The screen starts nothing, and missing parts read "not recorded". Rules:
+  backend `apps/alpha-web/src/alpha_web/api/setup_runs.py` with `apps/alpha-web/src/alpha_web/_setup_runs.py`.
+- The routes (`GET /api/setup/runs` and `/{find_id}`) read stored files directly through `alpha_web/_setup_runs.py` (bounded, allowlisted, no `alpha`
+  subprocess, unlike most routes). The screen starts nothing, and missing parts read "not recorded". Rules:
   [web API reads and writes](../../invariants/web-api-reads.md#reads-and-writes).
 - After a backend route change, from the repository root: `uv run python scripts/generate_web_openapi.py`, then `uv run python
   scripts/check_openapi_operations.py --write`, then `uv run python scripts/gate.py check`.
@@ -94,8 +94,9 @@ capabilities on [STATUS.md](../../../../STATUS.md) and the tool cards for [find]
 ## Decisions and open questions
 
 - Decided 2026-11-18 (orchestrator's order, reversible; see the [decisions log](../owner-decisions.md), volume 4): Setup Lab comes first.
-- Open: the reserve policy for setups. Today a setup run holds nothing back
-  ([ideas and things considered](../ideas-and-considered.md#open-questions)).
+- Open: the reserve policy for setups. Today every setup read is cut at 2023-12-31 and study and trade refuse a find that saw
+  the reserved period ([reserved period](../reserved-period.md#locks-it-out-rule-tests-and-setups);
+  [ideas and things considered](../ideas-and-considered.md#open-questions)).
 
 ## Never
 

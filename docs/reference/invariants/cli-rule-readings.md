@@ -24,7 +24,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/backtest_cmds.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
   - apps/alpha-web/frontend/src/explain/gates.ts
-verified: ebeeee198cd7a836
+verified: f6b31d470a0525cc
 ---
 
 # Command line rule-test readings invariants
@@ -62,6 +62,9 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
   from this period." with `too little to read`, and the numbers check is `not-checked`.
 - A manifest without `reading` gets one derived from its stored numbers on read. A ledger row with only a letter reads
   "graded C under the old rules". Owner text for rule tests never prints a letter grade, "supported", "rejected", "pass", "fail" or "profit".
+- The screen text reworks the stored sentence into plain words (`plain`, `relation_text`) and drops the stored count words: one
+  paragraph states the counts. After it comes one sentence, "What decided it: ...", built only from the stored reading
+  (`deciding_sentence`). A forecast or Monte Carlo run decides nothing: it is a description. The stored words stay unchanged.
 - `--json` keeps `verdict` and adds `reading`, with its `costs` lines ([cost classes](cli-cost-classes.md)).
 - A run id hashes every `alpha_cli` source byte, so any edit moves it, and the rows before the held-back boundary. It never hashes a later row,
   their count, a data-health verdict or a whole-file fingerprint. `tests/unit/test_reading_rule.py` holds that input fixed: the reading moves no id.

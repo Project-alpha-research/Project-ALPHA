@@ -8,7 +8,7 @@ sources:
   - scripts/gate.py
   - scripts/gate_components.py
   - pyproject.toml
-verified: 8196fa71e1d308a1
+verified: 2cafebab56e467aa
 ---
 
 # Checks
@@ -35,7 +35,7 @@ request only when its paths (or the workflow and gate files) change, and always 
 | `static` job: `uv lock --check`, `uv sync --locked` | a dependency change without its lock file | PR | 7 s (job 1.4 min) |
 | `static`: ruff lint and format | style and simple bug patterns (unused names, bad comparisons) | PR | 1 s |
 | `static`: living documents (`fs.py stale`) | broken front matter or a missing source (blocks); stale documents are listed, not blocked | PR | 1 s |
-| `static`: import contracts (`lint-imports`) | a package importing a layer it must not (the import DAG) | PR | 0.4 s |
+| `static`: import contracts (`lint-imports`) | a layer import the DAG forbids; a kept feature reaching old research-case code | PR | 0.4 s |
 | `static`: mypy, one strict run over packages, apps, tests and harness scripts | type errors | PR | 45 s |
 | `static`: harness lint and doctor | a removed deny rule, unwired hook, lowered coverage floor or `-x` in CI | PR | 0.2 s |
 | `static`: semgrep over the whole repo, plus its rule contracts | wall-clock reads, unseeded random numbers, negative shifts, silent excepts | PR | 13 s |

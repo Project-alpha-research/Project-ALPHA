@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - tests/unit/test_toolbox_*.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
-verified: a9b38e6041cf26ee
+verified: de553e6a7d10b2c0
 ---
 
 # Toolbox
@@ -50,24 +50,22 @@ The Workstation report shows a rule test's stored checks.
 - A "look" class separates describing a result (adds no trial), testing it (counted per result) and
   searching variants (would add the number of variants to the many-tries correction).
 - Gates come from a frozen list that is empty today; a tool never changes a grade or a promotion.
-- A tool row has a null verdict and adds zero deflation trials (the many-tries count is not changed by a tool run;
-  [rule](../../invariants/cli-investigation-tools.md)).
+- A tool row has a null verdict and adds no deflation trial by itself
+  ([rule](../../invariants/cli-investigation-tools.md)). The four settings checks that re-run the engine are the exception:
+  each re-run is one `screen_trial` row in the trial ledger ([rule](../../invariants/cli-toolbox.md#checks-that-re-run-the-engine)).
 - A single run is labelled `ad-hoc`, a non-default setting `non-default-params`, and a result whose run
   already used 2024 onward `reserved-period-seen`.
 - Growth rule: moving an old tool in deletes its old command and card in the same pull request, and a test
   without a known answer (a reference value or a planted effect) does not go in.
-- The accepted design (kept outside the repository so far, a known gap) expects 22 first entries, then 10 to 30
-  per pull request by input kind (return statistics, trade statistics, sweeps, multi-strategy overfitting, market
-  descriptions, forecast evaluation, the AFML worker).
 
 ## What is real today
 
-The first batch (market descriptions, reads of a rule test's stored files, tests on its history, a published-factor
-comparison) and the eleven overfitting controls are built; the list is in the [toolbox rules](../../invariants/cli-toolbox.md#registered-checks).
-`alpha tool` lists, describes and runs them; every attempt is logged and stored answers are reused. Two predeclared sets
-exist (`sets.py`): `market-context` and `rdagent-post-judge`, which runs two fixed checks after each judged RD-Agent idea
-and never changes the verdict. Not built: agent-chosen checks in the proposal and most of the 480-entry catalogue
-([STATUS.md](../../../../STATUS.md)). To add a check, see [Adding a check](../../invariants/cli-toolbox.md#adding-a-check).
+The catalogue holds 112 entries in 15 families (`alpha tool list`). The [toolbox rules](../../invariants/cli-toolbox.md#registered-checks)
+list what they constrain. `alpha tool` lists, finds, describes and runs them, and records the owner's plan before a look
+(`declare`). Every attempt is logged and stored answers are reused. Two predeclared sets exist (`sets.py`): `market-context`
+and `rdagent-post-judge`, which runs two fixed checks after each judged RD-Agent idea and never changes the verdict. Not built:
+agent-chosen checks and the rest of the 480-candidate catalogue ([STATUS.md](../../../../STATUS.md)).
+To add a check, see [Adding a check](../../invariants/cli-toolbox.md#adding-a-check).
 
 ## Where it lives
 

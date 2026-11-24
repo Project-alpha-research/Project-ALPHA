@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/research_intake.py
   - apps/alpha-cli/src/alpha_cli/control_store.py
   - apps/alpha-cli/src/alpha_cli/research_gate_packet.py
-verified: afc34c4772a9adcd
+verified: f4cd15efe9a0a522
 ---
 
 # Research method
@@ -19,7 +19,8 @@ the per-step method is the protocol library (`.agents/skills/alpha-research-prot
 ## The older staged lane
 
 The governed Research Case lane (`alpha research ...`, the control store, its Workstation screens) still
-works and is kept until the playbook route covers what it does. New ideas do not start there. It accepts only
+works but is being removed (owner decision 2026-11-23,
+[entry](project/owner-decisions-6.md#2026-11-23-remove-the-old-research-case-machinery-export-first)). New ideas do not start there. It accepts only
 its registered operators; when it reports `RESEARCH_OPERATOR_UNAVAILABLE`, take the idea through the playbook.
 
 | Phase (`uv run alpha research status <case> --json`) | Main commands | Owner act |

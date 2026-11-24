@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_forecast_*.py
   - tests/integration/test_ml_cli.py
   - tests/integration/test_forecast_*.py
-verified: d3effcd32cb91e9f
+verified: f63bddeb0a244c64
 ---
 
 # Command line model invariants
@@ -86,6 +86,5 @@ Kronos forecast composition (`alpha forecast ...`, `_forecast*` modules). Projec
 - `--model fake` is the offline test double; never use it as evidence.
 - For `alpha validate` on `kronos`, Tier 1 and default Tier 2 replay the observed signal cache (an association test,
   recorded as `tier2_policy`); `--tier2-mode model` re-forecasts each synthetic path.
-- Kronos has no live-paper support (`supports_live_paper=False`).
 - Kronos and Qlib jobs share the single heavyweight capacity slot; see
   [command line control plane § Jobs, leases and capacity](cli-control-store.md#jobs-leases-and-capacity).

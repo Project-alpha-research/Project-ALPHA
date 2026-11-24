@@ -29,7 +29,7 @@ sources:
   - tests/unit/test_suite_*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 76593438fc21ab3c
+verified: 670e832df801ec82
 ---
 
 # Command line runs invariants
@@ -97,9 +97,12 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - A spec rule is `ma_cross`, `breakout`, `tsmom` or `owner` ([language](../owner-rule-language.md)).
   An owner rule runs the `rules` strategy; its ledger `rule` and family are `owner:<shape12>`.
   The three old kinds keep canonical bytes, spec hash, test key and ledger keys (`tests/unit/test_spine_golden_pins.py`).
+- A spec that states no costs takes the asset-class default ([cost classes](cli-cost-classes.md)); a stored spec with stated costs keeps its hash.
 - `alpha test` reads bars and dividends only up to 2023-12-31 ([reserved period](../project/reserved-period.md)).
   With held-back bars it adds the label `reserved-period-held-back`, prints one sentence, records `spine.reserve`
   and puts `research_cutoff` 2023-12-31 into the run identity. Without them the run id is unchanged.
+  The one read of bars after the boundary is `reserve.open_with_receipt`, for the owner's confirmation only
+  ([reserved period](../project/reserved-period.md#the-owners-confirmation)).
   `alpha results show` and run facts derive `reserved-period-seen` for an older run whose last bar is on or after
   2024-01-01; stored runs are never rewritten. `alpha tool` reads a held-back run only up to its `research_cutoff`.
 - `alpha optim`, `validate`, `backtest` (oos, run including `--manifest-id`, portfolio, cross-sectional), `scan run`, `scan hypotheses`, `rules
@@ -157,7 +160,8 @@ Figure cache, themes and builders: [command line figures](cli-figures.md).
   gives the reason.
 ## Rules, scans and chart overlays
 - `alpha_strategies.rules` is the only rule parser; the CLI stores canonical JSON and interprets nothing.
-- `resolve_rules_spec` pairs the flags fail-closed: `--strategy rules` needs `--rules NAME`, `--rules` with any other strategy fails, and a frozen
+- `resolve_rules_spec` pairs the flags fail-closed: `--strategy rules` needs a rule (`--rules NAME` on `backtest` and `scan`;
+  `alpha validate` takes only a frozen file), `--rules` with any other strategy fails, and a frozen
   `--rules-file` needs a matching `--rules-sha256`, canonical bytes and at most 1,000,000 bytes.
 - `rules explain` reads canonical bars through `load_bars` cut at the end of `--as-of`, saves nothing and reports `authority: none`. Missing history or an
   invalid operand is an unavailable signal, never a flat one.

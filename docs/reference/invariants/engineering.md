@@ -7,7 +7,7 @@ sources:
   - scripts/gate_components.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_structural_digest.py
-verified: 69df4b64bba1b526
+verified: 3483ce76da273598
 ---
 
 # Engineering rules
@@ -35,6 +35,8 @@ Project-wide coding rules. Area files add their own detail and link here. The re
 - The contracts are the `[tool.importlinter]` section of `pyproject.toml`; check with
   `uv run lint-imports`. Never add an `ignore_imports` exception without an ADR (the one existing
   exception, the owner-auth seam, is ADR-0030).
+  A "forbidden" contract keeps the kept features (final check, `alpha test`, `alpha setup`, the ledger, jobs) off the old
+  research-case modules, so those can be deleted without touching them.
 - Workers (`workers/*`) are separate uv projects; no root package imports them.
 
 ## Subprocess boundary

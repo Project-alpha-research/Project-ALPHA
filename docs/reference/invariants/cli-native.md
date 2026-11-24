@@ -11,7 +11,7 @@ sources:
   - tests/unit/test_native_*.py
   - tests/unit/test_daily_rule_*.py
   - tests/unit/test_daily_native_*.py
-verified: a98a873ffec4cfd5
+verified: 54ab6cc0a77cd920
 ---
 
 # Command line native invariants
@@ -90,7 +90,7 @@ project-wide rule is [research integrity § Models and isolated workers](researc
   `control_store.py`, `_control_json.py`, `owner_auth.py`, `_artifacts.py`, `artifact_contract.py`, `durable_lease.py`,
   `research_analysis_plan.py`, `crypto_price_snapshot_query.py`, `crypto_bulk_store.py`, `daily_native_cmds.py`,
   `_control_schema.py`, `_native_daily_rule_history.py`, `_ml_observation_store.py`, `job_capacity.py`,
-  `paper_resources.py`, `run_store.py`, `run_context.py`, `_native_tearsheet.py`, `research_readiness.py`,
+  `job_rows.py`, `job_store.py`, `home_db.py`, `paper_resources.py`, `run_store.py`, `run_context.py`, `_native_tearsheet.py`, `research_readiness.py`,
   `research_runtime.py`, `_native_stock_launch.py`, `native_stock_fixture.py`, the package `__init__.py`, and the
   worker `daily_container_entry.py` ([ADR-0048](../../adr/0048-daily-rule-lane-binding-and-named-months.md)).
 - Every `alpha_cli` import in a bound file, at module level or inside a function, must reach a bound file or a reviewed

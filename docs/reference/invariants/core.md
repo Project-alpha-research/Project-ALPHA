@@ -7,7 +7,7 @@ sources:
   - tests/unit/test_corporate_actions.py
   - tests/unit/test_universe_store.py
   - tests/unit/test_forecast_settings.py
-verified: 1d240ec67a9c8784
+verified: f33f39f773362c9b
 ---
 
 # Core invariants
@@ -65,8 +65,9 @@ errors, settings and structural protocols that every other package imports. Proj
 - `DataSource.as_of(symbol, when)` takes an aware datetime and must never return a bar not knowable at
   `when`. [research integrity § Point-in-time reads](research-integrity.md#point-in-time-reads),
   [ADR-0005](../../adr/0005-point-in-time-firewall.md).
-- `ExecutionEventSink` is for paper execution only. Keep it out of deterministic run specifications and
-  hashes; payloads are flat JSON scalars so no engine object, credential, tick or bar crosses it.
+- `ExecutionEventSink` is for paper execution only. No command passes one today (the paper-session code was
+  removed); the seam stays. Keep it out of deterministic run specifications and hashes;
+  payloads are flat JSON scalars so no engine object, credential, tick or bar crosses it.
   [ADR-0012](../../adr/0012-operational-paper-sessions.md).
 
 ## Atomic publication

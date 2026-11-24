@@ -7,7 +7,7 @@ sources:
   - tests/unit/test_rule_context_gate.py
   - tests/unit/test_rule_context_plan.py
   - tests/unit/test_rule_context_identity.py
-verified: 6d7cb94085efa825
+verified: 72c574d38aaf4ae5
 ---
 
 # Command line rule context gate invariants
@@ -20,10 +20,12 @@ What must not break in the context gate of a rule spec (`alpha test --plan`). Th
 - A spec may carry `context` (`{alias: "series@key"}`) and `when` (a condition over the aliases). `when` needs `context`, and
   `context` needs `when`, and `when` must read every alias. Aliases follow the Setup Lab rule (`check_aliases`): lowercase,
   never a price source or a function, so an alias cannot shadow a price. A bad alias, series, key or condition fails when the spec loads.
+  A chart-pattern series (`spine/pattern_context.py`, for example `swing_low`) binds only with the key `SELF`: 1 on the bar the
+  event became known, else 0, missing during warm-up.
 - Canonical form (`_context_gate.canon`): each alias becomes `c0`, `c1`, ... in the sorted order of the bound `series@key`
   texts, and `when` is printed again from its parse tree. The spec hash takes this form; the stored `spec.json` keeps the text as
   written. So alias names and spacing make no new test; a new series, key, threshold or structure does. A spec without context
-  hashes and dumps exactly as before (a test pins three hashes and the stored bytes).
+  hashes and dumps exactly as before (a test pins three hashes and the stored bytes, for specs that state the flat costs).
 - `build_gate` attaches through `setup_context.attach_bindings` (the one call to `attach_context` for Setup Lab and the rule
   gate; daily bars; reserve cutoff) under the canonical names, then reads canonical `when` with `compile_expr` and the canonical
   names as context sources. The language is three-valued: a missing value never makes the condition true, also under `not`,

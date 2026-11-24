@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -102,6 +103,23 @@ def hook_pre_owner_action_guard(payload: dict[str, Any], root: Path) -> HookResu
     return (0, "")
 
 
+def _build_queue(root: Path) -> str:
+    """The build team's queue (`factory status`), when its checkout sits beside this one. Any
+    failure is silent: the queue is a help at session start, never a condition."""
+    factory = root.resolve().parent / "alpha-factory"
+    if not (factory / "pyproject.toml").is_file():
+        return ""
+    try:
+        done = subprocess.run(
+            ["uv", "run", "--project", str(factory), "factory", "status"],
+            cwd=factory, capture_output=True, text=True, timeout=20, check=False,
+        )  # fmt: skip
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    said = " | ".join(done.stdout.splitlines()).strip(" |")
+    return f" Build queue: {said[:600]}" if said else ""
+
+
 def hook_session_start(payload: dict[str, Any], root: Path) -> HookResult:
     return (
         0,
@@ -111,7 +129,7 @@ def hook_session_start(payload: dict[str, Any], root: Path) -> HookResult:
         'Find things: uv run python scripts/fs.py orient | search "words". '
         "Fast local check: uv run python scripts/gate.py check; CI on the pull request "
         "is the merge gate. "
-        "Engineering checks grant no application owner authority.",
+        "Engineering checks grant no application owner authority." + _build_queue(root),
     )
 
 

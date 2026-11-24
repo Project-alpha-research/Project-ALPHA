@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: fbc7d9dc2bc1d1ad
+verified: 89e0b9b8ab6eff6d
 ---
 
 # Research playbook: how to work any idea
@@ -16,7 +16,7 @@ every number; you never do. This page is a method, not a script: use judgement, 
 something is imperfect, label it and carry on. Nothing here promises a profit, and neither do you.
 
 ## The method
-1. **Look at what was tried.** `uv run alpha results --json` lists every recorded trial; read
+1. **Look at what was tried.** `uv run alpha results --json` lists the recorded rule tests (`--tools` adds tool readings); read
    [the lessons](lessons/README.md). Tell the owner what is already known.
 2. **State the idea and what would disprove it.** Quote the owner's sentence in an [idea card](tools/idea-card.md)
    (`alpha idea new`). Say in one line what result would make you drop it (for example "it does not beat holding the asset").
@@ -72,10 +72,10 @@ Labels go before numbers. Label reserved-period-seen: data on or after the 2024-
 - A flag (`below-benchmark`, `concentrated-profit`, ...) is an observation, never a verdict. Report every flag
   with its `detail` sentence. An audit line is `PASS`, `FLAG` or `NOT-CHECKED`; report every `FLAG` and every
   `NOT-CHECKED`. Quote the `reading` (evidence word and the aim line), never the old letter in `verdict`.
-- Trial count: say "ledger entry N of M" (a row number, not ideas tried) from `trials_total` (or `total_trials`), plus the
-  sensitivity re-runs in `variants_evaluated`; cite `family_trials` for the deflation count. Report best-of-many as best-of-many.
-  `alpha validate`, `alpha optim` and `alpha backtest` runs are not in the ledger yet: count those
-  by hand and say so.
+- Trial count: the count of tries is the sentence `alpha test` prints ("You have tested N ideas on <asset>"); `alpha ledger tries <asset>`
+  prints it again. Cite `family_trials` for the deflation count and `variants_evaluated` for the sensitivity re-runs. `trials_total`
+  and `total_trials` are ledger row numbers (an audit sequence), never ideas tried. Report best-of-many as best-of-many.
+  `alpha validate`, `alpha optim` and `alpha backtest` runs are not in the ledger: count those by hand and say so.
 
 ## What needs the owner
 
@@ -91,14 +91,14 @@ Labels go before numbers. Label reserved-period-seen: data on or after the 2024-
 $ uv run alpha test --rule ma_cross --param fast=50 --param slow=200 --asset SPY --asset BTC/USDT
 Test <test id> — ma_cross-50-200
 ASSET     RUN       READING         OOS SHARPE  LABELS / ERROR
-SPY       <run id>  <evidence word> <value>     all-in, dev-machine-data
+SPY       <run id>  <evidence word> <value>     <n> labels, below
 BTC/USDT  —         —               —           DataError: asset 'BTC/USDT' not found; stores searched: home
 $ uv run alpha results cite <run id> oos_sharpe
 <value> [<run id>:oos_sharpe] (walk-forward out-of-sample returns)
 ```
 
 Report: the system could not find BTC/USDT (system finding, with the `next` line of the error);
-SPY ran (its "Tries on SPY" line gives the count); labels in words; then `<value> [<run id>:oos_sharpe]` beside the
+SPY ran (its "You have tested N ideas on SPY" line gives the count); the labels in words; then `<value> [<run id>:oos_sharpe]` beside the
 scored buy-and-hold figure `[<run id>:scored_benchmark_sharpe]`. BTC is "not tested", not guessed.
 
 **A surprise.** `alpha diagnose` shows the flag `drawdown-with-market`: "During the worst drawdown

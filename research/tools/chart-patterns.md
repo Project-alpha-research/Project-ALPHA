@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/chart_pattern_picture.py
   - apps/alpha-cli/src/alpha_cli/pattern_events.py
   - apps/alpha-cli/src/alpha_cli/spine/pattern_context.py
-verified: 0000000000000000
+verified: 1c4d645032d0a671
 ---
 # Chart patterns: see one, then test one
 
@@ -16,6 +16,7 @@ verified: 0000000000000000
 alpha chart overlays NVDA -p trendlines [--since 2024-01-01] [--end 2025-06-30]
 ```
 It writes a plain and an annotated picture and prints 3 lines: how many, the most recent and its date, the paths.
+A window that ends after 2023-12-31 adds a note that the held-back period is inside it.
 Swings and other markers are all drawn; lines and outlines show the 5 most recent that do not crowd, numbered in the legend.
 The default window is the last two years. Families: swings, dc_extremes, structure_levels, trendlines, flags,
 head_shoulders, wedges, triple_taps, harmonics. Drawn only, no events: pips, market_profile, levels.

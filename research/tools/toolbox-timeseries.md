@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/families/timeseries_b.py
   - apps/alpha-cli/src/alpha_cli/toolbox/families/timeseries_c.py
   - tests/unit/test_toolbox_timeseries.py
-verified: 0000000000000000
+verified: 09a7a51a7bcb2dad
 ---
 
 # Time-series checks

@@ -7,7 +7,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_controls.py
   - apps/alpha-cli/src/alpha_cli/spine/event_study_figure.py
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
-verified: ca6c27cc70fdb13b
+verified: 6b8f6fb3f518031a
 ---
 # Setup study
 
@@ -32,7 +32,7 @@ alpha results cite <study_id> setup_mean_net_return --json
   `alpha setup show <study_id> [<id> ...] --json` reads them again, for studies or trades, with no write.
 - Each study counts one trial; a repeat is labelled `repeat`. A held-back find passes its label on; a find that used reserved bars is refused.
 
-The study checks the inputs again before measuring returns. A failed report requires a reason on this invocation. [Data health](data-health.md)
+The study checks the inputs again. A failed [data health](data-health.md) report stops it unless `--accept-bad-data` has a reason.
 **What it cannot tell you** Exits, sizing, portfolios, dividends or reserved-data confirmation.
 Setups cluster in market states (a double bottom follows a decline): beating random dates says
 the dates were unusual, not that the setup can be traded.

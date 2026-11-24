@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/propfirm_cmds.py
   - apps/alpha-cli/src/alpha_cli/_propfirm.py
-verified: 0000000000000000
+verified: 9c592c23ceab9027
 ---
 
 # Prop-firm evaluation: pass and bust rates

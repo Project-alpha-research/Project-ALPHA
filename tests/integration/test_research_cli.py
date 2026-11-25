@@ -20,7 +20,7 @@ import pytest
 from typer.testing import CliRunner
 
 from alpha_cli import control_store as control_store_module
-from alpha_cli import research_cmds
+from alpha_cli import literature_call, research_cmds
 from alpha_cli.artifact_contract import artifact_metadata
 from alpha_cli.control_store import ControlStore, ResearchExecutionState
 from alpha_cli.main import app
@@ -3367,7 +3367,7 @@ def test_literature_worker_preserves_an_explicit_cache_directory(
     monkeypatch.setattr(subprocess, "run", fake_run)
     monkeypatch.setattr(shutil, "which", lambda _name: "/usr/bin/uv")
 
-    assert research_cmds._run_literature_worker(["probe"]) == {"ok": True}
+    assert literature_call._run_literature_worker(["probe"]) == {"ok": True}
 
     assert captured_env["UV_CACHE_DIR"] == str(cache_dir)
     assert set(captured_env) == {
@@ -3400,7 +3400,7 @@ def test_literature_worker_rejects_an_unusable_explicit_cache(
     )
 
     with pytest.raises(DataError, match="UV_CACHE_DIR.*writable directory"):
-        research_cmds._run_literature_worker(["probe"])
+        literature_call._run_literature_worker(["probe"])
 
 
 def test_literature_worker_cleans_temporary_cache_after_subprocess_failure(
@@ -3429,7 +3429,7 @@ def test_literature_worker_cleans_temporary_cache_after_subprocess_failure(
     monkeypatch.setattr(shutil, "which", lambda _name: "/usr/bin/uv")
 
     with pytest.raises(DataError, match="synthetic worker failure"):
-        research_cmds._run_literature_worker(["probe"])
+        literature_call._run_literature_worker(["probe"])
 
     assert len(cache_dirs) == 1
     assert not cache_dirs[0].exists()
@@ -3445,7 +3445,7 @@ def test_literature_worker_requires_checked_out_module_source(
     worker_dir = tmp_path / "workers" / "literature"
     worker_dir.mkdir(parents=True)
     (worker_dir / "pyproject.toml").write_text("[project]\n", encoding="utf-8")
-    monkeypatch.setattr(research_cmds, "__file__", str(cli_root / "research_cmds.py"))
+    monkeypatch.setattr(literature_call, "__file__", str(cli_root / "literature_call.py"))
     monkeypatch.setattr(
         subprocess,
         "run",
@@ -3453,7 +3453,7 @@ def test_literature_worker_requires_checked_out_module_source(
     )
 
     with pytest.raises(DataError, match="literature worker source is unavailable"):
-        research_cmds._run_literature_worker(["probe"])
+        literature_call._run_literature_worker(["probe"])
 
 
 def test_literature_worker_safe_path_ignores_a_caller_directory_module(

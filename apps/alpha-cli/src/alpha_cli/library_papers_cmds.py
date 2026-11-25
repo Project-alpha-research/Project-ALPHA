@@ -10,8 +10,11 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.library_cmds import JSON, library_app
-from alpha_cli.local_pdf_cmds import _read_owner_pdf, _validated_extraction
-from alpha_cli.research_cmds import _run_literature_worker
+from alpha_cli.literature_call import (
+    _read_owner_pdf,
+    _run_literature_worker,
+    _validated_extraction,
+)
 from alpha_cli.spine import papers
 from alpha_cli.spine.errors import SpineError, fail
 from alpha_core import DataError

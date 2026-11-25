@@ -214,3 +214,22 @@ def test_flat_reply_passes_unchanged(judge: ModuleType) -> None:
     result = judge.AlphaFactorHypothesisGen().gen(None)
 
     assert result == reply
+
+
+def test_factory_backend_keeps_nested_value_as_json_text(judge: ModuleType) -> None:
+    backend_class = make_backend()
+    nested = {"window": 5, "skip": 1}
+    MODEL["reply"] = json.dumps({"hypothesis": nested, "reason": "plain"})
+
+    def factory(*args: Any, **kwargs: Any) -> Any:
+        return backend_class()
+
+    backend = judge.text_field_backend(factory)()
+
+    assert isinstance(backend, backend_class)
+    text = backend.build_messages_and_create_chat_completion(
+        user_prompt="q", json_mode=True, json_target_type=dict[str, str]
+    )
+    assert json.loads(text) == {"hypothesis": json.dumps(nested), "reason": "plain"}
+    other = backend.build_messages_and_create_chat_completion(user_prompt="q", json_mode=True)
+    assert other == MODEL["reply"]

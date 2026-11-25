@@ -778,22 +778,42 @@ class AlphaFactorRunner(Developer):
         return exp
 
 
-def text_field_backend(upstream: type) -> type:
-    """Wrap the backend: a nested value in a dict[str, str] reply becomes JSON text."""
+def _text_fields(call: Any) -> Any:
+    """Wrap one auto-continue call: a nested value in a dict[str, str] reply becomes JSON text."""
 
-    class TextFieldBackend(upstream):  # type: ignore[valid-type, misc]
-        def _create_chat_completion_auto_continue(self, *args: Any, **kwargs: Any) -> str:
-            if kwargs.get("json_target_type") != dict[str, str]:
-                return super()._create_chat_completion_auto_continue(*args, **kwargs)
-            kwargs["json_target_type"] = None
-            reply = json.loads(super()._create_chat_completion_auto_continue(*args, **kwargs))
-            if not isinstance(reply, dict):
-                raise ValueError(f"model reply is not a JSON object: {type(reply).__name__}")
-            return json.dumps(
-                {key: v if isinstance(v, str) else json.dumps(v) for key, v in reply.items()}
-            )
+    def auto_continue(*args: Any, **kwargs: Any) -> str:
+        if kwargs.get("json_target_type") != dict[str, str]:
+            return call(*args, **kwargs)
+        kwargs["json_target_type"] = None
+        reply = json.loads(call(*args, **kwargs))
+        if not isinstance(reply, dict):
+            raise ValueError(f"model reply is not a JSON object: {type(reply).__name__}")
+        return json.dumps(
+            {key: v if isinstance(v, str) else json.dumps(v) for key, v in reply.items()}
+        )
 
-    return TextFieldBackend
+    return auto_continue
+
+
+def text_field_backend(upstream: Any) -> Any:
+    """Wrap the backend class or factory: a nested dict[str, str] value becomes JSON text."""
+    if isinstance(upstream, type):
+
+        class TextFieldBackend(upstream):  # type: ignore[valid-type, misc]
+            def _create_chat_completion_auto_continue(self, *args: Any, **kwargs: Any) -> str:
+                call = super()._create_chat_completion_auto_continue
+                return _text_fields(call)(*args, **kwargs)
+
+        return TextFieldBackend
+
+    # Upstream rdagent.oai.llm_utils.APIBackend is a factory function: patch what it builds.
+    def build(*args: Any, **kwargs: Any) -> Any:
+        backend = upstream(*args, **kwargs)
+        call = backend._create_chat_completion_auto_continue
+        backend._create_chat_completion_auto_continue = _text_fields(call)
+        return backend
+
+    return build
 
 
 class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):

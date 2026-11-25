@@ -778,6 +778,24 @@ class AlphaFactorRunner(Developer):
         return exp
 
 
+def text_field_backend(upstream: type) -> type:
+    """Wrap the backend: a nested value in a dict[str, str] reply becomes JSON text."""
+
+    class TextFieldBackend(upstream):  # type: ignore[valid-type, misc]
+        def _create_chat_completion_auto_continue(self, *args: Any, **kwargs: Any) -> str:
+            if kwargs.get("json_target_type") != dict[str, str]:
+                return super()._create_chat_completion_auto_continue(*args, **kwargs)
+            kwargs["json_target_type"] = None
+            reply = json.loads(super()._create_chat_completion_auto_continue(*args, **kwargs))
+            if not isinstance(reply, dict):
+                raise ValueError(f"model reply is not a JSON object: {type(reply).__name__}")
+            return json.dumps(
+                {key: v if isinstance(v, str) else json.dumps(v) for key, v in reply.items()}
+            )
+
+    return TextFieldBackend
+
+
 class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
     TRIAL_SCHEMAS = {
         "AlphaRdagentFactorTrialV1",
@@ -790,7 +808,16 @@ class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
         # The guard's re-asks are part of the same round.
         if not FAMILY_REFUSALS:
             AlphaFactorHypothesisGen._ledger_snapshot = None
-        return super().gen(trace, plan)
+        # The upstream proposer asks for dict[str, str]; a nested value arrives as JSON text.
+        proposal = sys.modules.get("rdagent.scenarios.qlib.proposal.factor_proposal")
+        if proposal is None:
+            return super().gen(trace, plan)
+        upstream = proposal.APIBackend
+        proposal.APIBackend = text_field_backend(upstream)
+        try:
+            return super().gen(trace, plan)
+        finally:
+            proposal.APIBackend = upstream
 
     @classmethod
     def ledger_rows(cls, name: str | None) -> list[dict[str, Any]] | None:

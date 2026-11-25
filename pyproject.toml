@@ -83,6 +83,8 @@ select = [
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "datetime.datetime.utcnow".msg = "Use datetime.now(UTC); every read is point-in-time at an aware-UTC as_of."
 "datetime.datetime.utcfromtimestamp".msg = "Use datetime.fromtimestamp(ts, UTC); every read is point-in-time at an aware-UTC as_of."
+"atexit.register".msg = "Do not hook a run's ending with atexit.register; a run must end by its own result."
+"os._exit".msg = "Do not end a run by calling os._exit; a run must end by its own result."
 "numpy.random.seed".msg = "Pass the seed to numpy.random.default_rng(seed); seeds and fingerprints are deterministic and local."
 "numpy.random.RandomState".msg = "Use numpy.random.default_rng(seed); seeds and fingerprints are deterministic and local."
 

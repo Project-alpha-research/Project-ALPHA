@@ -43,7 +43,7 @@ _BYBIT_SPAN_DAYS: Mapping[str, Mapping[str, int]] = {
 _BINANCE_MONTHLY_FAMILIES = frozenset({"market_bars"})
 # Binance Vision BTCUSDT 1d monthly Last-Modified dates, measured 2026-11-14:
 # 2025-11 through 2026-10 lagged 1–7 days; 2024-02 lagged 12 days.
-# Source: docs/work/archive/2026-11/2026-11-14-prove-crypto-backfill/02-plan.md.
+# Source: https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/pre-thin-2026-11-14/docs/work/archive/2026-11/2026-11-14-prove-crypto-backfill/02-plan.md.
 BINANCE_PUBLICATION_GRACE = timedelta(days=14)
 
 

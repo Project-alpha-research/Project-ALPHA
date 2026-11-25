@@ -15,7 +15,6 @@ export default defineConfig({
   testIgnore: [
     '**/risk-metric-basis.spec.ts',
     '**/risk-live.spec.ts',
-    '**/native-result-real.spec.ts',
   ],
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),

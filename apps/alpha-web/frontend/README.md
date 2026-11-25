@@ -130,25 +130,19 @@ The build writes the production SPA to `../src/alpha_web/static/app` (build outp
 FastAPI application for UI/backend verification. `npm run dev` is an assets-only Vite server;
 it has no API proxy and is not the integrated application.
 
-`npm run test:e2e` builds, then invokes the same mandatory four-lane dispatcher as
+`npm run test:e2e` builds, then invokes the same mandatory three-lane dispatcher as
 `npm run test:e2e:built`. The built-only command requires a fresh normal build. It
 accepts no spec/project filters: focused checks use the original config intentionally
 and do not qualify the aggregate. The lanes are ordinary/default, source-mounted
-risk basis, raw-Vite synthetic risk live, and the existing native-result pytest
-driver. Exactly those three special specs are excluded from default discovery and
-positively routed here; self-owned retained/selector suites remain in default.
+risk basis and raw-Vite synthetic risk live. Exactly those two special specs are
+excluded from default discovery and positively routed here; self-owned retained/selector
+suites remain in default.
 
-Besides installed frontend/controller dependencies, this command needs Linux and
-explicit `ALPHA_RDAGENT_SOURCE` and `ALPHA_STOCK_PYTHON` selecting the existing
-pinned native source and its installed `runtime/venv/bin/python`. Its original
-validator remains authoritative. Missing assets, or only one selector set, fail before
-browser work; no installation is performed. With neither selector set (hosted CI) the
-three asset-free lanes run and the native lane is reported as explicitly skipped. Set the existing
-`PLAYWRIGHT_BROWSERS_PATH` when the browser cache is not the Linux default. Native
-fixture descriptors and evidence are created by the original driver, never supplied
-from a prior run. See [development loop](../../../docs/operations/development-loop.md)
-for evidence paths and focused commands. Hosted CI does not provide these native inputs,
-so CI runs never cover the native lane.
+Besides installed frontend/controller dependencies, this command needs Linux. Missing
+assets fail before browser work; no installation is performed. Set the existing
+`PLAYWRIGHT_BROWSERS_PATH` when the browser cache is not the Linux default. See
+[development loop](../../../docs/operations/development-loop.md) for evidence paths and
+focused commands.
 
 The ordinary Playwright lane launches its own real backend at localhost:8802 and refuses to reuse an unknown server.
 Set `ALPHA_PLAYWRIGHT_PORT=8803` (or another free port) when another checkout is testing concurrently. The app store, bulk store and working directory are temporary; bars for SPY and BTC/USDT are

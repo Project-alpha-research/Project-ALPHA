@@ -17,88 +17,25 @@ ROOT = Path(__file__).resolve().parents[2]
 FRONTEND = ROOT / "apps/alpha-web/frontend"
 
 
-def test_only_three_explicit_handoffs_keep_existing_projects() -> None:
+def test_only_two_explicit_handoffs_keep_existing_projects() -> None:
     source = (FRONTEND / "playwright.config.ts").read_text()
     for name in lanes.HANDOFFS:
         assert f"'**/{name}'" in source
     ignore = source.split("testIgnore: [", 1)[1].split("]", 1)[0]
-    assert ignore.count("'**/") == 3
+    assert ignore.count("'**/") == 2
     assert "grepInvert: /@reference-only/" in source
     assert "...(perfBudgets ? {} : { grepInvert: /@perf-budget/ })" in source
     assert "dependencies: ['chromium-minimum', 'chromium-reference', 'chromium-wide']" in source
     assert source.count("name: 'chromium-") == 4
-    for config, name in zip(
-        ("risk-basis", "risk-live", "native-result"), lanes.HANDOFFS, strict=True
-    ):
+    for config, name in zip(("risk-basis", "risk-live"), lanes.HANDOFFS, strict=True):
         assert f"testMatch: '{name}'" in (FRONTEND / f"playwright.{config}.config.ts").read_text()
-
-
-def test_native_junit_requires_one_exact_executed_case(tmp_path: Path) -> None:
-    report = tmp_path / "native.xml"
-    report.write_text(junit())
-    lanes.validate_native_report(report)
-
-
-def junit(case: str | None = None, *, count: int = 1, **counts: int) -> str:
-    case = (
-        case
-        if case is not None
-        else (f'<testcase classname="{lanes.NATIVE_CLASS}" name="{lanes.NATIVE_METHOD}"/>')
-    )
-    attrs = " ".join(f'{key}="{counts.get(key, 0)}"' for key in ("errors", "failures", "skipped"))
-    return f'<testsuites><testsuite tests="{count}" {attrs}>{case}</testsuite></testsuites>'
-
-
-@pytest.mark.parametrize(
-    "body",
-    [
-        "",
-        "not XML",
-        "<testsuites/>",
-        junit("", count=0),
-        junit(count=2),
-        junit(skipped=1),
-        junit(errors=1),
-        junit(failures=1),
-        junit('<testcase classname="other" name="other"/>'),
-        junit().replace("/>", "><skipped/></testcase>"),
-        junit().replace("/>", "><error/></testcase>"),
-        junit().replace("/>", "><failure/></testcase>"),
-        junit(
-            f'<testcase classname="{lanes.NATIVE_CLASS}" name="{lanes.NATIVE_METHOD}"/>' * 2,
-            count=2,
-        ),
-        junit(
-            f'<testcase classname="{lanes.NATIVE_CLASS}" name="{lanes.NATIVE_METHOD}"/>' * 2,
-            count=1,
-        ),
-        junit().replace(lanes.NATIVE_METHOD, "wrong_method"),
-    ],
-)
-def test_bad_native_report_cannot_pass(tmp_path: Path, body: str) -> None:
-    report = tmp_path / "native.xml"
-    report.write_text(body)
-    with pytest.raises((ValueError, OSError)):
-        lanes.validate_native_report(report)
-
-
-def test_missing_native_report_cannot_pass(tmp_path: Path) -> None:
-    with pytest.raises(OSError):
-        lanes.validate_native_report(tmp_path / "missing.xml")
 
 
 @pytest.fixture
 def installed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, dict[str, str]]:
     root = tmp_path / "repo"
     frontend = root / "apps/alpha-web/frontend"
-    source = tmp_path / "stock-source"
-    (source / "rdagent").mkdir(parents=True)
-    runtime = tmp_path / "stock-runtime"
-    python = runtime / "venv/bin/python"
     for path in (
-        python,
-        runtime / "venv/pyvenv.cfg",
-        runtime / "dependencies.lock.txt",
         frontend / "node_modules/@playwright/test/cli.js",
         frontend / "node_modules/vite/bin/vite.js",
         frontend / "e2e/fixtures/riskMetricBasis.json",
@@ -108,7 +45,6 @@ def installed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, di
     ):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("synthetic presence metadata only")
-    python.chmod(0o700)
     (root / ".venv/bin/python").chmod(0o700)
     cache = tmp_path / "browsers"
     cache.mkdir()
@@ -124,43 +60,9 @@ def installed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, di
     monkeypatch.setattr(importlib.util, "find_spec", lambda name: object())
     monkeypatch.setattr(sys, "platform", "linux")
     return root, {
-        "ALPHA_RDAGENT_SOURCE": str(source),
-        "ALPHA_STOCK_PYTHON": str(python),
         "PLAYWRIGHT_BROWSERS_PATH": str(cache),
         "PATH": "/installed",
     }
-
-
-@pytest.mark.parametrize("key", ["ALPHA_RDAGENT_SOURCE", "ALPHA_STOCK_PYTHON"])
-@pytest.mark.parametrize("value", [None, "", " "])
-def test_one_missing_native_selector_fails_before_children(
-    installed: tuple[Path, dict[str, str]],
-    key: str,
-    value: str | None,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    root, env = installed
-    if value is None:
-        env.pop(key)
-    else:
-        env[key] = value
-    monkeypatch.setattr(lanes, "run_child", lambda *args: pytest.fail("must not start child"))
-    with pytest.raises(ValueError, match=key):
-        lanes.run(root, env, tmp_path)
-    summary = json.loads(next(tmp_path.glob("alpha-browser-lanes-*/summary.json")).read_text())
-    assert summary["status"] == "failed" and summary["completed_lanes"] == []
-
-
-@pytest.mark.parametrize("missing", ["venv/bin/python", "dependencies.lock.txt", "venv/pyvenv.cfg"])
-def test_missing_native_runtime_files(
-    installed: tuple[Path, dict[str, str]],
-    missing: str,
-) -> None:
-    root, env = installed
-    (Path(env["ALPHA_STOCK_PYTHON"]).parents[2] / missing).unlink()
-    with pytest.raises(ValueError, match="Required installed input"):
-        lanes.prerequisites(root, env)
 
 
 @pytest.mark.parametrize(
@@ -222,13 +124,10 @@ def test_non_linux_and_bad_browser_cache_fail(
         lanes.prerequisites(root, env)
 
 
-def test_preserve_native_lexical_selector_and_bind_current_source(
+def test_bind_current_source_and_strip_inherited_filters(
     installed: tuple[Path, dict[str, str]],
 ) -> None:
     root, env = installed
-    python = Path(env["ALPHA_STOCK_PYTHON"])
-    python.unlink()
-    python.symlink_to(Path(sys.executable))
     inherited = {
         **env,
         "PYTHONPATH": "/old/source",
@@ -237,8 +136,6 @@ def test_preserve_native_lexical_selector_and_bind_current_source(
         "C04_RISK_LIVE_ROOT": "/old/live",
     }
     actual = lanes.prerequisites(root, inherited)
-    assert actual["ALPHA_STOCK_PYTHON"] == str(python)
-    assert actual["ALPHA_RDAGENT_SOURCE"] == env["ALPHA_RDAGENT_SOURCE"]
     assert actual["PYTHONPATH"].split(os.pathsep)[:2] == [str(root), str(root / "scripts")]
     assert "/old/source" not in actual["PYTHONPATH"]
     assert actual["UV_NO_SYNC"] == "1" and actual["UV_OFFLINE"] == "1"
@@ -298,13 +195,12 @@ def stub_children(
     monkeypatch: pytest.MonkeyPatch,
     *,
     fail_at: int = -1,
-    native_body: str | None = None,
 ) -> list[tuple[list[str], Path, dict[str, str]]]:
     calls: list[tuple[list[str], Path, dict[str, str]]] = []
 
     def child(command: list[str], cwd: Path, env: dict[str, str], log: Path, root: Path) -> None:
         calls.append((command, cwd, env.copy()))
-        log.write_text("STUB ONLY: no browser or native execution\n")
+        log.write_text("STUB ONLY: no browser execution\n")
         if len(calls) == fail_at:
             raise RuntimeError("controlled child failure")
         if "PLAYWRIGHT_JSON_OUTPUT_FILE" in env:
@@ -326,18 +222,6 @@ def stub_children(
                     )
                 )
             )
-        if "pytest" in command:
-            evidence = Path(env["ALPHA_NATIVE_WEB_EVIDENCE"])
-            assert not evidence.exists()
-            assert lanes.NATIVE_NODE in command
-            report = Path(
-                next(arg.split("=", 1)[1] for arg in command if arg.startswith("--junitxml="))
-            )
-            assert not report.exists()
-            if native_body is not None:
-                report.write_text(native_body)
-            else:
-                report.write_text(junit())
 
     monkeypatch.setattr(lanes, "run_child", child)
     return calls
@@ -353,14 +237,15 @@ def test_fixed_routes_fresh_paths_raw_build_and_honest_aggregation(
     first = lanes.run(root, env, tmp_path)
     second = lanes.run(root, env, tmp_path)
     assert first != second
-    assert len(calls) == 20  # two prereqs, three listings, three browsers, build, native per run
-    for offset, directory in ((0, first), (10, second)):
-        current = calls[offset : offset + 10]
+    assert len(calls) == 16  # browser prereq, three listings, three browsers, build per run
+    for offset, directory in ((0, first), (8, second)):
+        current = calls[offset : offset + 8]
         summary = json.loads((directory / "summary.json").read_text())
         assert summary["status"] == "passed"
-        assert summary["completed_lanes"] == ["default", "risk-basis", "risk-live", "native"]
-        assert all("--list" in cmd for cmd, _, _ in current[2:5])
-        run_commands = [current[i][0] for i in (5, 6, 8)]
+        assert summary["completed_lanes"] == ["default", "risk-basis", "risk-live"]
+        assert "skipped_lanes" not in summary
+        assert all("--list" in cmd for cmd, _, _ in current[1:4])
+        run_commands = [current[i][0] for i in (4, 5, 7)]
         assert [Path(cmd[cmd.index("--config") + 1]).name for cmd in run_commands] == [
             "playwright.config.ts",
             "playwright.risk-basis.config.ts",
@@ -380,118 +265,14 @@ def test_fixed_routes_fresh_paths_raw_build_and_honest_aggregation(
         )
         outputs = [cmd[cmd.index("--output") + 1] for cmd in run_commands]
         assert len(set(outputs)) == 3 and all(str(directory) in p for p in outputs)
-        build = current[7][0]
+        build = current[6][0]
         assert build[-3:] == ["build", "--outDir", str(directory / "risk-live/spa")]
         assert "normalize-build" not in " ".join(build)
-        assert current[8][2]["C04_RISK_LIVE_ROOT"] == str(directory / "risk-live")
-        native = current[9]
-        assert native[0][1:5] == ["-m", "pytest", "-q", lanes.NATIVE_NODE]
-        assert native[2]["ALPHA_STOCK_PYTHON"] == env["ALPHA_STOCK_PYTHON"]
-        assert native[2]["ALPHA_RDAGENT_SOURCE"] == env["ALPHA_RDAGENT_SOURCE"]
-        assert native[2]["ALPHA_NATIVE_WEB_EVIDENCE"] == str(directory / "native/evidence")
-        assert "ALPHA_STOCK_RECEIPTS" not in native[2]
-
-
-def test_provisioned_native_is_not_reported_skipped(
-    installed: tuple[Path, dict[str, str]],
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    root, env = installed
-    stub_children(monkeypatch)
-    directory = lanes.run(root, env, tmp_path)
-    summary = json.loads((directory / "summary.json").read_text())
-    assert "skipped_lanes" not in summary
-    assert "native lane skipped" not in capsys.readouterr().out
-
-
-def unprovision(env: dict[str, str], value: str | None) -> dict[str, str]:
-    for key in lanes.NATIVE_SELECTORS:
-        if value is None:
-            env.pop(key)
-        else:
-            env[key] = value
-    return env
-
-
-@pytest.mark.parametrize("value", [None, "", " "])
-def test_unprovisioned_native_runs_asset_free_lanes_and_reports_skip(
-    installed: tuple[Path, dict[str, str]],
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-    value: str | None,
-) -> None:
-    root, env = installed
-    unprovision(env, value)
-    calls = stub_children(monkeypatch)
-    directory = lanes.run(root, env, tmp_path)
-    out = capsys.readouterr().out
-    assert out.count(lanes.NATIVE_SKIPPED) == 1
-    assert "native lane skipped: ALPHA_RDAGENT_SOURCE/ALPHA_STOCK_PYTHON not provisioned" in out
-    assert len(calls) == 8  # browser prereq, three listings, three browsers, risk-live build
-    assert not any("pytest" in cmd or "StockFixtureLaunch" in " ".join(cmd) for cmd, _, _ in calls)
-    run_commands = [cmd for cmd, _, _ in calls if "--output" in cmd]
-    assert [Path(cmd[cmd.index("--config") + 1]).name for cmd in run_commands] == [
-        "playwright.config.ts",
-        "playwright.risk-basis.config.ts",
-        "playwright.risk-live.config.ts",
-    ]
-    summary = json.loads((directory / "summary.json").read_text())
-    assert summary["status"] == "passed"
-    assert summary["completed_lanes"] == ["default", "risk-basis", "risk-live"]
-    assert summary["skipped_lanes"] == {"native": lanes.NATIVE_SKIPPED}
-    assert not (directory / "native").exists()
-
-
-def test_unprovisioned_native_skips_only_native_inputs(
-    installed: tuple[Path, dict[str, str]],
-) -> None:
-    root, env = installed
-    runtime = Path(env["ALPHA_STOCK_PYTHON"]).parents[2]
-    unprovision(env, None)
-    shutil.rmtree(runtime)
-    assert (
-        not {"ALPHA_RDAGENT_SOURCE", "ALPHA_STOCK_PYTHON"} & lanes.prerequisites(root, env).keys()
-    )
-    (root / "apps/alpha-web/frontend/node_modules/vite/bin/vite.js").unlink()
-    with pytest.raises(ValueError, match="Required installed input"):
-        lanes.prerequisites(root, env)
+        assert current[7][2]["C04_RISK_LIVE_ROOT"] == str(directory / "risk-live")
+        assert not any("pytest" in cmd for cmd, _, _ in current)
 
 
 @pytest.mark.parametrize("fail_at", range(1, 9))
-def test_unprovisioned_child_failure_prevents_aggregate_pass(
-    installed: tuple[Path, dict[str, str]],
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-    fail_at: int,
-) -> None:
-    root, env = installed
-    unprovision(env, "")
-    calls = stub_children(monkeypatch, fail_at=fail_at)
-    with pytest.raises(RuntimeError, match="controlled child failure"):
-        lanes.run(root, env, tmp_path)
-    assert len(calls) == fail_at
-    summary = json.loads(next(tmp_path.glob("alpha-browser-lanes-*/summary.json")).read_text())
-    assert summary["status"] == "failed" and "risk-live" not in summary["completed_lanes"]
-
-
-@pytest.mark.parametrize("bad", ["relative/source", "/missing/source"])
-def test_set_but_invalid_native_selector_still_fails(
-    installed: tuple[Path, dict[str, str]],
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-    bad: str,
-) -> None:
-    root, env = installed
-    env["ALPHA_RDAGENT_SOURCE"] = bad
-    monkeypatch.setattr(lanes, "run_child", lambda *args: pytest.fail("must not start child"))
-    with pytest.raises(ValueError, match="ALPHA_RDAGENT_SOURCE must name"):
-        lanes.run(root, env, tmp_path)
-
-
-@pytest.mark.parametrize("fail_at", range(1, 11))
 def test_every_child_failure_prevents_aggregate_pass(
     installed: tuple[Path, dict[str, str]],
     monkeypatch: pytest.MonkeyPatch,
@@ -504,21 +285,7 @@ def test_every_child_failure_prevents_aggregate_pass(
         lanes.run(root, env, tmp_path)
     assert len(calls) == fail_at
     summary = json.loads(next(tmp_path.glob("alpha-browser-lanes-*/summary.json")).read_text())
-    assert summary["status"] == "failed" and "native" not in summary["completed_lanes"]
-
-
-def test_skipped_native_exit_zero_is_not_success(
-    installed: tuple[Path, dict[str, str]],
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    root, env = installed
-    stub_children(monkeypatch, native_body=junit(skipped=1))
-    with pytest.raises(ValueError, match="exactly one"):
-        lanes.run(root, env, tmp_path)
-    summary = json.loads(next(tmp_path.glob("alpha-browser-lanes-*/summary.json")).read_text())
-    assert summary["status"] == "failed"
-    assert summary["completed_lanes"] == ["default", "risk-basis", "risk-live"]
+    assert summary["status"] == "failed" and "risk-live" not in summary["completed_lanes"]
 
 
 @pytest.mark.parametrize(
@@ -734,7 +501,7 @@ def test_reference_viewport_set_runs_one_viewport_and_reference_only_journeys(
     directory = lanes.run(root, env, tmp_path, "reference")
     summary = json.loads((directory / "summary.json").read_text())
     assert summary["status"] == "passed" and summary["viewports"] == "reference"
-    assert summary["completed_lanes"] == ["default", "risk-basis", "risk-live", "native"]
+    assert summary["completed_lanes"] == ["default", "risk-basis", "risk-live"]
     selection = ["--project", "chromium-reference", "--project", "chromium-reference-only"]
     defaults = 0
     for command, _, _ in calls:

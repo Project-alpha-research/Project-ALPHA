@@ -40,7 +40,7 @@ and `npm run build`. The build updates the existing production SPA under
 `src/alpha_web/static/app`; these are shared generated delivery outputs, not a new
 frontend or service. The app.py import/mount is unchanged from the API predecessor.
 
-The new public `tests/unit/test_native_result_web.py` accepts explicit existing
+The former browser driver (since removed) accepted explicit existing
 `ALPHA_RDAGENT_SOURCE`, `ALPHA_STOCK_PYTHON` and a fresh `ALPHA_NATIVE_WEB_EVIDENCE`
 directory. It creates one fresh disposable approved synthetic native job, executes
 the actual pinned upstream stock fixture and retains its owner receipt. Its dedicated

@@ -146,8 +146,8 @@ Moved to [web-frontend-charts.md](web-frontend-charts.md#generated-api-client).
 - Playwright specs live in `e2e/`. The default config starts its own real backend on port 8802
   (`ALPHA_PLAYWRIGHT_PORT`, never 8801) and refuses to reuse an unknown server. Its bars are labelled synthetic fixtures.
 - Keep real-backend journeys separate from API-mocked scenarios. Mocked tests do not prove provider or owner acceptance.
-- Three specs are excluded from default discovery and run only as their own lanes through
-  `scripts/run_frontend_browser_lanes.py`: `risk-metric-basis`, `risk-live`, `native-result-real`. Do not run them under
+- Two specs are excluded from default discovery and run only as their own lanes through
+  `scripts/run_frontend_browser_lanes.py`: `risk-metric-basis`, `risk-live`. Do not run them under
   the default config or add filters to the lane command.
 - Browser lanes run against a fresh build: `npm run build` before `npm run test:e2e:built` (the frontend gate's order).
   `--viewports reference` runs the default lane at the reference viewport only (pull-request CI, `gate.py component

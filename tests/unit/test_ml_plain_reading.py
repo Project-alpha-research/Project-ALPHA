@@ -28,9 +28,9 @@ def _manifest(**metrics: float | None) -> dict[str, object]:
     return {"metrics": {**METRICS, **metrics}, "n_oos_periods": 500, "starting_cash": 1_000_000.0}
 
 
-def test_the_reading_uses_the_rule_test_words() -> None:
+def test_the_reading_uses_the_no_chance_test_word() -> None:
     word, because = ml_glosses.reading_word(_manifest())
-    assert word == reading.NOT_CLEAR
+    assert word == ml_glosses.NO_CHANCE
     assert "random-data" in " ".join(because)
 
 

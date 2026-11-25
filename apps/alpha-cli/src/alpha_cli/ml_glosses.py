@@ -11,6 +11,8 @@ from typing import Any
 from alpha_cli.spine import reading
 
 NOT_RUN = "the returns did not vary"
+# A model run holds no random-data test, so with enough test days it never reads a rule-test word.
+NO_CHANCE = "no chance test run"
 
 
 def _value(metrics: Mapping[str, Any], key: str) -> float | None:
@@ -19,19 +21,21 @@ def _value(metrics: Mapping[str, Any], key: str) -> float | None:
 
 
 def reading_word(manifest: Mapping[str, Any]) -> tuple[str, list[str]]:
-    """The rule test's evidence word for a model run, and why.
+    """The word for a model run's evidence, and why.
 
-    A model run holds no random-data test and no Sharpe interval, and a missing one reads
-    "not clear of chance" (see `spine.reading.WORDS`). Few test days read "too little to read".
+    A model run replays one stored prediction: it holds no random-data test and no Sharpe
+    interval, so the rule-test words do not apply. Fewer than
+    `spine.reading.MIN_OOS_OBSERVATIONS` test days read "too little to read"; enough test days
+    read "no chance test run".
     """
     days = manifest.get("n_oos_periods")
     if isinstance(days, int) and days < reading.MIN_OOS_OBSERVATIONS:
         return reading.TOO_LITTLE, [
             f"{days} out-of-sample test days (fewer than {reading.MIN_OOS_OBSERVATIONS})."
         ]
-    return reading.NOT_CLEAR, [
+    return NO_CHANCE, [
         "A model run is replayed once, so it holds no random-data test and no Sharpe interval.",
-        "A missing one reads this way.",
+        "No chance test was run, so this is no chance test run, not a rule-test word.",
     ]
 
 

@@ -41,8 +41,10 @@ Kronos forecast composition (`alpha forecast ...`, `_forecast*` modules). Projec
   in `data_dir/ml_timing.json` for the next estimate.
 - A new model run stores the equal-weight basket line (`benchmark_comparison.parquet`, kind
   `equal_weight_basket_open_to_open_price_only`) and per-period costs (`gross_return`, `cost_return` in `equity_curve.parquet`).
-  Runs made before that say "made before ... run `alpha ml run` again". Its reading (`ml_glosses.py`) uses the rule-test
-  evidence words, says which returned more, and counts held-back bars per asset.
+  Runs made before that say "made before ... run `alpha ml run` again". Its reading (`ml_glosses.py`) says which returned more
+  and counts held-back bars per asset. A model run replays one stored prediction and holds no random-data test, so its
+  evidence word is "too little to read" under 100 test days and "no chance test run" at 100 or more; it never borrows a
+  rule-test word.
 
 ## Exchange contract
 

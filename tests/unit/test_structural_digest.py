@@ -35,6 +35,13 @@ from alpha_cli._structural_digest import (
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def _in_skipped_folder(parts: tuple[str, ...]) -> bool:
+    """True for tool caches and every virtualenv folder: .venv, .venv-rule-qualified, ..."""
+    return any(
+        part.startswith(".venv") or part in {"node_modules", "__pycache__"} for part in parts
+    )
+
+
 def _digest(source: str) -> str:
     return source_binding(textwrap.dedent(source).encode("utf-8"))[1]
 
@@ -675,7 +682,7 @@ def test_no_unreviewed_code_reads_docstrings_or_source_of_other_modules() -> Non
     for top in ("apps", "packages", "workers"):
         for path in (ROOT / top).rglob("*.py"):
             parts = path.relative_to(ROOT).parts
-            if any(part in {"tests", ".venv", "node_modules", "__pycache__"} for part in parts):
+            if "tests" in parts or _in_skipped_folder(parts):
                 continue
             text = path.read_text(errors="replace")
             if any(reader in text for reader in _READERS) or _COMMAND_WRAP.search(text):
@@ -746,7 +753,7 @@ def test_the_known_nodes_are_exactly_the_python_312_parse_nodes() -> None:
     seen: set[str] = set()
     for top in ("apps", "packages", "workers", "scripts", "tests"):
         for path in (ROOT / top).rglob("*.py"):
-            if ".venv" in path.parts or "node_modules" in path.parts:
+            if _in_skipped_folder(path.parts):
                 continue
             try:
                 tree = ast.parse(path.read_bytes())

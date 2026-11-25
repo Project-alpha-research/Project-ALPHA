@@ -75,6 +75,12 @@ def _error(exc: ValueError | OSError | DataError, json_out: bool) -> None:
     )
 
 
+_BENCHMARKS = {
+    "rule_test": "buy-and-hold, full history",
+    "ml_run": "equal-weight basket, scored days",
+}
+
+
 def _when(stamp: object) -> str:
     """``YYYY-MM-DD HH:MM`` from a stored ISO time; anything else is shown as stored."""
     text = str(stamp)
@@ -165,7 +171,8 @@ def list_results(
                 "symbol",
                 "reading",
                 "OOS Sharpe",
-                "buy-and-hold Sharpe",
+                "benchmark Sharpe",
+                "benchmark (period)",
                 "labels",
                 "run",
                 "idea",
@@ -179,7 +186,9 @@ def list_results(
                     if key == "recorded_at"
                     else row[key]
                     for key in row
-                ]
+                ][:8]
+                + [_BENCHMARKS.get(str(row["kind"]))]
+                + [row[key] for key in list(row)[8:]]
                 for row, found in zip(items, selected, strict=True)
             ],
         )

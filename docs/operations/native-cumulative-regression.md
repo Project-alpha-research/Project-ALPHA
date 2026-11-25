@@ -64,20 +64,16 @@ implementation fingerprints and compatible installed dependencies. Record actual
 names/versions against the saved284-package worker inventory; do not inspect credentials.
 
 Supply ALPHA_RDAGENT_SOURCE (the existing exact pinned upstream source),
-ALPHA_STOCK_PYTHON (its installed venv/bin/python), ALPHA_STOCK_RECEIPTS (a fresh existing
-output root), and ALPHA_NATIVE_WEB_EVIDENCE (a separate directory that does not yet exist).
-Use a disposable HOME and existing installed browser cache metadata. Run the exact nine
-filenames above, together, through the documented Linux descendant owner:
+ALPHA_STOCK_PYTHON (its installed venv/bin/python), and ALPHA_STOCK_RECEIPTS (a fresh
+existing output root). Use a disposable HOME. Run the exact eight filenames above,
+together, through the documented Linux descendant owner:
 
     <controller-python> scripts/run_owned_test.py --timeout 900 -- \
-      <controller-python> -m pytest -q <the nine explicit filenames> --junitxml=<new-file>
+      <controller-python> -m pytest -q <the eight explicit filenames> --junitxml=<new-file>
 
 No root test discovery, protected support processing or private holdout is authorized by
-this selection. The real browser test uses its dedicated fixture/config, not the default
-Playwright seeder. It serves the existing built production SPA through actual loopback
-Uvicorn, exercises actual synthetic owner receipt recovery and controlled failures,
-and denies provider egress/credential access/store writes. No real inference or market
-input is used. Artifact roots stay separate for repeated qualification attempts.
+this selection. No real inference or market input is used. Artifact roots stay separate
+for repeated qualification attempts.
 
 Cumulative lint/format covers all changed Python source and these tests/helper. Cumulative
 strict typing covers all changed canonical apps/tests paths; full gate typing remains

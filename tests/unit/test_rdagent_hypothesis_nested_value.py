@@ -33,7 +33,7 @@ def check_target(text: str, target: Any) -> None:
     MODEL["checked"].append(target)
 
 
-def make_backend() -> type:
+def make_backend() -> type[Any]:
     class APIBackend:
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             pass

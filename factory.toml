@@ -38,6 +38,13 @@ fix_commands = [
   ["uv", "run", "ruff", "check", "--fix", "-q"],
 ]
 
+# Run on a new acceptance check file before the build team locks it. A locked check that fails
+# lint or types would fail the gate before any change, and nobody may edit a locked file.
+check_file_commands = [
+  ["uv", "run", "ruff", "check", "-q"],
+  ["uv", "run", "mypy"],
+]
+
 # A builder may change these only when the work order names the path with the owner's yes.
 [guarded_paths]
 "packages/alpha-research/src/" = "hash-bound source bytes (quant tier)"

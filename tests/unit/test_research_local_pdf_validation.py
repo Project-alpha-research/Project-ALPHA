@@ -12,7 +12,7 @@ from typing import cast
 import pytest
 from typer.testing import CliRunner
 
-from alpha_cli import local_pdf_cmds
+from alpha_cli import literature_call, local_pdf_cmds
 from alpha_cli.control_store import ControlStore
 from alpha_cli.main import app
 from alpha_core import DataError
@@ -49,7 +49,7 @@ def _page(text: str, number: int = 1) -> dict[str, object]:
 
 def test_valid_fixture_extraction_is_returned_unchanged() -> None:
     artifact = _extraction_artifact(DIGEST)
-    assert local_pdf_cmds._validated_extraction(artifact, source_sha256=DIGEST) is artifact
+    assert literature_call._validated_extraction(artifact, source_sha256=DIGEST) is artifact
 
 
 @pytest.mark.parametrize(
@@ -73,28 +73,28 @@ def test_extraction_metadata_and_page_text_fail_loud(
     artifact: dict[str, object], message: str
 ) -> None:
     with pytest.raises(DataError, match=message):
-        local_pdf_cmds._validated_extraction(artifact, source_sha256=DIGEST)
+        literature_call._validated_extraction(artifact, source_sha256=DIGEST)
 
 
 def test_extraction_identity_must_match_its_contents() -> None:
     artifact = {**_extraction_artifact(DIGEST), "extraction_id": "rx_" + "0" * 64}
     with pytest.raises(DataError, match="identity does not match its contents"):
-        local_pdf_cmds._validated_extraction(artifact, source_sha256=DIGEST)
+        literature_call._validated_extraction(artifact, source_sha256=DIGEST)
     malformed = {**_extraction_artifact(DIGEST), "extraction_id": "rx_short"}
     with pytest.raises(DataError, match="metadata is incomplete"):
-        local_pdf_cmds._validated_extraction(malformed, source_sha256=DIGEST)
+        literature_call._validated_extraction(malformed, source_sha256=DIGEST)
 
 
 def test_extraction_identity_ignores_only_the_artifact_digest() -> None:
     artifact = {**_extraction_artifact(DIGEST), "artifact_sha256": "e" * 64}
-    assert local_pdf_cmds._validated_extraction(artifact, source_sha256=DIGEST) is artifact
+    assert literature_call._validated_extraction(artifact, source_sha256=DIGEST) is artifact
 
 
 def test_tiny_file_is_not_a_pdf(tmp_path: Path) -> None:
     path = tmp_path / "tiny.pdf"
     path.write_bytes(b"%PDF")
     with pytest.raises(DataError, match="is not a PDF"):
-        local_pdf_cmds._read_owner_pdf(path)
+        literature_call._read_owner_pdf(path)
 
 
 def test_selected_path_removed_during_read_is_refused(
@@ -102,15 +102,15 @@ def test_selected_path_removed_during_read_is_refused(
 ) -> None:
     source = tmp_path / "owner-paper.pdf"
     source.write_bytes(PDF_BYTES)
-    original_reader = local_pdf_cmds._read_open_pdf
+    original_reader = literature_call._read_open_pdf
 
     def remove_then_read(fd: int, path: Path, before: os.stat_result) -> tuple[bytes, str]:
         path.unlink()
         return original_reader(fd, path, before)
 
-    monkeypatch.setattr(local_pdf_cmds, "_read_open_pdf", remove_then_read)
+    monkeypatch.setattr(literature_call, "_read_open_pdf", remove_then_read)
     with pytest.raises(DataError, match="path changed during import"):
-        local_pdf_cmds._read_owner_pdf(source)
+        literature_call._read_owner_pdf(source)
 
 
 @pytest.mark.parametrize("title", ["", "   ", "x" * 501, "bad\x00title"])

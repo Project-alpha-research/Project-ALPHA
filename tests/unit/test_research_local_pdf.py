@@ -13,7 +13,7 @@ from typing import cast
 import pytest
 from typer.testing import CliRunner
 
-from alpha_cli import local_pdf_cmds
+from alpha_cli import literature_call, local_pdf_cmds
 from alpha_cli.control_store import ControlStore
 from alpha_cli.main import app
 from alpha_core import DataError
@@ -279,16 +279,16 @@ def test_local_pdf_import_rejects_missing_non_regular_and_wrong_file_types(
     elif kind == "wrong_type":
         path.write_bytes(b"plain text, not a PDF")
     with pytest.raises(DataError):
-        local_pdf_cmds._read_owner_pdf(path)
+        literature_call._read_owner_pdf(path)
 
 
 _FIFO_PROBE = """
 import sys
 from pathlib import Path
-from alpha_cli import local_pdf_cmds
+from alpha_cli import literature_call
 from alpha_core import DataError
 try:
-    local_pdf_cmds._read_owner_pdf(Path(sys.argv[1]))
+    literature_call._read_owner_pdf(Path(sys.argv[1]))
 except DataError as exc:
     print(exc)
 """
@@ -315,28 +315,28 @@ def test_local_pdf_import_rejects_final_symlinks(tmp_path: Path) -> None:
     link = tmp_path / "link.pdf"
     link.symlink_to(target)
     with pytest.raises(DataError, match="non-symlink"):
-        local_pdf_cmds._read_owner_pdf(link)
+        literature_call._read_owner_pdf(link)
 
 
 def test_local_pdf_import_accepts_exact_byte_limit_and_rejects_oversize_before_read(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     boundary = tmp_path / "boundary.pdf"
-    boundary.write_bytes(b"%PDF-" + b" " * (local_pdf_cmds._MAX_PDF_BYTES - 5))
-    raw, digest = local_pdf_cmds._read_owner_pdf(boundary)
-    assert len(raw) == local_pdf_cmds._MAX_PDF_BYTES
+    boundary.write_bytes(b"%PDF-" + b" " * (literature_call._MAX_PDF_BYTES - 5))
+    raw, digest = literature_call._read_owner_pdf(boundary)
+    assert len(raw) == literature_call._MAX_PDF_BYTES
     assert digest == hashlib.sha256(raw).hexdigest()
 
     oversized = tmp_path / "oversized.pdf"
     with oversized.open("wb") as stream:
-        stream.truncate(local_pdf_cmds._MAX_PDF_BYTES + 1)
+        stream.truncate(literature_call._MAX_PDF_BYTES + 1)
     monkeypatch.setattr(
         os,
         "read",
         lambda *_args: pytest.fail("oversized input was read before its stat-size check"),
     )
     with pytest.raises(DataError, match="10 MiB"):
-        local_pdf_cmds._read_owner_pdf(oversized)
+        literature_call._read_owner_pdf(oversized)
 
 
 def test_local_pdf_import_fails_if_selected_path_is_replaced_during_read(
@@ -346,15 +346,15 @@ def test_local_pdf_import_fails_if_selected_path_is_replaced_during_read(
     replacement = tmp_path / "replacement.pdf"
     source.write_bytes(PDF_BYTES)
     replacement.write_bytes(b"%PDF-1.4\nreplacement\n")
-    original_reader = local_pdf_cmds._read_open_pdf
+    original_reader = literature_call._read_open_pdf
 
     def replace_before_read(fd: int, path: Path, before: os.stat_result) -> tuple[bytes, str]:
         os.replace(replacement, path)
         return original_reader(fd, path, before)
 
-    monkeypatch.setattr(local_pdf_cmds, "_read_open_pdf", replace_before_read)
+    monkeypatch.setattr(literature_call, "_read_open_pdf", replace_before_read)
     with pytest.raises(DataError, match="changed during import"):
-        local_pdf_cmds._read_owner_pdf(source)
+        literature_call._read_owner_pdf(source)
 
 
 @pytest.mark.parametrize("status", ["parser_failed", "encrypted", "image_only", "truncated"])

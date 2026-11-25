@@ -5,14 +5,10 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-import os
 import platform
-import resource
-import shutil
 import sys
-import tempfile
 from collections.abc import Iterator, Mapping
-from contextlib import ExitStack, contextmanager
+from contextlib import contextmanager
 from dataclasses import asdict
 from importlib.metadata import version
 from pathlib import Path
@@ -109,6 +105,7 @@ from alpha_cli.control_store import (
     ResearchResponsibility,
     research_case_revision,
 )
+from alpha_cli.literature_call import _run_literature_worker
 from alpha_cli.paper_resources import (
     build_paper_resource_resolutions,
     parse_paper_resources,
@@ -202,14 +199,6 @@ _crypto_empirical_dataset = load_crypto_empirical_dataset
 _crypto_empirical_d1 = load_crypto_empirical_d1
 
 
-def _apply_literature_worker_limits() -> None:
-    """Bound the isolated parser/fetch child before it executes any worker code."""
-    resource.setrlimit(resource.RLIMIT_CPU, (60, 60))
-    resource.setrlimit(resource.RLIMIT_AS, (1024 * 1024 * 1024, 1024 * 1024 * 1024))
-    resource.setrlimit(resource.RLIMIT_FSIZE, (32 * 1024 * 1024, 32 * 1024 * 1024))
-    resource.setrlimit(resource.RLIMIT_NOFILE, (64, 64))
-
-
 research_app = typer.Typer(help="Governed research cases, contracts, sources, and bounded runs.")
 sources_app = typer.Typer(help="Immutable research-source records and frozen source packs.")
 context_app = typer.Typer(help="Content-addressed Codex context packets; recording is visibility.")
@@ -228,73 +217,6 @@ research_app.add_typer(data_app, name="data")
 
 def _store() -> ControlStore:
     return ControlStore(AlphaSettings().data_dir)
-
-
-def _run_literature_worker(argv: list[str], *, timeout_seconds: int = 180) -> dict[str, object]:
-    """Run the isolated worker with no inherited credential or shell environment."""
-    import subprocess
-
-    worker_dir = Path(__file__).resolve().parents[4] / "workers" / "literature"
-    if not (worker_dir / "pyproject.toml").is_file():
-        raise DataError("literature worker is unavailable outside a checked-out repository")
-    worker_source = worker_dir / "src" / "literature_worker" / "__main__.py"
-    if not worker_source.is_file():
-        raise DataError("literature worker source is unavailable in the checkout")
-    uv_executable = shutil.which("uv")
-    if uv_executable is None or not Path(uv_executable).is_absolute():
-        raise DataError("the pinned literature worker runtime is unavailable")
-    child_env = {
-        "LANG": "C.UTF-8",
-        "LC_ALL": "C.UTF-8",
-        "PATH": os.defpath,
-        "PYTHONPATH": str(worker_dir / "src"),
-        "UV_NO_CONFIG": "1",
-        "UV_OFFLINE": "1",
-    }
-    with ExitStack() as cleanup:
-        configured_cache = os.environ.get("UV_CACHE_DIR")
-        if configured_cache is None:
-            cache_dir = cleanup.enter_context(
-                tempfile.TemporaryDirectory(prefix="alpha-literature-uv-cache-")
-            )
-        else:
-            cache_path = Path(configured_cache)
-            if (
-                not configured_cache
-                or "\x00" in configured_cache
-                or not cache_path.is_dir()
-                or not os.access(cache_path, os.W_OK | os.X_OK)
-            ):
-                raise DataError("configured UV_CACHE_DIR must be an existing writable directory")
-            cache_dir = configured_cache
-        child_env["UV_CACHE_DIR"] = str(cache_dir)
-        completed = subprocess.run(
-            [
-                uv_executable,
-                "run",
-                "--locked",
-                "--no-sync",
-                "--project",
-                str(worker_dir),
-                "python",
-                "-P",
-                "-m",
-                "literature_worker",
-                *argv,
-            ],
-            capture_output=True,
-            text=True,
-            timeout=timeout_seconds,
-            check=False,
-            env=child_env,
-            start_new_session=True,
-            preexec_fn=_apply_literature_worker_limits,
-        )
-    if completed.returncode != 0:
-        raise DataError(
-            completed.stderr.strip() or completed.stdout.strip() or "literature worker failed"
-        )
-    return _object(completed.stdout, "literature worker output")
 
 
 def _required_candidate_text(candidate: Mapping[str, object], field: str) -> str:

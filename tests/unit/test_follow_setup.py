@@ -33,13 +33,17 @@ def _run(home: Path, follow: str, last_bar: int) -> list[Any]:
     return follow_store.entries_of(home, follow)
 
 
-@pytest.fixture(scope="module")
-def world(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any]:
-    home = tmp_path_factory.mktemp("setup-follow")
+def _build(home: Path) -> dict[str, Any]:
     study = make_study(home)
     follow = _start(home, study["trade_id"])
     entries = _run(home, follow, 160)
     return {"home": home, "study": study, "follow": follow, "entries": entries}
+
+
+@pytest.fixture(scope="module")
+def world(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any]:
+    """Shared read-only state; a test that changes the followed state builds its own."""
+    return _build(tmp_path_factory.mktemp("setup-follow"))
 
 
 def test_start_keeps_the_study_labels_and_trial_identity(world: dict[str, Any]) -> None:
@@ -122,12 +126,13 @@ def test_paper_book_after_the_trade(world: dict[str, Any]) -> None:
     assert book["dividends_cum"] == 0.0
 
 
-def test_stop_and_the_refusals(world: dict[str, Any], tmp_path: Path) -> None:
-    follow_store.stop_follow(
-        world["home"], world["follow"], reason="done", clock=lambda: clock_after(161)
-    )
+def test_stop_and_the_refusals(tmp_path: Path) -> None:
+    own = tmp_path / "own"
+    own.mkdir()
+    mine = _build(own)
+    follow_store.stop_follow(own, mine["follow"], reason="done", clock=lambda: clock_after(161))
     with pytest.raises(SpineError) as stopped:
-        follow_update.update_follow(world["home"], world["follow"], clock=lambda: clock_after(162))
+        follow_update.update_follow(own, mine["follow"], clock=lambda: clock_after(162))
     assert stopped.value.payload["code"] == "FOLLOW_STOPPED"
     other = tmp_path / "short"
     other.mkdir()
@@ -138,11 +143,12 @@ def test_stop_and_the_refusals(world: dict[str, Any], tmp_path: Path) -> None:
     assert "long only" in str(refused.value)
 
 
-def test_today_shows_a_setup_follow_with_its_exits_in_plain_words(world: dict[str, Any]) -> None:
+def test_today_shows_a_setup_follow_with_its_exits_in_plain_words(tmp_path: Path) -> None:
     from alpha_cli import follow_today
 
-    home = world["home"]
-    fresh = follow_source.setup_trade_source(home, world["study"]["trade_id"], "SPY")
+    home = tmp_path
+    study = make_study(home)
+    fresh = follow_source.setup_trade_source(home, study["trade_id"], "SPY")
     facts = follow_store.start_follow(home, fresh, card="", size_pct=20.0, clock=lambda: START)
     view = follow_today.build(home, clock_after(START_BAR))
     row = next(r for r in view["rows"] if r["follow_id"] == facts["follow_id"])

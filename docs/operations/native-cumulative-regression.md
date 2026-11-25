@@ -48,7 +48,6 @@ and full installed-runtime qualification remain distinct from those execution re
 - tests/unit/test_native_stock_result.py
 - tests/unit/test_native_stock_operator_cli.py
 - tests/unit/test_native_result_api.py
-- tests/unit/test_native_result_web.py
 
 The new _native_stock_test_support.py is imported by these tests, not a replacement
 loop or another test runner. All57retained methods and272existing unittest assertions

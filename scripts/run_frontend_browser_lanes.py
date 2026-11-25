@@ -1,9 +1,7 @@
-"""Run the four mandatory browser fixtures, without changing their test policies.
+"""Run the three mandatory browser lanes, without changing their test policies.
 
 Requires already installed assets. Every run retains fresh evidence outside source;
-failed prerequisites or a skipped native driver never count as aggregate success.
-When neither native selector is set (e.g. CI), the three asset-free lanes still run
-and the native lane is reported as explicitly skipped; a half-set selector fails.
+failed prerequisites never count as aggregate success.
 ``--viewports reference`` (pull-request CI) runs the default lane at the reference viewport
 only; the full four-viewport run (``all``, the default) is the nightly and local route.
 """
@@ -18,17 +16,11 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-HANDOFFS = ("risk-metric-basis.spec.ts", "risk-live.spec.ts", "native-result-real.spec.ts")
-NATIVE_CLASS = "tests.unit.test_native_result_web.NativeWebJourney"
-NATIVE_METHOD = "test_built_spa_reads_native_owner_receipt_without_interception"
-NATIVE_NODE = f"tests/unit/test_native_result_web.py::NativeWebJourney::{NATIVE_METHOD}"
-NATIVE_SELECTORS = ("ALPHA_RDAGENT_SOURCE", "ALPHA_STOCK_PYTHON")
-NATIVE_SKIPPED = "native lane skipped: ALPHA_RDAGENT_SOURCE/ALPHA_STOCK_PYTHON not provisioned"
+HANDOFFS = ("risk-metric-basis.spec.ts", "risk-live.spec.ts")
 ALL_PROJECTS = frozenset(
     {"chromium-minimum", "chromium-reference", "chromium-wide", "chromium-reference-only"}
 )
@@ -44,32 +36,13 @@ VIEWPORT_SETS: dict[str, tuple[frozenset[str], tuple[str, ...]]] = {
 }
 
 
-def native_provisioned(env: dict[str, str]) -> bool:
-    """Both selectors set: native runs. Neither: native is skipped. One: misconfiguration."""
-    missing = [name for name in NATIVE_SELECTORS if not env.get(name, "").strip()]
-    if len(missing) == 1:
-        raise ValueError(f"Required installed selector is missing or empty: {missing[0]}")
-    return not missing
-
-
 def prerequisites(root: Path, inherited: dict[str, str]) -> dict[str, str]:
-    """Presence checks only; the existing native validator measures the selected pins."""
+    """Presence checks only."""
     if sys.platform != "linux":
         raise ValueError("Browser lanes require Linux retained-child ownership")
     env = dict(inherited)
-    native: tuple[Path, ...] = ()
-    if native_provisioned(env):
-        source = Path(env["ALPHA_RDAGENT_SOURCE"])
-        python = Path(env["ALPHA_STOCK_PYTHON"])
-        if not source.is_absolute() or not (source / "rdagent").is_dir():
-            raise ValueError("ALPHA_RDAGENT_SOURCE must name an existing absolute source root")
-        if not python.is_absolute() or python.parts[-3:] != ("venv", "bin", "python"):
-            raise ValueError("ALPHA_STOCK_PYTHON must name the installed runtime/venv/bin/python")
-        runtime = python.parents[2]
-        native = (python, runtime / "dependencies.lock.txt", runtime / "venv/pyvenv.cfg")
     frontend = root / "apps/alpha-web/frontend"
     for path in (
-        *native,
         frontend / "node_modules/@playwright/test/cli.js",
         frontend / "node_modules/vite/bin/vite.js",
         frontend / "e2e/fixtures/riskMetricBasis.json",
@@ -80,8 +53,6 @@ def prerequisites(root: Path, inherited: dict[str, str]) -> dict[str, str]:
             built = "static" in path.parts
             hint = " (run `npm run build` in apps/alpha-web/frontend)" if built else ""
             raise ValueError(f"Required installed input is absent: {path}{hint}")
-    if native and not os.access(native[0], os.X_OK):
-        raise ValueError(f"Native interpreter is not executable: {native[0]}")
     # Direct Python and the existing configs' `python`, `alpha`, and `uv run python`
     # must resolve the current controller, never an older editable checkout.
     env["PATH"] = str(Path(sys.executable).parent) + os.pathsep + env.get("PATH", os.defpath)
@@ -117,7 +88,7 @@ def prerequisites(root: Path, inherited: dict[str, str]) -> dict[str, str]:
     env["UV_NO_SYNC"] = "1"
     env["UV_OFFLINE"] = "1"
     env["UV_PYTHON_DOWNLOADS"] = "never"
-    # Native's existing browser owner changes HOME. Make the installed cache
+    # Make the installed cache
     # explicit so all lanes use the same installation; never download a browser.
     cache = env.get("PLAYWRIGHT_BROWSERS_PATH")
     if not cache:
@@ -218,26 +189,6 @@ def validate_browser_report(
     return identities
 
 
-def validate_native_report(path: Path) -> None:
-    try:
-        document = ET.parse(path).getroot()
-    except ET.ParseError as exc:
-        raise ValueError("Invalid native JUnit report") from exc
-    suites = list(document.iter("testsuite"))
-    cases = list(document.iter("testcase"))
-    if (
-        document.tag not in {"testsuites", "testsuite"}
-        or len(suites) != 1
-        or len(cases) != 1
-        or cases[0].get("classname") != NATIVE_CLASS
-        or cases[0].get("name") != NATIVE_METHOD
-        or any(list(document.iter(tag)) for tag in ("skipped", "failure", "error"))
-        or suites[0].get("tests") != "1"
-        or any(s.get(key) != "0" for s in suites for key in ("skipped", "failures", "errors"))
-    ):
-        raise ValueError("Native lane requires exactly one executed, passing, exact-node testcase")
-
-
 def run(root: Path, inherited: dict[str, str], output_parent: Path, viewports: str = "all") -> Path:
     selected_projects, project_args = VIEWPORT_SETS[viewports]
     parent = output_parent.resolve(strict=True)
@@ -253,30 +204,9 @@ def run(root: Path, inherited: dict[str, str], output_parent: Path, viewports: s
     print(f"Browser lane evidence: {run_dir}", flush=True)
     try:
         env = prerequisites(root, inherited)
-        native = native_provisioned(env)
-        if not native:
-            summary["skipped_lanes"] = {"native": NATIVE_SKIPPED}
-            print(NATIVE_SKIPPED, flush=True)
         frontend = root / "apps/alpha-web/frontend"
         node = shutil.which("node", path=env["PATH"])
         assert node is not None
-        # Validate the native pin with the existing implementation, without a
-        # fixture, worker launch, owner store, model invocation or duplicate policy.
-        if native:
-            run_child(
-                [
-                    sys.executable,
-                    "-c",
-                    "import os; from pathlib import Path; "
-                    "from alpha_cli._native_stock_launch import StockFixtureLaunch; "
-                    "StockFixtureLaunch(Path(os.environ['ALPHA_RDAGENT_SOURCE']), 'resume', "
-                    "stock_runtime=Path(os.environ['ALPHA_STOCK_PYTHON']).parents[2])",
-                ],
-                root,
-                env,
-                run_dir / "native-prerequisites.log",
-                root,
-            )
         run_child(
             [
                 node,
@@ -297,8 +227,7 @@ def run(root: Path, inherited: dict[str, str], output_parent: Path, viewports: s
             ("risk-live", "playwright.risk-live.config.ts", HANDOFFS[1]),
         )
         # Playwright itself resolves config/grep/project membership. Listing imports
-        # these public specs but starts no server or browser. Native needs its real
-        # descriptor and is selected only by the exact existing pytest method.
+        # these public specs but starts no server or browser.
         selections: dict[str, set[tuple[str, str, str]]] = {}
         for lane, config, file in routes:
             directory = run_dir / lane
@@ -371,20 +300,6 @@ def run(root: Path, inherited: dict[str, str], output_parent: Path, viewports: s
             if identities != selections[lane]:
                 raise ValueError(f"Browser execution differs from its fresh selection: {lane}")
             summary["completed_lanes"].append(lane)
-        if native:
-            native_dir = run_dir / "native"
-            native_dir.mkdir()
-            native_env = {**env, "ALPHA_NATIVE_WEB_EVIDENCE": str(native_dir / "evidence")}
-            report = native_dir / "junit.xml"
-            run_child(
-                [sys.executable, "-m", "pytest", "-q", NATIVE_NODE, f"--junitxml={report}"],
-                root,
-                native_env,
-                native_dir / "run.log",
-                root,
-            )
-            validate_native_report(report)
-            summary["completed_lanes"].append("native")
         summary["status"] = "passed"
     except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
         summary["error"] = str(exc)

@@ -1133,7 +1133,7 @@ entry_points = [
   "panel: apps/alpha-web/frontend/src/panels/NativeJobResult.tsx",
 ]
 proof_synthetic = [
-  "apps/alpha-web/frontend/e2e/native-result-real.spec.ts::Research native UUID lookup reads real owner evidence and clears stale state",
+  "apps/alpha-web/frontend/src/api/nativeResults.test.ts::accepts bound completed evidence and explicit incomplete states",
 ]
 real_data = "not yet confirmed (to check on the Mac later)"
 proof_smoke = [

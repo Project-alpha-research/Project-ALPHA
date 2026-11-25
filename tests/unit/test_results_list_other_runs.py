@@ -154,7 +154,7 @@ def test_every_kind_is_in_the_default_list_with_a_reading(home: Path) -> None:
         assert row["evidence"] and row["evidence"] != "recorded without a reading"
     assert by_run[ML]["oos_sharpe"] == pytest.approx(0.8125, rel=1e-9, abs=1e-12)
     assert by_run[ML]["benchmark_sharpe"] is not None
-    assert by_run[ML]["evidence"] == "not clear of chance"
+    assert by_run[ML]["evidence"] == "no chance test run"
     assert "all 8 simulated paths" not in str(by_run[MC]["evidence"]) or "too few" in str(
         by_run[MC]["evidence"]
     )

@@ -809,15 +809,23 @@ class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
         if not FAMILY_REFUSALS:
             AlphaFactorHypothesisGen._ledger_snapshot = None
         # The upstream proposer asks for dict[str, str]; a nested value arrives as JSON text.
-        proposal = sys.modules.get("rdagent.scenarios.qlib.proposal.factor_proposal")
-        if proposal is None:
-            return super().gen(trace, plan)
-        upstream = proposal.APIBackend
-        proposal.APIBackend = text_field_backend(upstream)
+        # Upstream gen is defined in rdagent.components.proposal and reads APIBackend there.
+        modules = [
+            module
+            for name in (
+                "rdagent.components.proposal",
+                "rdagent.scenarios.qlib.proposal.factor_proposal",
+            )
+            if (module := sys.modules.get(name)) is not None and hasattr(module, "APIBackend")
+        ]
+        upstreams = [module.APIBackend for module in modules]
+        for module, upstream in zip(modules, upstreams, strict=True):
+            module.APIBackend = text_field_backend(upstream)
         try:
             return super().gen(trace, plan)
         finally:
-            proposal.APIBackend = upstream
+            for module, upstream in zip(modules, upstreams, strict=True):
+                module.APIBackend = upstream
 
     @classmethod
     def ledger_rows(cls, name: str | None) -> list[dict[str, Any]] | None:

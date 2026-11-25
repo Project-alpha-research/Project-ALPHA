@@ -118,8 +118,7 @@ def kronos_monte_carlo_calibration(ctx: BuildContext) -> FigureSpec:
             f"Mean Kronos CRPS is {sum(crps) / len(crps):.4f} versus random-walk "
             f"{sum(crps_rw) / len(crps_rw):.4f} and bootstrap "
             f"{sum(crps_bootstrap) / len(crps_bootstrap):.4f}; realised 80% coverage is "
-            f"{pct(realised[1])} across {frame.height:,} rolling origins and "
-            f"{_mc_path_count(ctx):,} synthetic full-engine paths."
+            f"{pct(realised[1])} across {frame.height:,} rolling origins."
         ),
         panels=(
             Panel(

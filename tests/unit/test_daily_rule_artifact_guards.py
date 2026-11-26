@@ -10,14 +10,12 @@ import copy
 import hashlib
 import json
 import os
-import shutil
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from alpha_cli import daily_rule_report
 from alpha_cli._native_daily_rule_artifacts import (
     publish_daily_rule_run,
     read_json_artifact,
@@ -28,7 +26,6 @@ from alpha_cli._native_daily_rule_artifacts import (
 )
 from alpha_cli._native_daily_rule_protocol import canonical, sha
 from alpha_cli._native_loop_admission import SOURCE_SHA256, WORKER, WORKER_FILES
-from alpha_cli.artifact_contract import artifact_metadata
 from alpha_core import DataError
 from tests.unit.test_native_daily_rule_artifacts import make_daily_fixture
 
@@ -310,17 +307,6 @@ def test_actual_accounting_rejects_independent_chronological_and_unit_mutations(
         validate_daily_economics(study, value)
 
 
-@pytest.mark.parametrize("payload", [b"{", b"[]", b'{"equity":NaN}'])
-def test_report_json_rejects_malformed_nonobject_or_nonfinite_payload(
-    tmp_path: Path,
-    payload: bytes,
-) -> None:
-    path = tmp_path / "receipt.json"
-    path.write_bytes(payload)
-    with pytest.raises(DataError):
-        daily_rule_report._json(path)
-
-
 def test_artifact_read_limits_and_symlinks_are_checked_without_loading_oversized_content(
     tmp_path: Path,
 ) -> None:
@@ -339,111 +325,3 @@ def test_artifact_read_limits_and_symlinks_are_checked_without_loading_oversized
     assert not same_artifact(link, b"{")
     with pytest.raises(DataError, match="unsafe"):
         read_json_artifact(link, maximum_bytes=11)
-    with pytest.raises(DataError, match="unavailable"):
-        daily_rule_report._json(link)
-    with path.open("wb") as stream:
-        stream.truncate(32 * 1024 * 1024 + 1)
-    with pytest.raises(DataError, match="bound"):
-        daily_rule_report._json(path)
-
-
-@pytest.mark.parametrize(
-    "field,value,message",
-    [
-        ("project_id", None, "project identity"),
-        ("research_fingerprints", {}, "source fingerprint"),
-        ("schema_version", 2, "versioned immutable"),
-    ],
-)
-def test_report_rejects_missing_identity_before_artifact_verification(
-    tmp_path: Path,
-    field: str,
-    value: object,
-    message: str,
-) -> None:
-    run_id = "a" * 16
-    path = tmp_path / "runs" / run_id
-    path.mkdir(parents=True)
-    manifest = {
-        "command": "research_daily_rule_native_v1",
-        "project_id": "fixture",
-        "research_fingerprints": {"code": "b" * 64},
-        "schema_version": 3,
-    }
-    manifest[field] = value
-    (path / "manifest.json").write_text(json.dumps(manifest))
-    with pytest.raises(DataError, match=message):
-        daily_rule_report._run(tmp_path, run_id)
-
-
-@pytest.mark.parametrize(
-    "role,limit,offset",
-    [
-        ("unknown", 10, 0),
-        ("baseline", True, 0),
-        ("control", 1001, 0),
-        ("baseline", 10, True),
-        ("control", 10, -1),
-        ("baseline", 10, 100001),
-    ],
-)
-def test_report_rejects_invalid_paging_before_any_run_read(
-    tmp_path: Path,
-    role: str,
-    limit: int,
-    offset: int,
-) -> None:
-    with pytest.raises(DataError, match="role|limit|offset"):
-        daily_rule_report.daily_rule_evidence(
-            "missing", data_dir=tmp_path, role=role, limit=limit, offset=offset
-        )
-
-
-@pytest.mark.parametrize("defect", ["selectors", "study", "query", "economics", "lineage"])
-def test_report_rejects_semantically_rehashed_evidence(
-    tmp_path: Path,
-    artificial_evidence: Fixture,
-    defect: str,
-) -> None:
-    original, _, _, _, parent_manifest = artificial_evidence
-    root = tmp_path / "copied"
-    shutil.copytree(original, root)
-    parent = root / "runs" / parent_manifest["run_id"]
-    file = {
-        "selectors": "projections.json",
-        "study": "study.json",
-        "query": "query.json",
-        "economics": "economics.json",
-        "lineage": "projections.json",
-    }[defect]
-    if defect == "lineage":
-        selectors = json.loads((parent / "projections.json").read_text())
-        projection = root / "runs" / selectors["roles"]["baseline"]["run_id"]
-        path = projection / "lineage.json"
-        value = json.loads(path.read_text())
-        value["crypto_snapshot_id"] = "9" * 64
-        path.write_text(canonical(value))
-        projection_manifest = json.loads((projection / "manifest.json").read_text())
-        projection_manifest["artifacts"][path.name] = artifact_metadata(path)
-        (projection / "manifest.json").write_text(json.dumps(projection_manifest))
-        selectors["roles"]["baseline"]["manifest_sha256"] = hashlib.sha256(
-            (projection / "manifest.json").read_bytes()
-        ).hexdigest()
-        value, path = selectors, parent / "projections.json"
-    else:
-        path = parent / file
-        value = json.loads(path.read_text())
-        if defect == "selectors":
-            value["parent_run_id"] = "1" * 16
-        elif defect == "study":
-            value["authority"] = "promoted"
-        elif defect == "query":
-            value["rows"][0]["close"] += 1
-        else:
-            value["baseline"]["equity_curve"][-1][1] += 1
-    path.write_text(canonical(value))
-    updated = json.loads((parent / "manifest.json").read_text())
-    updated["artifacts"][path.name] = artifact_metadata(path)
-    (parent / "manifest.json").write_text(json.dumps(updated))
-    with pytest.raises(DataError):
-        daily_rule_report.daily_rule_evidence(parent_manifest["run_id"], data_dir=root)

@@ -5,10 +5,7 @@ Searches every run-type directory (``runs/`` gauntlet + backtest runs, ``portfol
 whatever the manifest contains. The manifest is self-sufficient, so this never loads data or touches
 the backtest engine.
 
-``--json`` prints the same run as JSON: the stored manifest, artifact-verified and verbatim, or for
-a daily-rule study run its bounded ``DailyRuleEvidenceV1`` report. ``--daily-rule-evidence``
-always prints ``DailyRuleEvidenceV1`` (``available: false`` for any other run); the web
-daily-study endpoint uses it.
+``--json`` prints the same run as JSON: the stored manifest, artifact-verified and verbatim.
 """
 
 from __future__ import annotations
@@ -33,10 +30,6 @@ from alpha_cli.spine.report_readings import (
 )
 from alpha_cli.spine.reserve import describe
 from alpha_core.config import AlphaSettings
-
-_DAILY_RULE_COMMANDS = frozenset(
-    {"research_daily_rule_native_v1", "research_daily_rule_projection_v1"}
-)
 
 
 def _block_value(value: object) -> object:
@@ -88,93 +81,18 @@ def _echo_reading(manifest: dict[str, Any], plain: bool) -> None:
         typer.echo(text)
 
 
-def _echo_daily_rule(run_id: str, data_dir: Path) -> None:
-    """Print the stored claim, outcome and per-role result of a daily rule run."""
-    from alpha_cli.daily_rule_report import daily_rule_evidence
-
-    evidence = daily_rule_evidence(run_id, data_dir=data_dir)
-    typer.echo(f"claim: {evidence['claim_scope']} / {evidence['data_origin']}")
-    typer.echo(f"outcome: {evidence['outcome']}")
-    for role, result in evidence["roles"].items():
-        typer.echo(
-            f"{role}: run={result['run_id']} net_pnl={_fmt(result['net_pnl'])} "
-            f"final_equity={_fmt(result['final_equity'])} "
-            f"observed_fees={_fmt(result['fees_total'])} fills={result['fills']} "
-            f"closed_trades={result['n_trades']}"
-        )
-        terminal = result.get("terminal")
-        if not isinstance(terminal, dict):
-            typer.echo("  Terminal valuation not recorded.")
-            continue
-        basis = (
-            "last admitted opening quote"
-            if terminal.get("valuation_basis") == "last_admitted_open_quote"
-            else "valuation basis not recorded"
-        )
-        typer.echo(
-            f"  {basis} {terminal.get('opening_quote_at') or 'not recorded'}; "
-            f"valuation event {terminal.get('valuation_at') or 'not recorded'} "
-            "(simulation ordering)."
-        )
-        typer.echo(
-            "  No forced liquidation."
-            if terminal.get("terminal_liquidation") is False
-            else "  Liquidation policy not recorded."
-        )
-        decision_at = terminal.get("final_decision_at")
-        if (
-            terminal.get("terminal_decision") == "unfilled_without_next_admitted_quote"
-            and decision_at
-        ):
-            typer.echo(
-                f"  Final decision {decision_at}: no next admitted quote recorded; "
-                "no fill inferred."
-            )
-        else:
-            typer.echo("  Final decision not recorded.")
-
-
 def report(
     run_id: str,
     json_out: Annotated[bool, typer.Option("--json")] = False,
-    daily_rule_evidence_out: Annotated[
-        bool,
-        typer.Option(
-            "--daily-rule-evidence",
-            help="Print the daily-rule evidence report (DailyRuleEvidenceV1) as JSON; "
-            "unavailable for any other run.",
-        ),
-    ] = False,
-    role: str = "baseline",
-    limit: int = 100,
-    offset: int = 0,
 ) -> None:
     """Print a plain summary of the stored result for RUN_ID (any run type)."""
     settings = AlphaSettings()
-    if daily_rule_evidence_out:
-        from alpha_cli.daily_rule_report import daily_rule_evidence
-
-        _echo_json(
-            daily_rule_evidence(
-                run_id, data_dir=settings.data_dir, role=role, limit=limit, offset=offset
-            )
-        )
-        return
     manifest = _find_manifest(settings.data_dir, run_id)
     if manifest is None:
         raise typer.BadParameter(
             f"no run {run_id!r} under {settings.data_dir} ({'/'.join(RUN_DIRS)})"
         )
     if json_out:
-        if manifest.get("command") in _DAILY_RULE_COMMANDS:
-            from alpha_cli.daily_rule_report import daily_rule_evidence
-
-            _echo_json(
-                daily_rule_evidence(
-                    run_id, data_dir=settings.data_dir, role=role, limit=limit, offset=offset
-                )
-            )
-            return
         rdir = Path(manifest.pop("__dir"))
         verify_manifest_artifacts(rdir, manifest)
         _echo_json(manifest)
@@ -195,9 +113,6 @@ def report(
         # spec §15 / ADR-0026: a run launched under an owner research-gate override is
         # permanently watermarked EXPLORATORY / RESEARCH GATE NOT COMPLETED.
         typer.secho(str(research_gate["watermark"]), fg=typer.colors.YELLOW, bold=True)
-
-    if manifest.get("command") in _DAILY_RULE_COMMANDS:
-        _echo_daily_rule(run_id, settings.data_dir)
 
     if manifest.get("command") in ("forecast_run", "forecast_eval"):  # Kronos forecasting
         model = manifest.get("model") or {}

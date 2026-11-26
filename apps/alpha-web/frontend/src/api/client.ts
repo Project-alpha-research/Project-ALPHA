@@ -1,7 +1,6 @@
 // Thin typed client over the FastAPI JSON layer. Same-origin (loopback), so no base URL.
 
 import type { components } from './generated'
-import type { DailyRuleEvidence, DailyRuleRole } from './dailyRule'
 
 type Schema = components['schemas']
 
@@ -280,13 +279,6 @@ export const api = {
   // Not cached for good: the price status depends on the stored bars as they are now.
   runSeries: (id: string, limit = 2000): Promise<RunSeries> => getJSON(`/api/runs/${id}/series?limit=${limit}`),
   trades: (id: string): Promise<TradeRow[]> => getImmutableJSON(`/api/runs/${id}/trades`),
-  dailyRuleEvidence: (id: string, role: DailyRuleRole = 'baseline', offset = 0): Promise<DailyRuleEvidence> => {
-    if (!Number.isInteger(offset) || offset < 0 || offset > 1_000_000) {
-      throw new RangeError('Daily rule accounting offset must be an integer from 0 to 1,000,000')
-    }
-    const params = new URLSearchParams({ role, limit: '100', offset: String(offset) })
-    return getJSON(`/api/runs/${encodeURIComponent(id)}/daily-rule-evidence?${params.toString()}`)
-  },
   forecast: (id: string): Promise<ForecastSeries> => getImmutableJSON(`/api/runs/${id}/forecast`),
   forecastPaths: (id: string, n = 20): Promise<ForecastPaths> =>
     getImmutableJSON(`/api/runs/${id}/forecast/paths?n=${n}`),

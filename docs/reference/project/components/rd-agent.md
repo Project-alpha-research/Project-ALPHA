@@ -53,7 +53,7 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
 ## Where it lives
 
 - **Workspaces:** `workers/rdagent`
-- **Capabilities:** `ai-stock-research`, `rdagent-job-result`, `daily-rule-study`, `ai-research-team`, `rdagent-run-viewer`,
+- **Capabilities:** `ai-stock-research`, `daily-rule-study`, `ai-research-team`, `rdagent-run-viewer`,
   `rdagent-workstation-panel`, `rdagent-idea-journey`
 - Code: [worker](../../../../workers/rdagent/README.md); `apps/alpha-cli/src/alpha_cli/native_supervisor.py`; `scripts/setup_rdagent.sh`.
 - Tests: `tests/smoke/test_rdagent_smoke.py`, `tests/unit/test_native_loop_conformance.py`, `tests/unit/test_rdagent_*.py`.

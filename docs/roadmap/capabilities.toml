@@ -1123,25 +1123,6 @@ missing = "no end-to-end smoke check; not linked from the Workstation yet"
 docs = ["workers/rdagent/README.md"]
 
 [[capability]]
-id = "rdagent-job-result"
-name = "Read an RD-Agent job result by its job number"
-codes = ["W04", "W18"]
-what = "Read the result of one RD-Agent job by its job number, from the command line. The web API route and Workstation screen for it were removed."
-see_it = ["uv run alpha research diagnostic native-result --data-dir … --job-id … --profile-source … --profile-runtime … --profile-mode …"]
-entry_points = ["cli: alpha research diagnostic native-result"]
-proof_synthetic = []
-real_data = "not yet confirmed (to check on the Mac later)"
-proof_smoke = [
-  "tests/smoke/test_rdagent_smoke.py::test_stock_rdloop_result_is_read_by_alpha",
-]
-needs = ["a real (not made-up) stock RD-Agent job, which needs an AI model connection"]
-state = "Partial"
-missing = "its smoke check passes here: alpha reads a made-up stock job's result; no real job exists yet; the web API route and Workstation screen were removed"
-# owner, 2026-11-14: RD-Agent is a key component of how the project works
-triage = { card = "8", recommendation = "SHELVE", owner_decision = "KEEP" }
-docs = ["docs/roadmap/rd-agent-in-alpha.md"]
-
-[[capability]]
 id = "daily-rule-study"
 name = "AI-run daily trading-rule study"
 codes = ["Packet 3", "W08"]

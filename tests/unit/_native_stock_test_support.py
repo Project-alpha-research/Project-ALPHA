@@ -7,11 +7,6 @@ from collections.abc import Iterator, Sequence
 from contextlib import closing, contextmanager
 from typing import cast
 
-from alpha_cli.native_stock_fixture import StockFixtureRequest
-
-# One canonical synthetic stock request, shared by the fixture, snapshot and worker suites.
-REQUEST = StockFixtureRequest("job", "reservation", "owner", "a" * 64, "b" * 64, 5, 2, 2, 1000)
-
 
 def record(value: object) -> dict[str, object]:
     assert isinstance(value, dict), "fixture expected an object"

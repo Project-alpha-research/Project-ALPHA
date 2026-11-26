@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from alpha_cli.native_stock_fixture import validate_stock_snapshot
 from alpha_core import DataError
-from tests.unit._native_stock_test_support import REQUEST
+from tests.unit._native_stock_request import REQUEST
 
 
 class SnapshotTests(unittest.TestCase):

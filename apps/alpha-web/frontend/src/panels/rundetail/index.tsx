@@ -27,7 +27,6 @@ import { asStr } from './commonUtils'
 import { Artifacts } from './Artifacts'
 import { Gates } from './Gates'
 import { Risk } from './Risk'
-import { DailyRuleReport } from '../DailyRuleReport'
 import { TradesTab } from './TradesTab'
 import { BacktestResultCard } from './BacktestResultCard'
 import { isBacktestRun } from './backtestResultModel'
@@ -144,7 +143,6 @@ export function RunDetail(props: PanelHandleProps) {
     : { runId, status: 'loading' }
   const trades = selectedTradeState.status === 'ready' ? selectedTradeState.rows : []
   const command = asStr(manifest.command)
-  const dailyStudy = command === 'research_daily_rule_native_v1' || command === 'research_daily_rule_projection_v1'
   const isValidate = detail.kind === 'runs' && manifest.verdict !== undefined
   // A rule test (`alpha test`) says what it is; its labels replace the launch-context watermark.
   const ruleTest = detail.rule_test ?? null
@@ -160,11 +158,6 @@ export function RunDetail(props: PanelHandleProps) {
     items: catalogue?.items ?? [],
   })
   const leaves = tree.flatMap((group) => group.leaves)
-  if (dailyStudy) {
-    const dailyLeaf = { id: 'daily-study', label: 'Daily rule and control', figureIds: [], empty: false, reason: null }
-    tree[0].leaves.splice(1, 0, dailyLeaf)
-    leaves.push(dailyLeaf)
-  }
   const leaf = leaves.find((item) => item.id === view) ?? leaves[0]
   const chip = watermarkChip(null, ruleTest ? null : detail.run_context_watermark)
   // Save PNG hands over the first drawable figure of the current view; nothing is drawn here.
@@ -174,8 +167,6 @@ export function RunDetail(props: PanelHandleProps) {
 
   const body = (() => {
     switch (leaf.id) {
-      case 'daily-study':
-        return <DailyRuleReport key={runId} runId={runId} panelApi={props.api}/>
       case 'summary':
         if (ruleTest) return <RuleTestReport key={runId} test={ruleTest} manifest={manifest} runId={runId}
           runName={detail.display_name} figures={catalogue?.items ?? null}

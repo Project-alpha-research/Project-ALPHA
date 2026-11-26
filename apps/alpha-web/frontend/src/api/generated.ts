@@ -1485,26 +1485,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/runs/{run_id}/daily-rule-evidence": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Run Daily Rule Evidence
-         * @description Bounded recorded daily-study evidence; never executes or approves research.
-         */
-        get: operations["run_daily_rule_evidence_api_runs__run_id__daily_rule_evidence_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/runs/{run_id}/equity": {
         parameters: {
             query?: never;
@@ -3703,111 +3683,6 @@ export interface components {
              * @constant
              */
             state: "verified";
-        };
-        /** DailyRuleAccountingPage */
-        DailyRuleAccountingPage: {
-            /** Has More */
-            has_more: boolean;
-            /** Next Offset */
-            next_offset: number | null;
-            /**
-             * Role
-             * @enum {string}
-             */
-            role: "baseline" | "control";
-            /** Rows */
-            rows: {
-                [key: string]: components["schemas"]["JsonValue"];
-            }[];
-            /** Total */
-            total: number;
-        };
-        /** DailyRuleEvidenceResponse */
-        DailyRuleEvidenceResponse: {
-            accounting: components["schemas"]["DailyRuleAccountingPage"];
-            /** Artifact Sha256 */
-            artifact_sha256: {
-                [key: string]: string;
-            };
-            /** Available */
-            available: boolean;
-            /** Claim Scope */
-            claim_scope: string | null;
-            /** Data Origin */
-            data_origin: ("artificial_fixture" | "captured_provider_history") | null;
-            /** Outcome */
-            outcome: ("exploratory_complete" | "accounting_rejection_inconclusive") | null;
-            /** Parent Run Id */
-            parent_run_id?: string | null;
-            /** Provenance */
-            provenance: {
-                [key: string]: components["schemas"]["JsonValue"];
-            };
-            /** Roles */
-            roles: {
-                [key: string]: components["schemas"]["DailyRuleRoleSummary"];
-            };
-            /** Run Id */
-            run_id: string;
-            /**
-             * Schema
-             * @constant
-             */
-            schema: "DailyRuleEvidenceV1";
-            /** Selectors */
-            selectors: {
-                [key: string]: components["schemas"]["JsonValue"];
-            };
-            /** Watermark */
-            watermark: string | null;
-        };
-        /** DailyRuleRoleSummary */
-        DailyRuleRoleSummary: {
-            /** Fees Total */
-            fees_total: number;
-            /** Fills */
-            fills: number;
-            /** Final Equity */
-            final_equity: number;
-            /** Gross Pnl */
-            gross_pnl: number;
-            /** N Trades */
-            n_trades: number;
-            /** Net Pnl */
-            net_pnl: number;
-            /** Orders */
-            orders: number;
-            /** Rejected */
-            rejected: number;
-            /** Run Id */
-            run_id: string;
-            /** Starting Equity */
-            starting_equity: number;
-            terminal?: components["schemas"]["DailyRuleTerminalEvidence"] | null;
-        };
-        /** DailyRuleTerminalEvidence */
-        DailyRuleTerminalEvidence: {
-            /** Final Decision At */
-            final_decision_at: string;
-            /** Opening Quote At */
-            opening_quote_at: string;
-            /**
-             * Terminal Decision
-             * @constant
-             */
-            terminal_decision: "unfilled_without_next_admitted_quote";
-            /**
-             * Terminal Liquidation
-             * @constant
-             */
-            terminal_liquidation: false;
-            /** Valuation At */
-            valuation_at: string;
-            /**
-             * Valuation Basis
-             * @constant
-             */
-            valuation_basis: "last_admitted_open_quote";
         };
         /** DataSnapshotRow */
         DataSnapshotRow: {
@@ -10963,41 +10838,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RuleTestChecks"];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
-    run_daily_rule_evidence_api_runs__run_id__daily_rule_evidence_get: {
-        parameters: {
-            query?: {
-                role?: string;
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path: {
-                run_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DailyRuleEvidenceResponse"];
                 };
             };
             /** @description Stable, redacted Workstation error */

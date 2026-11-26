@@ -4,7 +4,6 @@ sources:
   - apps/alpha-cli/src/alpha_cli/_native_*.py
   - apps/alpha-cli/src/alpha_cli/native_*.py
   - apps/alpha-cli/src/alpha_cli/daily_native_cmds.py
-  - apps/alpha-cli/src/alpha_cli/daily_rule_report.py
   - apps/alpha-cli/src/alpha_cli/rdagent_cmds.py
   - apps/alpha-cli/src/alpha_cli/rdagent_run_*.py
   - tests/unit/test_rdagent_run_command.py

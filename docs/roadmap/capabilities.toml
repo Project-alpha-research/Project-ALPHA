@@ -1129,15 +1129,11 @@ codes = ["Packet 3", "W08"]
 what = "Run one complete, rule-governed study of a simple daily momentum rule against a \"do nothing\" control, with locked inputs and a final report."
 see_it = [
   "uv run alpha research draft-daily <project-id> --source-pack-id … --snapshot-id … --normalized-manifest-id … (once per month)",
-  "Workstation: the daily rule report on a study run",
 ]
 entry_points = [
   "cli: alpha research draft-daily",
-  "api: GET /api/runs/{run_id}/daily-rule-evidence",
-  "panel: apps/alpha-web/frontend/src/panels/DailyRuleReport.tsx",
 ]
 proof_synthetic = [
-  "tests/integration/test_daily_rule_report.py::test_parent_and_role_selector_reports_agree_with_actual_recorded_results",
   "tests/unit/test_native_rule_authority.py::test_one_actual_native_rule_execution",
 ]
 real_data = "not yet confirmed (to check on the Mac later)"

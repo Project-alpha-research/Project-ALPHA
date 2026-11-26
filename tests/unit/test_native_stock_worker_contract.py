@@ -12,8 +12,7 @@ from pathlib import Path
 from types import ModuleType
 from unittest.mock import patch
 
-from tests.unit._native_stock_test_support import record
-from tests.unit.test_native_stock_inspect import REQUEST
+from tests.unit._native_stock_test_support import REQUEST, record
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKER = ROOT / "workers/rdagent"

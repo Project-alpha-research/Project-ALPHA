@@ -660,7 +660,6 @@ _READERS = ("__doc__", "getdoc(", "getsource", "getcomments", "co_firstlineno", 
 _COMMAND_WRAP = re.compile(r"\.(command|callback)\([^)]*\)\(")
 _REVIEWED_READERS = {
     # Each reads only its own module docstring or its own (unbound) models.
-    "apps/alpha-cli/src/alpha_cli/native_stock_inspect.py",
     "workers/rdagent/install_stock_profile.py",
     "workers/rdagent/qualify_daily_container.py",
     "workers/rdagent/model_gateway.py",  # own module docstring as argparse help; vars(args)
@@ -670,7 +669,7 @@ _REVIEWED_READERS = {
     "apps/alpha-cli/src/alpha_cli/propfirm_cmds.py",
     "apps/alpha-cli/src/alpha_cli/validate_cmds.py",
     # Registers typer commands (typer reads their docstrings) from local_pdf_cmds,
-    # native_stock_cmds, validate_cmds and report_cmds; none of them is bound.
+    # validate_cmds and report_cmds; none of them is bound.
     "apps/alpha-cli/src/alpha_cli/main.py",
     # The digest itself names the readers it guards against.
     "apps/alpha-cli/src/alpha_cli/_structural_digest.py",
@@ -689,7 +688,7 @@ def test_no_unreviewed_code_reads_docstrings_or_source_of_other_modules() -> Non
                 found.add(path.relative_to(ROOT).as_posix())
     bound = {path.relative_to(ROOT).as_posix() for path in _bound_files()}
     assert not (found & bound)
-    wrapped = {"local_pdf_cmds.py", "native_stock_cmds.py", "validate_cmds.py", "report_cmds.py"}
+    wrapped = {"local_pdf_cmds.py", "validate_cmds.py", "report_cmds.py"}
     assert not wrapped & {path.name for path in _bound_files()}
     assert found == _REVIEWED_READERS
 

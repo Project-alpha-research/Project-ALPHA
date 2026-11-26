@@ -15,8 +15,8 @@ sources:
 # Command line native invariants
 
 What must not break when changing the native upstream lanes: the synthetic native fixture supervisor, the pinned
-RD-Agent loop child (`workers/rdagent`), synthetic and costed rule studies, the registered daily rule route, the stock
-RDLoop diagnostics and the synthetic Qlib-to-Nautilus pipeline. Every rule here is taken from the code, and the
+RD-Agent loop child (`workers/rdagent`), synthetic and costed rule studies, the registered daily rule route, the synthetic
+stock RDLoop lane and the synthetic Qlib-to-Nautilus pipeline. Every rule here is taken from the code, and the
 project-wide rule is [research integrity § Models and isolated workers](research-integrity.md#models-and-isolated-workers).
 
 ## Starting a factor loop
@@ -120,15 +120,13 @@ project-wide rule is [research integrity § Models and isolated workers](researc
   or mutable package path, and needs supported Linux resource enforcement.
 - Per-job `payload-<job_id>` directories sit directly under the control-store data root.
 
-## Results and inspection
+## Results
 
 - Results are validated from the same bounded receipt bytes observed after child cleanup (`NativeLaunch.verify_result`),
   capped at `MAX_NATIVE_RECEIPT_BYTES`.
 - `_native_daily_rule_restore.py` restores only missing immutable daily evidence and keeps current authority and
   reservations.
-- `native_stock_inspect.py` opens the store read-only and always reports `resume_allowed: false` and
-  `resume_authority: none`. It never dispatches, deserialises a checkpoint or authorises a resume.
-- Never start a replacement job, borrow a reservation or reset counters from inspection output; reconcile through the
+- Never start a replacement job, borrow a reservation or reset counters; reconcile through the
   original owner process. Cross-owner restart continuation does not exist.
 - Keep `native_supervisor` start-up free of the native-loop admission stack, `alpha_research` and scipy. Enforced by
   `tests/unit/test_native_supervisor_import_boundary.py`.

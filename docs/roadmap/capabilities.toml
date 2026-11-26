@@ -1028,10 +1028,9 @@ name = "AI stock research loop"
 codes = ["RD-Agent", "W02"]
 what = "Start RD-Agent on a stock research task, then check exactly what it ran and recover its results, even after a crash."
 see_it = [
-  "uv run alpha research diagnostic native-result --data-dir … --job-id … --profile-source … --profile-runtime … --profile-mode …",
+  "uv run alpha rdagent status",
 ]
 entry_points = [
-  "cli: alpha research diagnostic native-result",
   "cli: alpha rdagent run",
   "cli: alpha rdagent status",
   "code: apps/alpha-cli/src/alpha_cli/native_supervisor.py",

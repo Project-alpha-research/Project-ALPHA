@@ -9,7 +9,7 @@ React installations. This setting changes module identity and requires fresh gen
 Bounded synthetic engineering verification: identical 248 non-test production frontend inputs
 and the same existing Vite8.1.5/Rolldown1.1.5 dependencies emitted52 byte-identical assets in
 fresh top-level and nested locations, with a matching repeat. The existing trailing-whitespace
-normalizer was applied unchanged. A browser mounted the new native-result view without page
+normalizer was applied unchanged. A browser mounted the new native job result view without page
 errors or external requests and handled an unavailable synthetic backend. Source typecheck
 passed on the production-only copy. Test sources were deliberately excluded: this is not
 full frontend/private qualification, all-app runtime proof or universal cross-platform

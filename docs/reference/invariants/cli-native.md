@@ -126,8 +126,6 @@ project-wide rule is [research integrity § Models and isolated workers](researc
   capped at `MAX_NATIVE_RECEIPT_BYTES`.
 - `_native_daily_rule_restore.py` restores only missing immutable daily evidence and keeps current authority and
   reservations.
-- `native_stock_inspect.py` opens the store read-only and always reports `resume_allowed: false` and
-  `resume_authority: none`. It never dispatches, deserialises a checkpoint or authorises a resume.
 - Never start a replacement job, borrow a reservation or reset counters from inspection output; reconcile through the
   original owner process. Cross-owner restart continuation does not exist.
 - Keep `native_supervisor` start-up free of the native-loop admission stack, `alpha_research` and scipy. Enforced by

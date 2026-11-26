@@ -161,10 +161,8 @@ export ALPHA_STOCK_RECEIPTS="$(mktemp -d)"
 uv run python scripts/run_owned_test.py -- uv run pytest -q -m smoke -n 0 tests/smoke/test_rdagent_smoke.py
 ```
 
-Both checks pass on the Dell. Without the two flags the install is about 1.1 GB; the image adds
-about 120 MB and the stock runtime about 230 MB. To read a stock
-job's result once one exists: `uv run alpha research diagnostic native-result --data-dir … --job-id …
---profile-source … --profile-runtime … --profile-mode resume`, or the Native job result screen.
+The check passes on the Dell. Without the two flags the install is about 1.1 GB; the image adds
+about 120 MB and the stock runtime about 230 MB.
 Technical detail: [worker README](../../workers/rdagent/README.md).
 
 To repeat the ALPHA-judged loop (real model calls, about 40 per run, never more than 60):

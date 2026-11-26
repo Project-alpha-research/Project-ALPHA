@@ -1026,12 +1026,11 @@ triage = { card = "A", recommendation = "DELETE", owner_decision = "SHELVE" }
 id = "ai-stock-research"
 name = "AI stock research loop"
 codes = ["RD-Agent", "W02"]
-what = "Start RD-Agent on a stock research task, then check exactly what it ran and recover its results, even after a crash."
+what = "Start RD-Agent on a stock research task, then check what it ran, even after a crash."
 see_it = [
-  "uv run alpha research diagnostic native-result --data-dir … --job-id … --profile-source … --profile-runtime … --profile-mode …",
+  "uv run alpha rdagent status",
 ]
 entry_points = [
-  "cli: alpha research diagnostic native-result",
   "cli: alpha rdagent run",
   "cli: alpha rdagent status",
   "code: apps/alpha-cli/src/alpha_cli/native_supervisor.py",
@@ -1039,7 +1038,6 @@ entry_points = [
 proof_synthetic = []
 proof_smoke = [
   "tests/smoke/test_rdagent_smoke.py::test_native_fixture_loop_runs_and_alpha_shows_its_job",
-  "tests/smoke/test_rdagent_smoke.py::test_stock_rdloop_result_is_read_by_alpha",
   "tests/smoke/test_rdagent_model_gateway_smoke.py::test_stock_rdagent_client",
 ]
 real_data = "not yet confirmed (to check on the Mac later)"

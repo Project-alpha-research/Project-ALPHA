@@ -1126,7 +1126,7 @@ docs = ["workers/rdagent/README.md"]
 id = "daily-rule-study"
 name = "AI-run daily trading-rule study"
 codes = ["Packet 3", "W08"]
-what = "Run one complete, rule-governed study of a simple daily momentum rule against a \"do nothing\" control, with locked inputs and a final report."
+what = "Draft one rule-governed study of a simple daily momentum rule against a \"do nothing\" control, with locked inputs and its baseline and control runs. It has no report view."
 see_it = [
   "uv run alpha research draft-daily <project-id> --source-pack-id … --snapshot-id … --normalized-manifest-id … (once per month)",
 ]
@@ -1142,7 +1142,7 @@ needs = [
   "real Binance daily bars admitted into that storage",
 ]
 state = "Partial"
-missing = "with its Docker image now qualified here, the full daily study's tests pass on made-up bars; it has no end-to-end smoke check, the storage settings are not yet created, and no real data has been acquired"
+missing = "the final daily rule report is removed: there is no CLI option, API route or Workstation panel for it; with its Docker image now qualified here, the full daily study's tests pass on made-up bars; it has no end-to-end smoke check, the storage settings are not yet created, and no real data has been acquired"
 # owner, 2026-11-14: RD-Agent is a key component of how the project works
 triage = { card = "9", recommendation = "KEEP", owner_decision = "KEEP" }
 docs = ["docs/roadmap/rd-agent-in-alpha.md", "docs/operations/storage-settings.md"]

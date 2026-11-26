@@ -1131,26 +1131,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/native-jobs/{job_id}/result": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Native Result
-         * @description Read owner-observed synthetic result; no paths, launch or resume selectors.
-         */
-        get: operations["native_result_api_native_jobs__job_id__result_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/overlays/{symbol}": {
         parameters: {
             query?: never;
@@ -6424,22 +6404,6 @@ export interface components {
             /** Year */
             year: number;
         };
-        /** NativeDispatch */
-        NativeDispatch: {
-            /**
-             * Job Id
-             * Format: uuid
-             */
-            job_id: string;
-            /** Owner Id */
-            owner_id: string;
-            /** Profile Sha256 */
-            profile_sha256: string;
-            /** Reservation Id */
-            reservation_id: string;
-            /** Spec Sha256 */
-            spec_sha256: string;
-        };
         /** NativeExposureTurnover */
         NativeExposureTurnover: {
             /** End Ts */
@@ -6461,13 +6425,6 @@ export interface components {
             /** Turnover Unavailable Reason */
             turnover_unavailable_reason: string | null;
         };
-        /** NativeFeedback */
-        NativeFeedback: {
-            /** Acceptable */
-            acceptable: boolean;
-            /** Decision */
-            decision: boolean;
-        };
         /** NativeHistogramBin */
         NativeHistogramBin: {
             /** Count */
@@ -6477,57 +6434,6 @@ export interface components {
             /** Right */
             right: number;
         };
-        /** NativeJobResultV1 */
-        NativeJobResultV1: {
-            /**
-             * Classification
-             * @constant
-             */
-            classification: "synthetic_only_unqualified";
-            dispatch?: components["schemas"]["NativeDispatch"] | null;
-            feedback?: components["schemas"]["NativeFeedback"] | null;
-            /**
-             * Operation
-             * @constant
-             */
-            operation: "recover_native_stock_result";
-            provenance?: components["schemas"]["NativeProvenance"] | null;
-            /** Reason */
-            reason: string;
-            receipt?: components["schemas"]["NativeReceipt"] | null;
-            result?: components["schemas"]["NativeResult"] | null;
-            /** Resume Allowed */
-            resume_allowed: boolean;
-            /**
-             * Schema
-             * @constant
-             */
-            schema: "NativeStockOperatorResultV1";
-            /**
-             * Scientific Acceptance
-             * @constant
-             */
-            scientific_acceptance: "not_admitted";
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "completed" | "invalid" | "unavailable";
-        };
-        /** NativeProvenance */
-        NativeProvenance: {
-            /** Checkpoint Sha256 */
-            checkpoint_sha256?: string | null;
-            /**
-             * Owner Receipt Match
-             * @enum {string}
-             */
-            owner_receipt_match: "verified" | "mismatch" | "unavailable";
-            /** Receipt Sha256 */
-            receipt_sha256?: string | null;
-            /** Trace Sha256 */
-            trace_sha256?: string | null;
-        };
         /** NativeQQPoint */
         NativeQQPoint: {
             /** Probability */
@@ -6536,95 +6442,6 @@ export interface components {
             sample: number;
             /** Theoretical */
             theoretical: number;
-        };
-        /** NativeReceipt */
-        NativeReceipt: {
-            /** Actual Model Calls */
-            actual_model_calls: number;
-            /** Charged Stages */
-            charged_stages: [
-                "direct_exp_gen",
-                "coding",
-                "running",
-                "feedback",
-                "record"
-            ];
-            /** Checkpoint Sha256 */
-            checkpoint_sha256: string;
-            /** Checkpoint Unchanged */
-            checkpoint_unchanged: boolean;
-            /** Fake Model Attempts */
-            fake_model_attempts: number;
-            /** Fake Tool Attempts */
-            fake_tool_attempts: number;
-            /** Replay Rejected */
-            replay_rejected: boolean;
-            request: components["schemas"]["NativeRequest"];
-            /** Resumed Without Repeating */
-            resumed_without_repeating: boolean;
-            /** Routes Enabled */
-            routes_enabled: boolean;
-            /**
-             * Schema
-             * @constant
-             */
-            schema: "StockRDLoopReceiptV1";
-            /**
-             * Scientific Acceptance
-             * @constant
-             */
-            scientific_acceptance: "not_admitted";
-            /**
-             * Source Sha256
-             * @constant
-             */
-            source_sha256: "0266b2d63328f88fcaf6f239bf6d67f29c896b8161566f794ef69465b7788707";
-            /** Trace Sha256 */
-            trace_sha256: string;
-        };
-        /** NativeRequest */
-        NativeRequest: {
-            /** Cpu Milliseconds */
-            cpu_milliseconds: number;
-            /**
-             * Job Id
-             * Format: uuid
-             */
-            job_id: string;
-            /** Loop Steps */
-            loop_steps: number;
-            /** Manifest Sha256 */
-            manifest_sha256: string;
-            /**
-             * Mode
-             * @constant
-             */
-            mode: "resume";
-            /** Model Calls */
-            model_calls: number;
-            /** Owner Id */
-            owner_id: string;
-            /** Reservation Id */
-            reservation_id: string;
-            /**
-             * Schema
-             * @constant
-             */
-            schema: "StockRDLoopFixtureRequestV1";
-            /** Spec Sha256 */
-            spec_sha256: string;
-            /** Tool Calls */
-            tool_calls: number;
-        };
-        /** NativeResult */
-        NativeResult: {
-            /** Synthetic Score */
-            synthetic_score: number;
-            /**
-             * Unit
-             * @constant
-             */
-            unit: "fixture_only";
         };
         /** NativeRollingMetric */
         NativeRollingMetric: {
@@ -10554,37 +10371,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MlServiceStatus"];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
-    native_result_api_native_jobs__job_id__result_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                job_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NativeJobResultV1"];
                 };
             };
             /** @description Stable, redacted Workstation error */

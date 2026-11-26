@@ -1,6 +1,7 @@
 # Server-owned native-job result API
 
-`GET /api/native-jobs/{job_id}/result` is mounted in the existing Workstation app. It
+This route has been removed: the web app no longer serves `GET /api/native-jobs/{job_id}/result`.
+The text below is kept as history. It
 reads a retained synthetic native job; it creates no run ID, run manifest, job, owner,
 reservation, approval or execution. It invokes the fixed read-only `alpha research diagnostic native-result` CLI through
 the existing command-scoped web environment. Owner-receipt recovery is not duplicated.
@@ -82,8 +83,8 @@ package or prove historical runtime immutability. Full/private qualification rem
 unverified. No frontend, Qlib Results, saved inspector, paper reader, ControlStore or
 accounting implementation changes are required.
 
-The only shared mount changes are in app.py: native_results_api import after ml_api,
-and include_router immediately after jobs_api. Existing paper/research router entries
+The route has since been removed from app.py (it used to import the router after ml_api
+and include it immediately after jobs_api). Existing paper/research router entries
 remain intact. The source-reader successor was unavailable in this executor; the exact
 hunk was relayed to the coordinator and actual combined-tree integration remains to check.
 

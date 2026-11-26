@@ -43,7 +43,6 @@ from alpha_web.api import jobs as jobs_api
 from alpha_web.api import market as market_api
 from alpha_web.api import ml as ml_api
 from alpha_web.api import ml_runs as ml_runs_api
-from alpha_web.api import native_results as native_results_api
 from alpha_web.api import owner_auth as owner_auth_api
 from alpha_web.api import rdagent as rdagent_api
 from alpha_web.api import recent_runs as recent_runs_api
@@ -131,7 +130,6 @@ def create_app() -> FastAPI:
     app.include_router(ml_runs_api.router)
     app.include_router(recent_runs_api.router)
     app.include_router(jobs_api.router)
-    app.include_router(native_results_api.router)
     app.include_router(rdagent_api.router)
     app.include_router(setup_runs_api.router)
     app.include_router(activity_api.router)

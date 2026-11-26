@@ -5,7 +5,7 @@ creates its disposable, synthetic-only job the way the native tests do: the publ
 write an approved, reserved fixture job into a fresh ``synthetic_workspace()``, and the existing
 retained owner (``start_synthetic_owner``) launches the worker. These approvals are fixture
 records in a throwaway store, not the owner's. Everything after the launch is read back by the
-installed ``alpha`` and ``alpha-web`` programs, each in a new process. All results stay
+installed ``alpha`` program, each time in a new process. All results stay
 synthetic and ``not_admitted``; no model, provider or market data is involved.
 
 Prerequisites, provisioned by ``scripts/setup_rdagent.sh``: ``ALPHA_RDAGENT_SOURCE`` (the derived,
@@ -24,7 +24,7 @@ from typing import Any
 
 import pytest
 
-from tests.smoke._harness import child_env, get_json, program, web_server
+from tests.smoke._harness import child_env, program
 
 pytestmark = [pytest.mark.smoke, pytest.mark.usefixtures("owned_test_process")]
 
@@ -111,7 +111,7 @@ def test_native_fixture_loop_runs_and_alpha_shows_its_job() -> None:
         assert row["case_id"] == PROJECT_ID
 
 
-def test_stock_rdloop_result_is_read_by_alpha_and_the_web_app() -> None:
+def test_stock_rdloop_result_is_read_by_alpha() -> None:
     _source()
     if not os.environ.get("ALPHA_STOCK_PYTHON", "").strip():
         pytest.skip(NO_STOCK)
@@ -134,15 +134,3 @@ def test_stock_rdloop_result_is_read_by_alpha_and_the_web_app() -> None:
         assert body["result"] == {"synthetic_score": -0.125, "unit": "fixture_only"}
         assert body["scientific_acceptance"] == "not_admitted"
         assert body["resume_allowed"] is False
-
-        with web_server(
-            root,
-            ALPHA_DATA_DIR=str(root),
-            ALPHA_NATIVE_RESULT_SOURCE=str(launch.source),
-            ALPHA_NATIVE_RESULT_RUNTIME=str(launch.stock_runtime),
-            ALPHA_NATIVE_RESULT_MODE="resume",
-        ) as base:
-            served = get_json(f"{base}/api/native-jobs/{JOB}/result")
-            assert served["status"] == "completed"
-            assert served["result"] == body["result"]
-            assert served["scientific_acceptance"] == "not_admitted"

@@ -1026,7 +1026,7 @@ triage = { card = "A", recommendation = "DELETE", owner_decision = "SHELVE" }
 id = "ai-stock-research"
 name = "AI stock research loop"
 codes = ["RD-Agent", "W02"]
-what = "Start RD-Agent on a stock research task, then check exactly what it ran and recover its results, even after a crash."
+what = "Start RD-Agent on a stock research task, then read the run folder's status to see what it ran."
 see_it = [
   "uv run alpha rdagent status",
 ]

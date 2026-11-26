@@ -1039,7 +1039,7 @@ entry_points = [
 proof_synthetic = []
 proof_smoke = [
   "tests/smoke/test_rdagent_smoke.py::test_native_fixture_loop_runs_and_alpha_shows_its_job",
-  "tests/smoke/test_rdagent_smoke.py::test_stock_rdloop_result_is_read_by_alpha_and_the_web_app",
+  "tests/smoke/test_rdagent_smoke.py::test_stock_rdloop_result_is_read_by_alpha",
   "tests/smoke/test_rdagent_model_gateway_smoke.py::test_stock_rdagent_client",
 ]
 real_data = "not yet confirmed (to check on the Mac later)"
@@ -1121,30 +1121,6 @@ needs = []
 state = "Partial"
 missing = "no end-to-end smoke check; not linked from the Workstation yet"
 docs = ["workers/rdagent/README.md"]
-
-[[capability]]
-id = "native-job-result"
-name = "Read an RD-Agent job result by its job number"
-codes = ["W04", "W18"]
-what = "Read the result of one RD-Agent job by its job number, from the command line or the web API. The Workstation screen for it was removed."
-see_it = ["uv run alpha research diagnostic native-result --data-dir … --job-id … --profile-source … --profile-runtime … --profile-mode …"]
-entry_points = [
-  "api: GET /api/native-jobs/{job_id}/result",
-  "panel: apps/alpha-web/frontend/src/panels/NativeJobResult.tsx",
-]
-proof_synthetic = [
-  "apps/alpha-web/frontend/src/api/nativeResults.test.ts::accepts bound completed evidence and explicit incomplete states",
-]
-real_data = "not yet confirmed (to check on the Mac later)"
-proof_smoke = [
-  "tests/smoke/test_rdagent_smoke.py::test_stock_rdloop_result_is_read_by_alpha_and_the_web_app",
-]
-needs = ["a real (not made-up) stock RD-Agent job, which needs an AI model connection"]
-state = "Partial"
-missing = "its smoke check passes here: alpha and the web API read a made-up stock job's result; no real job exists yet; the Workstation screen was removed"
-# owner, 2026-11-14: RD-Agent is a key component of how the project works
-triage = { card = "8", recommendation = "SHELVE", owner_decision = "KEEP" }
-docs = ["docs/roadmap/rd-agent-in-alpha.md"]
 
 [[capability]]
 id = "daily-rule-study"

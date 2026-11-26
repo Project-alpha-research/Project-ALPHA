@@ -458,13 +458,6 @@
     {
       "method": "GET",
       "mode": "fixture_backed",
-      "operation_id": "native_result_api_native_jobs__job_id__result_get",
-      "path": "/api/native-jobs/{job_id}/result",
-      "reason": "Parameterized safe read uses typed identity and boundary fixtures."
-    },
-    {
-      "method": "GET",
-      "mode": "fixture_backed",
       "operation_id": "overlays_api_overlays__symbol__get",
       "path": "/api/overlays/{symbol}",
       "reason": "Parameterized safe read uses typed identity and boundary fixtures."

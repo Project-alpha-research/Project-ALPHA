@@ -1,0 +1,25 @@
+{
+  "kind": "absence",
+  "removed_symbols": [
+    "native_result_command",
+    "native_stock_inspect",
+    "native_stock_profile",
+    "native_stock_cmds"
+  ],
+  "command_words": [
+    "diagnostic native-result"
+  ],
+  "removed_paths": [
+    "apps/alpha-cli/src/alpha_cli/native_stock_cmds.py",
+    "apps/alpha-cli/src/alpha_cli/native_stock_inspect.py",
+    "apps/alpha-cli/src/alpha_cli/native_stock_profile.py",
+    "tests/unit/test_native_stock_operator_cli.py",
+    "tests/unit/test_native_stock_inspect.py",
+    "tests/unit/test_native_stock_profile.py",
+    "tests/unit/test_native_stock_result.py"
+  ],
+  "search_roots": [
+    "apps/alpha-cli",
+    "tests/unit"
+  ]
+}

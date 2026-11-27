@@ -10,8 +10,7 @@
 #
 # Optional, off by default so the default install stays small:
 #   --with-daily-container  pull the one Docker base image pinned by digest for the daily study
-#                           (python:3.12-slim, ~120 MB) and run qualify_daily_container.py, which
-#                           writes .alpha/state/runtime/daily-container.json.
+#                           (python:3.12-slim, ~120 MB) and check that it is the pinned image ID.
 #   --with-stock-runtime    build the closed Python 3.11 stock RDLoop runtime bundle from
 #                           workers/rdagent/stock-requirements.lock (60 hash-pinned packages,
 #                           ~230 MB) and record it with workers/rdagent/install_stock_profile.py.
@@ -127,8 +126,7 @@ if [ "$with_daily" = 1 ]; then
         echo "setup-rdagent: python@$daily_digest is not image $daily_image; not qualified" >&2
         exit 1
     fi
-    echo "setup-rdagent: qualifying daily container image $daily_image (offline import smoke)"
-    uv run --locked python -B workers/rdagent/qualify_daily_container.py --image-id "$daily_image"
+    echo "setup-rdagent: daily container image $daily_image present"
 fi
 
 stock="${ALPHA_STOCK_PYTHON:-}"

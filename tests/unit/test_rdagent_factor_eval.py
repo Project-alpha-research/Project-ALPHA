@@ -993,7 +993,11 @@ def test_series_failure_changes_no_metrics_or_decisions(
     run = tmp_path / "run"
     req = fixture(run)
     good = evaluate(run, req, tmp_path / "good.jsonl")
-    with patch.object(ev, "_write_series", side_effect=OSError("evidence disk unavailable")):
+    from alpha_cli import _factor_eval_series
+
+    with patch.object(
+        _factor_eval_series, "_write_series", side_effect=OSError("evidence disk unavailable")
+    ):
         failed = ev.evaluate(run, req, run / "other.json", tmp_path / "failed.jsonl")
     assert "evidence disk unavailable" in failed["series_note"]
     checks = good.pop("checks")

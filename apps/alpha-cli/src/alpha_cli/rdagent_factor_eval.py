@@ -20,7 +20,8 @@ import polars as pl
 from alpha_cli import _rdagent_identity as identity
 from alpha_cli import _rdagent_membership as membership
 from alpha_cli import _rdagent_universe as universes
-from alpha_cli._factor_eval_replay import _chance_disclosure, _gap_disclosure, _replay_clocks
+from alpha_cli._factor_eval_replay import _chance_disclosure, _gap_disclosure
+from alpha_cli._factor_eval_replay import _replay_clocks as _replay_clocks
 from alpha_cli._factor_eval_series import _bucket_frames as _bucket_frames
 from alpha_cli._factor_eval_series import _record_series
 from alpha_cli._factor_eval_series import _series_file as _series_file

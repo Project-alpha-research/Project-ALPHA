@@ -349,7 +349,9 @@ def test_small_p_with_many_looks_cannot_replay(monkeypatch: pytest.MonkeyPatch) 
     from alpha_cli._rdagent_stats import SCREEN_RULE
 
     replay = Mock(side_effect=AssertionError("failed screen must not replay"))
-    monkeypatch.setattr(ev, "replay", replay)
+    from alpha_cli import _factor_eval_replay
+
+    monkeypatch.setattr(_factor_eval_replay, "replay", replay)
     trials: dict[str, dict[str, Any]] = {
         c: {
             "status": "OK" if c == "weekly" else "DIAGNOSTIC",
@@ -370,7 +372,7 @@ def test_small_p_with_many_looks_cannot_replay(monkeypatch: pytest.MonkeyPatch) 
     }
     family = {(str(i), "weekly"): {"p": 0.0001, "replay": {}} for i in range(236)}
     family[("new", "weekly")] = trials["weekly"]
-    returns, _ = ev._replay_clocks([row], pl.DataFrame(), {}, [], {}, family, 237)
+    returns, _ = _factor_eval_replay._replay_clocks([row], pl.DataFrame(), {}, [], {}, family, 237)
     assert row["status"] == "SCREEN_FAIL" and returns == {}
     assert row["screen_m"] == 237 and row["screen_confirmed"] == 0
     assert trials["weekly"]["bh_q_diagnostic"] < 0.1

@@ -10,6 +10,7 @@ import numpy as np
 import polars as pl
 import pytest
 
+from alpha_cli import _factor_eval_replay
 from alpha_cli import _rdagent_judge as judge
 from alpha_cli import rdagent_factor_eval as ev
 from alpha_cli._rdagent_clocks import overall_status, trial_family
@@ -94,7 +95,7 @@ def test_noise_candidate_rate_and_slow_daily_calibration(monkeypatch: pytest.Mon
             "screen_rule": SCREEN_RULE,
         }
         family = trial_family([*history, row])
-        returns, _ = ev._replay_clocks(
+        returns, _ = _factor_eval_replay._replay_clocks(
             [row], panel, {digest: signal}, days, series, family, index + 1
         )
         ev._deflate([row], history, family, returns)

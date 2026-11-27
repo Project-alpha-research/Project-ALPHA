@@ -20,7 +20,7 @@ closed launch types (fixture, rule, costed, daily, stock) and refuses anything e
   receipt; accepted by `start_synthetic_owner`'s type check and `_entry`.
 - A ControlStore job (`stage: "rdagent_native"`) with a reservation of model calls and wall
   seconds made before spawn, consumed even when interrupted, as the stock route does.
-- `alpha research diagnostic native-result` reads the run's receipt and `evaluations.jsonl`.
+- An `alpha` command reads the run's receipt and `evaluations.jsonl`.
 - The gateway's run cap equals the reservation; the launcher's own refusal above 60 calls stays.
 
 ## Dependencies

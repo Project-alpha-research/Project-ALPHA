@@ -12,11 +12,12 @@ from pathlib import Path
 from types import ModuleType
 from unittest.mock import patch
 
+from alpha_cli.native_stock_fixture import StockFixtureRequest
 from tests.unit._native_stock_test_support import record
-from tests.unit.test_native_stock_inspect import REQUEST
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKER = ROOT / "workers/rdagent"
+REQUEST = StockFixtureRequest("job", "reservation", "owner", "a" * 64, "b" * 64, 5, 2, 2, 1000)
 
 
 def entry() -> ModuleType:

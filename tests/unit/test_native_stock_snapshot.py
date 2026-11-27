@@ -2,21 +2,20 @@
 
 from __future__ import annotations
 
-import os
 import unittest
 from collections.abc import Mapping
 from pathlib import Path
 from typing import cast
 from unittest.mock import patch
 
-from alpha_cli.native_stock_fixture import validate_stock_snapshot
+from alpha_cli.native_stock_fixture import StockFixtureRequest, validate_stock_snapshot
 from alpha_core import DataError
-from tests.unit._native_stock_test_support import record
+
+REQUEST = StockFixtureRequest("job", "reservation", "owner", "a" * 64, "b" * 64, 5, 2, 2, 1000)
 
 
 class SnapshotTests(unittest.TestCase):
     def test_rejects_missing_extra_nonbytes_and_oversized_snapshot(self) -> None:
-        from tests.unit.test_native_stock_inspect import REQUEST
 
         for artifacts in (
             {},
@@ -40,7 +39,6 @@ class SnapshotTests(unittest.TestCase):
         from pathlib import Path
 
         from alpha_cli.native_stock_fixture import validate_stock_artifacts
-        from tests.unit.test_native_stock_inspect import REQUEST
 
         artifacts = {
             "stock-receipt.json": b"receipt",
@@ -70,7 +68,6 @@ def fixture_snapshot() -> dict[str, bytes]:
     import json
 
     from alpha_cli.native_stock_fixture import RESULT, SOURCE_SHA256, STAGES, digest
-    from tests.unit.test_native_stock_inspect import REQUEST
 
     trace = {
         "schema": "StockRDLoopTraceV1",
@@ -117,7 +114,6 @@ class SnapshotSemanticsTests(unittest.TestCase):
         from pathlib import Path
 
         from alpha_cli.native_stock_fixture import validate_stock_artifacts
-        from tests.unit.test_native_stock_inspect import REQUEST
 
         artifacts = fixture_snapshot()
         calls = []
@@ -139,8 +135,6 @@ class SnapshotSemanticsTests(unittest.TestCase):
     def test_changed_trace_checkpoint_request_and_nonfinite_values_are_rejected(self) -> None:
         import json
 
-        from tests.unit.test_native_stock_inspect import REQUEST
-
         for name in fixture_snapshot():
             artifacts = fixture_snapshot()
             artifacts[name] += b"changed"
@@ -153,94 +147,3 @@ class SnapshotSemanticsTests(unittest.TestCase):
             artifacts["stock-receipt.json"] = json.dumps(receipt).encode()
             with self.subTest(key=key), self.assertRaises(DataError):
                 validate_stock_snapshot(artifacts, REQUEST)
-
-    def test_inspector_current_only_independent_of_progress_and_no_owner_receipt_claim(
-        self,
-    ) -> None:
-        import tempfile
-        from pathlib import Path
-
-        from alpha_cli.native_stock_inspect import inspect_current_artifacts
-        from tests.unit.test_native_stock_inspect import REQUEST
-
-        binding = {
-            key: REQUEST.payload()[key]
-            for key in (
-                "job_id",
-                "reservation_id",
-                "owner_id",
-                "spec_sha256",
-            )
-        }
-        with tempfile.TemporaryDirectory() as directory:
-            work = Path(directory)
-            self.assertEqual(inspect_current_artifacts(work, binding)["status"], "unavailable")
-            for name, raw in fixture_snapshot().items():
-                (work / name).write_bytes(raw)
-            report = inspect_current_artifacts(work, binding)
-            self.assertEqual(report["status"], "current_bytes_validated_only")
-            self.assertEqual(
-                report["durable_owner_receipt_binding"],
-                "unavailable_stock_outcome_has_no_receipt_hash",
-            )
-            self.assertEqual(report["worker_profile_binding"], "unverified")
-            self.assertFalse((work / "stock-progress.json").exists())
-            with self.assertRaises(DataError):
-                inspect_current_artifacts(work, binding | {"owner_id": "wrong"})
-            (work / "stock-trace.json").unlink()
-            with self.assertRaises(DataError):
-                inspect_current_artifacts(work, binding)
-
-
-@unittest.skipUnless(
-    "ALPHA_RDAGENT_SOURCE" in os.environ and "ALPHA_STOCK_PYTHON" in os.environ,
-    "explicit installed synthetic assets required",
-)
-class NativeSnapshotJourney(unittest.TestCase):
-    def test_actual_owner_success_inspection_without_durable_hash_or_resume_authority(self) -> None:
-        import hashlib
-        import json
-        from pathlib import Path
-
-        from alpha_cli._native_fixture_store import _events
-        from alpha_cli.native_stock_inspect import inspect_run
-        from alpha_cli.native_supervisor import start_synthetic_owner
-        from tests.unit.test_native_stock_dispatch import JOB, case
-
-        with case() as (root, store, launch):
-            process = start_synthetic_owner(
-                root, JOB, fixture="native_loop", seconds=40, native=launch
-            )
-            try:
-                self.assertEqual(process.wait(timeout=50), 0)
-            finally:
-                if process.poll() is None:
-                    process.terminate()
-                    process.wait(timeout=5)
-            report = inspect_run(root, JOB)
-            self.assertEqual(
-                record(report["artifact_validation"])["status"], "current_bytes_validated_only"
-            )
-            self.assertFalse(report["resume_allowed"])
-            with store._readonly_transaction() as connection:
-                outcome = _events(connection, JOB)["native_outcome"]
-            self.assertNotIn("rule_result", outcome)
-            # Advisory corruption must not hide independently valid success bytes.
-            progress = root / f"payload-{JOB}" / "stock-progress.json"
-            progress.write_bytes(b"{malformed advisory snapshot")
-            report = inspect_run(root, JOB)
-            self.assertEqual(record(report["progress"])["status"], "invalid")
-            self.assertEqual(
-                record(report["artifact_validation"])["status"], "current_bytes_validated_only"
-            )
-            self.assertFalse(report["resume_allowed"])
-            raw = (root / f"payload-{JOB}" / "stock-receipt.json").read_bytes()
-            self.assertEqual(
-                record(report["artifact_validation"])["receipt_sha256"],
-                hashlib.sha256(raw).hexdigest(),
-            )
-            evidence = Path(os.environ["ALPHA_STOCK_RECEIPTS"]) / "snapshot-native"
-            evidence.mkdir()
-            (evidence / "inspection.json").write_text(json.dumps(report, sort_keys=True))
-            (evidence / "stock-receipt.json").write_bytes(raw)
-            (evidence / "owner-outcome.json").write_text(json.dumps(outcome, sort_keys=True))

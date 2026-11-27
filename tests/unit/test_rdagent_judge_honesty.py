@@ -330,7 +330,7 @@ def test_missing_proposal_fields_use_same_reask_limit(
 
 
 def test_every_new_status_has_a_web_sentence() -> None:
-    from alpha_web._rdagent_runs import status_sentence
+    from alpha_web._rdagent_run_words import status_sentence
 
     for status in (
         "DIAGNOSTIC",
@@ -475,7 +475,7 @@ def test_ledger_proposer_text_reports_deflation() -> None:
 
 
 def test_new_round_outcomes_have_plain_sentences() -> None:
-    from alpha_web._rdagent_runs import STATUS_SENTENCES
+    from alpha_web._rdagent_run_words import STATUS_SENTENCES
 
     for step in ("proposal_failed", "critic_unavailable"):
         for failure in ("provider_timeout", "provider_error"):

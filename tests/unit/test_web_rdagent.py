@@ -12,6 +12,7 @@ import httpx
 import pytest
 from fastapi import HTTPException
 
+from alpha_web import _rdagent_run_words as words
 from alpha_web import _rdagent_runs as reader
 from alpha_web.api import rdagent
 from alpha_web.app import create_app
@@ -236,14 +237,14 @@ def test_all_writer_statuses_have_sentences() -> None:
     )
     assert isinstance(assignment.value, ast.Call)
     statuses = ast.literal_eval(assignment.value.args[0])
-    assert statuses <= reader.STATUS_SENTENCES.keys()
+    assert statuses <= words.STATUS_SENTENCES.keys()
     for status in statuses:
-        assert reader.status_sentence(status, None)
+        assert words.status_sentence(status, None)
     for reason in ("critic_rejected", "cap_reached", "exception", "bad_output"):
-        assert reader.status_sentence("FAILED", reason) == reader.STATUS_SENTENCES[reason]
-    assert reader.status_sentence("refused_closed_family", None)
+        assert words.status_sentence("FAILED", reason) == words.STATUS_SENTENCES[reason]
+    assert words.status_sentence("refused_closed_family", None)
     with pytest.raises(ValueError, match="status"):
-        reader.status_sentence("NEW_UNMAPPED_STATUS", None)
+        words.status_sentence("NEW_UNMAPPED_STATUS", None)
 
 
 def test_http_contract_without_sockets(store: Path) -> None:
@@ -373,7 +374,7 @@ def test_status_sentences_cover_round_refusals_and_code_failure_reasons() -> Non
                             if isinstance(value, ast.Constant) and isinstance(value.value, str)
                         )
     assert {"cap_reached", "exception", "critic_rejected", "bad_output"} <= reasons
-    assert reasons <= reader.STATUS_SENTENCES.keys()
+    assert reasons <= words.STATUS_SENTENCES.keys()
     for node in ast.walk(tree):
         if isinstance(node, ast.Dict):
             for key, value in zip(node.keys, node.values, strict=True):
@@ -386,7 +387,7 @@ def test_status_sentences_cover_round_refusals_and_code_failure_reasons() -> Non
                         for n in candidates
                         if isinstance(n, ast.Constant) and isinstance(n.value, str)
                     }
-                    assert codes <= reader.STATUS_SENTENCES.keys()
+                    assert codes <= words.STATUS_SENTENCES.keys()
 
 
 def test_funnel_is_counted_from_recorded_rows_and_receipt_wins(store: Path) -> None:
@@ -549,8 +550,8 @@ def test_round_outcomes_of_the_loop_guard_and_resume_have_sentences() -> None:
                     }
     assert {"coding_failed_provider_timeout", "abandoned_after_error"} <= codes
     for code in codes:
-        assert reader.status_sentence(code, None)
-    assert reader.status_sentence("DEFLATION_FAIL", None)
+        assert words.status_sentence(code, None)
+    assert words.status_sentence("DEFLATION_FAIL", None)
 
 
 def test_story_links_tasks_by_evaluation_name_and_hash_not_loop_number(store: Path) -> None:

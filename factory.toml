@@ -15,7 +15,7 @@ never_paths = [
 # Product lines added per change (tests and deletions do not count).
 size_cap = 400
 # Work orders in flight at once.
-max_in_flight = 3
+max_in_flight = 5
 # No new features before this date (owner decision 2026-11-24): fixes and removals only.
 feature_freeze_until = 2026-12-08
 

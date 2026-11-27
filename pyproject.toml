@@ -345,3 +345,100 @@ forbidden_modules = [
     "alpha_cli._control_schema", "alpha_cli._control_json", "alpha_cli._ml_observation_store",
     "alpha_cli.ml_native_plan", "alpha_cli._structural_digest",
 ]
+
+# The layers inside alpha_cli, from the bottom: core (`_*`) and store modules, then figures and
+# toolbox, then spine, then the command files (`*_cmds`). The two fences below stop new direct imports
+# that go down-to-up. Each `ignore_imports` entry is one direct import that existed when the fence
+# was added; remove the entry when the import goes. Never add an entry. A new command file adds its
+# name to both `forbidden_modules` lists.
+[[tool.importlinter.contracts]]
+name = "spine imports no toolbox, figures or command file directly"
+type = "forbidden"
+source_modules = ["alpha_cli.spine"]
+forbidden_modules = [
+    "alpha_cli.toolbox", "alpha_cli.figures",
+    "alpha_cli.assistant_cmds", "alpha_cli.backtest_cmds", "alpha_cli.chart_cmds",
+    "alpha_cli.confirm_cmds", "alpha_cli.context_cmds", "alpha_cli.context_derived_cmds",
+    "alpha_cli.context_free_cmds", "alpha_cli.context_sources_cmds", "alpha_cli.crypto_data_cmds",
+    "alpha_cli.daily_native_cmds", "alpha_cli.data_cmds", "alpha_cli.data_update_cmds",
+    "alpha_cli.figures_cmds", "alpha_cli.follow_cmds", "alpha_cli.forecast_cmds",
+    "alpha_cli.home_cmds", "alpha_cli.idea_cmds", "alpha_cli.info_cmds", "alpha_cli.jobs_cmds",
+    "alpha_cli.labels_cmds", "alpha_cli.ledger_cmds", "alpha_cli.library_cmds",
+    "alpha_cli.library_papers_cmds", "alpha_cli.local_pdf_cmds", "alpha_cli.lookalike_cmds",
+    "alpha_cli.market_overview_cmds", "alpha_cli.ml_cmds", "alpha_cli.monte_carlo_cmds",
+    "alpha_cli.next_cmds", "alpha_cli.nightly_cmds", "alpha_cli.optim_cmds",
+    "alpha_cli.options_cmds", "alpha_cli.owner_auth_cmds", "alpha_cli.partner_cmds",
+    "alpha_cli.propfirm_cmds", "alpha_cli.provider_cmds", "alpha_cli.rdagent_bench_cmds",
+    "alpha_cli.rdagent_cmds", "alpha_cli.report_cmds", "alpha_cli.research_cmds",
+    "alpha_cli.research_diagnostic_cmds", "alpha_cli.results_cmds", "alpha_cli.risk_cmds",
+    "alpha_cli.rules_cmds", "alpha_cli.run_price_cmds", "alpha_cli.scan_cmds",
+    "alpha_cli.setup_cmds", "alpha_cli.strategy_candidate_cmds", "alpha_cli.test_cmds",
+    "alpha_cli.tool_cmds", "alpha_cli.validate_cmds",
+]
+allow_indirect_imports = true
+ignore_imports = [
+    "alpha_cli.spine.facts -> alpha_cli.toolbox.registry",
+    "alpha_cli.spine.facts -> alpha_cli.toolbox.store",
+    "alpha_cli.spine.trial_record -> alpha_cli.toolbox.registry",
+    "alpha_cli.spine.idea_file -> alpha_cli.toolbox.declarations",
+    "alpha_cli.spine.idea_file -> alpha_cli.figures",
+    "alpha_cli.spine.event_study_figure -> alpha_cli.figures.direct_notes",
+    "alpha_cli.spine.setup_trade_figure -> alpha_cli.figures.direct_notes",
+    "alpha_cli.spine.diagnose -> alpha_cli.validate_cmds",
+    "alpha_cli.spine.run -> alpha_cli.validate_cmds",
+    "alpha_cli.spine.run -> alpha_cli.figures_cmds",
+    "alpha_cli.spine.honesty -> alpha_cli.results_cmds",
+]
+
+[[tool.importlinter.contracts]]
+# Core modules leave out the old research-case machinery listed in the contract above; that
+# machinery is being deleted.
+name = "toolbox, figures, core and store modules import no command file directly"
+type = "forbidden"
+source_modules = [
+    "alpha_cli.toolbox", "alpha_cli.figures",
+    "alpha_cli._archive_bars", "alpha_cli._artifacts", "alpha_cli._chart_data",
+    "alpha_cli._cli_json", "alpha_cli._context_gate", "alpha_cli._context_plan",
+    "alpha_cli._cross_sectional", "alpha_cli._crypto_acquisition_errors",
+    "alpha_cli._crypto_acquisition", "alpha_cli._crypto_analysis",
+    "alpha_cli._crypto_asset_master_sources", "alpha_cli._crypto_backfill_evidence",
+    "alpha_cli._crypto_backfill_inspection", "alpha_cli._crypto_backfill",
+    "alpha_cli._crypto_backfill_state", "alpha_cli._crypto_bar_coverage",
+    "alpha_cli._crypto_coverage", "alpha_cli._crypto_panel", "alpha_cli._crypto_persistence",
+    "alpha_cli._crypto_snapshot_members", "alpha_cli._data_health", "alpha_cli._estimate",
+    "alpha_cli._forecast_cache", "alpha_cli._forecast_eval", "alpha_cli._forecast",
+    "alpha_cli._gauntlet", "alpha_cli._hypothesis_scan", "alpha_cli._identity",
+    "alpha_cli._lookalike_figures", "alpha_cli._mcpt", "alpha_cli._mc_reading",
+    "alpha_cli._ml_replay", "alpha_cli._native_tearsheet", "alpha_cli._optim",
+    "alpha_cli._portfolio", "alpha_cli._progress", "alpha_cli._propfirm",
+    "alpha_cli._rdagent_checks", "alpha_cli._rdagent_clocks", "alpha_cli._rdagent_costs",
+    "alpha_cli._rdagent_identity", "alpha_cli._rdagent_judge", "alpha_cli._rdagent_ledger",
+    "alpha_cli._rdagent_membership", "alpha_cli._rdagent_stability", "alpha_cli._rdagent_stats",
+    "alpha_cli._rdagent_twins", "alpha_cli._rdagent_universe", "alpha_cli._runner",
+    "alpha_cli._schemas", "alpha_cli._screen_trials", "alpha_cli._seeds",
+    "alpha_cli._setup_spec_build", "alpha_cli._strategies", "alpha_cli._surrogate",
+    "alpha_cli._synth",
+    "alpha_cli.home_db", "alpha_cli.run_store", "alpha_cli.job_store", "alpha_cli.follow_store",
+    "alpha_cli.crypto_bulk_store",
+]
+forbidden_modules = [
+    "alpha_cli.assistant_cmds", "alpha_cli.backtest_cmds", "alpha_cli.chart_cmds",
+    "alpha_cli.confirm_cmds", "alpha_cli.context_cmds", "alpha_cli.context_derived_cmds",
+    "alpha_cli.context_free_cmds", "alpha_cli.context_sources_cmds", "alpha_cli.crypto_data_cmds",
+    "alpha_cli.daily_native_cmds", "alpha_cli.data_cmds", "alpha_cli.data_update_cmds",
+    "alpha_cli.figures_cmds", "alpha_cli.follow_cmds", "alpha_cli.forecast_cmds",
+    "alpha_cli.home_cmds", "alpha_cli.idea_cmds", "alpha_cli.info_cmds", "alpha_cli.jobs_cmds",
+    "alpha_cli.labels_cmds", "alpha_cli.ledger_cmds", "alpha_cli.library_cmds",
+    "alpha_cli.library_papers_cmds", "alpha_cli.local_pdf_cmds", "alpha_cli.lookalike_cmds",
+    "alpha_cli.market_overview_cmds", "alpha_cli.ml_cmds", "alpha_cli.monte_carlo_cmds",
+    "alpha_cli.next_cmds", "alpha_cli.nightly_cmds", "alpha_cli.optim_cmds",
+    "alpha_cli.options_cmds", "alpha_cli.owner_auth_cmds", "alpha_cli.partner_cmds",
+    "alpha_cli.propfirm_cmds", "alpha_cli.provider_cmds", "alpha_cli.rdagent_bench_cmds",
+    "alpha_cli.rdagent_cmds", "alpha_cli.report_cmds", "alpha_cli.research_cmds",
+    "alpha_cli.research_diagnostic_cmds", "alpha_cli.results_cmds", "alpha_cli.risk_cmds",
+    "alpha_cli.rules_cmds", "alpha_cli.run_price_cmds", "alpha_cli.scan_cmds",
+    "alpha_cli.setup_cmds", "alpha_cli.strategy_candidate_cmds", "alpha_cli.test_cmds",
+    "alpha_cli.tool_cmds", "alpha_cli.validate_cmds",
+]
+allow_indirect_imports = true
+ignore_imports = ["alpha_cli.figures._price_signal -> alpha_cli.run_price_cmds"]

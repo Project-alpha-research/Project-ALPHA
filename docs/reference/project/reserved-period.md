@@ -34,8 +34,9 @@ Three kinds: the code locks it out (it refuses reserved rows or aborts), only la
 ### Locks it out: RD-Agent
 
 - RD-Agent factor loop: the worker's prepare step and funding read (`alpha_factor_data.py`) and the daily funding reader refuse rows from the date on.
-  The evaluator (`rdagent_factor_eval.py`) refuses a panel receipt or factor values that reach it. The judge (`_rdagent_judge.py`, `_rdagent_judge_replay.py`) refuses a panel,
-  replay or lineage matrix that reaches it. The loop is never given that data ([rules](../invariants/rdagent.md#factor-loop-and-judging)).
+  The evaluator (`rdagent_factor_eval.py`) refuses a panel receipt or factor values that reach it.
+  The judge (`_rdagent_judge.py`, `_rdagent_judge_replay.py`) refuses a panel, replay or lineage matrix that reaches it.
+  The loop is never given that data ([rules](../invariants/rdagent.md#factor-loop-and-judging)).
 - RD-Agent rule families (`rdagent_rule_family.py`): the run aborts if the loader returns a bar or dividend on or after the date.
 - RD-Agent journeys: the figures stop at the date and a record that reaches it is refused (`rdagent_journey.py`, `figures/rdagent_journey_figures.py`).
 - RD-Agent post-verdict checks (`_rdagent_checks.py`): a replay with an exit on or after the date is refused (`RESERVED_PERIOD`).

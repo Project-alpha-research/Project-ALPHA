@@ -67,7 +67,7 @@ isolated workers keep their own suites. Tests must never read the guarded
 - What runs where:
   - `gate.py check --all`: `-m "not platform and not network and not slow_oracle"`.
   - `gate.py check`: `-m "not network and not slow_oracle"` over the `gate_select.py` selection.
-  - CI on main after each merge (`gate.py component backend-tests --shard I/4`, four shards of whole files). A pull request runs
+  - CI on main after each merge (`gate.py component backend-tests --shard I/6`, six shards of whole files). A pull request runs
     the `gate.py check` selection instead (the `quick` job):
     `pytest -q -n auto --dist worksteal -m "not network and not slow_oracle" --cov`. Changed lines of
     product source must be 85% covered (`[tool.diff_cover]`); the global figure is reported, not gated.

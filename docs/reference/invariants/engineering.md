@@ -153,7 +153,7 @@ Project-wide coding rules. Area files add their own detail and link here. The re
   `type(scope): summary` message. Model review is advisory.
   [ADR-0039](../../adr/0039-ci-is-the-merge-gate.md)
 - One CI job locally: `uv run python scripts/gate.py component NAME` (`backend` is the whole
-  backend; CI runs it as `backend-static`, `backend-tests --shard I/4` and `backend-quant`;
+  backend; CI runs it as `backend-static`, `backend-tests --shard I/6` and `backend-quant`;
   also `frontend`, `frontend-full`, `literature`, `qlib`, `afml`). Every check: [checks](../checks.md).
 - Step by step, with focused checks and owned test processes: [development loop](../../operations/development-loop.md).
 - CI passing changes no application authority: owner actions, approvals and promotion are unchanged by it.

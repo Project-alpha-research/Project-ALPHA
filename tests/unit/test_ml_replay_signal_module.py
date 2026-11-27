@@ -39,7 +39,6 @@ def test_ml_contract_keeps_shared_names() -> None:
         "MIN_ALIGNED_SESSIONS",
         "canonical_json_bytes",
         "sha256_file",
-        "validate_result_bundle",
         "validate_request_bundle",
         "prepare_exchange",
         "MLContractError",

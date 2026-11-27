@@ -14,8 +14,8 @@ from alpha_cli.ml_contract import (
     MLContractError,
     _as_finite_float,
     sha256_file,
-    validate_result_bundle,
 )
+from alpha_cli.ml_result_validation import validate_result_bundle
 
 
 def evaluate_result_bundle(exchange_dir: Path) -> dict[str, Any]:

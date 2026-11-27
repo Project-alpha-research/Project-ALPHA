@@ -13,8 +13,8 @@ from alpha_cli.ml_contract import (
     MLContractError,
     canonical_json_bytes,
     sha256_file,
-    validate_result_bundle,
 )
+from alpha_cli.ml_result_validation import validate_result_bundle
 
 _KEYS = ["fold", "split", "target_ts", "symbol", "origin_ts", "available_at"]
 _ARTIFACTS = (

@@ -29,9 +29,9 @@ from alpha_cli.ml_contract import (
     prepare_exchange,
     sha256_file,
     validate_request_bundle,
-    validate_result_bundle,
 )
 from alpha_cli.ml_replay_signal import publish_replay_signal_frame
+from alpha_cli.ml_result_validation import validate_result_bundle
 from alpha_core import DataError
 
 

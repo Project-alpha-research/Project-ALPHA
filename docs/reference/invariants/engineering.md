@@ -44,6 +44,10 @@ Project-wide coding rules. Area files add their own detail and link here. The re
   and Kronos. The web app and MCP server run the `alpha` command as a subprocess for actions and
   engine-backed projections; they never run that machinery in-process.
   [ADR-0002](../../adr/0002-cli-sole-composer-subprocess-surfaces.md)
+- Reads and the job-lease reservation run in-process. For them, the web app and MCP server import
+  named light `alpha_cli` modules: for example `run_store`, `run_projection`,
+  `artifact_contract`, `catalog`, `durable_lease` and `job_capacity`. These imports never run an
+  action and never load the engine.
 - Engine imports inside `alpha_cli` are lazy, so light commands stay light.
 
 ## Strict typing

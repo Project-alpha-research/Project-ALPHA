@@ -10,6 +10,8 @@ sources:
 ## Purpose
 
 A stdio MCP server that lets an AI client call bounded `alpha` commands, by running the CLI as a subprocess.
+Reads and the job-lease reservation import named `alpha_cli` modules in process
+([rule](../../docs/reference/invariants/engineering.md#subprocess-boundary)).
 It can never approve or decide research, consume D2 confirmation, reveal a holdout or place orders.
 
 ## Read first

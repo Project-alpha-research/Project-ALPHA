@@ -11,7 +11,8 @@ sources:
 # alpha-web workspace
 ## Purpose
 The ALPHA Workstation: a local FastAPI backend and a React single-page app.
-It runs `alpha` as a subprocess for every action, except that Setup Lab reads stored files directly, bounded and read-only
+It runs `alpha` as a subprocess for every action. Reads and the job-lease reservation import named `alpha_cli` modules in process
+([rule](../../docs/reference/invariants/engineering.md#subprocess-boundary)); Setup Lab reads stored files directly, bounded and read-only
 ([rule](../../docs/reference/invariants/web-api-reads.md#reads-and-writes)). It never runs the engine, reads SQLite itself or grants authority.
 
 ## Read first

@@ -9,7 +9,6 @@ sources:
   - tests/unit/test_web_*.py
   - tests/integration/test_web_api_*.py
   - tests/integration/test_openapi_safe_routes.py
-  - tests/unit/test_owner_auth_api.py
   - tests/unit/test_owner_local_confirmation.py
   - tests/unit/test_run_context_authority.py
 ---
@@ -51,7 +50,7 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
   sample progress is `indeterminate` (no ETA); an estimate never shows more than 95 % before the job ends.
 - The generic launcher `POST /api/jobs` classifies argv with `alpha_cli.catalog.classify_generic_command`:
   - `owner_only` commands are refused (for example `owner-auth`, `project`, `suite`, `provider`, `assistant`, most
-    `research` and `paper` verbs). Enforced by `tests/unit/test_owner_auth_api.py`.
+    `research` and `paper` verbs). Enforced by `tests/unit/test_web_local_origin.py`.
   - An argv root that is not a classified `alpha` command (`unknown`) is refused with 422 before any subprocess or
     job record exists, with or without a run context.
   - `empirical` commands need an explicit run context, resolved by `run_authority.resolve_run_context`. A missing or
@@ -67,13 +66,11 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
   So any `alpha_cli` module you import must not pull those in. See [engineering § Import layers](engineering.md#import-layers).
 - Seams in use today: `run_store`, `catalog`, `run_context`, `artifact_contract`, `run_projection`, `figure_cache`,
   `job_capacity`, `durable_lease`, `ml_contract`, `ml_split`, `spine.reading`,
-  `assistant_contracts`, and `owner_auth` (exception below).
+  and `assistant_contracts`.
   A new `alpha_cli` import is an architecture change: keep it small and engine-free.
 - `tests/unit/test_public_seams.py` checks that `alpha_cli.catalog` and `alpha_cli.run_store` load without numpy, scipy,
   torch, nautilus or `alpha_validation`. It covers only those two modules.
-- The one `ignore_imports` entry is `alpha_web.api.owner_auth -> alpha_cli.owner_auth`
-  ([ADR-0030](../../adr/0030-touch-id-owner-presence-for-research-actions.md)). Only that router may import it.
-  Never add another ignore entry to make an import pass.
+- The contract has no `ignore_imports` entry. Never add one to make an import pass.
 - Never import matplotlib or `alpha_research` in the web process. Enforced by
   `tests/unit/test_web_figures.py::test_the_web_process_never_imports_matplotlib_or_the_renderer`.
 - Bounded Polars reads of artifacts are allowed (`_runs.py`, `_ml.py`). No engine, gauntlet, Nautilus, Qlib or Kronos in-process.
@@ -130,24 +127,15 @@ Moved to [web-api-reads.md § Reads and writes](web-api-reads.md#reads-and-write
   stat-only and reads a manifest only when its mtime changes, so runs started from the CLI or MCP also appear. Areas
   are declared in `_activity.AREAS`. Enforced by `tests/unit/test_web_activity_areas.py`.
 
-## Owner confirmation routes
+## Owner actions and the local-origin check
 
-- `POST /api/owner-auth/actions/challenge` and `/actions/perform` are the only browser path to owner research actions.
-  [ADR-0030](../../adr/0030-touch-id-owner-presence-for-research-actions.md),
-  [ADR-0038](../../adr/0038-local-confirmation-and-terminal-archive-charts.md). Authority rules:
-  [research-integrity § Owner authority](research-integrity.md#owner-authority).
-- Verify in-process through `alpha_cli.owner_auth`, then run only the server-built closed argv from `_action_argv`
-  through `_run_json`. `record_semantic_event` is never a CLI action; perform returns the seam's atomic result.
-- Take the actor from the verified authorization, never from the request. Re-derive the artifact hash server-side and
-  refuse a mismatch. Tokens are single-use and expire after 60 s.
-  Enforced by `tests/unit/test_owner_auth_api.py`, `tests/unit/test_owner_local_confirmation.py`.
-- Refuse (403) unless Origin is exactly `http://localhost:<port>`, Host matches, content type is JSON, and `Sec-Fetch-Site` is absent or `same-origin`.
-- Local confirmation is not proof that a human was present. Never label it as verified physical presence.
-- The closed action list is the `OwnerActionChallengeRequest.action_type` literal. Enforced against the generated
-  contract by `tests/unit/test_web_owner_actions_drift.py`.
-- Research-gate override, holdout reveal, reviewed asset master and owner-auth enroll/recover stay CLI-only.
-  Enforced for the override by `tests/unit/test_web_owner_action_argv.py`.
-- Agents never call these routes or `alpha owner-auth enroll|recover`; the `pre-owner-action-guard` hook blocks them.
+- The web app has no owner action or owner enrollment route. Owner research actions and owner credentials stay in the
+  trusted local CLI. Authority rules: [research-integrity § Owner authority](research-integrity.md#owner-authority).
+- The assistant writes (`POST /api/assistant/sessions`, `.../turns`, `.../check`) use
+  `_common.require_local_origin`. It refuses (403) unless Origin is exactly `http://localhost:<port>`, Host matches,
+  content type is JSON, and `Sec-Fetch-Site` is absent or `same-origin`.
+  Enforced by `tests/unit/test_web_local_origin.py`.
+- Agents never call `alpha owner-auth enroll|recover`; the `pre-owner-action-guard` hook blocks it.
 
 ## Figures
 

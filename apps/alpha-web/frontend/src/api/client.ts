@@ -145,33 +145,7 @@ export function clearImmutableApiCache(): void {
   immutableCache.clear()
 }
 
-// Semantic ledger events use the server-owned Study cycle, never a generic owner button.
-export type OwnerActionType = Exclude<
-  Schema['OwnerActionChallengeRequest']['action_type'],
-  'record_semantic_event'
->
-
-export interface OwnerCredentialOptions {
-  challenge_id: string
-  expires_at: string
-  binding?: Record<string, unknown>
-  public_key: Record<string, unknown>
-}
-
-export type OwnerActionChallengeRequest = Omit<
-  Schema['OwnerActionChallengeRequest'],
-  'action_type' | 'authorization_method'
-> & {
-  authorization_method?: 'webauthn' | 'local_confirmation'
-  action_type: OwnerActionType
-}
-
 export type ArchiveChartDataset = Schema['ArchiveChartDataset']
-
-export interface OwnerActionResult {
-  authorization: Record<string, unknown>
-  result: Record<string, unknown>
-}
 
 export interface LiteratureCandidate {
   candidate_id: string
@@ -218,32 +192,6 @@ export async function postJSON<T>(url: string, body: unknown): Promise<T> {
 }
 
 export const api = {
-  ownerRegistrationOptions: (token: string): Promise<OwnerCredentialOptions> =>
-    postJSON('/api/owner-auth/enrollment/options', { token }),
-  ownerRegistrationFinish: (
-    token: string,
-    challengeId: string,
-    credential: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> =>
-    postJSON('/api/owner-auth/enrollment/finish', {
-      token,
-      challenge_id: challengeId,
-      credential,
-    }),
-  ownerActionChallenge: (
-    body: OwnerActionChallengeRequest,
-  ): Promise<OwnerCredentialOptions> => postJSON('/api/owner-auth/actions/challenge', body),
-  ownerLocalChallenge: (body: OwnerActionChallengeRequest): Promise<{ challenge_id: string; confirmation_token: string; binding: Record<string, unknown> }> => postJSON('/api/owner-auth/actions/challenge', { ...body, authorization_method: 'local_confirmation' }),
-  ownerLocalPerform: (challengeId: string, confirmationToken: string, payload: Record<string, unknown>): Promise<OwnerActionResult> => postJSON('/api/owner-auth/actions/perform', { challenge_id: challengeId, confirmation_token: confirmationToken, payload }),
-  ownerActionPerform: (
-    challengeId: string,
-    credential: Record<string, unknown>,
-    payload: Record<string, unknown>,
-  ): Promise<OwnerActionResult> => postJSON('/api/owner-auth/actions/perform', {
-    challenge_id: challengeId,
-    credential,
-    payload,
-  }),
   chartDatasets: (): Promise<Schema['ArchiveChartDatasets']> => getJSON('/api/chart-datasets'),
   cryptoMarketCatalog: (query = '', limit = 25): Promise<Schema['CryptoMarketCatalogResponse']> => {
     const params = new URLSearchParams({ query, limit: String(limit) })

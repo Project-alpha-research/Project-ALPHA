@@ -43,7 +43,6 @@ from alpha_web.api import jobs as jobs_api
 from alpha_web.api import market as market_api
 from alpha_web.api import ml as ml_api
 from alpha_web.api import ml_runs as ml_runs_api
-from alpha_web.api import owner_auth as owner_auth_api
 from alpha_web.api import rdagent as rdagent_api
 from alpha_web.api import recent_runs as recent_runs_api
 from alpha_web.api import risk as risk_api
@@ -83,7 +82,7 @@ def create_app() -> FastAPI:
     async def canonicalize_localhost(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        """Keep every WebAuthn ceremony on the exact enrolled localhost origin."""
+        """Keep the Workstation on the exact localhost origin that local-origin writes need."""
         if request.url.hostname == "127.0.0.1":
             target = str(request.url).replace("://127.0.0.1", "://localhost", 1)
             return RedirectResponse(target, status_code=307)
@@ -143,7 +142,6 @@ def create_app() -> FastAPI:
     app.include_router(ideas_api.router)
     app.include_router(market_api.router)
     app.include_router(figures_api.router)
-    app.include_router(owner_auth_api.router)
     app.include_router(risk_api.router)
     app.include_router(rules_api.router)
     app.include_router(v3_api.router)
@@ -168,11 +166,6 @@ def create_app() -> FastAPI:
     @app.get("/app")
     def workstation() -> FileResponse:
         """Alias for the workstation (same SPA as ``/``)."""
-        return _spa()
-
-    @app.get("/owner-auth/enroll")
-    def owner_enrollment() -> FileResponse:
-        """SPA entry reached only through the trusted CLI's short-lived enrollment URL."""
         return _spa()
 
     return app

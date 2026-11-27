@@ -13,7 +13,7 @@ from typing import Any
 import polars as pl
 
 from alpha_core import DataError
-from alpha_data._atomic import publish, write_text
+from alpha_core.atomic import publish, write_text
 
 SCHEMA = {
     "series_id": pl.String,

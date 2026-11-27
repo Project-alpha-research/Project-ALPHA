@@ -20,7 +20,7 @@ from zoneinfo import ZoneInfo
 import polars as pl
 
 from alpha_core import CorporateAction, DataError
-from alpha_data._atomic import publish
+from alpha_core.atomic import publish
 from alpha_data.adapters.base import DatasetIdentity, FetchReceipt, FetchResult
 from alpha_data.sessions import calendar_zone, session_bounds, sessions_between
 from alpha_data.store import ParquetStore

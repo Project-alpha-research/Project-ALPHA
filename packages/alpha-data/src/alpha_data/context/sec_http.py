@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from alpha_core import DataError
-from alpha_data._atomic import publish, write_text
+from alpha_core.atomic import publish, write_text
 from alpha_data.context.events import cik10
 from alpha_data.context.fred import _NoRedirect
 

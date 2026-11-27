@@ -51,7 +51,7 @@ from alpha_cli._rdagent_judge import (
 from alpha_cli._rdagent_judge import (
     LEDGER_SCHEMAS as LEDGER_SCHEMAS,
 )
-from alpha_cli._rdagent_judge import LINEAGE_CONVENTION, lineage, panel_membership
+from alpha_cli._rdagent_judge import LINEAGE_CONVENTION, lineage
 from alpha_cli._rdagent_judge import (
     LOOP_UNIVERSE as LOOP_UNIVERSE,
 )
@@ -101,9 +101,6 @@ from alpha_cli._rdagent_judge import (
     outside_git as outside_git,
 )
 from alpha_cli._rdagent_judge import (
-    replay as replay,
-)
-from alpha_cli._rdagent_judge import (
     screen as screen,
 )
 from alpha_cli._rdagent_judge import (
@@ -120,6 +117,10 @@ from alpha_cli._rdagent_judge import (
 )
 from alpha_cli._rdagent_judge import (
     validate_panel as validate_panel,
+)
+from alpha_cli._rdagent_judge_replay import panel_membership
+from alpha_cli._rdagent_judge_replay import (
+    replay as replay,
 )
 from alpha_cli._rdagent_ledger import (
     LedgerRows as LedgerRows,
@@ -218,6 +219,7 @@ def _inputs(
     fingerprint = sha(
         Path(__file__).read_bytes()
         + Path(__file__).with_name("_rdagent_judge.py").read_bytes()
+        + Path(__file__).with_name("_rdagent_judge_replay.py").read_bytes()
         + Path(__file__).with_name("_rdagent_membership.py").read_bytes()
         + Path(__file__).with_name("_rdagent_identity.py").read_bytes()
         + Path(__file__).with_name("_rdagent_clocks.py").read_bytes()

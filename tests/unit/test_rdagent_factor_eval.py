@@ -16,6 +16,7 @@ import pytest
 from typer.testing import CliRunner
 
 from alpha_cli import _rdagent_judge as judge
+from alpha_cli import _rdagent_judge_replay as judge_replay
 from alpha_cli import rdagent_factor_eval as ev
 from alpha_cli.ledger_cmds import ledger_app
 from alpha_cli.spine.trial_reader import LedgerSource, read_ledgers, trials_for_deflation
@@ -360,7 +361,9 @@ def test_noise_never_replayed(tmp_path: Path, seed: int) -> None:
     run = tmp_path / "run"
     req = fixture(run, seed=seed, noise=True)
     with patch.object(
-        judge, "run_weight_replay", side_effect=AssertionError("screen failed but replay called")
+        judge_replay,
+        "run_weight_replay",
+        side_effect=AssertionError("screen failed but replay called"),
     ):
         record = evaluate(run, req, tmp_path / "ledger.jsonl")
     assert record["decision"] is False

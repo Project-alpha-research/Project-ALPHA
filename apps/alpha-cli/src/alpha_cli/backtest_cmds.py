@@ -15,8 +15,10 @@ import numpy as np
 import typer
 
 from alpha_cli import _artifacts, _forecast_cache, _runner, rules_cmds
-from alpha_cli import _backtest_run_inputs as run_inputs
-from alpha_cli._backtest_run_inputs import _RESEARCH_GATE_OVERRIDE_HELP
+from alpha_cli import _backtest_run_inputs as inputs
+from alpha_cli._backtest_run_inputs import (
+    _RESEARCH_GATE_OVERRIDE_HELP as _RESEARCH_GATE_OVERRIDE_HELP,
+)
 from alpha_cli.backtest_cross_sectional_cmds import cross_sectional_app
 from alpha_cli.spine import reserve
 from alpha_core import DataError
@@ -469,9 +471,7 @@ def run(
     """
     settings = AlphaSettings()
     try:
-        target, stored = run_inputs._run_timeframes(
-            timeframe, from_timeframe, manifest_id, snapshot
-        )
+        target, stored = inputs._run_timeframes(timeframe, from_timeframe, manifest_id, snapshot)
         rules_spec = rules_cmds.resolve_rules_spec(
             strategy, rules, settings.data_dir, rules_file=rules_file, rules_sha256=rules_sha256
         )
@@ -502,7 +502,7 @@ def run(
     )
     try:
         held = _run_hold(symbol, settings.data_dir, as_of, snapshot, stored, manifest_id)
-        symbol, bars, snapshot_id, dividends, timeframe_fields = run_inputs._load_run_bars(
+        symbol, bars, snapshot_id, dividends, timeframe_fields = inputs._load_run_bars(
             symbol,
             data_dir=settings.data_dir,
             snapshot=snapshot,
@@ -513,7 +513,7 @@ def run(
             manifest_id=manifest_id,
             resampled=stored != target,
         )
-        spec = run_inputs._annualised(spec, bars, target, timeframe_fields, periods_per_year)
+        spec = inputs._annualised(spec, bars, target, timeframe_fields, periods_per_year)
         # kronos: precompute the signal cache (slow model, runs once) and pin its key on the
         # spec; every other strategy passes through untouched.
         spec, forecast_meta = _forecast_cache.prepare_spec_for_engine(

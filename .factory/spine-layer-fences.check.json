@@ -1,0 +1,6 @@
+{
+  "kind": "characterisation",
+  "test_paths": [
+    "tests/unit/test_research_boundary.py"
+  ]
+}

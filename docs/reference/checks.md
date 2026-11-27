@@ -40,7 +40,7 @@ request only when its paths (or the workflow and gate files) change, and always 
 | `static`: OpenAPI freshness and authority | a web route changed without regenerating `openapi.json`, or an unsafe operation | PR | 3 s |
 | `static`: wheel build and wheel smoke | a package that no longer builds or imports, or a web wheel without its SPA | PR | 5 s |
 | `quick` job: `gate.py check` (lint, types, imports, tests mapped from the changed files) | a failure near the change; guards, quick oracles | PR | ~8 min |
-| `tests` job, six shards: all root tests but `network`, `slow_oracle` | any unit, integration, smoke or acceptance failure | main | ~3-4 min each |
+| `tests` job, six shards: all root tests but `network`, `slow_oracle` | any unit, integration, smoke or acceptance failure | main | 4.5-5.7 min each |
 | `bias_guard` marker (inside `tests`) | look-ahead: output before the cutoff changes when later data is poisoned | PR | in `tests` |
 | `oracle` marker (inside `tests`) | wrong statistics: metamorphic and differential checks fail | PR | in `tests` |
 | `tests/acceptance` (inside `tests`, no marker) | the gauntlet, threshold and execution contracts break | PR | in `tests` |

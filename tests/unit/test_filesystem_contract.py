@@ -89,7 +89,8 @@ def workspaces() -> list[str]:
 
 
 def context_files() -> list[str]:
-    return [CONTEXT, *(f"{ws}/{CONTEXT}" for ws in workspaces())]
+    notes = sorted(p.relative_to(ROOT).as_posix() for p in ROOT.glob(f"apps/*/src/*/*/{CONTEXT}"))
+    return [CONTEXT, *(f"{ws}/{CONTEXT}" for ws in workspaces()), *notes]
 
 
 @cache

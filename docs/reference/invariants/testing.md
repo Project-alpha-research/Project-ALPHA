@@ -80,7 +80,8 @@ isolated workers keep their own suites. Tests must never read the guarded
   function, because a renamed parametrised case would make pytest refuse the whole run).
   Over 400 mapped tests it keeps only files named after the changed modules; a changed
   `conftest.py` is left to the run on main. It also always runs a fixed list of fast whole-repository rules (code size,
-  reserved date, research playbook, file-system contract, spec, capabilities, status page, commands reference).
+  reserved date, research playbook, file-system contract, spec, capabilities, status page, commands reference),
+  and the guard, golden and drift tests that read files they do not import (the list is `ALWAYS` in `gate_select.py`).
   Every test runs on main after the merge; a failure there is fixed or reverted at once.
 - Keep fixes in the test file for the behaviour they cover. New test filenames must avoid `fixups` and numbered suffixes.
 - A new file's name decides its tier: `tests/_tiers.py` moves files with listed prefixes out of

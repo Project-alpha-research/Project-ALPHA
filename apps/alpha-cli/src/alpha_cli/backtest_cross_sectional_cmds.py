@@ -1,4 +1,7 @@
-"""``alpha backtest cross-sectional``: a dollar-neutral relative-strength book over a universe."""
+"""``alpha backtest cross-sectional``: a cross-sectional momentum book over a universe.
+
+The book is long-short or long-only.
+"""
 
 from __future__ import annotations
 

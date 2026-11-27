@@ -1,4 +1,7 @@
-"""The inputs of one ``alpha backtest run``: its timeframes, its bars and its bars per year."""
+"""The inputs of one ``alpha backtest run``.
+
+They are its timeframes, its bars and dividends, and its bars per year.
+"""
 
 from __future__ import annotations
 

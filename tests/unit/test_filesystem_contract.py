@@ -40,6 +40,10 @@ ROOT = Path(__file__).parents[2]
 CONTEXT = "CONTEXT.md"
 WORKSPACE_PARENTS = ("packages", "apps", "workers")
 EXTRA_WORKSPACES = ("scripts", "tests", "docs", "research")
+# Folders inside a workspace that carry their own notes in the workspace shape.
+FOLDER_NOTES = tuple(
+    f"apps/alpha-cli/src/alpha_cli/{name}" for name in ("spine", "toolbox", "figures")
+)
 REFERENCE_DIR = "docs/reference"
 REQUIRED_SECTIONS = ("Purpose", "Read first", "How to change it", "Outputs")
 CONTEXT_MAX_LINES = 40
@@ -89,7 +93,11 @@ def workspaces() -> list[str]:
 
 
 def context_files() -> list[str]:
-    return [CONTEXT, *(f"{ws}/{CONTEXT}" for ws in workspaces())]
+    return [
+        CONTEXT,
+        *(f"{ws}/{CONTEXT}" for ws in workspaces()),
+        *(f"{folder}/{CONTEXT}" for folder in FOLDER_NOTES),
+    ]
 
 
 @cache
@@ -656,7 +664,7 @@ def test_research_integrity_rules_stay_stated_in_their_home() -> None:
 
 def test_every_workspace_loads_its_context_through_a_one_line_claude_md() -> None:
     problems = []
-    for ws in workspaces():
+    for ws in (*workspaces(), *FOLDER_NOTES):
         loader = ROOT / ws / IDENTITY
         if not loader.is_file() or loader.read_text(encoding="utf-8") != WORKSPACE_LOADER:
             problems.append(f"{ws}/{IDENTITY} must contain exactly {WORKSPACE_LOADER!r}")

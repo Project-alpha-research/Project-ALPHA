@@ -18,6 +18,8 @@ It must never grant authority the owner did not give, and never route live capit
 Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` = command group, wired in `main.py`).
 The module list is made from the code, never written here: `uv run python scripts/fs.py map apps/alpha-cli [--find WORDS]`
 prints each module's path, line count and docstring line. Tests share the module's name prefix in `tests/unit/`.
+Folder notes: [spine/CONTEXT.md](src/alpha_cli/spine/CONTEXT.md), [toolbox/CONTEXT.md](src/alpha_cli/toolbox/CONTEXT.md),
+[figures/CONTEXT.md](src/alpha_cli/figures/CONTEXT.md).
 
 - Forward follow (`follow_*`) writes only `<home>/forward/`; no research module may import it. Nightly steps run real commands in child processes.
 - Idea cards live under `<home>/ideas/`; the spec link is in no identity. Published: `research/library/published/`; private notes: `<home>/library/private/`.

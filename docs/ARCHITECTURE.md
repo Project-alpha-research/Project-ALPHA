@@ -131,7 +131,7 @@ another package is named.
 | `snapshots/` | `data_cmds` over `alpha_data.snapshot` | Immutable content-hashed data snapshots that runs and studies bind to. |
 | `runs/` | `_artifacts` (backtest/validate runs; listed in `run_store.RUN_DIRS`) | Immutable single-strategy run directories with manifest-pinned artifacts. |
 | `portfolio/` | `backtest_cmds` (`RUN_DIRS`) | Portfolio backtest run directories. |
-| `cross_sectional/` | `backtest_cmds` (`RUN_DIRS`) | Cross-sectional backtest run directories. |
+| `cross_sectional/` | `backtest_cross_sectional_cmds` (`RUN_DIRS`) | Cross-sectional backtest run directories. |
 | `optim/` | `optim_cmds` (`RUN_DIRS`) | Parameter-sweep runs with multi-trial selection-bias statistics. |
 | `propfirm/` | `propfirm_cmds` (`RUN_DIRS`) | Prop-firm rule evaluation runs. |
 | `forecast/` | `forecast_cmds` (`RUN_DIRS`) | Kronos forecast-evaluation run directories. |

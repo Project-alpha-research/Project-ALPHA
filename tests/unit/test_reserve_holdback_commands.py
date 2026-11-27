@@ -11,6 +11,7 @@ import typer
 from typer.testing import CliRunner
 
 from alpha_cli import (
+    _backtest_run_inputs,
     _cross_sectional,
     _portfolio,
     _runner,
@@ -61,7 +62,7 @@ def spy(monkeypatch: pytest.MonkeyPatch) -> Spy:
         seen.actions.extend(action.ex_date for action in result)
         return result
 
-    for module in (optim_cmds, validate_cmds, backtest_cmds):
+    for module in (optim_cmds, validate_cmds, backtest_cmds, _backtest_run_inputs):
         monkeypatch.setattr(module, "_load_bars", bars)
         monkeypatch.setattr(module, "_load_dividends", dividends)
     for module in (_runner, _portfolio):

@@ -350,7 +350,7 @@ forbidden_modules = [
 # toolbox, then spine, then the command files (`*_cmds`). The two fences below stop new direct imports
 # that go down-to-up. Each `ignore_imports` entry is one direct import that existed when the fence
 # was added; remove the entry when the import goes. Never add an entry. A new command file adds its
-# name to both `forbidden_modules` lists (tests/unit/test_spine_layer_fences.py checks this).
+# name to both `forbidden_modules` lists.
 [[tool.importlinter.contracts]]
 name = "spine imports no toolbox, figures or command file directly"
 type = "forbidden"

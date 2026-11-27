@@ -1067,7 +1067,9 @@ def test_partial_series_write_failure_is_not_a_scoring_failure(tmp_path: Path) -
             raise OSError("bucket write failed")
         original(path, payload)
 
-    with patch.object(ev, "_series_file", fail_buckets):
+    from alpha_cli import _factor_eval_series
+
+    with patch.object(_factor_eval_series, "_series_file", fail_buckets):
         record = evaluate(run, req, tmp_path / "ledger.jsonl")
     factor = record["factors"][0]
     assert factor["status"] == "CANDIDATE" and record["decision"] is True

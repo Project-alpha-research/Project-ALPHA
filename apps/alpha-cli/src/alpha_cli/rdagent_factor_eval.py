@@ -7,12 +7,9 @@ import ast
 import fcntl
 import io
 import json
-import math
 import os
 import re
 import sys
-from collections.abc import Iterator
-from dataclasses import asdict
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -23,6 +20,10 @@ import polars as pl
 from alpha_cli import _rdagent_identity as identity
 from alpha_cli import _rdagent_membership as membership
 from alpha_cli import _rdagent_universe as universes
+from alpha_cli._factor_eval_replay import _chance_disclosure, _gap_disclosure, _replay_clocks
+from alpha_cli._factor_eval_series import _bucket_frames as _bucket_frames
+from alpha_cli._factor_eval_series import _record_series
+from alpha_cli._factor_eval_series import _series_file as _series_file
 from alpha_cli._rdagent_checks import post_judge_checks
 from alpha_cli._rdagent_clocks import (
     CLOCKS as CLOCKS,
@@ -145,9 +146,7 @@ from alpha_cli._rdagent_stability import (
 from alpha_cli._rdagent_stability import plain_name as plain_name
 from alpha_cli._rdagent_stats import (
     FACTOR_DEFLATION_RULE,
-    chance_fields,
     factor_deflation,
-    screen_cutoff,
 )
 from alpha_cli._rdagent_twins import find_twin
 from alpha_cli.toolbox.reserve import RESERVED_DAY as RESERVED_DAY
@@ -157,7 +156,6 @@ from alpha_validation.dsr import (
     expected_max_sharpe,
     probabilistic_sharpe_ratio,
 )
-from alpha_validation.proportion import benjamini_hochberg
 
 
 def _inputs(
@@ -228,6 +226,8 @@ def _inputs(
         + Path(__file__).with_name("_rdagent_ledger.py").read_bytes()
         + Path(__file__).with_name("_rdagent_stats.py").read_bytes()
         + Path(__file__).with_name("_rdagent_twins.py").read_bytes()
+        + Path(__file__).with_name("_factor_eval_series.py").read_bytes()
+        + Path(__file__).with_name("_factor_eval_replay.py").read_bytes()
         + (Path(__file__).resolve().parents[4] / "uv.lock").read_bytes()
     )
     return (
@@ -496,213 +496,6 @@ def _report(
     return lead, legacy, disclosures, decision, feedback
 
 
-def _bucket_frames(
-    signal: np.ndarray, outcome: np.ndarray, days: list[date], symbols: list[str], direction: int
-) -> tuple[pl.DataFrame, pl.DataFrame]:
-    observations: dict[int, list[float]] = {bucket: [] for bucket in (1, 2, 3)}
-    masses: dict[int, list[float]] = {bucket: [] for bucket in (1, 2, 3)}
-    daily = []
-    for day, scores, returns in zip(days, signal, outcome, strict=True):
-        top = membership.third_weights(scores, direction, TOP_FRACTION)
-        bottom = membership.third_weights(scores, -direction, TOP_FRACTION)
-        if np.isfinite(scores).sum() == 1:
-            bottom[:] = 0.0  # One name: both thirds are that name; the top bucket keeps it.
-        middle = np.maximum(0.0, np.isfinite(scores).astype(float) - top - bottom)
-        for bucket, weights in ((1, bottom), (2, middle), (3, top)):
-            held = (weights > 0) & np.isfinite(returns)
-            outcomes = (returns[held] * weights[held]).tolist()
-            mass = weights[held].tolist()
-            observations[bucket].extend(outcomes)
-            masses[bucket].extend(mass)
-            daily.append(
-                {
-                    "clock": "daily",
-                    "date": day,
-                    "bucket": bucket,
-                    "mean_outcome": math.fsum(outcomes) / math.fsum(mass) if mass else None,
-                }
-            )
-    # Explicit ordered sums avoid floating-point reductions depending on worker scheduling.
-    buckets = [
-        {
-            "clock": "daily",
-            "bucket": bucket,
-            "mean_outcome": math.fsum(outcomes) / math.fsum(masses[bucket]) if outcomes else None,
-            "observations": (
-                int(count) if (count := math.fsum(masses[bucket])).is_integer() else count
-            ),
-        }
-        for bucket, outcomes in observations.items()
-    ]
-    return (
-        pl.DataFrame(buckets).with_columns(pl.col("mean_outcome").cast(pl.Float64)),
-        pl.DataFrame(daily).with_columns(pl.col("mean_outcome").cast(pl.Float64)),
-    )
-
-
-def _clock_series_frames(
-    row: dict[str, Any],
-    data: dict[str, Any],
-    signal: np.ndarray,
-    outcome: np.ndarray,
-    days: list[date],
-    symbols: list[str],
-) -> Iterator[tuple[str, pl.DataFrame]]:
-    if "daily_ic" in data:
-        yield (
-            "screen",
-            pl.DataFrame(
-                {
-                    "clock": ["daily"] * len(days),
-                    "date": days,
-                    "rank_ic": pl.Series(data["daily_ic"], dtype=pl.Float64),
-                    "names": data["names"],
-                }
-            ),
-        )
-    if row["screen"].get("status") == "OK":
-        buckets, daily = _bucket_frames(signal, outcome, days, symbols, row["screen"]["direction"])
-        yield "buckets", buckets
-        yield "buckets_daily", daily
-    if "periods" in data:
-        periods = [
-            {"clock": "daily", **{k: v for k, v in asdict(p).items() if k != "fold"}}
-            for p in data["periods"]
-        ]
-        yield "replay", pl.DataFrame(periods).sort(["clock", "target_ts", "exit_ts"])
-        yield (
-            "holdings",
-            pl.DataFrame(
-                [
-                    {
-                        "clock": "daily",
-                        "date": t.origin_ts.date(),
-                        "instrument": t.symbol,
-                        "target_weight": t.target_weight,
-                        "score": t.score,
-                    }
-                    for t in data["targets"]
-                ]
-            ).sort(["clock", "date", "instrument"]),
-        )
-
-    if data.get("events"):
-        yield "events", pl.DataFrame(data["events"]).with_columns(pl.lit("daily").alias("clock"))
-    if data.get("positions"):
-        yield (
-            "positions",
-            pl.DataFrame(
-                [
-                    {
-                        "clock": "daily",
-                        "date": snapshot["date"],
-                        "instrument": name,
-                        "quantity": snapshot["quantities"][j],
-                        "cash": snapshot["cash"],
-                        "equity": snapshot["equity"],
-                    }
-                    for snapshot in data["positions"]
-                    for j, name in enumerate(symbols)
-                ]
-            ),
-        )
-
-
-def _series_frames(
-    row: dict[str, Any],
-    data: dict[str, Any],
-    signal: np.ndarray,
-    outcome: np.ndarray,
-    days: list[date],
-    symbols: list[str],
-) -> Iterator[tuple[str, pl.DataFrame]]:
-    frames: dict[str, list[pl.DataFrame]] = {}
-    for clock in CLOCKS:
-        if clock not in data:
-            continue
-        block = data[clock]
-        if "days" not in block:
-            continue
-        for kind, frame in _clock_series_frames(
-            row["clocks"][clock], block, block["signal"], block["outcome"], block["days"], symbols
-        ):
-            frames.setdefault(kind, []).append(frame.with_columns(pl.lit(clock).alias("clock")))
-    for kind, blocks in frames.items():
-        yield kind, pl.concat(blocks)
-
-
-def _series_file(path: Path, payload: bytes) -> None:
-    try:
-        exclusive(path, payload)
-    except FileExistsError:
-        if path.read_bytes() != payload:
-            raise DataError(f"conflicting series file: {path.name}") from None
-
-
-def _write_series(
-    run: Path,
-    iteration: int,
-    rows: list[dict[str, Any]],
-    series: dict[str, dict[str, Any]],
-    signals: dict[str, np.ndarray],
-    outcome: np.ndarray,
-    days: list[date],
-    symbols: list[str],
-) -> tuple[str, str, set[str]]:
-    relative = f"evaluations/iter-{iteration}/series/series.json"
-    folder = (run / relative).parent
-    folder.mkdir(parents=True, exist_ok=True)
-    factors = []
-    written = set()
-    for row in rows:
-        digest = row["code_sha256"]
-        if digest not in series or row["stage"] == "none":
-            continue
-        files = []
-        try:
-            for kind, frame in _series_frames(
-                row, series[digest], signals[digest], outcome, days, symbols
-            ):
-                name = f"{digest}.{kind}.parquet"
-                buffer = io.BytesIO()
-                frame.write_parquet(buffer)
-                payload = buffer.getvalue()
-                _series_file(folder / name, payload)
-                files.append({"name": name, "sha256": sha(payload)})
-        except Exception as error:  # Series must not change evaluation outcomes.
-            row["series_note"] = f"{type(error).__name__}: {error}"
-        if files:
-            factors.append({"code_sha256": digest, "files": files})
-            written.add(digest)
-    payload = canonical({"schema": "AlphaRdagentTrialSeriesV1", "factors": factors})
-    _series_file(run / relative, payload)
-    return relative, sha(payload), written
-
-
-def _record_series(
-    run: Path,
-    iteration: int,
-    rows: list[dict[str, Any]],
-    series: dict[str, dict[str, Any]],
-    signals: dict[str, np.ndarray],
-    outcome: np.ndarray,
-    days: list[date],
-    symbols: list[str],
-    inputs: dict[str, Any],
-) -> str | None:
-    try:
-        relative, digest, written = _write_series(
-            run, iteration, rows, series, signals, outcome, days, symbols
-        )
-    except Exception as error:  # Evidence failures are recorded, never scoring failures.
-        return f"{type(error).__name__}: {error}"
-    inputs["series_sha256"] = digest
-    for row in rows:
-        if row["code_sha256"] in written and row["stage"] != "none":
-            row["evidence"] = {"series_manifest": relative, "sha256": digest}
-    return None
-
-
 def source_columns(code: bytes) -> list[str]:
     """Literal column selectors in Python syntax; comments and standalone strings do not count.
 
@@ -964,84 +757,6 @@ def _spread_or_error(
         return {"status": "ERROR", "error": f"{type(error).__name__}: {error}"}
 
 
-def _replay_clocks(
-    rows: list[dict[str, Any]],
-    panel: pl.DataFrame,
-    signals: dict[str, np.ndarray],
-    days: list[date],
-    series: dict[str, dict[str, Any]],
-    family: dict[tuple[str, str], dict[str, Any]],
-    total_rows: int,
-    gap_policy: bool = False,
-    identity_segments: frozenset[str] = frozenset(),
-    confirmed: int = 0,
-) -> tuple[dict[tuple[str, str], np.ndarray], dict[str, dict[str, float]]]:
-    q = benjamini_hochberg([trial["p"] for trial in family.values()], alpha=Q_THRESHOLD).qvalues
-    qvalues: dict[str, dict[str, float]] = {}
-    for (digest, clock), value in zip(family, q, strict=True):
-        if clock != "unknown":
-            qvalues.setdefault(digest, {})[clock] = float(value)
-    replay_returns = {}
-    replay_options: dict[str, Any] = {"gap_policy": True} if gap_policy else {}
-    if identity_segments:
-        replay_options["identity_segments"] = identity_segments
-    for row in rows:
-        digest = row.get("repeat_code_sha256", row["code_sha256"])
-        row.update(
-            screen_cutoff=screen_cutoff(len(family), confirmed),
-            screen_m=len(family),
-            screen_confirmed=confirmed,
-        )
-        row.update(family_size=len(family), distinct_factors=len(qvalues), total_trials=total_rows)
-        for clock, trial in row["clocks"].items():
-            trial["q"] = qvalues.get(digest, {}).get(clock, 1.0)
-            trial["bh_q_diagnostic"] = trial["q"]
-            trial.update({k: row[k] for k in ("screen_cutoff", "screen_m", "screen_confirmed")})
-            if row["status"] != "OK" or trial["status"] != "OK":
-                continue
-            trial["status"] = "SCREEN_FAIL"
-            if clock == row["primary_clock"] and trial["p"] <= row["screen_cutoff"] / 2:
-                # ADR-0055: a screened clock must first show its top third beating its bottom
-                # third; only then is it replayed. A stricter, cheaper failure, never a pass.
-                checked = trial.get("spread", {"status": "ERROR", "error": "spread not computed"})
-                # A clock whose spread failed or could not be computed is still replayed, only so
-                # the Deflated Sharpe counts it as a trial exactly as before ADR-0055; that replay
-                # can never turn it into a pass.
-                verdict = {"PASS": None, "ERROR": "ERROR"}.get(checked["status"], "SPREAD_FAIL")
-                row["stage"] = "replay"
-                try:
-                    metrics, net = replay(
-                        panel,
-                        signals[digest],
-                        days,
-                        trial["screen"]["direction"],
-                        clock=clock,
-                        series=series[digest][clock],
-                        **replay_options,
-                    )
-                except (DataError, ValueError, ZeroDivisionError, FloatingPointError) as error:
-                    trial.update(
-                        status="ERROR", replay={"error": f"{type(error).__name__}: {error}"}
-                    )
-                    continue
-                if verdict is not None:
-                    metrics["counted_only"] = (
-                        f"spread check {checked['status']}; replayed only to count the trial, "
-                        "not a result"
-                    )
-                    status = verdict
-                else:
-                    status = "PASS" if metrics["net"]["annualized_return"] > 0 else "REPLAY_FAIL"
-                trial.update(replay=metrics, status=status)
-                replay_returns[(digest, clock)] = net
-        if row["status"] == "OK":
-            row["status"], row["lead_clock"] = overall_status(
-                row["clocks"], row.get("primary_clock")
-            )
-        row.update({k: row["clocks"][row["lead_clock"]][k] for k in ("p", "q", "screen", "replay")})
-    return replay_returns, qvalues
-
-
 def _eligibility(
     run: Path,
     panel: pl.DataFrame,
@@ -1065,46 +780,6 @@ def _eligibility(
         )
         mask = liquidity if mask is None else mask & liquidity
     return mask, policy is not None
-
-
-def _gap_disclosure(panel: pl.DataFrame, rows: list[dict[str, Any]]) -> tuple[dict[str, Any], str]:
-    summary = membership.panel_summary(panel)
-    replays = [
-        t["replay"] for row in rows if row["status"] != "REPEAT" for t in row["clocks"].values()
-    ]
-    spreads = [
-        t.get("spread", {})
-        for row in rows
-        if row["status"] != "REPEAT"
-        for t in row["clocks"].values()
-    ]
-    summary["spread_haircuts_applied"] = sum(s.get("haircuts_applied", 0) for s in spreads)
-    count = sum(r.get("haircuts_applied", 0) for r in replays)
-    summary["haircuts_applied"] = count
-    summary["written_off_at_panel_end"] = sum(r.get("written_off_at_panel_end", 0) for r in replays)
-    note = (
-        f" {summary['instruments_ended_early']} instruments ended early; "
-        f"{summary['missing_instrument_days']} instrument-days were missing inside their spans; "
-        f"{count} position haircuts across the new factor/clock replays "
-        f"({summary['written_off_at_panel_end']} at panel end); "
-        f"{summary['spread_haircuts_applied']} spread-leg haircuts. "
-        + str(membership.POLICY["assumption"])
-        + " "
-    )
-    return summary, note
-
-
-def _chance_disclosure(rows: list[dict[str, Any]], history: list[dict[str, Any]]) -> None:
-    evaluable = len(
-        {
-            r["code_sha256"]
-            for r in [*history, *rows]
-            if r["status"] != "REPEAT"
-            and any(t.get("screen", {}).get("status") == "OK" for t in trial_clocks(r).values())
-        }
-    )
-    for row in rows:
-        row.update(chance_fields(evaluable))
 
 
 def _factor_identities(history: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:

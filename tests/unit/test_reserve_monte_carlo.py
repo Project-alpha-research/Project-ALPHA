@@ -15,7 +15,7 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
-from alpha_cli import _runner, monte_carlo_cmds, validate_cmds
+from alpha_cli import _monte_carlo_sources, _runner, monte_carlo_cmds, validate_cmds
 from alpha_cli.monte_carlo_cmds import monte_carlo_app
 from alpha_cli.spine import reserve
 from alpha_core import DataError
@@ -79,7 +79,7 @@ def test_kronos_reads_with_the_reserve_cutoff_when_the_source_recorded_none(
         monte_carlo_cmds, "_verified_validation_source", lambda *_a: (tmp_path, manifest)
     )
     monkeypatch.setattr(
-        monte_carlo_cmds, "_verified_forecast_eval", lambda *_a, **_k: (tmp_path, eval_manifest)
+        _monte_carlo_sources, "_verified_forecast_eval", lambda *_a, **_k: (tmp_path, eval_manifest)
     )
     asked: list[datetime | None] = []
 
@@ -103,7 +103,7 @@ def test_a_source_cutoff_before_the_reserve_cutoff_is_kept(
         monte_carlo_cmds, "_verified_validation_source", lambda *_a: (tmp_path, manifest)
     )
     monkeypatch.setattr(
-        monte_carlo_cmds,
+        _monte_carlo_sources,
         "_verified_forecast_eval",
         lambda *_a, **_k: (tmp_path, {"research_cutoff": "2023-06-30"}),
     )

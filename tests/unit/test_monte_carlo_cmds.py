@@ -12,15 +12,17 @@ import pytest
 import typer
 
 import alpha_cli.monte_carlo_cmds as monte_carlo_cmds
-from alpha_cli import _artifacts
-from alpha_cli.monte_carlo_cmds import (
-    _calibration_assessment,
-    _causal_regime_states,
-    _path_frame,
-    _project_forecast_path,
+from alpha_cli import _artifacts, _monte_carlo_sources
+from alpha_cli._monte_carlo_frames import _path_frame
+from alpha_cli._monte_carlo_sources import (
     _spec_from_validation,
     _verified_forecast_eval,
     _verified_validation_source,
+)
+from alpha_cli.monte_carlo_cmds import (
+    _calibration_assessment,
+    _causal_regime_states,
+    _project_forecast_path,
 )
 from alpha_core import DataError
 from tests.fixtures.forecast_fixtures import daily_bars
@@ -264,7 +266,7 @@ def test_one_fitting_evaluation_is_used_by_default(tmp_path: Path) -> None:
     _stored_eval(tmp_path, "f" * 16, "QQQ", "snap1")
     _stored_eval(tmp_path, "9" * 16, "SPY", "other")
 
-    assert monte_carlo_cmds._only_fitting_eval(tmp_path, SOURCE) == "e" * 16
+    assert _monte_carlo_sources._only_fitting_eval(tmp_path, SOURCE) == "e" * 16
 
 
 @pytest.mark.parametrize("stored", [0, 2])
@@ -273,7 +275,7 @@ def test_no_or_several_fitting_evaluations_say_what_to_do(tmp_path: Path, stored
         _stored_eval(tmp_path, f"{number}" * 16, "SPY", "snap1")
 
     with pytest.raises(DataError) as error:
-        monte_carlo_cmds._only_fitting_eval(tmp_path, SOURCE)
+        _monte_carlo_sources._only_fitting_eval(tmp_path, SOURCE)
 
     said = str(error.value)
     assert "--forecast-eval-run is missing" in said

@@ -9,7 +9,7 @@ import polars as pl
 from pydantic import ValidationError
 
 from alpha_core import CorporateAction, DataError, UniverseMembership
-from alpha_data._atomic import publish, write_text
+from alpha_core.atomic import publish, write_text
 from alpha_data.adapters.base import DatasetIdentity, FetchReceipt
 
 _BAR_COLUMNS = ["ts", "open", "high", "low", "close", "volume"]

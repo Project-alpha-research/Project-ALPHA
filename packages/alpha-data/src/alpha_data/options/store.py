@@ -25,8 +25,8 @@ from typing import Any
 import polars as pl
 
 from alpha_core import DataError
+from alpha_core.atomic import publish, write_text
 from alpha_core.reserve import RESERVED_DAY
-from alpha_data._atomic import publish, write_text
 from alpha_data.options.codec import filter_rows, from_frame, to_frame
 from alpha_data.options.schema import ChainSnapshot, OptionsDataError, aware_utc
 

@@ -17,7 +17,7 @@ from typing import Any, Final
 import polars as pl
 
 from alpha_core import DataError
-from alpha_data._atomic import publish, write_text
+from alpha_core.atomic import publish, write_text
 from alpha_data.context.events import (
     FUNDING_SCHEMA,
     OPEN_INTEREST_SCHEMA,

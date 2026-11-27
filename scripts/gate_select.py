@@ -27,6 +27,28 @@ ALWAYS = (
     "tests/unit/test_status_page.py",
     "tests/unit/test_filesystem_completeness.py",
     "tests/unit/test_web_menu_groups.py",
+    # Guard, golden and drift tests that read source, docs, workflows, CSS or generated files
+    # instead of importing what they guard, so no import maps a far change to them.
+    "tests/unit/test_calendar_home_guard.py",
+    "tests/unit/test_context_attach_guard.py",
+    "tests/unit/test_options_forward_guard.py",
+    "tests/unit/test_reference_read_structural_guard.py",
+    "tests/unit/test_research_boundary.py",
+    "tests/unit/test_research_reads_are_cut.py",
+    "tests/unit/test_reserved_confirmation_surfaces.py",
+    "tests/unit/test_no_workaround_comments.py",
+    "tests/unit/test_follow_separation.py",
+    "tests/unit/test_cli_registry.py",
+    "tests/unit/test_checks_reference.py",
+    "tests/unit/test_ci_backend_bootstrap.py",
+    "tests/unit/test_docs_links.py",
+    "tests/unit/test_docs_work_pointers_at_tag.py",
+    "tests/unit/test_repo_awareness_drift.py",
+    "tests/unit/test_overlay_tables_drift.py",
+    "tests/unit/test_theme_drift.py",
+    "tests/unit/test_web_owner_actions_drift.py",
+    "tests/unit/test_documentation_truth.py",
+    "tests/unit/test_setup_script.py",
 )
 MAX_MAPPED_TESTS = 400
 LAST_FAILED = Path(".pytest_cache") / "v" / "cache" / "lastfailed"
@@ -143,7 +165,9 @@ def select(root: Path, changed: list[str] | None) -> Selection:
             if any(imports_module(text, name) for name in modules):
                 mapped.add(test)
     always = set(ALWAYS)
-    chosen = sorted(f for f in mapped if not f.startswith(tuple(f"{a}/" for a in always)))
+    chosen = sorted(
+        f for f in mapped if f not in always and not f.startswith(tuple(f"{a}/" for a in always))
+    )
     if _count_tests(root, chosen) > MAX_MAPPED_TESTS:
         stems = {name.rsplit(".", 1)[-1] for name in modules}
         direct = [f for f in chosen if f in (changed or [])]
@@ -154,7 +178,7 @@ def select(root: Path, changed: list[str] | None) -> Selection:
             f"{len(kept)} named after the changed files and left the rest to CI"
         )
         chosen = kept
-    covered = (*chosen, *(f"{a}/" for a in always))
+    covered = (*chosen, *(f"{a}/" for a in always), *(f"{a}::" for a in always))
     failed = [node for node in _last_failed(root) if not node.startswith(covered)]
     return Selection(
         always=ALWAYS,

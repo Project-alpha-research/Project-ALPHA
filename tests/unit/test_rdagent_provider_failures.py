@@ -508,11 +508,12 @@ def test_critic_does_not_swallow_unattested_errors_or_interrupts(
 
 def test_provider_losses_are_proposed_factors(tmp_path: Path) -> None:
     from alpha_web import _rdagent_runs as reader
+    from alpha_web._rdagent_run_files import RECEIPT_SCHEMA
 
     folder = tmp_path / "run"
     folder.mkdir()
     (folder / "receipt.json").write_text(
-        json.dumps({"schema": reader.RECEIPT_SCHEMA, "run_id": "run", "rounds_completed": 2})
+        json.dumps({"schema": RECEIPT_SCHEMA, "run_id": "run", "rounds_completed": 2})
     )
     ledger = tmp_path / "ledger.jsonl"
     ledger.touch()

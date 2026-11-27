@@ -23,13 +23,6 @@ QUALITY_METHOD_VERSION: Final = "crypto-quality-v1"
 _SHA256: Final = re.compile(r"^[0-9a-f]{64}$")
 
 
-def _source_column(provider: str, value_column: str) -> str:
-    provider_key = re.sub(r"[^a-z0-9]+", "_", provider.lower()).strip("_")
-    if not provider_key:
-        raise DataError("crypto comparison provider is invalid")
-    return f"{provider_key}_{value_column}"
-
-
 def _times(frame: pl.DataFrame, column: str) -> list[datetime]:
     if column not in frame.columns:
         return []

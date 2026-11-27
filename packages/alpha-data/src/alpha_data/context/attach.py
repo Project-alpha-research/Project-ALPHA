@@ -13,7 +13,7 @@ import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import NamedTuple
 
@@ -206,9 +206,3 @@ def attach_context(
         tables.update(source.tables)
         notes[alias] = source.note
     return AttachResult(left.drop("_d"), used_hashes, tables, derived.RECIPE, notes)
-
-
-def known_dates(result: AttachResult, alias: str) -> list[date]:
-    """Bar dates whose value for `alias` is not null (used by readings that count coverage)."""
-    kept = result.frame.filter(pl.col(f"ctx_{alias}").is_not_null())
-    return [ts.date() for ts in kept["ts"].to_list()]

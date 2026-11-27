@@ -73,8 +73,6 @@ and [research integrity § Invalid data fails loud](research-integrity.md#invali
 
 - Crypto JSON documents are written once with exact bytes (`_crypto_persistence.write_immutable_json`): an identical
   repeat is kept, a different payload at the same id fails as an identity collision.
-- Coverage batches freeze their task slice in a content-addressed plan with `execution_authority: false`; at most
-  25 tasks, and the checkpoint must match the plan exactly or the batch fails integrity (`_crypto_coverage.py`).
 - Only failed checkpoints resume, and they retry only unfinished membership; a completed resume is offline.
 - Coverage profiles, liquidity memberships and research selections are scheduling provenance, not evidence approval
   or execution authority.

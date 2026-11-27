@@ -404,7 +404,7 @@ source_modules = [
     "alpha_cli._crypto_asset_master_sources", "alpha_cli._crypto_backfill_evidence",
     "alpha_cli._crypto_backfill_inspection", "alpha_cli._crypto_backfill",
     "alpha_cli._crypto_backfill_state", "alpha_cli._crypto_bar_coverage",
-    "alpha_cli._crypto_coverage", "alpha_cli._crypto_panel", "alpha_cli._crypto_persistence",
+    "alpha_cli._crypto_panel", "alpha_cli._crypto_persistence",
     "alpha_cli._crypto_snapshot_members", "alpha_cli._data_health", "alpha_cli._estimate",
     "alpha_cli._forecast_cache", "alpha_cli._forecast_eval", "alpha_cli._forecast",
     "alpha_cli._gauntlet", "alpha_cli._hypothesis_scan", "alpha_cli._identity",

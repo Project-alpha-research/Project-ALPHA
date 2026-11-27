@@ -237,7 +237,7 @@ def status_rows() -> list[dict[str, Any]]:
 
 def test_status_derivation_agrees_in_ledger_web_and_worker() -> None:
     from alpha_cli._rdagent_stability import recorded_status
-    from alpha_web._rdagent_runs import _derived_status
+    from alpha_web._rdagent_run_factor import _derived_status
     from tests.unit.test_rdagent_judge_honesty import worker_module
 
     worker = worker_module("idea_families")

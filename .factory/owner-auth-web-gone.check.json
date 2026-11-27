@@ -1,0 +1,26 @@
+{
+  "kind": "absence",
+  "removed_symbols": [
+    "_action_argv",
+    "OwnerActionChallengeRequest"
+  ],
+  "command_words": [
+    "/api/owner-auth",
+    "/owner-auth/enroll"
+  ],
+  "removed_paths": [
+    "apps/alpha-web/src/alpha_web/api/owner_auth.py",
+    "apps/alpha-web/frontend/src/auth/OwnerEnrollment.tsx",
+    "apps/alpha-web/frontend/src/auth/ownerAuth.ts",
+    "apps/alpha-web/frontend/src/auth/ownerAuth.test.ts",
+    "tests/unit/test_owner_auth_api.py",
+    "tests/unit/test_web_owner_action_argv.py"
+  ],
+  "search_roots": [
+    "apps/alpha-web/src",
+    "apps/alpha-web/frontend/src",
+    "apps/alpha-web/frontend/openapi.json",
+    "docs/governance/openapi-operation-classification.json",
+    "docs/reference/invariants/web-api.md"
+  ]
+}

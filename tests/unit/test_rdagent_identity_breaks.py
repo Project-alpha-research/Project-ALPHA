@@ -15,6 +15,7 @@ import pytest
 
 from alpha_cli import _rdagent_identity as identity
 from alpha_cli import _rdagent_judge as judge
+from alpha_cli import _rdagent_judge_replay as judge_replay
 from alpha_cli import _rdagent_membership as membership
 from alpha_cli import _rdagent_universe as universes
 from alpha_cli._rdagent_clocks import CLOCKS, clock_feedback, clock_samples
@@ -210,7 +211,7 @@ def test_split_position_writes_off_and_new_asset_earns_warmup(tmp_path: Path) ->
     assert exit_["date"] == boundary - timedelta(days=1) + timedelta(days=30)
     assert exit_["price"] == pytest.approx(last * 0.7)
     assert exit_["realized_pnl_before_fees"] < 0
-    mask = judge.panel_membership(panel, days, symbols)
+    mask = judge_replay.panel_membership(panel, days, symbols)
     assert not mask[days.index(boundary) :, old].any()
     assert not mask[: days.index(boundary) + 19, new].any()
     assert mask[days.index(boundary) + 19, new]
@@ -240,7 +241,7 @@ def test_future_break_changes_no_past_decision_or_realized_figure(
             [np.full(len(days), 20.0 if s.startswith("C0") else float(s[1:])) for s in symbols]
         )
         series: dict[str, Any] = {}
-        judge.replay(
+        judge_replay.replay(
             panel,
             scores,
             days,
@@ -252,7 +253,7 @@ def test_future_break_changes_no_past_decision_or_realized_figure(
         )
         results.append(series)
         names.append(symbols)
-        masks.append(judge.panel_membership(panel, days, symbols))
+        masks.append(judge_replay.panel_membership(panel, days, symbols))
     through = days.index(cutoff) + 1
     for j, symbol in enumerate(names[0]):
         assert np.array_equal(masks[0][:through, j], masks[1][:through, names[1].index(symbol)])
@@ -407,12 +408,12 @@ def test_break_changes_nothing_before_new_from_except_differing_bars(
     out: list[dict[str, Any]] = []
     for panel in (bars, split):
         symbols = sorted(panel["instrument"].unique().to_list())
-        mask = judge.panel_membership(panel, days, symbols)
+        mask = judge_replay.panel_membership(panel, days, symbols)
         raw = np.column_stack([np.full(len(days), float(s[1:].replace("~", "."))) for s in symbols])
         raw[:, symbols.index("C0")] = 20.0
         signal = np.where(mask, raw, np.nan)
         replayed: dict[str, Any] = {}
-        judge.replay(
+        judge_replay.replay(
             panel,
             signal,
             days,
@@ -538,7 +539,7 @@ def test_rescale_holds_position_and_future_poison_changes_no_past() -> None:
     outputs: list[dict[str, Any]] = []
     for panel in (raw, adjusted):
         series: dict[str, Any] = {}
-        judge.replay(panel, signals, days, 1, gap_policy=True, series=series)
+        judge_replay.replay(panel, signals, days, 1, gap_policy=True, series=series)
         outputs.append(series)
     for key in ("events", "positions"):
         assert [r for r in outputs[0][key] if r["date"] < boundary] == [

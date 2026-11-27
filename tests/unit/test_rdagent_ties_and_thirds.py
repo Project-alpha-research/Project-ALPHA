@@ -11,6 +11,7 @@ import pytest
 
 from alpha_cli import _rdagent_clocks as clocks
 from alpha_cli import _rdagent_judge as judge
+from alpha_cli import _rdagent_judge_replay as judge_replay
 from alpha_cli import _rdagent_membership as membership
 from alpha_cli import rdagent_factor_eval as ev
 
@@ -183,12 +184,12 @@ def test_tied_replay_returns_costs_turnover_ignore_name_order() -> None:
     for gaps in (False, True):
         # Supply membership directly so this short fixture can exercise the gap replay account.
         with patch.object(
-            judge, "panel_membership", return_value=np.ones(signal.shape, dtype=bool)
+            judge_replay, "panel_membership", return_value=np.ones(signal.shape, dtype=bool)
         ):
-            before, net_before = judge.replay(
+            before, net_before = judge_replay.replay(
                 panel, signal, days, 1, clock="weekly", gap_policy=gaps
             )
-            after, net_after = judge.replay(
+            after, net_after = judge_replay.replay(
                 renamed, signal[:, order], days, 1, clock="weekly", gap_policy=gaps
             )
         for key in ("annual_cost", "mean_turnover", "turnover_per_rebalance"):
@@ -208,8 +209,12 @@ def test_tied_replay_returns_costs_turnover_ignore_name_order() -> None:
 def test_tie_free_replay_metrics_match_original_bytes(gaps: bool, digest: str) -> None:
     # Pinned using HEAD's original clock_targets and replay_weights before this change.
     panel, signal, days = replay_inputs()
-    with patch.object(judge, "panel_membership", return_value=np.ones(signal.shape, dtype=bool)):
-        metrics, returns = judge.replay(panel, signal, days, 1, clock="weekly", gap_policy=gaps)
+    with patch.object(
+        judge_replay, "panel_membership", return_value=np.ones(signal.shape, dtype=bool)
+    ):
+        metrics, returns = judge_replay.replay(
+            panel, signal, days, 1, clock="weekly", gap_policy=gaps
+        )
     metrics.pop(
         "tie_break", None
     )  # Wording changed; every numerical figure remains byte-identical.

@@ -13,6 +13,7 @@ import polars as pl
 import pytest
 
 from alpha_cli import _rdagent_judge as judge
+from alpha_cli import _rdagent_judge_replay as judge_replay
 from alpha_cli import _rdagent_universe as universes
 from alpha_core import DataError
 from tests.unit._rdagent_support import judge_namespace, universe_run
@@ -170,8 +171,8 @@ def test_replay_future_poison_includes_fills_positions_and_pnl() -> None:
     ).filter(~((pl.col("instrument") == "C5") & (pl.col("date") > cutoff)))
     clean_series: dict[str, Any] = {}
     poison_series: dict[str, Any] = {}
-    judge.replay(bars, scores, days, 1, series=clean_series, gap_policy=True)
-    judge.replay(poison, scores, days, 1, series=poison_series, gap_policy=True)
+    judge_replay.replay(bars, scores, days, 1, series=clean_series, gap_policy=True)
+    judge_replay.replay(poison, scores, days, 1, series=poison_series, gap_policy=True)
     for key in ("events", "positions"):
         assert [e for e in clean_series[key] if e["date"] <= cutoff] == [
             e for e in poison_series[key] if e["date"] <= cutoff
@@ -236,8 +237,8 @@ def test_gap_free_replay_matches_retained_legacy_engine_bytes(clock: str) -> Non
     bars = panel(100)
     days = [date(2021, 1, 1) + timedelta(days=i) for i in range(50)]
     scores = np.random.default_rng(76).normal(size=(50, 6))
-    old, old_returns = judge.replay(bars, scores, days, 1, clock=clock)
-    new, new_returns = judge.replay(bars, scores, days, 1, clock=clock, gap_policy=True)
+    old, old_returns = judge_replay.replay(bars, scores, days, 1, clock=clock)
+    new, new_returns = judge_replay.replay(bars, scores, days, 1, clock=clock, gap_policy=True)
     assert new_returns.tobytes() == old_returns.tobytes()
     for key in ("net", "gross", "mean_turnover", "turnover_per_rebalance", "annual_cost"):
         assert judge.canonical({key: new[key]}) == judge.canonical({key: old[key]})
@@ -433,13 +434,13 @@ def test_future_poison_on_a_held_coin_leaves_everything_up_to_t_unchanged(clock:
     scores = np.random.default_rng(5).normal(size=(70, 9))
     cutoff = date(2021, 1, 30)
     clean: dict[str, Any] = {}
-    judge.replay(bars, scores, days, 1, clock=clock, series=clean, gap_policy=True)
+    judge_replay.replay(bars, scores, days, 1, clock=clock, series=clean, gap_policy=True)
     held_at_cutoff = next(p for p in clean["positions"] if p["date"] == cutoff)["quantities"]
     ended = symbols[int(np.argmax(held_at_cutoff))]
     assert max(held_at_cutoff) > 0
     poison_bars = _poisoned(bars, cutoff, ended)
     poisoned: dict[str, Any] = {}
-    judge.replay(poison_bars, scores, days, 1, clock=clock, series=poisoned, gap_policy=True)
+    judge_replay.replay(poison_bars, scores, days, 1, clock=clock, series=poisoned, gap_policy=True)
     for key in ("events", "positions"):
         assert [e for e in clean[key] if e["date"] <= cutoff] == [
             e for e in poisoned[key] if e["date"] <= cutoff
@@ -450,8 +451,8 @@ def test_future_poison_on_a_held_coin_leaves_everything_up_to_t_unchanged(clock:
     assert [p for p in clean["periods"] if p.exit_ts.date() <= cutoff] == [
         p for p in poisoned["periods"] if p.exit_ts.date() <= cutoff
     ]
-    clean_members = judge.panel_membership(bars, days, symbols)
-    poison_members = judge.panel_membership(poison_bars, days, symbols)
+    clean_members = judge_replay.panel_membership(bars, days, symbols)
+    poison_members = judge_replay.panel_membership(poison_bars, days, symbols)
     through = days.index(cutoff) + 1
     assert np.array_equal(clean_members[:through], poison_members[:through])
     # Power: the ended coin leaves membership the next day and is written off 30 days later.
@@ -507,7 +508,7 @@ def test_gap_free_replay_first_period_is_hand_computed() -> None:
     days = [date(2021, 1, 1) + timedelta(days=i) for i in range(5)]
     scores = np.tile(np.array([5.0, 1.0, 2.0, 3.0, 4.0]), (5, 1))  # C0 is the only top name
     series: dict[str, Any] = {}
-    metrics, net = judge.replay(bars, scores, days, 1, series=series, gap_policy=True)
+    metrics, net = judge_replay.replay(bars, scores, days, 1, series=series, gap_policy=True)
     assert metrics["haircuts_applied"] == 0 and metrics["unrankable_instrument_rebalances"] == 0
     # Decide on the 2021-01-01 close: k = round(5/3) = 2 names, C0 (close 131) and C4 (100), half
     # each, sized at that close. Fill at the 2021-01-02 open (C0 132) with 5 bps slippage and
@@ -588,7 +589,7 @@ def test_replay_output_names_missing_rank_observations() -> None:
     days = [date(2021, 1, 1) + timedelta(days=i) for i in range(50)]
     scores = np.tile(np.arange(9.0), (50, 1))
     scores[:, 0] = np.nan
-    metrics, _ = judge.replay(walk_panel(), scores, days, 1, clock="weekly", gap_policy=True)
+    metrics, _ = judge_replay.replay(walk_panel(), scores, days, 1, clock="weekly", gap_policy=True)
     assert "missing_coin_days" not in metrics
     assert metrics["unrankable_instrument_rebalances"] == metrics["rebalances"]
 

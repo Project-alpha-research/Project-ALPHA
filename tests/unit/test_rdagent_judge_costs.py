@@ -12,6 +12,7 @@ import pytest
 
 from alpha_cli import _rdagent_costs as costs
 from alpha_cli import _rdagent_judge as judge
+from alpha_cli import _rdagent_judge_replay as judge_replay
 from alpha_cli._native_daily_rule_study import daily_rule_terms_proposal
 from alpha_cli.spine import cost_classes
 
@@ -39,7 +40,7 @@ def _bars() -> pl.DataFrame:
 def _annual_cost() -> float:
     days = [date(2021, 1, 1) + timedelta(days=i) for i in range(5)]
     scores = np.tile(np.array([5.0, 1.0, 2.0, 3.0, 4.0]), (5, 1))
-    metrics, _ = judge.replay(_bars(), scores, days, 1, series={}, gap_policy=True)
+    metrics, _ = judge_replay.replay(_bars(), scores, days, 1, series={}, gap_policy=True)
     return float(metrics["annual_cost"])
 
 

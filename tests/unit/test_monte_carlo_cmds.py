@@ -14,13 +14,13 @@ import typer
 import alpha_cli.monte_carlo_cmds as monte_carlo_cmds
 from alpha_cli import _artifacts, _monte_carlo_sources
 from alpha_cli._monte_carlo_frames import _path_frame
+from alpha_cli._monte_carlo_kronos_report import _calibration_assessment
 from alpha_cli._monte_carlo_sources import (
     _spec_from_validation,
     _verified_forecast_eval,
     _verified_validation_source,
 )
 from alpha_cli.monte_carlo_cmds import (
-    _calibration_assessment,
     _causal_regime_states,
     _project_forecast_path,
 )

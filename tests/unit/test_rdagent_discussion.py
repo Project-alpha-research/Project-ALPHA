@@ -510,7 +510,7 @@ def test_timeout_publishes_one_final_decision(
 
 
 def test_round_decision_remains_readable_in_recorded_story(tmp_path: Path) -> None:
-    from alpha_web import _rdagent_runs
+    from alpha_web import _rdagent_run_story
 
     discussion.record_decision(
         tmp_path,
@@ -523,7 +523,7 @@ def test_round_decision_remains_readable_in_recorded_story(tmp_path: Path) -> No
         [{"name": "Funding"}],
     )
     row = json.loads((tmp_path / "rounds.jsonl").read_bytes())
-    story, _ = _rdagent_runs._story(tmp_path, {"run_id": "test"}, [], [row], [])
+    story, _ = _rdagent_run_story._story(tmp_path, {"run_id": "test"}, [], [row], [])
     assert story.journey["judged"].value == 0
     assert story.journey["proposed"].value == 1
 

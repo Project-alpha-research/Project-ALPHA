@@ -27,11 +27,11 @@ from alpha_cli.ml_contract import (
     canonical_json_bytes,
     compute_config_hash,
     prepare_exchange,
-    publish_replay_signal_frame,
     sha256_file,
     validate_request_bundle,
     validate_result_bundle,
 )
+from alpha_cli.ml_replay_signal import publish_replay_signal_frame
 from alpha_core import DataError
 
 

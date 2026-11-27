@@ -17,9 +17,7 @@ from alpha_cli.ml_compare import compare_exchanges, publish_comparison
 from alpha_cli.ml_contract import (
     MLContractError,
     ValidatedResult,
-    evaluate_result_bundle,
     prepare_exchange,
-    publish_replay_signal_frame,
     sha256_file,
     tabular_model_names,
     validate_input_anchor,
@@ -29,6 +27,7 @@ from alpha_cli.ml_contract import (
 from alpha_cli.ml_glosses import held_back_sentence
 from alpha_cli.ml_input import export_input as export_ml_input
 from alpha_cli.ml_refit import plan_refit, publish_refit_plan, status_refit_plan
+from alpha_cli.ml_replay_signal import evaluate_result_bundle, publish_replay_signal_frame
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 

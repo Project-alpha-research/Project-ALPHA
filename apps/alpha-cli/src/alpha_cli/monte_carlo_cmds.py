@@ -12,7 +12,6 @@ import json
 import math
 from collections.abc import Sequence
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -20,6 +19,18 @@ import polars as pl
 import typer
 
 from alpha_cli import _artifacts, _forecast, _forecast_cache, _mc_reading, _runner
+from alpha_cli._monte_carlo_frames import (
+    _metric_frame,
+    _observed_frame,
+    _path_frame,
+    _summarize_families,
+)
+from alpha_cli._monte_carlo_sources import (
+    _horizon_steps,
+    _resolve_eval,
+    _spec_from_validation,
+    _verified_validation_source,
+)
 from alpha_cli._progress import heartbeat, with_heartbeat
 from alpha_cli._seeds import semantic_seed, semantic_seeds
 from alpha_cli.artifact_contract import sha256_file
@@ -30,7 +41,6 @@ from alpha_validation import (
     MonteCarloFamilySummaryV1,
     ProportionInterval,
     empirical_return_paths,
-    path_metric_arrays,
     regime_switching_return_paths,
     student_t_return_paths,
     summarize_path_family,
@@ -44,24 +54,6 @@ monte_carlo_app = typer.Typer(
 # Monkeypatchable seam for offline integration tests. Real runs resolve the pinned Kronos facade.
 _forecaster_factory = _forecast._forecaster_factory
 
-MIN_STATE_SHARE = 0.10
-
-
-def _regime_caveats(state_observations: tuple[int, int], horizon: int) -> tuple[str, ...]:
-    n0, n1 = state_observations
-    p0, p1 = n0 / horizon, n1 / horizon
-    caveats: tuple[str, ...] = (
-        f"Causal states: calm {n0} of {horizon} OOS returns ({p0:.1%}), "
-        f"volatile {n1} ({p1:.1%}); the boundary is frozen from the first training prefix.",
-    )
-    if min(p0, p1) < MIN_STATE_SHARE:
-        caveats += (
-            f"One state holds under {MIN_STATE_SHARE:.0%} of OOS returns: its emissions and "
-            "transitions rest on few observations, and the frozen boundary may not describe "
-            "the OOS period; compare this family with the IID empirical family.",
-        )
-    return caveats
-
 
 def _source_as_of(cutoff: object) -> datetime:
     """The source run's cut-off, and never later than the held-back boundary.
@@ -72,134 +64,6 @@ def _source_as_of(cutoff: object) -> datetime:
     """
     parsed = _runner.parse_as_of(str(cutoff) if cutoff is not None else None)
     return reserve.CUTOFF if parsed is None else min(parsed, reserve.CUTOFF)
-
-
-def _verified_validation_source(data_dir: Path, run_id: str) -> tuple[Path, dict[str, Any]]:
-    rdir = _artifacts.find_run_dir(data_dir, run_id)
-    if rdir is None:
-        raise DataError(f"validation source run {run_id!r} was not found")
-    manifest = _artifacts.read_manifest(rdir)
-    if manifest.get("command") != "validate":
-        raise DataError(f"source run {run_id!r} must be a completed validate run")
-    metadata = manifest.get("metadata")
-    if not isinstance(metadata, dict) or not isinstance(metadata.get("symbol"), str):
-        raise DataError(f"source run {run_id!r} has invalid validation metadata")
-    return rdir, manifest
-
-
-def _verified_forecast_eval(
-    data_dir: Path,
-    run_id: str,
-    *,
-    source_manifest: dict[str, Any],
-) -> tuple[Path, dict[str, Any]]:
-    rdir = _artifacts.find_run_dir(data_dir, run_id)
-    if rdir is None:
-        raise DataError(f"forecast evaluation run {run_id!r} was not found")
-    manifest = _artifacts.read_manifest(rdir)
-    if manifest.get("command") != "forecast_eval":
-        raise DataError(f"run {run_id!r} must be a completed forecast_eval run")
-    source_metadata = source_manifest["metadata"]
-    # The cut-off dates may differ in name only (a weekend date names the same last bar); the
-    # caller then checks that the evaluation hashed exactly the source run's bars.
-    for label, source_value, eval_value in (
-        ("symbol", source_metadata.get("symbol"), manifest.get("symbol")),
-        ("snapshot", source_metadata.get("snapshot_id"), manifest.get("snapshot_id")),
-    ):
-        if source_value != eval_value:
-            raise DataError(
-                f"forecast evaluation {label} {eval_value!r} differs from source {source_value!r}"
-            )
-    return rdir, manifest
-
-
-def _only_fitting_eval(data_dir: Path, source_manifest: dict[str, Any]) -> str:
-    """The one stored forecast-eval run for the source run's symbol and bars, or say what to do."""
-    metadata = source_manifest["metadata"]
-    symbol = metadata.get("symbol")
-    first = (
-        f"run `alpha forecast eval {symbol}` first (a few minutes); it prints the id, "
-        "then pass it with --forecast-eval-run"
-    )
-    fitting = []
-    for path in sorted((data_dir / "forecast").glob("*/manifest.json")):
-        manifest = _artifacts.read_manifest(path.parent)
-        if (
-            manifest.get("command") == "forecast_eval"
-            and manifest.get("symbol") == symbol
-            and manifest.get("snapshot_id") == metadata.get("snapshot_id")
-        ):
-            fitting.append(path.parent.name)
-    if len(fitting) == 1:
-        return fitting[0]
-    if not fitting:
-        raise DataError(f"--forecast-eval-run is missing: {first}")
-    raise DataError(
-        f"--forecast-eval-run is missing and {len(fitting)} stored evaluations fit "
-        f"{symbol}: pass one of {', '.join(fitting)}"
-    )
-
-
-def _resolve_eval(
-    data_dir: Path, source_manifest: dict[str, Any], given: str | None
-) -> tuple[str, Path, dict[str, Any]]:
-    """The forecast-eval run id (the one stored fitting run when none is given) and its files."""
-    run_id = given
-    if run_id is None:
-        run_id = _only_fitting_eval(data_dir, source_manifest)
-        typer.echo(
-            f"Using forecast evaluation {run_id}: the only stored one for this symbol and "
-            "these bars."
-        )
-    eval_dir, eval_manifest = _verified_forecast_eval(
-        data_dir, run_id, source_manifest=source_manifest
-    )
-    return run_id, eval_dir, eval_manifest
-
-
-def _horizon_steps(horizon: int | None, spec: _runner.RunSpec, future: int) -> int:
-    """Sessions per path. Kronos re-reads its window at every step, so the cost grows with the
-    tail: by default it makes the first test window only, and never more than its 512-bar window."""
-    if horizon is None:
-        return min(spec.embargo + spec.test_size + 1, future, _forecast.MAX_WINDOW)
-    if horizon > min(future, _forecast.MAX_WINDOW):
-        raise DataError(
-            f"--horizon {horizon} is too long: the largest that works is "
-            f"{min(future, _forecast.MAX_WINDOW)} (Kronos makes at most "
-            f"{_forecast.MAX_WINDOW} sessions; the run has {future} after training)."
-        )
-    return horizon
-
-
-def _spec_from_validation(manifest: dict[str, Any]) -> _runner.RunSpec:
-    metadata = manifest["metadata"]
-    raw_params = metadata.get("strategy_params", ())
-    if not isinstance(raw_params, list | tuple):
-        raise DataError("validation strategy_params must be a sequence")
-    params = tuple((str(row[0]), float(row[1])) for row in raw_params)
-    return _runner.RunSpec(
-        lookback=int(metadata["lookback"]),
-        skip=int(metadata["skip"]),
-        vol_window=int(metadata["vol_window"]),
-        # an `alpha test` run sizes all-in and stores no target volatility: that field goes unused
-        target_vol=float(metadata.get("target_vol", 0.15)),
-        rebalance_every=int(metadata["rebalance_every"]),
-        max_leverage=float(metadata["max_leverage"]),
-        allow_short=bool(metadata["allow_short"]),
-        periods_per_year=int(metadata["periods_per_year"]),
-        fee_bps=float(metadata["fee_bps"]),
-        slippage_bps=float(metadata["slippage_bps"]),
-        starting_cash=float(metadata["starting_cash"]),
-        account_type=str(metadata["account_type"]),
-        train_size=int(metadata["train_size"]),
-        test_size=int(metadata["test_size"]),
-        embargo=int(metadata["embargo"]),
-        anchored=bool(metadata["anchored"]),
-        strategy_name=str(metadata["strategy_name"]),
-        strategy_params=params,
-        rules_spec=manifest.get("rules_spec"),
-        sizing=str(metadata.get("sizing", "vol_target")),
-    )
 
 
 def _calibration_assessment(manifest: dict[str, Any]) -> dict[str, Any]:
@@ -351,78 +215,6 @@ def _causal_regime_states(
         oos_volatility.append(float(volatility))
         states.append(int(volatility > threshold))
     return np.asarray(states, dtype=np.int8), threshold, np.asarray(oos_volatility)
-
-
-def _path_frame(families: Sequence[tuple[str, np.ndarray]]) -> pl.DataFrame:
-    frames: list[pl.DataFrame] = []
-    for family, paths in families:
-        if paths.ndim != 2:
-            raise DataError(f"Monte Carlo path matrix for {family!r} must be two-dimensional")
-        n_paths, horizon = paths.shape
-        frame = pl.DataFrame(
-            {
-                "path_index": np.repeat(np.arange(n_paths, dtype=np.int64), horizon),
-                "step": np.tile(np.arange(horizon, dtype=np.int64), n_paths),
-                "account_return": np.asarray(paths, dtype=np.float64).reshape(-1),
-            },
-            schema={
-                "path_index": pl.Int64,
-                "step": pl.Int64,
-                "account_return": pl.Float64,
-            },
-        ).with_columns(pl.lit(family).alias("family"))
-        frames.append(frame.select("family", "path_index", "step", "account_return"))
-    if not frames:
-        raise DataError("at least one Monte Carlo path family is required")
-    return pl.concat(frames, how="vertical")
-
-
-def _metric_frame(families: Sequence[tuple[str, np.ndarray]]) -> pl.DataFrame:
-    rows: list[dict[str, object]] = []
-    for family, paths in families:
-        metrics = path_metric_arrays(paths)
-        rows.extend(
-            {
-                "family": family,
-                "path_index": path_index,
-                "terminal_return": float(metrics.terminal_return[path_index]),
-                "maximum_drawdown": float(metrics.maximum_drawdown[path_index]),
-                "longest_loss_streak": int(metrics.longest_loss_streak[path_index]),
-                "loss": bool(metrics.loss[path_index]),
-                "ruined": bool(metrics.ruined[path_index]),
-            }
-            for path_index in range(paths.shape[0])
-        )
-    return pl.DataFrame(
-        rows,
-        schema={
-            "family": pl.String,
-            "path_index": pl.Int64,
-            "terminal_return": pl.Float64,
-            "maximum_drawdown": pl.Float64,
-            "longest_loss_streak": pl.Int64,
-            "loss": pl.Boolean,
-            "ruined": pl.Boolean,
-        },
-    )
-
-
-def _summarize_families(
-    families: Sequence[tuple[str, np.ndarray]], states: np.ndarray, *, confidence: float
-) -> tuple[tuple[int, int], tuple[str, ...], dict[str, MonteCarloFamilySummaryV1]]:
-    """Summarize each family; the regime family carries its causal-state disclosure."""
-    state_observations = (int(np.sum(states == 0)), int(np.sum(states == 1)))
-    regime_caveats = _regime_caveats(state_observations, int(states.size))
-    summaries = {
-        name: summarize_path_family(
-            name,
-            values,
-            confidence=confidence,
-            caveats=regime_caveats if name == "regime_switching" else (),
-        )
-        for name, values in families
-    }
-    return state_observations, regime_caveats, summaries
 
 
 @monte_carlo_app.command("classical")
@@ -666,18 +458,6 @@ def classical(
         f"monte-carlo classical -> run {identity.run_id}: manifest at {rdir / 'manifest.json'}"
     )
     _mc_reading.echo_family_lines(source, summaries, regime_caveats, fit["window_note"])
-
-
-def _observed_frame(equity: Sequence[tuple[datetime, float]]) -> pl.DataFrame:
-    """The source run's observed out-of-sample equity, one row per step."""
-    return pl.DataFrame(
-        {
-            "step": range(len(equity)),
-            "ts": [timestamp for timestamp, _ in equity],
-            "equity": [float(value) for _, value in equity],
-        },
-        schema={"step": pl.Int64, "ts": pl.Datetime("us", "UTC"), "equity": pl.Float64},
-    )
 
 
 def _kronos_report(

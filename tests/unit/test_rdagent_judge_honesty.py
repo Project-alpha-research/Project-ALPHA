@@ -133,7 +133,7 @@ def test_old_deflation_is_labelled_without_recalculation() -> None:
 
 def test_web_and_ledger_derive_same_old_status(tmp_path: Path) -> None:
     from alpha_cli.spine.trial_record import map_row
-    from alpha_web._rdagent_runs import _factor
+    from alpha_web._rdagent_run_factor import _factor
     from tests.unit._rdagent_support import clock_rows
     from tests.unit.test_trial_record import factor
 
@@ -251,7 +251,7 @@ def test_primary_only_replay_and_negation_repeat(tmp_path: Path) -> None:
 
 def test_real_stored_old_figure_is_not_recomputed(tmp_path: Path) -> None:
     from alpha_cli.spine.trial_record import map_row
-    from alpha_web._rdagent_runs import _factor
+    from alpha_web._rdagent_run_factor import _factor
     from tests.unit._rdagent_support import clock_rows
     from tests.unit.test_trial_record import factor
 
@@ -420,7 +420,7 @@ def test_effective_size_reports_newey_west_estimate() -> None:
 
 def test_web_derivation_matches_ledger_for_nonfinite_old_figure() -> None:
     from alpha_cli._rdagent_stability import recorded_status
-    from alpha_web._rdagent_runs import _derived_status
+    from alpha_web._rdagent_run_factor import _derived_status
     from tests.unit._rdagent_support import clock_rows
     from tests.unit.test_trial_record import factor
 

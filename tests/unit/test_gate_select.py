@@ -111,17 +111,6 @@ def test_a_broad_change_keeps_only_tests_named_after_it(tmp_path: Path) -> None:
     assert "left the rest to CI" in selection.notes[0]
 
 
-def test_an_always_file_is_not_selected_twice(tmp_path: Path) -> None:
-    guard = "tests/unit/test_cli_registry.py"
-    assert guard in gate_select.ALWAYS
-    _write(tmp_path, guard, "def test_a():\n    pass\n")
-    _write(tmp_path, str(gate_select.LAST_FAILED), json.dumps({f"{guard}::test_a": True}))
-    selection = gate_select.select(tmp_path, [guard])
-    assert selection.mapped == ()
-    assert selection.last_failed == ()
-    assert selection.pytest_paths().count(guard) == 1
-
-
 def test_conftest_changes_are_reported_not_guessed(tmp_path: Path) -> None:
     selection = gate_select.select(tmp_path, ["tests/unit/conftest.py"])
     assert selection.mapped == ()

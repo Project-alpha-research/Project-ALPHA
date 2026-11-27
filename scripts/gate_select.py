@@ -165,9 +165,7 @@ def select(root: Path, changed: list[str] | None) -> Selection:
             if any(imports_module(text, name) for name in modules):
                 mapped.add(test)
     always = set(ALWAYS)
-    chosen = sorted(
-        f for f in mapped if f not in always and not f.startswith(tuple(f"{a}/" for a in always))
-    )
+    chosen = sorted(f for f in mapped if not f.startswith(tuple(f"{a}/" for a in always)))
     if _count_tests(root, chosen) > MAX_MAPPED_TESTS:
         stems = {name.rsplit(".", 1)[-1] for name in modules}
         direct = [f for f in chosen if f in (changed or [])]
@@ -178,7 +176,7 @@ def select(root: Path, changed: list[str] | None) -> Selection:
             f"{len(kept)} named after the changed files and left the rest to CI"
         )
         chosen = kept
-    covered = (*chosen, *(f"{a}/" for a in always), *(f"{a}::" for a in always))
+    covered = (*chosen, *(f"{a}/" for a in always))
     failed = [node for node in _last_failed(root) if not node.startswith(covered)]
     return Selection(
         always=ALWAYS,

@@ -19,10 +19,10 @@ from alpha_cli import _artifacts, _runner
 from alpha_cli.ml_contract import (
     RESERVE_FILENAME,
     ValidatedResult,
-    replay_signal_frame,
     sha256_file,
     validate_result_bundle,
 )
+from alpha_cli.ml_replay_signal import replay_signal_frame
 from alpha_cli.spine import reserve
 from alpha_core import Bar, DataError
 from alpha_validation import (

@@ -22,13 +22,15 @@ from alpha_cli.ml_contract import (
     MLContractError,
     canonical_json_bytes,
     compute_config_hash,
-    evaluate_result_bundle,
     prepare_exchange,
-    publish_replay_signal_frame,
-    replay_signal_frame,
     sha256_file,
     validate_request_bundle,
     validate_result_bundle,
+)
+from alpha_cli.ml_replay_signal import (
+    evaluate_result_bundle,
+    publish_replay_signal_frame,
+    replay_signal_frame,
 )
 
 

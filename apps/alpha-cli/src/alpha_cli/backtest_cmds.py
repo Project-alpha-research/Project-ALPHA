@@ -7,8 +7,7 @@ validation gauntlet, so both drive the engine through one code path.
 from __future__ import annotations
 
 import re
-from dataclasses import replace
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -16,10 +15,15 @@ import numpy as np
 import typer
 
 from alpha_cli import _artifacts, _forecast_cache, _runner, rules_cmds
+from alpha_cli import _backtest_run_inputs as inputs
+from alpha_cli._backtest_run_inputs import (
+    _RESEARCH_GATE_OVERRIDE_HELP as _RESEARCH_GATE_OVERRIDE_HELP,
+)
+from alpha_cli.backtest_cross_sectional_cmds import cross_sectional_app
 from alpha_cli.spine import reserve
-from alpha_core import Bar, CorporateAction, DataError
+from alpha_core import DataError
 from alpha_core.config import AlphaSettings
-from alpha_data.timeframe import BarTimeframe, parse_timeframe
+from alpha_data.timeframe import BarTimeframe
 from alpha_validation import annualized_volatility, cagr, max_drawdown, sharpe_ratio
 
 backtest_app = typer.Typer(help="Run the v1 strategy through the backtest engine.")
@@ -27,14 +31,6 @@ backtest_app = typer.Typer(help="Run the v1 strategy through the backtest engine
 # monkeypatchable load seams (mirror data_cmds._ADAPTERS); tests point them at fixture stores
 _load_bars = _runner.load_bars
 _load_dividends = _runner.load_dividends
-
-# Suite-injected when a governed project's research gate was owner-overridden (spec §15,
-# ADR-0026). Safe on the public CLI: it only ever downgrades the run's presentation (adds the
-# EXPLORATORY watermark and forks run identity), never upgrades or grants authority.
-_RESEARCH_GATE_OVERRIDE_HELP = (
-    "watermark this run EXPLORATORY / RESEARCH GATE NOT COMPLETED "
-    "(launched under an owner research-gate override)"
-)
 
 
 def _holdout_date(value: str, label: str) -> date:
@@ -368,77 +364,6 @@ def oos(
     held.announce()
 
 
-def _load_run_bars(
-    symbol: str,
-    *,
-    data_dir: Path,
-    snapshot: str | None,
-    as_of: datetime | None,
-    target: BarTimeframe,
-    stored: BarTimeframe,
-    session: str | None,
-    manifest_id: str | None,
-    resampled: bool,
-) -> tuple[str, list[Bar], str | None, list[CorporateAction], dict[str, str | None]]:
-    """Bars, dividends and the extra identity fields of one ``backtest run`` read.
-
-    A daily run from the store or a snapshot returns no extra fields, so its identity inputs and
-    manifest keys are unchanged; any other read names its timeframe, source timeframe, session and
-    archive manifest.
-    """
-    scope: str
-    if manifest_id is not None:
-        from alpha_cli._archive_bars import load_archive_bars
-        from alpha_cli.crypto_data_cmds import _bulk_store
-        from alpha_data.sessions import check_session
-
-        scope = session or "continuous"
-        check_session(scope, None)
-        bars = load_archive_bars(
-            _bulk_store(),
-            manifest_id,
-            symbol=symbol,
-            timeframe=target,
-            source_timeframe=stored,
-            as_of=as_of,
-        )
-        if len(bars) < 2:
-            raise DataError(f"need >= 2 bars for {symbol!r}, got {len(bars)}")
-        symbol, snapshot_id, dividends = bars[0].symbol, None, []
-    else:
-        bars, snapshot_id = _load_bars(
-            symbol,
-            data_dir=data_dir,
-            snapshot_id=snapshot,
-            as_of=as_of,
-            timeframe=target.canonical,
-            source_timeframe=stored.canonical,
-            session=session,
-        )
-        dividends = _load_dividends(
-            symbol,
-            data_dir=data_dir,
-            snapshot_id=snapshot,
-            as_of=as_of,
-            timeframe=target.canonical,
-            source_timeframe=stored.canonical,
-            session=session,
-        )
-    if target.is_daily and manifest_id is None and not resampled:
-        return symbol, bars, snapshot_id, dividends, {}
-    if manifest_id is None:
-        _, _, scope = _runner._bar_store(
-            symbol, data_dir=data_dir, snapshot_id=snapshot, stored=stored, session=session
-        )
-    fields: dict[str, str | None] = {
-        "timeframe": target.canonical,
-        "source_timeframe": stored.canonical,
-        "session": scope,
-        "manifest_id": manifest_id,
-    }
-    return symbol, bars, snapshot_id, dividends, fields
-
-
 def _run_hold(
     symbol: str,
     data_dir: Path,
@@ -461,29 +386,6 @@ def _run_hold(
         timeframe=stored.canonical,
         instant=True,
     )
-
-
-def _annualised(
-    spec: _runner.RunSpec,
-    bars: list[Bar],
-    target: BarTimeframe,
-    fields: dict[str, str | None],
-    override: int | None,
-) -> _runner.RunSpec:
-    """Set bars per year from the bar size and session (daily: 252) unless the owner gave it."""
-    ppy = _runner.resolve_periods_per_year(
-        bars, timeframe=target, session=fields.get("session"), override=override
-    )
-    return replace(spec, periods_per_year=ppy)
-
-
-def _run_timeframes(
-    timeframe: str, from_timeframe: str | None, manifest_id: str | None, snapshot: str | None
-) -> tuple[BarTimeframe, BarTimeframe]:
-    """The run's bar timeframe and the stored one it is read (and maybe resampled) from."""
-    if manifest_id is not None and snapshot is not None:
-        raise DataError("--manifest-id and --snapshot are mutually exclusive")
-    return parse_timeframe(timeframe), parse_timeframe(from_timeframe or timeframe)
 
 
 def _run_manifest(
@@ -569,7 +471,7 @@ def run(
     """
     settings = AlphaSettings()
     try:
-        target, stored = _run_timeframes(timeframe, from_timeframe, manifest_id, snapshot)
+        target, stored = inputs._run_timeframes(timeframe, from_timeframe, manifest_id, snapshot)
         rules_spec = rules_cmds.resolve_rules_spec(
             strategy, rules, settings.data_dir, rules_file=rules_file, rules_sha256=rules_sha256
         )
@@ -600,7 +502,7 @@ def run(
     )
     try:
         held = _run_hold(symbol, settings.data_dir, as_of, snapshot, stored, manifest_id)
-        symbol, bars, snapshot_id, dividends, timeframe_fields = _load_run_bars(
+        symbol, bars, snapshot_id, dividends, timeframe_fields = inputs._load_run_bars(
             symbol,
             data_dir=settings.data_dir,
             snapshot=snapshot,
@@ -611,7 +513,7 @@ def run(
             manifest_id=manifest_id,
             resampled=stored != target,
         )
-        spec = _annualised(spec, bars, target, timeframe_fields, periods_per_year)
+        spec = inputs._annualised(spec, bars, target, timeframe_fields, periods_per_year)
         # kronos: precompute the signal cache (slow model, runs once) and pin its key on the
         # spec; every other strategy passes through untouched.
         spec, forecast_meta = _forecast_cache.prepare_spec_for_engine(
@@ -859,149 +761,4 @@ def portfolio(
     )
 
 
-@backtest_app.command(name="cross-sectional")
-def cross_sectional(
-    symbols: list[str],
-    lookback: int = 252,
-    skip: int = 21,
-    vol_window: int = 63,
-    target_vol: float = 0.15,
-    rebalance_every: int = 21,
-    top_quantile: float = 0.3,
-    long_short: bool = True,
-    max_leverage: float = 2.0,
-    fee_bps: float = 1.0,
-    slippage_bps: float = 2.0,
-    periods_per_year: int = 252,
-    seed: int | None = None,
-    snapshot: str | None = None,
-    as_of: str | None = typer.Option(None, "--as-of", help="inclusive research cutoff YYYY-MM-DD"),
-    research_gate_override: bool = typer.Option(
-        False, "--research-gate-override", help=_RESEARCH_GATE_OVERRIDE_HELP
-    ),
-) -> None:
-    """Backtest a cross-sectional momentum book: long the universe's winners, short its losers.
-
-    Ranks SYMBOLS each rebalance by trailing return; longs the top ``--top-quantile`` and (unless
-    ``--no-long-short``) shorts the bottom, vol-targeted. Reports OOS metrics + PSR + BCa intervals
-    and writes a manifest under ``data_dir/cross_sectional``.
-    """
-
-    from alpha_cli import _cross_sectional
-
-    settings = AlphaSettings()
-    symbols = sorted(symbols)  # canonical order (see portfolio)
-    resolved_seed = seed if seed is not None else settings.random_seed
-    try:
-        held = reserve.hold_many(symbols, settings.data_dir, as_of, snapshot)
-        result = _cross_sectional.run_cross_sectional(
-            symbols,
-            data_dir=settings.data_dir,
-            lookback=lookback,
-            skip=skip,
-            vol_window=vol_window,
-            target_vol=target_vol,
-            rebalance_every=rebalance_every,
-            top_quantile=top_quantile,
-            long_short=long_short,
-            max_leverage=max_leverage,
-            fee_bps=fee_bps,
-            slippage_bps=slippage_bps,
-            periods_per_year=periods_per_year,
-            seed=resolved_seed,
-            snapshot_id=snapshot,
-            as_of=held.as_of,
-        )
-    except DataError as exc:
-        raise typer.BadParameter(str(exc)) from exc
-
-    identity = _runner.run_identity_for(
-        {
-            "command": "cross_sectional",
-            "symbols": symbols,
-            "lookback": lookback,
-            "skip": skip,
-            "vol_window": vol_window,
-            "target_vol": target_vol,
-            "rebalance_every": rebalance_every,
-            "top_quantile": top_quantile,
-            "long_short": long_short,
-            "max_leverage": max_leverage,
-            "fee_bps": fee_bps,
-            "slippage_bps": slippage_bps,
-            "periods_per_year": periods_per_year,
-            "seed": resolved_seed,
-            "snapshot_id": snapshot,
-            **held.identity(),
-            **_artifacts.research_gate_override_identity(research_gate_override),
-        },
-        source_fingerprint=result.source_fingerprint,
-        snapshot_hash=_runner.verified_snapshot_hash(settings.data_dir, snapshot),
-    )
-    run_id = identity.run_id
-    rdir = settings.data_dir / "cross_sectional" / run_id
-    rdir.mkdir(parents=True, exist_ok=True)
-    # the OOS stream as an equity curve (validate-run schema, base 1.0), written BEFORE the
-    # manifest — manifest.json is the run-exists marker (see _artifacts.write_run)
-    _artifacts.write_equity_curve(
-        rdir,
-        baseline_ts=result.baseline_ts,
-        timestamps=result.timestamps,
-        returns=result.returns.tolist(),
-        periods_per_year=periods_per_year,
-    )
-    manifest: dict[str, Any] = {
-        "schema_version": 1,
-        "run_id": run_id,
-        "command": "cross_sectional",
-        "seed": resolved_seed,
-        "snapshot_id": snapshot,
-        "research_cutoff": held.research_cutoff,
-        "symbols": list(result.symbols),
-        "long_short": result.long_short,
-        "n_long": result.n_long,
-        "n_periods": result.n_periods,
-        "metrics": {k: (v if v == v else None) for k, v in result.metrics.items()},
-        "psr": result.psr if result.psr == result.psr else None,
-        "dsr": result.dsr if result.dsr == result.dsr else None,
-        "sharpe_ci": {"lower": result.sharpe_ci.lower, "upper": result.sharpe_ci.upper},
-        "cagr_ci": {"lower": result.cagr_ci.lower, "upper": result.cagr_ci.upper},
-        **_artifacts.research_gate_override_fields(research_gate_override),
-        **identity.manifest_fields(),
-    }
-    held.stamp(manifest)
-    book = "long-short" if long_short else "long-only"
-    from alpha_validation import render_returns_tearsheet
-
-    _artifacts.publish_artifact(
-        rdir / "tearsheet.html",
-        lambda path: render_returns_tearsheet(
-            result.returns,
-            result.timestamps,
-            title=(
-                f"ALPHA Cross-Sectional — {', '.join(result.symbols)} ({book}, {result.n_long}/leg)"
-            ),
-            summary_rows=[
-                ("OOS Sharpe", f"{result.metrics['sharpe']:.3f}"),
-                (
-                    "Sharpe 95% CI",
-                    f"[{result.sharpe_ci.lower:.2f}, {result.sharpe_ci.upper:.2f}]",
-                ),
-                ("CAGR", f"{result.metrics['cagr']:.3f}"),
-                ("Max drawdown", f"{result.metrics['max_drawdown']:.3f}"),
-                ("Probabilistic Sharpe", f"{result.psr:.3f}"),
-                ("Book", f"{book}, {result.n_long} names/leg"),
-                ("Periods", str(result.n_periods)),
-            ],
-            output_path=path,
-        ),
-    )
-    _artifacts.write_manifest(rdir, manifest)
-    typer.echo(
-        f"cross-sectional [{', '.join(result.symbols)}] ({book}, {result.n_long}/leg) -> "
-        f"run {run_id}: OOS Sharpe {result.metrics['sharpe']:.3f} "
-        f"[{result.sharpe_ci.lower:.2f}, {result.sharpe_ci.upper:.2f}], "
-        f"CAGR {result.metrics['cagr']:.3f}, PSR {result.psr:.3f} "
-        f"over {result.n_periods} periods; manifest at {rdir / 'manifest.json'}"
-    )
-    held.announce()
+backtest_app.add_typer(cross_sectional_app)

@@ -15,6 +15,7 @@ import polars as pl
 import pytest
 from typer.testing import CliRunner
 
+from alpha_cli import _factor_eval_series
 from alpha_cli import _rdagent_judge as judge
 from alpha_cli import _rdagent_judge_replay as judge_replay
 from alpha_cli import rdagent_factor_eval as ev
@@ -993,8 +994,6 @@ def test_series_failure_changes_no_metrics_or_decisions(
     run = tmp_path / "run"
     req = fixture(run)
     good = evaluate(run, req, tmp_path / "good.jsonl")
-    from alpha_cli import _factor_eval_series
-
     with patch.object(
         _factor_eval_series, "_write_series", side_effect=OSError("evidence disk unavailable")
     ):
@@ -1064,14 +1063,12 @@ def test_screen_error_retains_computed_daily_ic_only(tmp_path: Path) -> None:
 def test_partial_series_write_failure_is_not_a_scoring_failure(tmp_path: Path) -> None:
     run = tmp_path / "run"
     req = fixture(run)
-    original = ev._series_file
+    original = _factor_eval_series._series_file
 
     def fail_buckets(path: Path, payload: bytes) -> None:
         if path.name.endswith(".buckets.parquet"):
             raise OSError("bucket write failed")
         original(path, payload)
-
-    from alpha_cli import _factor_eval_series
 
     with patch.object(_factor_eval_series, "_series_file", fail_buckets):
         record = evaluate(run, req, tmp_path / "ledger.jsonl")
@@ -1098,7 +1095,7 @@ def test_bucket_three_matches_replay_ties_and_direction(tmp_path: Path, directio
     ev.replay(panel, signal, days, direction, series=data)
     outcomes = ev.matrix(panel, "open", [days[0] + timedelta(days=n) for n in range(6)], symbols)
     outcomes = outcomes[2:] / outcomes[1:-1] - 1
-    buckets, daily = ev._bucket_frames(signal, outcomes, days, symbols, direction)
+    buckets, daily = _factor_eval_series._bucket_frames(signal, outcomes, days, symbols, direction)
     assert buckets["observations"].sum() == len(days) * len(symbols)
     held = {
         t.symbol: t.target_weight
@@ -1120,7 +1117,7 @@ def test_bucket_table_keeps_empty_days_and_null_means() -> None:
     scores = np.tile(np.arange(6), (2, 1)).astype(float)
     outcomes = np.ones((2, 6))
     outcomes[1] = np.nan
-    summary, daily = ev._bucket_frames(scores, outcomes, days, list("ABCDEF"), 1)
+    summary, daily = _factor_eval_series._bucket_frames(scores, outcomes, days, list("ABCDEF"), 1)
     assert daily.height == 6
     assert daily.filter(pl.col("date") == days[1])["mean_outcome"].to_list() == [None] * 3
     assert summary["observations"].to_list() == [2, 2, 2]

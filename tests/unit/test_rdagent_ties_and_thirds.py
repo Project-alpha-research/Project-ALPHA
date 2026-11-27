@@ -9,11 +9,11 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
+from alpha_cli import _factor_eval_series
 from alpha_cli import _rdagent_clocks as clocks
 from alpha_cli import _rdagent_judge as judge
 from alpha_cli import _rdagent_judge_replay as judge_replay
 from alpha_cli import _rdagent_membership as membership
-from alpha_cli import rdagent_factor_eval as ev
 
 
 def test_tie_diagnostics_count_names_and_preserve_all_tied_guard() -> None:
@@ -131,7 +131,9 @@ def test_tie_free_replay_weights_are_exact(direction: int) -> None:
 def test_bucket_report_uses_fractional_thirds() -> None:
     signal = np.array([[3.0, 2.0, 0.0, 0.0, 0.0, -1.0, -2.0, -3.0, -4.0, -5.0]])
     returns = np.array([[0.1, 0.2, 0.9, -0.3, 0.6, 0.0, 0.0, -0.1, -0.2, -0.3]])
-    buckets, daily = ev._bucket_frames(signal, returns, [date(2021, 1, 1)], list("ABCDEFGHIJ"), 1)
+    buckets, daily = _factor_eval_series._bucket_frames(
+        signal, returns, [date(2021, 1, 1)], list("ABCDEFGHIJ"), 1
+    )
     expected = (0.1 + 0.2 + (0.9 - 0.3 + 0.6) / 3) / 3
     assert buckets.filter(buckets["bucket"] == 3)["mean_outcome"][0] == pytest.approx(expected)
     assert daily.filter(daily["bucket"] == 3)["mean_outcome"][0] == pytest.approx(expected)
@@ -249,7 +251,7 @@ def test_single_name_day_stays_in_the_top_bucket_only() -> None:
     signal[0, 2] = 0.7
     signal[1] = np.arange(6.0)
     returns = np.full(signal.shape, 0.01)
-    _, daily = ev._bucket_frames(
+    _, daily = _factor_eval_series._bucket_frames(
         signal, returns, [date(2021, 1, 1), date(2021, 1, 2)], list("ABCDEF"), 1
     )
     first = daily.filter(daily["date"] == date(2021, 1, 1))

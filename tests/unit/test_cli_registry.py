@@ -1,4 +1,7 @@
-"""Every module and attribute named by a CLI string resolves, so a move that forgets a string fails."""
+"""Every module and attribute named by a CLI string resolves.
+
+A move that forgets a string fails.
+"""
 
 from __future__ import annotations
 

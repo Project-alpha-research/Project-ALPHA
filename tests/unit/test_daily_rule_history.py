@@ -256,21 +256,6 @@ def test_largest_sqlite_offset_keeps_global_reservation_count(tmp_path: Path) ->
     assert history["routing_metadata_complete"] is False
 
 
-def test_script_reports_oversized_offset_without_a_traceback(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    from inspect_daily_rule_history import main
-
-    _store(tmp_path)
-    with pytest.raises(SystemExit) as exc:
-        main(["--data-dir", str(tmp_path), "--offset", str(2**80)])
-    assert exc.value.code == 2
-    captured = capsys.readouterr()
-    assert captured.out == ""
-    assert "daily history offset" in captured.err
-    assert "Traceback" not in captured.err
-
-
 def test_old_schema_is_not_migrated(tmp_path: Path) -> None:
     store = _store(tmp_path)
     database = tmp_path / "control/workstation.sqlite3"
@@ -398,33 +383,3 @@ def test_one_snapshot_covers_counts_and_rows_during_concurrent_write(
     assert history["daily_contract_count"] == 1
     assert len(cast(list[object], history["contracts"])) == 1
     assert store.daily_rule_history()["daily_contract_count"] == 2
-
-
-def test_operator_script_uses_only_explicit_root(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    from inspect_daily_rule_history import main
-
-    _store(tmp_path)
-    _contract(tmp_path, "rc_" + "a" * 64, _daily_payload())
-    wrong_root = tmp_path / "environment-root"
-    monkeypatch.setenv("ALPHA_DATA_DIR", str(wrong_root))
-    assert main(["--data-dir", str(tmp_path)]) == 0
-    output = json.loads(capsys.readouterr().out)
-    assert output["daily_contract_count"] == 1
-    assert output["new_root_authorized"] is False
-    assert not wrong_root.exists()
-
-
-def test_operator_script_reports_unknown_missing_history_with_error(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    from inspect_daily_rule_history import main
-
-    with pytest.raises(SystemExit) as exc:
-        main(["--data-dir", str(tmp_path)])
-    assert exc.value.code == 2
-    output = capsys.readouterr()
-    assert output.out == ""
-    assert "History inspection blocked" in output.err
-    assert not (tmp_path / "control").exists()

@@ -661,7 +661,6 @@ _COMMAND_WRAP = re.compile(r"\.(command|callback)\([^)]*\)\(")
 _REVIEWED_READERS = {
     # Each reads only its own module docstring or its own (unbound) models.
     "workers/rdagent/install_stock_profile.py",
-    "workers/rdagent/qualify_daily_container.py",
     "workers/rdagent/model_gateway.py",  # own module docstring as argparse help; vars(args)
     # vars()/__dict__ of dataclass instances (instance fields, never a class or module docstring).
     "apps/alpha-cli/src/alpha_cli/backtest_cmds.py",

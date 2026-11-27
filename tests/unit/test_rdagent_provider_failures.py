@@ -541,7 +541,7 @@ def test_provider_losses_are_proposed_factors(tmp_path: Path) -> None:
 
 
 def test_old_refusal_counts_are_unchanged_and_provider_losses_are_added() -> None:
-    from alpha_web import _rdagent_runs as reader
+    from alpha_web._rdagent_run_funnel import _funnel
 
     # Run-3 shape: two refused proposals of two factors each, plus two judged factors.
     refused = [
@@ -549,12 +549,12 @@ def test_old_refusal_counts_are_unchanged_and_provider_losses_are_added() -> Non
         {"status": "refused_closed_family", "factor_names": ["c", "d"], "trial_created": False},
     ]
     trials = [{"status": "SCREEN_FAIL"}, {"status": "SCREEN_FAIL"}]
-    funnel = reader._funnel({}, trials, refused)
+    funnel = _funnel({}, trials, refused)
     assert (funnel["proposed"].value, funnel["refused_closed_family"].value) == (4, 2)
     assert funnel["stopped_by_provider"].value == 0
     lost = {"status": "coding_failed_provider_timeout", "factor_names": ["e", "f", "g"]}
     critic = {"status": "critic_unavailable_provider_timeout", "factor_names": ["h"]}
-    funnel = reader._funnel({}, trials, [*refused, lost, critic])
+    funnel = _funnel({}, trials, [*refused, lost, critic])
     assert (funnel["proposed"].value, funnel["stopped_by_provider"].value) == (7, 3)
 
 

@@ -17,7 +17,8 @@ from alpha_cli import _rdagent_judge as judge
 from alpha_cli import rdagent_factor_eval as ev
 from alpha_cli._rdagent_stats import FACTOR_DEFLATION_RULE
 from alpha_core import DataError
-from alpha_web import _rdagent_runs as web
+from alpha_web._rdagent_run_factor import _factor
+from alpha_web._rdagent_run_funnel import _funnel
 from tests.unit.test_rdagent_factor_eval import fixture
 from tests.unit.test_rdagent_factor_eval import recorded_time as recorded_time
 
@@ -203,19 +204,19 @@ def test_shortlisted_non_candidate_does_not_increase_confirmed(tmp_path: Path) -
 
 def test_workstation_missing_shortlist_is_not_false() -> None:
     row: dict[str, Any] = {"status": "DEFLATION_FAIL", "clocks": {}}
-    old = web._factor(row)
+    old = _factor(row)
     assert old.figures["shortlist"].value is None
     assert "not recorded" in str(old.figures["shortlist"].reason)
-    assert web._funnel({}, [row], None)["shortlisted"].value is None
+    assert _funnel({}, [row], None)["shortlisted"].value is None
     row.update(shortlist=True, composite_suspect=True, lineage_r2=0.98)
-    new = web._factor(row)
+    new = _factor(row)
     assert new.figures["shortlist"].value is True
     assert "looks like a blend of earlier tries" in new.sentence
     assert "not a pass, not a candidate, and not evidence of profit" in new.sentence
-    assert web._funnel({}, [row], None)["shortlisted"].value == 1
+    assert _funnel({}, [row], None)["shortlisted"].value == 1
     row["shortlist"] = False
-    assert web._factor(row).figures["shortlist"].value is False
-    assert web._funnel({}, [row], None)["shortlisted"].value == 0
+    assert _factor(row).figures["shortlist"].value is False
+    assert _funnel({}, [row], None)["shortlisted"].value == 0
 
 
 def test_lineage_skips_earlier_trials_that_stored_no_values(tmp_path: Path) -> None:

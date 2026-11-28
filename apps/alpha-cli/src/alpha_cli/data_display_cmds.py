@@ -10,7 +10,10 @@ from alpha_cli.market_overview_cmds import run_market_overview
 from alpha_cli.run_price_cmds import run_run_price
 from alpha_core import DataError
 
+display_app = typer.Typer()
 
+
+@display_app.command("market-overview")
 def market_overview_command(
     store: str = typer.Option("1D", help="stored bar size: 1D (default), 1h, 5m, ..."),
     window: int = typer.Option(90, help="bars shown: 30, 90 or 365"),
@@ -21,6 +24,7 @@ def market_overview_command(
     run_market_overview(store, window, limit, json_out)
 
 
+@display_app.command("run-price")
 def run_price_command(
     run_id: str = typer.Argument(..., help="a completed rule-test run id"),
     json_out: bool = typer.Option(False, "--json", help="emit JSON"),
@@ -29,6 +33,7 @@ def run_price_command(
     run_run_price(run_id, json_out)
 
 
+@display_app.command("chart-datasets")
 def chart_datasets_command(json_out: bool = typer.Option(False, "--json")) -> None:
     """Discover qualified external archive chart datasets without hashing all artifacts."""
     from alpha_cli._chart_data import chart_datasets

@@ -724,9 +724,6 @@ def symbols(
         typer.echo(sym)
 
 
-data_app.command()(data_snapshots_cmds.snapshots)
-data_app.command()(data_snapshots_cmds.verify)
+data_app.add_typer(data_snapshots_cmds.snapshots_app)
+data_app.add_typer(data_display_cmds.display_app)
 data_app.add_typer(data_universe_cmds.universe_app, name="universe")
-data_app.command("market-overview")(data_display_cmds.market_overview_command)
-data_app.command("run-price")(data_display_cmds.run_price_command)
-data_app.command("chart-datasets")(data_display_cmds.chart_datasets_command)

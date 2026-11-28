@@ -11,7 +11,10 @@ from alpha_core import DataError
 from alpha_data.snapshot import snapshot_timeframe, verify_snapshot
 from alpha_data.snapshot_reuse import content_hash, read_manifests, shared_content, total_bytes
 
+snapshots_app = typer.Typer()
 
+
+@snapshots_app.command()
 def snapshots(
     json_out: bool = typer.Option(False, "--json", help="emit JSON"),
     with_content: bool = typer.Option(
@@ -81,6 +84,7 @@ def snapshots(
     )
 
 
+@snapshots_app.command()
 def verify(snapshot_id: str) -> None:
     """Re-hash a snapshot and confirm it matches its manifest."""
     from alpha_cli.data_cmds import _snaps_root

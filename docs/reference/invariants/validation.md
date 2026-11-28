@@ -138,8 +138,8 @@ General rule: [research integrity § Point-in-time reads](research-integrity.md#
   rcParams (the existing headless Agg backend selection remains). Clean-process bytes and style drift are
   pinned in `tests/unit/test_figure_history_determinism.py`; the SVG salt and renderer identity are unchanged.
 - `grade_verdict` is an A–F headline summary, not a gate. Thresholds are module constants; NaN inputs score F
-  on that dimension. The Workstation mirrors the bands in `apps/alpha-web/frontend/src/explain/bands.ts`
-  (drift-guarded) — change both together.
+  on that dimension. The Workstation shows no grade: see
+  [Workstation run detail](web-run-detail.md).
 - The verdict's robustness count treats null tiers strictly (`_gauntlet.py` `_verdict_summary`): a demoted
   Tier-1 FAIL still lowers the grade even though the gate passes.
 - `native_tearsheet.py` is the authority for report metrics and series; the browser renders them and never

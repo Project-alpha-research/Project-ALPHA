@@ -53,9 +53,6 @@ button.idea-t-row[aria-pressed='true'] { outline: 3px solid var(--accent); outli
   .idea-nav-item { display: flex; white-space: nowrap; width: auto; }
   .idea-t-row { grid-template-columns: minmax(0, 1fr); }
 }
-.idea-notice { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pad-sm) var(--pad); margin: var(--pad) 0; padding: var(--pad-sm) var(--pad);
-  background: var(--panel-2); border: 1px solid var(--line-strong); border-radius: 4px; color: var(--ink); }
-.idea-notice p { margin: 0; overflow-wrap: anywhere; }
 .idea-t-labels { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px; }
 .idea-t-studies { grid-column: 1 / -1; margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 2px; }
 .idea-t-studies .chip { margin-left: 6px; }

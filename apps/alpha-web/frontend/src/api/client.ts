@@ -42,20 +42,11 @@ import type {
   ForecastPaths,
   ForecastSeries,
   JobDetail,
-  MlExperimentPage,
-  MlExperimentPreflight,
-  MlExperimentJobAccepted,
-  MlServiceStatus,
-  MlCapabilities,
-  MlModelName,
-  MlModelParameters,
   JobSummary,
-  MlTearSheetProjection,
   NativeTearSheetProjection,
   NullTiers,
   OptimTrials,
   PortfolioAnalyticsProjection,
-  PropfirmPaths,
   ProviderDefinition,
   DataSnapshots,
   DataSourceStatus,
@@ -232,7 +223,6 @@ export const api = {
     getImmutableJSON(`/api/runs/${id}/forecast/paths?n=${n}`),
   nulls: (id: string): Promise<NullTiers> => getImmutableJSON(`/api/runs/${id}/nulls`),
   trials: (id: string): Promise<OptimTrials> => getImmutableJSON(`/api/runs/${id}/trials`),
-  propfirmPaths: (id: string): Promise<PropfirmPaths> => getImmutableJSON(`/api/runs/${id}/propfirm-paths`),
   origins: (id: string): Promise<ForecastOrigins> => getImmutableJSON(`/api/runs/${id}/origins`),
   nativeTearsheet: (id: string, pointLimit = 750): Promise<NativeTearSheetProjection> =>
     getImmutableJSON(`/api/runs/${id}/native-tearsheet?point_limit=${pointLimit}`),
@@ -296,8 +286,6 @@ export const api = {
   cryptoFeatures: (): Promise<CryptoFeatures> => getJSON('/api/crypto-data/features'),
   cryptoFeatureCreate: (body: CryptoFeatureCreateRequest): Promise<CryptoFeature> =>
     postJSON('/api/crypto-data/features', body),
-  cryptoFeature: (manifestId: string): Promise<CryptoFeature> =>
-    getJSON(`/api/crypto-data/features/${encodeURIComponent(manifestId)}`),
   cryptoEstimate: (body: CryptoEstimateRequest): Promise<CryptoEstimate> =>
     postJSON('/api/crypto-data/estimate', body),
   cryptoAcquire: (
@@ -339,28 +327,4 @@ export const api = {
   dataSnapshots: (): Promise<DataSnapshots> => getJSON('/api/data/snapshots'),
   dataSourceStatus: (symbol: string): Promise<DataSourceStatus> =>
     getJSON(`/api/data/source-status?symbol=${encodeURIComponent(symbol)}`),
-  mlCapabilities: (): Promise<MlCapabilities> => getJSON('/api/ml/capabilities'),
-  mlStatus: (): Promise<MlServiceStatus> => getJSON('/api/ml/status'),
-  mlExperiments: (projectId?: string | null): Promise<MlExperimentPage> => {
-    const query = projectId ? `?project_id=${encodeURIComponent(projectId)}` : ''
-    return getJSON(`/api/ml/experiments${query}`)
-  },
-  mlExperimentPreflight: (spec: Record<string, unknown>): Promise<MlExperimentPreflight> =>
-    postJSON('/api/ml/experiments/preflight', { spec }),
-  mlTearsheet(exchangeId: string, timelineOffset = 0): Promise<MlTearSheetProjection> {
-    if (!Number.isInteger(timelineOffset) || timelineOffset < 0 || timelineOffset > 1_000_000) {
-      throw new RangeError('ML tear-sheet timeline offset must be an integer from 0 to 1,000,000')
-    }
-    const params = new URLSearchParams({
-      feature_limit: '50',
-      timeline_limit: '500',
-      timeline_offset: String(timelineOffset),
-      history_limit: '200',
-    })
-    return getJSON(
-      `/api/ml/exchanges/${encodeURIComponent(exchangeId)}/tear-sheet?${params.toString()}`,
-    )
-  },
-  createMlExperiment: (spec: Record<string, unknown>, model?: MlModelName, parameters?: MlModelParameters): Promise<MlExperimentJobAccepted> =>
-    postJSON('/api/ml/experiments', { spec, ...(model ? { model, parameters: parameters ?? {} } : {}) }),
 }

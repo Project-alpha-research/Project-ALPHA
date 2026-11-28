@@ -35,5 +35,4 @@ It imports nothing internal; every other package imports it, so a change reaches
 ## Outputs
 
 - Tests: see the [code map](../../docs/reference/invariants/core.md#code-map).
-- The owning document: `docs/reference/invariants/core.md`; update it and its `verified` commit
-  when a rule changes.
+- The owning document: `docs/reference/invariants/core.md`; update it when a rule changes.

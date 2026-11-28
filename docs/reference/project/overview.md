@@ -129,8 +129,8 @@ Each step needs the owner's approval before the next starts.
 1. **Development on the Dell.** The Dell is the main development machine now; the work is to move the
    project forward and make it production ready. Since 2026-11-14 it also downloads free real market
    data (Yahoo, Stooq, crypto exchanges) and results on it are labelled not yet confirmed
-   ([owner decision](owner-decisions-2.md#2026-11-14-free-real-data-on-the-dell-now)); the first goal is one
-   real RD-Agent loop ([owner decision](owner-decisions-2.md#2026-11-14-first-goal-one-real-rd-agent-loop)).
+   ([owner decision](owner-decisions-2.md#2026-11-14-free-real-data-on-the-dell-now)). Golden paths 1 and 2
+   reach a Workstation screen first ([working order](owner-decisions-4.md#2026-11-18-working-order-golden-paths-1-and-2-reach-the-screen-first)).
 2. **Confirmation on the Mac, with real data.** The Mac comes later, to confirm with live data
    ([owner decision](owner-decisions.md#2026-11-14-dell-now-mac-later)).
 3. **Paper trading**, with no real money.

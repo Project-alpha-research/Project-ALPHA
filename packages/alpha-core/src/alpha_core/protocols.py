@@ -7,7 +7,7 @@ from typing import Protocol, runtime_checkable
 
 from pydantic import AwareDatetime
 
-from alpha_core.types import Bar, ValidationOutcome
+from alpha_core.types import Bar
 
 
 @runtime_checkable
@@ -19,15 +19,6 @@ class DataSource(Protocol):
     def as_of(self, symbol: str, when: AwareDatetime) -> list[Bar]:
         """Return bars for `symbol` whose data was knowable no later than `when`."""
         ...
-
-
-@runtime_checkable
-class Validator(Protocol):
-    """A statistical validation gate applied to a backtest result."""
-
-    name: str
-
-    def validate(self, result: object) -> ValidationOutcome: ...
 
 
 @runtime_checkable

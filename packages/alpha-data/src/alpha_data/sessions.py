@@ -247,11 +247,6 @@ def session_on_or_before(calendar: str, day: date) -> date:
     return table.days[index - 1]
 
 
-def session_before(calendar: str, day: date) -> date:
-    """The session before `day` (a session or not)."""
-    return session_on_or_before(calendar, day - timedelta(days=1))
-
-
 def session_after(calendar: str, day: date) -> date:
     """The first session after `day`; after the window end: ``CalendarRangeError``."""
     table = _table(calendar)

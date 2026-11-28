@@ -22,7 +22,6 @@ from alpha_data.sessions import (
     outside_supported_range,
     range_label,
     session_after,
-    session_before,
     session_bounds,
     session_close,
     session_on_or_before,
@@ -199,7 +198,6 @@ def test_in_window_answers_equal_the_library_default_window(name: str) -> None:
         assert session_on_or_before(name, probe) == before
         if probe in index and index[probe] + 1 < len(expected):
             assert session_after(name, probe) == expected[index[probe] + 1]
-            assert session_before(name, expected[index[probe] + 1]) == probe
         if probe not in index:
             assert _known(probe, name) == _stamp(probe) + DAILY.duration
             assert not is_session(name, probe)

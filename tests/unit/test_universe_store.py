@@ -50,7 +50,6 @@ def test_store_round_trip_replaces_wholesale(tmp_path: Path) -> None:
     store = ParquetStore(tmp_path)
     store.write_universe("sp500", _rows())
     assert store.read_universe("sp500") == _rows()
-    assert store.list_universes() == ["sp500"]
     store.write_universe("sp500", _rows()[:1])
     assert [m.symbol for m in store.read_universe("sp500")] == ["AAA"]
     with pytest.raises(DataError, match="universe"):

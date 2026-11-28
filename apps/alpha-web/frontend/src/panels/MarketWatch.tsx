@@ -5,7 +5,7 @@ import { openArchiveMarket } from './actions'
 // Prices are the last two daily bars of the candles projection (`?tail=2`, so a pair whose
 // history ends months ago still reads its last close) and the Age cell says which day that bar
 // is from; a bar older than two days is dimmed as history. A symbol with no stored bars shows
-// `—`. Clicking a row sets the linked symbol; `+ click to add…` opens the Data Manager.
+// `—`; a failed bars read shows `read failed` with the reason in the row title. Clicking a row sets the linked symbol; `+ click to add…` opens the Data Manager.
 
 import { useEffect, useState } from 'react'
 
@@ -20,6 +20,7 @@ import {
   MARKET_WATCH_TABS,
   TICKER_POLL_MS,
   applyTicker,
+  isReadFailure,
   relatedRows,
   shouldPoll,
   tickerExchange,
@@ -27,7 +28,7 @@ import {
   watchRows,
   watchSymbols,
   type LiveQuote,
-  type WatchQuote,
+  type WatchQuoteState,
   type WatchRow,
 } from './marketWatchModel'
 
@@ -38,7 +39,7 @@ export function MarketWatch() {
   const linked = useLinked()
   const [tab, setTab] = useState<string>(MARKET_WATCH_TABS[0])
   const [stored, setStored] = useState<string[]>([])
-  const [quotes, setQuotes] = useState<Record<string, WatchQuote | null>>({})
+  const [quotes, setQuotes] = useState<Record<string, WatchQuoteState | null>>({})
   const [live, setLive] = useState<Record<string, LiveQuote | null>>({})
   const now = useNow()
   const [error, setError] = useState<string | null>(null)
@@ -69,7 +70,14 @@ export function MarketWatch() {
               [symbol]: { bars: result.bars, provenance: result.provenance },
             })),
         )
-        .catch(() => live && setQuotes((current) => ({ ...current, [symbol]: null })))
+        .catch(
+          (cause) =>
+            live &&
+            setQuotes((current) => ({
+              ...current,
+              [symbol]: { failed: true, reason: cause instanceof Error ? cause.message : String(cause) },
+            })),
+        )
     }
     return () => {
       live = false
@@ -79,7 +87,9 @@ export function MarketWatch() {
   const storedRows = watchRows(profile, stored, quotes, now)
   // The Navigator counts stored pairs per venue from these same reads.
   useEffect(() => {
-    for (const [symbol, quote] of Object.entries(quotes)) setStoredVenue(symbol, venueLabel(quote?.provenance?.source))
+    for (const [symbol, quote] of Object.entries(quotes)) {
+      if (!isReadFailure(quote)) setStoredVenue(symbol, venueLabel(quote?.provenance?.source))
+    }
   }, [quotes])
   // Public tickers: one read per quotable row every TICKER_POLL_MS, only while the toggle is on
   // and the tab is visible; a failed read leaves the stored close and its date in place.
@@ -114,8 +124,11 @@ export function MarketWatch() {
     }
   }, [liveTicker, tickerKey])
 
+  // A failed read stays visible and says so; only rows with no readable bars are hidden.
   const readableRows = storedRows.filter((row) => {
-    const bars = quotes[row.symbol]?.bars
+    const quote = quotes[row.symbol]
+    if (isReadFailure(quote)) return true
+    const bars = quote?.bars
     const last = bars?.[bars.length - 1]
     return Boolean(last && Number.isFinite(last.t) && Number.isFinite(last.c))
   })
@@ -160,7 +173,9 @@ export function MarketWatch() {
                 key={row.symbol}
                 className={`watch-row tone-${row.tone}${linked.symbol === row.symbol ? ' active' : ''}${row.stale ? ' stale' : ''}`}
                 title={
-                  row.asOf === 'live'
+                  row.failure
+                    ? row.failure
+                    : row.asOf === 'live'
                     ? `${row.symbol} on ${row.venue} · public last-trade price, refreshed every 10 s`
                     : row.asOf
                       ? `${row.symbol} on ${row.venue ?? 'an unknown venue'} · last stored bar ${row.asOf}${row.stale ? ' (history, not a quote)' : ''}`
@@ -184,7 +199,7 @@ export function MarketWatch() {
                 <td className="num">{row.change}</td>
                 <td
                   className={`num watch-age${row.asOf === 'live' ? ' live' : ''}`}
-                  title={row.asOf === 'live' ? 'public last trade, refreshed every 10 s' : row.asOf ? `last stored bar ${row.asOf}` : 'no stored bars'}
+                  title={row.failure ? row.failure : row.asOf === 'live' ?'public last trade, refreshed every 10 s' : row.asOf ? `last stored bar ${row.asOf}` : 'no stored bars'}
                 >
                   {row.age ?? '—'}
                 </td>

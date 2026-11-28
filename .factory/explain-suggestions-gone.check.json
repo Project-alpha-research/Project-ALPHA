@@ -1,0 +1,33 @@
+{
+  "kind": "absence",
+  "removed_symbols": [
+    "suggestionsFor",
+    "forecastSuggestions",
+    "optimSuggestions",
+    "portfolioSuggestions",
+    "propfirmSuggestions",
+    "forecastStories",
+    "optimStories",
+    "portfolioStories",
+    "propfirmStories",
+    "OptimManifest",
+    "PropfirmManifest",
+    "PortfolioManifest",
+    "ForecastManifest"
+  ],
+  "command_words": [],
+  "removed_paths": [
+    "apps/alpha-web/frontend/src/explain/dispatch.ts",
+    "apps/alpha-web/frontend/src/explain/forecast.ts",
+    "apps/alpha-web/frontend/src/explain/optim.ts",
+    "apps/alpha-web/frontend/src/explain/portfolio.ts",
+    "apps/alpha-web/frontend/src/explain/propfirm.ts",
+    "apps/alpha-web/frontend/src/explain/suggestions.ts",
+    "apps/alpha-web/frontend/src/explain/__fixtures__/optim.json",
+    "apps/alpha-web/frontend/src/explain/__fixtures__/portfolio.json",
+    "apps/alpha-web/frontend/src/explain/__fixtures__/propfirm.json"
+  ],
+  "search_roots": [
+    "apps/alpha-web/frontend/src"
+  ]
+}

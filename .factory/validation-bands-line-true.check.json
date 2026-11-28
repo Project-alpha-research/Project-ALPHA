@@ -1,0 +1,11 @@
+{
+  "kind": "absence",
+  "removed_symbols": [],
+  "command_words": [
+    "bands.ts"
+  ],
+  "removed_paths": [],
+  "search_roots": [
+    "docs/reference/invariants/validation.md"
+  ]
+}

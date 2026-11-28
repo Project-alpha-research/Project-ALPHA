@@ -42,4 +42,4 @@ Rules:
 Final message: exactly one JSON object matching `QuantVerificationReport` in
 `scripts/harness_models.py` (`claims`, `docstring_citations`, `overall`, `files_reviewed`,
 `oracles_present`, `numeric_spot_checks`), no fences, no commentary. The caller posts it on the
-pull request and records the result in `04-verify.md`.
+pull request.

@@ -16,8 +16,8 @@ import pandas as pd
 import polars as pl
 import pytest
 
+from alpha_cli import _factor_eval_screen as factor_screen
 from alpha_cli import _rdagent_judge as judge
-from alpha_cli import rdagent_factor_eval as ev
 from alpha_cli import rdagent_factor_eval as evaluator
 from tests.unit.test_context_daily_funding import write_funding
 
@@ -125,7 +125,7 @@ def test_prepare_funding_in_every_partition(
     ],
 )
 def test_code_read_detection(code: str, expected: bool) -> None:
-    assert evaluator.reads_funding(code.encode()) is expected
+    assert factor_screen.reads_funding(code.encode()) is expected
 
 
 def test_funded_coverage_still_requires_eighty_percent(tmp_path: Path) -> None:
@@ -145,7 +145,7 @@ def test_funded_coverage_still_requires_eighty_percent(tmp_path: Path) -> None:
     (folder / "panel-receipt.json").write_text(
         json.dumps({"funding": {"sha256": judge.sha((folder / "funding.parquet").read_bytes())}})
     )
-    mask = evaluator.funding_eligibility(tmp_path, days, symbols, None)
+    mask = factor_screen.funding_eligibility(tmp_path, days, symbols, None)
     signal = np.where(mask, rng.normal(size=mask.shape), np.nan)
     outcome = rng.normal(size=mask.shape)
     full = judge.screen(signal, outcome, "a" * 64, eligible=mask, n_resamples=20)
@@ -286,10 +286,10 @@ def test_factor_specific_mask_and_price_only_parity(
         masks.append(kwargs.get("eligible"))
         return {"status": "DEGENERATE", "p": 1.0}
 
-    monkeypatch.setattr(evaluator, "screen_at_clock", capture)
+    monkeypatch.setattr(factor_screen, "screen_at_clock", capture)
 
     def run() -> tuple[list[dict[str, Any]], dict[str, np.ndarray]]:
-        rows, signals = evaluator._screen_factors(
+        rows, signals = factor_screen._screen_factors(
             tmp_path, request, values, inputs, [], {}, [], days, symbols, np.ones((3, 10)), days, {}
         )
         for row in rows:
@@ -456,8 +456,10 @@ def test_input_columns_only_read_selectors(tmp_path: Path, selector: str) -> Non
     (tmp_path / "panel").mkdir()
     (tmp_path / "panel/funding.parquet").write_bytes(b"funding")
     row: dict[str, Any] = {}
-    with patch.object(ev, "funding_eligibility", return_value=np.ones((1, 5), dtype=bool)):
-        ev._factor_eligibility(
+    with patch.object(
+        factor_screen, "funding_eligibility", return_value=np.ones((1, 5), dtype=bool)
+    ):
+        factor_screen._factor_eligibility(
             tmp_path,
             {"code_sha256": digest, "status": "OK"},
             row,
@@ -476,6 +478,8 @@ def test_input_columns_detection_miss_is_disclosed(tmp_path: Path) -> None:
     (tmp_path / "code").mkdir()
     (tmp_path / "code" / f"{digest}.py").write_bytes(code)
     row: dict[str, Any] = {}
-    ev._factor_eligibility(tmp_path, {"code_sha256": digest, "status": "OK"}, row, [], [], None)
+    factor_screen._factor_eligibility(
+        tmp_path, {"code_sha256": digest, "status": "OK"}, row, [], [], None
+    )
     assert row["input_columns_method"].startswith("fallback:")
     assert row.get("input_columns", []) == []

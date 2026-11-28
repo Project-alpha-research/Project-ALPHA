@@ -15,6 +15,7 @@ import polars as pl
 import pytest
 from typer.testing import CliRunner
 
+from alpha_cli import _factor_eval_screen as factor_screen
 from alpha_cli import _factor_eval_series
 from alpha_cli import _rdagent_judge as judge
 from alpha_cli import _rdagent_judge_replay as judge_replay
@@ -38,7 +39,7 @@ def recorded_time(monkeypatch: pytest.MonkeyPatch) -> None:
             assert zone is UTC
             return datetime(2026, 11, 17, tzinfo=UTC)
 
-    monkeypatch.setattr(ev, "datetime", Clock)
+    monkeypatch.setattr(factor_screen, "datetime", Clock)
 
 
 def fixture(run: Path, *, seed: int = 42, noise: bool = False) -> Path:

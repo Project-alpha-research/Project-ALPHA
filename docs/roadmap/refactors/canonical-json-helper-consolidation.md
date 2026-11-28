@@ -61,7 +61,7 @@ ordering) does not reach the others, and reviewers cannot tell which variant a h
 
 ## Suggested slicing
 
-1. Inventory and classify all 123 definitions; add golden tests (no production change).
+1. Inventory and classify all 122 definitions; add golden tests (no production change).
 2. Introduce one shared module per layer (`alpha_core` for pure encoders) with the variants found.
 3. Migrate one package at a time, starting where no identity hash covers the file.
 4. Leave worker copies and identity-bound files for last, each with an explicit owner decision.

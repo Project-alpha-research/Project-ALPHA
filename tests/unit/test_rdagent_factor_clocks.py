@@ -8,6 +8,7 @@ import numpy as np
 import polars as pl
 import pytest
 
+from alpha_cli import _factor_eval_screen as factor_screen
 from alpha_cli import _rdagent_clocks as clocks
 from alpha_cli import rdagent_factor_eval as ev
 from alpha_cli.spine.trial_record import map_row
@@ -343,7 +344,7 @@ def test_legacy_result_includes_each_factor_clock_and_warning_text(
         stats["warnings"] = ["low_sample: n=10"]
         return stats
 
-    monkeypatch.setattr(ev, "screen_at_clock", warned)
+    monkeypatch.setattr(factor_screen, "screen_at_clock", warned)
     result = evaluate(run, req, tmp_path / "ledger.jsonl")
     row = result["factors"][0]
     for clock, trial in row["clocks"].items():

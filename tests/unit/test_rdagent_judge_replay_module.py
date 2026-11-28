@@ -10,6 +10,7 @@ from types import ModuleType
 import numpy as np
 import polars as pl
 
+from alpha_cli import _factor_eval_screen as screen
 from alpha_cli import _rdagent_judge as judge
 from alpha_cli import rdagent_factor_eval as ev
 
@@ -55,7 +56,7 @@ def test_judge_no_longer_holds_moved_names() -> None:
 
 def test_factor_eval_reexports_from_new_module() -> None:
     module = _new_module()
-    assert vars(ev)["panel_membership"] is module.panel_membership
+    assert vars(screen)["panel_membership"] is module.panel_membership
     assert ev.replay is module.replay
 
 
@@ -74,11 +75,11 @@ def test_return_metrics_unchanged_from_new_module() -> None:
     )
 
 
-def test_panel_membership_behaviour_through_factor_eval() -> None:
+def test_panel_membership_behaviour_through_factor_eval_screen() -> None:
     bars = panel()
     symbols = sorted(bars["instrument"].unique().to_list())
     days = [date(2020, 12, 1) + timedelta(days=i) for i in range(40, 80)]
-    mask = vars(ev)["panel_membership"](bars, days, symbols)
+    mask = vars(screen)["panel_membership"](bars, days, symbols)
     assert mask.shape == (len(days), len(symbols))
     assert mask.dtype == bool
     assert mask.all()

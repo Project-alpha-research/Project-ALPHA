@@ -82,6 +82,6 @@ test('Today on an empty home says how to start a follow', async ({ page }) => {
   await page.goto('/#page=research&pane=FollowToday')
   await expect(page.getByText('Nothing is followed yet.')).toBeVisible()
   await expect(page.getByText('alpha follow start --test <run id>')).toBeVisible()
-  await expect(page.getByText('alpha results list')).toBeVisible()
+  await expect(page.getByText('alpha results', { exact: true })).toBeVisible()
   await expect(page.locator('.follow-card')).toHaveCount(0)
 })

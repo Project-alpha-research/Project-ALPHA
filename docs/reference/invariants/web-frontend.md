@@ -98,7 +98,7 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
   LATE OR MISSED, then WAITING. An empty group is one muted line. A behind or late card carries an icon and words,
   never colour alone. Up and down use ▲▼ as the Market view does.
 - It has no buy or sell button and starts, updates or stops no follow. An empty list shows
-  `alpha follow start --test <run id>` and `alpha results list`.
+  `alpha follow start --test <run id>` and `alpha results`.
 - The equity chart plots the entries `follow show` returns (newest 5): percent since the start, a dashed zero line,
   and a table below. Enforced by `src/panels/FollowToday.test.tsx`, `followTodayModel.test.ts`, `e2e/follow-today.spec.ts`.
 

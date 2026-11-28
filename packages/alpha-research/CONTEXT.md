@@ -24,7 +24,7 @@ It imports only `alpha_core`; it has no network, persistence or authority.
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Point-in-time reads | changing event studies, bars or phase boundaries |
 | [command line research](../../docs/reference/invariants/cli-research.md) | Projections and dossiers | a gate packet is assembled or shown differently |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Statistical evidence | changing a statistic |
-| [what this part is for](../../docs/reference/project/components/research-cases-and-approval.md) | — | why it exists; before you keep, shelve or remove it |
+| [what it is for (being removed)](../../docs/reference/project/components/research-cases-and-approval.md) | — | before you keep, shelve or remove it |
 | [research invariants](../../docs/reference/invariants/research.md) | Code map | finding a module or its tests |
 
 ## How to change it

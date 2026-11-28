@@ -23,7 +23,8 @@
 #   real_data        whether a run on real market data is recorded
 #   real_data_needs  what a real-data run would need (credentials, network); optional
 #   needs            things this workflow needs that the development machine does not have
-#   state            Working | Partial | Demo only | Shelved | Not started
+#   state            Being removed | Working | Partial | Demo only | Shelved | Not started
+#                    Being removed = the owner decided to remove it; do not build on it
 #                    Working = at least one proof_smoke node that is not skipped or xfailed by
 #                    design, and needs is empty; in-process tests alone make it at most Partial
 #   missing          a few words on what stops it being Working (required unless Working);
@@ -32,6 +33,8 @@
 #   triage           {card, recommendation, owner_decision} for items the owner decides (the old triage sheet is gone; the decisions live here);
 #                    owner_decision is "undecided" until the owner answers (TOML has no null)
 #   docs             plain-English documents for the owner (repo-relative .md paths; optional)
+#   removal          the owner decision that removes it ("docs/reference/project/owner-decisions*.md#<heading>");
+#                    required for, and only for, Being removed; each page in its docs starts "Being removed"
 #
 # [[decision]] holds triage cards that are not a workflow of their own. [[known_defect]] lists each
 # strict-xfail smoke check with a plain title, its node and how to see the defect; every xfail
@@ -726,8 +729,10 @@ proof_smoke = [
 ]
 real_data = "not yet confirmed (to check on the Mac later)"
 needs = []
-state = "Partial"
-missing = "proven up to the owner-approval boundary; a full case needs provider data and your approval"
+state = "Being removed"
+missing = "being removed after a private export; use alpha test, ideas, Setup Lab, alpha follow and alpha confirm instead"
+removal = "docs/reference/project/owner-decisions-6.md#2026-11-23-remove-the-old-research-case-machinery-export-first"
+docs = ["docs/reference/project/components/research-cases-and-approval.md"]
 
 [[capability]]
 id = "quick-screening"
@@ -1017,8 +1022,9 @@ entry_points = [
 proof_synthetic = []
 real_data = "not yet confirmed (to check on the Mac later)"
 needs = []
-state = "Shelved"
-missing = "shelved 2026-11-14: unused groundwork, not wired in; kept for routing Qlib models through RD-Agent research cases after the daily rule study"
+state = "Being removed"
+missing = "unused groundwork, never wired in; retired with the research cases it ran inside"
+removal = "docs/reference/project/owner-decisions-6.md#2026-11-23-remove-the-old-research-case-machinery-export-first"
 # owner's delegation, 2026-11-14 ("Build whatever you believe is the right decision"): shelve, not delete: it routes Qlib through RD-Agent, which the owner declared core after the sheet was written
 triage = { card = "A", recommendation = "DELETE", owner_decision = "SHELVE" }
 

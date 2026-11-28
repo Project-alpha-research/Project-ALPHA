@@ -211,3 +211,33 @@ def test_known_defect_must_be_a_strict_xfail_smoke_check(
     toml = _cap() + _defect(node)
     with pytest.raises(capabilities.CapabilityError, match=message):
         capabilities.load(_tree(tmp_path, toml, defects=True))
+
+
+_DECISION = "docs/reference/project/owner-decisions-6.md"
+
+
+def _removed(removal: str) -> str:
+    extra = f'missing = "removed"\nremoval = "{removal}"' if removal else 'missing = "removed"'
+    return _cap(state="Being removed", extra=extra)
+
+
+@pytest.mark.parametrize(
+    ("toml", "message"),
+    [
+        (_removed(""), "'removal' is required for, and only for"),
+        (_cap(extra=f'removal = "{_DECISION}#x"'), "'removal' is required for, and only for"),
+        (_removed("docs/roadmap/README.md#x"), "must link an owner decision heading"),
+        (_removed(f"{_DECISION}#x"), "names no file"),
+    ],
+)
+def test_being_removed_needs_a_removal_decision(tmp_path: Path, toml: str, message: str) -> None:
+    with pytest.raises(capabilities.CapabilityError, match=message):
+        capabilities.load(_tree(tmp_path, toml))
+
+
+def test_being_removed_with_its_decision_loads(tmp_path: Path) -> None:
+    root = _tree(tmp_path, _removed(f"{_DECISION}#x"))
+    (root / _DECISION).parent.mkdir(parents=True)
+    (root / _DECISION).write_text("# Decisions\n", encoding="utf-8")
+    cap = capabilities.load(root).capabilities[0]
+    assert (cap.state, cap.removal) == ("Being removed", f"{_DECISION}#x")

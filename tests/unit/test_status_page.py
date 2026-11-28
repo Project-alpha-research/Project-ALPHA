@@ -15,6 +15,7 @@ def test_page_sections_appear_in_the_agreed_order() -> None:
     headings = [line for line in text.splitlines() if line.startswith("## ")]
     assert headings == [
         "## At a glance",
+        "## Being removed: do not build on",
         "## What works today",
         "## Partly working",
         "## Known defects",

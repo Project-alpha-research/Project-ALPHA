@@ -9,6 +9,8 @@ node (a check under ``tests/smoke/`` that runs the installed programs) that is n
 xfailed by design, and nothing in ``needs``. Every strict-xfail smoke check must be listed under
 ``[[known_defect]]``, and every listed defect must be such a check, so the status page shows them.
 
+"Being removed" marks a capability the owner decided to remove; its ``removal`` links that decision.
+
 ``uv run python scripts/capabilities.py`` prints ``ok`` or the first problem (exit 1).
 ``tests/unit/test_capabilities.py`` runs the same check on the committed tree.
 """
@@ -27,7 +29,8 @@ from typing import cast
 ROOT = Path(__file__).parents[1]
 MAP = Path("docs/roadmap/capabilities.toml")
 
-STATES = ("Working", "Partial", "Demo only", "Shelved", "Not started")
+STATES = ("Being removed", "Working", "Partial", "Demo only", "Shelved", "Not started")
+BEING_REMOVED = "Being removed"
 RECOMMENDATIONS = ("KEEP", "SHELVE", "SHELVE (your call)", "DELETE", "YOUR CALL")
 DECISIONS = ("undecided", "KEEP", "SHELVE", "DELETE")
 INTERNAL_ONLY = "nothing to see yet — internal only"
@@ -36,6 +39,8 @@ SMOKE_DIR = "tests/smoke/"
 NO_SMOKE_YET = "no end-to-end smoke check yet"
 
 _ID = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+# A Being-removed capability links the owner decision that removes it.
+_REMOVAL = re.compile(r"docs/reference/project/owner-decisions(?:-\d+)?\.md#[a-z0-9-]+")
 _CLI_MAIN = Path("apps/alpha-cli/src/alpha_cli/main.py")
 _API_DIR = Path("apps/alpha-web/src/alpha_web/api")
 _PREFIX = re.compile(r'router = APIRouter\(prefix="([^"]*)"')
@@ -60,6 +65,7 @@ _OPTIONAL_KEYS = {
     "missing": str,
     "triage": dict,
     "docs": list,
+    "removal": str,
 }
 _DESIGNED_MARKS = frozenset({"skip", "skipif", "xfail"})
 
@@ -96,6 +102,7 @@ class Capability:
     missing: str
     triage: Triage | None
     docs: tuple[str, ...] = ()
+    removal: str = ""
 
     @property
     def label(self) -> str:
@@ -205,11 +212,16 @@ def _capability(index: int, raw: object) -> Capability:
         missing=str(table.get("missing", "")),
         triage=_triage(f"{where} triage", table["triage"]) if "triage" in table else None,
         docs=_strings(where, "docs", table.get("docs", [])),
+        removal=str(table.get("removal", "")),
     )
     if _ID.fullmatch(cap.id) is None:
         raise CapabilityError(f"{where}: id must be kebab-case")
     if cap.state not in STATES:
         raise CapabilityError(f"{where}: state must be one of {STATES}")
+    if (cap.state == BEING_REMOVED) != bool(cap.removal.strip()):
+        raise CapabilityError(f"{where}: 'removal' is required for, and only for, {BEING_REMOVED}")
+    if cap.removal and _REMOVAL.fullmatch(cap.removal) is None:
+        raise CapabilityError(f"{where}: 'removal' must link an owner decision heading")
     if cap.state == "Working":
         if not cap.proof_smoke or cap.needs:
             raise CapabilityError(f"{where}: Working needs proof_smoke and no needs")
@@ -451,6 +463,8 @@ def load(root: Path = ROOT) -> CapabilityMap:
         for doc in cap.docs:
             if not doc.endswith(".md") or not (root / doc).is_file():
                 raise CapabilityError(f"{where}: doc {doc!r} is not a Markdown file in the repo")
+        if cap.removal and not (root / cap.removal.split("#", 1)[0]).is_file():
+            raise CapabilityError(f"{where}: removal {cap.removal!r} names no file in the repo")
     defects = _known_defects(root, data.get("known_defect", []))
 
     return CapabilityMap(caps, tuple(decisions), defects)

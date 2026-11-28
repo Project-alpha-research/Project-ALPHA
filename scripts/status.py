@@ -101,7 +101,8 @@ def render(root: Path = ROOT) -> str:
         "",
         "## At a glance",
         "",
-        f"- **Capabilities:** {len(by_state['Working'])} working, "
+        f"- **Capabilities:** {len(by_state[capabilities.BEING_REMOVED])} being removed, "
+        f"{len(by_state['Working'])} working, "
         f"{len(by_state['Partial'])} partly working, {len(by_state['Demo only'])} demo only, "
         f"{len(by_state['Shelved'])} shelved, {len(by_state['Not started'])} not started.",
         f"- **Known defects:** {len(cmap.known_defects)}"
@@ -113,9 +114,16 @@ def render(root: Path = ROOT) -> str:
         "Not yet proven: the booking step of follow on paper (it needs one new market session)",
         "and RD-Agent's paid loop inside a test sweep.",
         "",
-        "## What works today",
+        "## Being removed: do not build on",
+        "",
+        "You decided to remove these. Do not build on them or link new work to them.",
         "",
     ]
+    for cap in by_state[capabilities.BEING_REMOVED]:
+        out.append(f"- **{cap.label}** — {cap.missing}. Decision: [{cap.removal}]({cap.removal}).")
+    if not by_state[capabilities.BEING_REMOVED]:
+        out.append("- None.")
+    out += ["", "## What works today", ""]
     for cap in by_state["Working"]:
         out.append(f"- **{cap.label}** — {_how_to_see(cap)}{_real_run(cap)}{_docs(cap)}")
     if not by_state["Working"]:

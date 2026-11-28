@@ -23,7 +23,7 @@ It owns no persistence, commands, approvals, evidence or trading authority.
 | [study invariants](../../docs/reference/invariants/study.md) | — | changing clocks, setup rules, operators or capabilities |
 | [research invariants](../../docs/reference/invariants/research.md) | Phase allocation | the change touches D0 or D1 references |
 | [command line research](../../docs/reference/invariants/cli-research.md) | Projections and dossiers | the change surfaces through `alpha research` |
-| [what this part is for](../../docs/reference/project/components/research-cases-and-approval.md) | — | why it exists; before you keep, shelve or remove it |
+| [what it is for (being removed)](../../docs/reference/project/components/research-cases-and-approval.md) | — | before you keep, shelve or remove it |
 | [study invariants](../../docs/reference/invariants/study.md) | Code map | finding a module or its tests |
 
 ## How to change it

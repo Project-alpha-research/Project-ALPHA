@@ -17,7 +17,7 @@ append-only records, and relative links.
 
 ## Document lifecycle
 
-- Living documents (`ARCHITECTURE.md`, `context/`, `governance/` hand-written files, `operations/`) are
+- Living documents (`ARCHITECTURE.md`, `governance/` hand-written files, `operations/`) are
   updated in place when behaviour changes (`docs/README.md`).
 - The June 2026 research reports (`archive/2026-06-research-notes/`) and dated specs and plans are rationale
   and intent: neither a recommendation nor a `Completed` plan proves current behaviour. Read the accepted ADR, the code and a
@@ -40,8 +40,7 @@ append-only records, and relative links.
   request fixes text it knows is wrong, and nothing else.
 - When work lands, any page that listed it as queued, open or not built is updated in the same pull request (search for the feature's name).
 - Caps are split triggers, not targets. Near a cap, split by heading into a sibling file, or summarise and link. Never drop words
-  to fit. CONTEXT files hold routing only, so they have nothing to cram. A test fails a reference file when more than 20% of its
-  prose lines are 150 to 160 characters long (a sign of text squeezed under the line cap).
+  to fit. CONTEXT files hold routing only, so they have nothing to cram.
 
 The project's documentation: the file system's reference material (`docs/reference/`), decision
 records (`docs/adr/`), the architecture reference, operations runbooks, governance records and the

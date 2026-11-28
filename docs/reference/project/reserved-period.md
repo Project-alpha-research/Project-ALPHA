@@ -77,7 +77,7 @@ Three kinds: the code locks it out (it refuses reserved rows or aborts), only la
   sentence says "rows (bars, funding and open interest)". Other commands keep `held_back_bars` and the standard sentence. A manifest replay reads
   the whole verified artifact (its hash and overlap checks need every row) but builds no bar that closes after the boundary.
   A replay of an older frozen scan is refused by its code hash, as before. `alpha research compare` and `alpha propfirm run` print the same sentence
-  and record the same `reserve` field. `propfirm` adds it to the run id only when a bar was held back, so other ids stay. `alpha propfirm --from-run`
+  and record the same `reserve` field. `propfirm` adds it to the run id only when a bar was held back, so other ids stay. `alpha propfirm run --from-run`
   reads only a stored equity curve. `alpha monte-carlo` reads with its source run's cut-off, never later than 2023-12-31: a source run that recorded
   none gets 2023-12-31. `alpha labels weights` and `importance` refuse a stored barrier result that holds a bar or event from the date on
   (`RESERVED_PERIOD_SEEN`) and name `alpha labels barrier` as the next step.
@@ -126,7 +126,6 @@ These still read bars from the date on.
   The verdict that can stop a run covers the rows a test may read.
   A problem found only in held-back rows is stated ("N problems in held-back rows, not used") and does not stop it.
   Its verdict can label or stop a run; its numbers do not enter a result, and neither its verdict nor its fingerprint enters an identity.
-- The old `alpha project reveal-holdout` action is removed.
 
 ## The owner's confirmation
 

@@ -126,10 +126,10 @@ Project-wide coding rules. Area files add their own detail and link here. The re
 - No product source file (`packages`, `apps`, `workers`, `tools`, `scripts`; tests are not
   measured) over 1,500 lines, and no function over 150 lines (`def` line to last line), so an
   agent can hold any file or function in its head.
-- The offenders of 2026-11-14 (10 files, 98 functions; 8 files and 90 functions after the suite and research command splits) are capped at their size then in
-  `.claude/code-size-baseline.json`. Each entry is a ceiling: code may shrink below it with no
-  edit, and a sweep change lowers or removes entries later (owner decision, 2026-11-22). Code that
-  grows past its entry fails, and an entry added or raised since `origin/main` fails; split the
+- The files and functions over a cap on 2026-11-14 are the entries in `.claude/code-size-baseline.json`.
+  Each entry caps its code at its size on that date. Each entry is a ceiling: code may shrink below it
+  with no edit. A sweep change lowers or removes entries later (owner decision, 2026-11-22). Code that
+  grows past its entry fails. An entry added or raised since `origin/main` fails; split the
   code instead. Same-name definitions
   (a property setter) are measured separately as `name#2`. Enforced by `tests/unit/test_code_size.py`.
 
@@ -165,20 +165,3 @@ Project-wide coding rules. Area files add their own detail and link here. The re
   A linked test, a result from another tree or one reported by someone else is not a pass here.
 - Retire local code that duplicates an upstream capability only after a recorded value-level comparison,
   dependency review, and a tested migration and backout; until then keep the old route.
-- `## Commands run` — each command, the commit it ran on, and its result (counts, exit code).
-- `## End-to-end check` — the test that proves the workflow and its result, or the statement
-  that none exists and which one is needed.
-- `## Not run` — every check CI or the plan would run that was not run here, and why.
-- `## Review findings` — who built (from `03-build.json`), who reviewed with which model, and
-  each finding with what was done about it.
-
-Done means all of these hold:
-
-- The brief's "what done looks like" is true, seen running, not only type-checked.
-- New behaviour has tests that fail without the change; existing tests still pass.
-- Error paths and edge cases are handled and fail loud; no dead code or debug output is left.
-- The change is scoped to the plan; config, migrations and public interfaces are accounted for.
-- Each changed fact is updated in its one owning document, in current-state language; a decision
-  worth keeping is an ADR; the README was checked and the pull request says so.
-- Untrusted input, authority and credentials were looked at; a risky change has a rollback.
-- CI is green and the pull request is merged.

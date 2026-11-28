@@ -22,8 +22,8 @@ this file holds the command-line specifics.
 
 ## Phases and words used here
 
-- A Research Case is the finite, governed study every new project starts with. `alpha research capture` and
-  `alpha project create` both create one and enter triage atomically. [ADR-0019](../../adr/0019-governed-research-cases-before-strategy-development.md)
+- A Research Case is the finite, governed study every new project starts with. `alpha research capture`
+  creates one and enters triage atomically. [ADR-0019](../../adr/0019-governed-research-cases-before-strategy-development.md)
 - D0 is the synthetic pilot: canned fixture data, no market claim. D1 is registered discovery on real research-only
   data. D2 is the one-shot sealed confirmation. D3 is the final holdout share; research never reads it.
 - Gate 1 is the D0 gate. It runs only the contract-bound canonical `double_bottom` detector with

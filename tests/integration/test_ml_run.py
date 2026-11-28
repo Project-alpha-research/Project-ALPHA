@@ -6,8 +6,10 @@ import json
 import os
 import subprocess
 import sys
+from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import polars as pl
 import pytest
@@ -24,6 +26,7 @@ from alpha_data.store import ParquetStore
 REPO = Path(__file__).parents[2]
 SYMBOLS = [f"S{i:02d}" for i in range(20)]
 SESSIONS = 1200  # from 2021-01-04: crosses the held-back day 2024-01-01
+SharedRun = tuple[Path, dict[str, Any]]
 
 
 def _seed_store(home: Path) -> None:
@@ -91,8 +94,29 @@ def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return data
 
 
-def test_run_end_to_end_with_fake_worker(home: Path, tmp_path: Path) -> None:
-    result = ml_run.run_spec(_spec(tmp_path), data_dir=home)
+@pytest.fixture(scope="module")
+def _shared_run(tmp_path_factory: pytest.TempPathFactory) -> Iterator[SharedRun]:
+    """Seed one store and run the fake worker once for the tests that only read the run."""
+    root = tmp_path_factory.mktemp("ml-run-shared")
+    data = root / "alpha-data"
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(ml_cmds, "train_exchange", _fake_worker)
+        patch.setattr(ml_run, "_require_worker", lambda project: REPO / "workers/qlib")
+        patch.setenv("ALPHA_DATA_DIR", str(data))
+        _seed_store(data)
+        result = ml_run.run_spec(_spec(root), data_dir=data)
+    yield data, result
+
+
+@pytest.fixture
+def shared(_shared_run: SharedRun, monkeypatch: pytest.MonkeyPatch) -> SharedRun:
+    """The shared run's store and result; the CLI reads that store."""
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(_shared_run[0]))
+    return _shared_run
+
+
+def test_run_end_to_end_with_fake_worker(shared: SharedRun) -> None:
+    home, result = shared
     manifest = json.loads((home / "runs" / result["run_id"] / "manifest.json").read_text())
     assert manifest["command"] == "ml_replay"
     assert manifest["costs"]["fee_bps"] > 0
@@ -210,16 +234,16 @@ def test_a_tampered_snapshot_is_not_reused(home: Path) -> None:
         ml_run._freeze(home, SYMBOLS)
 
 
-def test_results_list_an_ml_run_without_calling_it_a_fault(home: Path, tmp_path: Path) -> None:
-    run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
+def test_results_list_an_ml_run_without_calling_it_a_fault(shared: SharedRun) -> None:
+    run_id = shared[1]["run_id"]
     listed = CliRunner().invoke(app, ["results"])
     line = next(line for line in listed.output.splitlines() if run_id in line)
     assert "ml_run" in line
     assert "fault" not in line
 
 
-def test_result_readers_say_an_ml_run_has_no_diagnostics(home: Path, tmp_path: Path) -> None:
-    run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
+def test_result_readers_say_an_ml_run_has_no_diagnostics(shared: SharedRun) -> None:
+    run_id = shared[1]["run_id"]
     runner = CliRunner()
     report = runner.invoke(app, ["report", run_id])
     assert report.exit_code == 0, report.output
@@ -239,8 +263,8 @@ def _show(run_id: str) -> str:
     return out.output
 
 
-def test_results_show_reads_an_ml_run_in_plain_words(home: Path, tmp_path: Path) -> None:
-    run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
+def test_results_show_reads_an_ml_run_in_plain_words(shared: SharedRun) -> None:
+    run_id = shared[1]["run_id"]
 
     text = _show(run_id)
 
@@ -254,8 +278,8 @@ def test_results_show_reads_an_ml_run_in_plain_words(home: Path, tmp_path: Path)
     assert shown["runs"][0]["reading"]["kind"] == "ml_run"
 
 
-def test_report_names_the_assets_and_gives_the_reading(home: Path, tmp_path: Path) -> None:
-    run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
+def test_report_names_the_assets_and_gives_the_reading(shared: SharedRun) -> None:
+    run_id = shared[1]["run_id"]
 
     out = CliRunner().invoke(app, ["report", run_id]).output
 
@@ -271,10 +295,8 @@ def test_run_prints_a_fold_table_not_raw_dict_lines(home: Path, tmp_path: Path) 
     assert "equal-weight basket" in out
 
 
-def test_a_check_that_needs_only_stored_equity_accepts_an_ml_run(
-    home: Path, tmp_path: Path
-) -> None:
-    run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
+def test_a_check_that_needs_only_stored_equity_accepts_an_ml_run(shared: SharedRun) -> None:
+    run_id = shared[1]["run_id"]
 
     out = CliRunner().invoke(app, ["tool", "run", "performance.ulcer", run_id, "--json"])
 
@@ -283,9 +305,9 @@ def test_a_check_that_needs_only_stored_equity_accepts_an_ml_run(
 
 
 def test_a_check_that_needs_one_rules_bars_says_why_it_does_not_apply(
-    home: Path, tmp_path: Path
+    shared: SharedRun,
 ) -> None:
-    run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
+    run_id = shared[1]["run_id"]
 
     out = CliRunner().invoke(app, ["tool", "run", "parameters.price_noise", run_id])
 
@@ -293,11 +315,11 @@ def test_a_check_that_needs_one_rules_bars_says_why_it_does_not_apply(
     assert "model run" in out.output and "one rule" in out.output
 
 
-def test_every_check_either_runs_or_says_why_on_an_ml_run(home: Path, tmp_path: Path) -> None:
+def test_every_check_either_runs_or_says_why_on_an_ml_run(shared: SharedRun) -> None:
     """No check may crash or say the run is not a rule test; each runs or gives one reason."""
     from alpha_cli.toolbox.registry import SPECS
 
-    run_id = ml_run.run_spec(_spec(tmp_path), data_dir=home)["run_id"]
+    run_id = shared[1]["run_id"]
     stored = {"stored_equity", "run_trades"}
     ran: list[str] = []
     refused: list[str] = []

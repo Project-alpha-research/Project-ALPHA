@@ -12,7 +12,8 @@ Where things are in the `alpha` command line, and how a change to it is checked.
 ## Code map
 
 The `alpha` CLI composes data, strategies, the engine, validation, research and models, and owns the SQLite control store (projects, jobs, evidence, owner
-receipts). It may import every package below it; nothing but the surfaces' public seams may import it, and the web app and MCP server call it as a subprocess.
+receipts). It may import every package below it; nothing but the surfaces' public seams may import it, and the web app and MCP server call it as a subprocess
+for actions. Their reads and job-lease reservation import named `alpha_cli` modules in process.
 It must never grant authority the owner did not give, and never route live capital.
 
 Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` = command group, wired in `main.py`).

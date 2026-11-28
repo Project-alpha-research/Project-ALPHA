@@ -23,6 +23,9 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from . import research_memory_store as store
 else:
+    # Run as a script under ``python -I`` (the memory view), the worker folder is not on sys.path.
+    if not __package__:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
     store = importlib.import_module(
         f"{__package__}.research_memory_store" if __package__ else "research_memory_store"
     )

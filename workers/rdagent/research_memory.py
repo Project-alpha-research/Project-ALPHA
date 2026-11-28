@@ -36,6 +36,9 @@ if TYPE_CHECKING or __package__:
         completed_loops,
     )
 else:
+    # `python -I` runs this file as a script without its own folder on sys.path.
+    if str(Path(__file__).resolve().parent) not in sys.path:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
     from research_memory_store import (
         KNOWLEDGE,
         _fields,

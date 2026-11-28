@@ -15,7 +15,7 @@ from typer.testing import CliRunner
 
 from alpha_cli import ml_cmds, ml_run
 from alpha_cli.main import app
-from alpha_cli.ml_contract import validate_result_bundle
+from alpha_cli.ml_result_validation import validate_result_bundle
 from alpha_cli.spine.ledger import read_trials
 from alpha_cli.spine.trial_reader import family_counts, spine_snapshot
 from alpha_cli.spine.trial_record import map_row

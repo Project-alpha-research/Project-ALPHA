@@ -16,8 +16,8 @@ from alpha_cli.ml_contract import (
     ValidatedResult,
     canonical_json_bytes,
     prepare_exchange,
-    validate_result_bundle,
 )
+from alpha_cli.ml_result_validation import validate_result_bundle
 from tests.unit.test_ml_contract import _draft, _panel, _prediction_frame, _write_result
 
 

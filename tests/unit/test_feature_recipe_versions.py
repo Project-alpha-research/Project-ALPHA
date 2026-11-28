@@ -17,9 +17,9 @@ from alpha_cli.ml_contract import (
     canonical_json_bytes,
     compute_config_hash,
     prepare_exchange,
-    validate_result_bundle,
 )
 from alpha_cli.ml_input import _draft_spec
+from alpha_cli.ml_result_validation import validate_result_bundle
 from alpha_core import DataError
 from alpha_web.api.ml import MlDiagnosticFeatureRecipe, MlFeatureRecipe
 from tests.unit.test_ml_contract import _draft, _panel, _prediction_frame, _sessions, _write_result

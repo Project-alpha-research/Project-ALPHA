@@ -27,8 +27,8 @@ Kronos forecast composition (`alpha forecast ...`, `_forecast*` modules). Projec
   an allow-listed set of variables, a fixed `PYTHONHASHSEED`, and single-threaded numeric libraries.
 - The request's `worker_lock_hash` must equal the selected worker's `uv.lock` bytes, or training refuses to start.
 - The worker gets only immutable snapshot, fold and config inputs; only validated JSON and Parquet come back
-  (`validate_result_bundle`). A worker that rewrites its inputs, or a result whose claims do not match the control
-  record, fails validation. Enforced by `tests/unit/test_ml_boundary_guards.py`.
+  (`ml_result_validation.validate_result_bundle`). A worker that rewrites its inputs, or a result whose
+  claims do not match the control record, fails validation. Enforced by `tests/unit/test_ml_boundary_guards.py`.
 - Workstation-managed exchanges live below `data_dir/control/ml/`.
 - `alpha ml export-input OUTPUT --spec FILE` reads the experiment spec from a file (snapshot, universe, splits, costs, seeds); it reads no project.
   The Workstation stores the spec it receives as `control/ml/specs/<sha256>.json` and passes that path.

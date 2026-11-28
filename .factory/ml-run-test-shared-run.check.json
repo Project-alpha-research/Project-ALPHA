@@ -1,7 +1,0 @@
-{
-  "kind": "characterisation",
-  "test_paths": [
-    "tests/integration/test_ml_run.py",
-    "tests/integration/test_ml_run_tools.py"
-  ]
-}

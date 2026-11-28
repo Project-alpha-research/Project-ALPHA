@@ -5,6 +5,9 @@ sources:
   - apps/alpha-cli/src/alpha_cli/_crypto_*.py
   - apps/alpha-cli/src/alpha_cli/_chart_data.py
   - apps/alpha-cli/src/alpha_cli/data_cmds.py
+  - apps/alpha-cli/src/alpha_cli/data_snapshots_cmds.py
+  - apps/alpha-cli/src/alpha_cli/data_display_cmds.py
+  - apps/alpha-cli/src/alpha_cli/data_universe_cmds.py
   - tests/unit/test_crypto_*.py
   - tests/integration/test_crypto_*.py
   - tests/integration/test_data_*.py

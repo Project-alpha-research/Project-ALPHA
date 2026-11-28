@@ -29,8 +29,9 @@ always work end to end on real data:
   [capital](docs/reference/invariants/research-integrity.md#no-live-capital)
 - UI, MCP, model output, account state and passing checks confer no authority; infer no approvals.
   [Rule](docs/reference/invariants/research-integrity.md#owner-authority)
-- Obey the layered import DAG (`uv run lint-imports`); web and MCP call `alpha_cli` as a subprocess,
-  except bounded read-only reads of stored files ([Setup Lab](docs/reference/invariants/web-api-reads.md#reads-and-writes)).
+- Obey the layered import DAG (`uv run lint-imports`); web and MCP run `alpha` as a subprocess for
+  actions. Reads and the job-lease reservation import named `alpha_cli` modules in process, and
+  Setup Lab reads stored files, bounded and read-only ([Setup Lab](docs/reference/invariants/web-api-reads.md#reads-and-writes)).
   [DAG](docs/reference/invariants/engineering.md#import-layers),
   [subprocess](docs/reference/invariants/engineering.md#subprocess-boundary)
 - Never weaken bias guards, oracles or the guarded `tests/holdout/` path to make a change pass.

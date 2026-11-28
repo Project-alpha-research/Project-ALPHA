@@ -30,7 +30,7 @@ its registered operators; when it reports `RESEARCH_OPERATOR_UNAVAILABLE`, take 
 | `confirmation_review`, `sealed_confirmation` | `research draft-confirmation`, `research run confirm` | approves the one-shot run |
 | `research_decision` | `research report`, `evidence-hub`, `decision-view` | `research decide` |
 
-On 2026-11-15 the research playbook, tool cards and six skills replaced its stage files (readable at commit `0c8b0535`).
+Its stage-by-stage walk-through was removed on 2026-11-15 (readable at commit `0c8b0535`, in the old research/stages/ folder).
 Its method library, `.agents/skills/alpha-research-protocols/`, stays: the program and the tool server load it.
 
 ## Phases and evidence zones

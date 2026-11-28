@@ -20,7 +20,6 @@ export default defineConfig({
         'src/panels/dataManagerModel.ts',
         'src/panels/jobProgress.ts',
         'src/panels/jobTableModel.ts',
-        'src/panels/mlTearsheetModel.ts',
         'src/panels/paperModel.ts',
         'src/panels/reportModel.ts',
         'src/panels/ruleTestModel.ts',

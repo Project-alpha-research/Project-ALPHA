@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse
 
 from alpha_cli import run_projection
 from alpha_core import DataError
-from alpha_web import _checks, _run_series, _runs
+from alpha_web import _checks, _run_analytics_reads, _run_series, _runs
 from alpha_web.api._common import data_dir
 from alpha_web.api.models import (
     ChartBundle,
@@ -177,7 +177,7 @@ def run_chart_bundle(
 def run_forecast(run_id: str) -> dict[str, Any]:
     """A forecast run's history + forecast series (+ quantile bands). 404 otherwise."""
     _ensure_run(run_id)
-    series = _runs.forecast_series(run_id, data_dir=data_dir())
+    series = _run_analytics_reads.forecast_series(run_id, data_dir=data_dir())
     if series is None:
         raise HTTPException(status_code=404, detail="no forecast for this run")
     return series
@@ -185,11 +185,11 @@ def run_forecast(run_id: str) -> dict[str, Any]:
 
 @router.get("/runs/{run_id}/forecast/paths", response_model=ForecastPaths)
 def run_forecast_paths(
-    run_id: str, n: Annotated[int, Query(ge=1, le=_runs.MAX_FORECAST_PATHS)] = 20
+    run_id: str, n: Annotated[int, Query(ge=1, le=_run_analytics_reads.MAX_FORECAST_PATHS)] = 20
 ) -> dict[str, Any]:
     """The first ``n`` (clamped to 40) sampled OHLCV paths of a forecast run. 404 otherwise."""
     _ensure_run(run_id)
-    body = _runs.forecast_paths(run_id, data_dir=data_dir(), n=n)
+    body = _run_analytics_reads.forecast_paths(run_id, data_dir=data_dir(), n=n)
     if body is None:
         raise HTTPException(status_code=404, detail="no sampled forecast paths for this run")
     return body
@@ -199,7 +199,7 @@ def run_forecast_paths(
 def run_nulls(run_id: str) -> dict[str, Any]:
     """A gauntlet run's raw per-tier null distributions. 404 when it wrote none."""
     _ensure_run(run_id)
-    body = _runs.null_distributions(run_id, data_dir=data_dir())
+    body = _run_analytics_reads.null_distributions(run_id, data_dir=data_dir())
     if body is None:
         raise HTTPException(status_code=404, detail="no null distributions for this run")
     return body
@@ -209,7 +209,7 @@ def run_nulls(run_id: str) -> dict[str, Any]:
 def run_trials(run_id: str) -> dict[str, Any]:
     """A sweep's per-config OOS return streams. 404 when it wrote none."""
     _ensure_run(run_id)
-    body = _runs.optim_trials(run_id, data_dir=data_dir())
+    body = _run_analytics_reads.optim_trials(run_id, data_dir=data_dir())
     if body is None:
         raise HTTPException(status_code=404, detail="no trials for this run")
     return body
@@ -219,7 +219,7 @@ def run_trials(run_id: str) -> dict[str, Any]:
 def run_propfirm_paths(run_id: str) -> dict[str, Any]:
     """A prop-firm run's per-path Monte-Carlo outcomes, columnar. 404 when it wrote none."""
     _ensure_run(run_id)
-    body = _runs.propfirm_paths(run_id, data_dir=data_dir())
+    body = _run_analytics_reads.propfirm_paths(run_id, data_dir=data_dir())
     if body is None:
         raise HTTPException(status_code=404, detail="no propfirm paths for this run")
     return body
@@ -229,7 +229,7 @@ def run_propfirm_paths(run_id: str) -> dict[str, Any]:
 def run_origins(run_id: str) -> dict[str, Any]:
     """A forecast-eval run's per-origin skill scores, columnar. 404 when it wrote none."""
     _ensure_run(run_id)
-    body = _runs.forecast_origins(run_id, data_dir=data_dir())
+    body = _run_analytics_reads.forecast_origins(run_id, data_dir=data_dir())
     if body is None:
         raise HTTPException(status_code=404, detail="no eval origins for this run")
     return body
@@ -239,7 +239,7 @@ def run_origins(run_id: str) -> dict[str, Any]:
 def run_tearsheet(run_id: str) -> FileResponse:
     """The run's rendered quantstats tear sheet (embedded in Run Detail via an iframe)."""
     _ensure_run(run_id)
-    path = _runs.tearsheet_file(run_id, data_dir=data_dir())
+    path = _run_analytics_reads.tearsheet_file(run_id, data_dir=data_dir())
     if path is None:
         raise HTTPException(status_code=404, detail="no tear sheet for this run")
     return FileResponse(path, media_type="text/html")

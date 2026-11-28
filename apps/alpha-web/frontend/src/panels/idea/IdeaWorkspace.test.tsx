@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { IdeaFile, IdeaList, IdeaListRow, IdeaTest } from '../../api/types'
-import { IdeaCardsNoticeView } from './IdeaCardsNotice'
 import { IdeaListView, IdeaPageView } from './IdeaWorkspace'
 
 const noop = () => undefined
@@ -92,19 +91,5 @@ describe('IdeaPageView', () => {
   })
   it('uses no grade or advice words', () => {
     expect(page(file()).replace(/<[^>]+>/g, ' ')).not.toMatch(/\b(passed|failed|pass|fail|profit|verdict)\b/i)
-  })
-})
-
-describe('IdeaCardsNoticeView', () => {
-  it('shows the count, the newest card and a link to Ideas', () => {
-    const data: IdeaList = { cards: [row('aaaa', '2026-11-01T00:00:00+00:00'), row('bbbb', '2026-11-05T00:00:00+00:00')], total: 2, truncated: false }
-    const html = renderToStaticMarkup(<IdeaCardsNoticeView data={data} />)
-    expect(html).toContain('2 idea cards written.')
-    expect(html).toContain('Claim bbbb')
-    expect(html).toContain('href="#page=research&amp;pane=IdeaWorkspace"')
-  })
-  it('shows nothing when no card exists', () => {
-    expect(renderToStaticMarkup(<IdeaCardsNoticeView data={{ cards: [], total: 0, truncated: false }} />)).toBe('')
-    expect(renderToStaticMarkup(<IdeaCardsNoticeView data={null} />)).toBe('')
   })
 })

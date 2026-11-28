@@ -43,19 +43,14 @@ import type {
   ForecastSeries,
   JobDetail,
   MlExperimentPage,
-  MlExperimentPreflight,
-  MlExperimentJobAccepted,
   MlServiceStatus,
   MlCapabilities,
-  MlModelName,
-  MlModelParameters,
   JobSummary,
   MlTearSheetProjection,
   NativeTearSheetProjection,
   NullTiers,
   OptimTrials,
   PortfolioAnalyticsProjection,
-  PropfirmPaths,
   ProviderDefinition,
   DataSnapshots,
   DataSourceStatus,
@@ -232,7 +227,6 @@ export const api = {
     getImmutableJSON(`/api/runs/${id}/forecast/paths?n=${n}`),
   nulls: (id: string): Promise<NullTiers> => getImmutableJSON(`/api/runs/${id}/nulls`),
   trials: (id: string): Promise<OptimTrials> => getImmutableJSON(`/api/runs/${id}/trials`),
-  propfirmPaths: (id: string): Promise<PropfirmPaths> => getImmutableJSON(`/api/runs/${id}/propfirm-paths`),
   origins: (id: string): Promise<ForecastOrigins> => getImmutableJSON(`/api/runs/${id}/origins`),
   nativeTearsheet: (id: string, pointLimit = 750): Promise<NativeTearSheetProjection> =>
     getImmutableJSON(`/api/runs/${id}/native-tearsheet?point_limit=${pointLimit}`),
@@ -345,8 +339,6 @@ export const api = {
     const query = projectId ? `?project_id=${encodeURIComponent(projectId)}` : ''
     return getJSON(`/api/ml/experiments${query}`)
   },
-  mlExperimentPreflight: (spec: Record<string, unknown>): Promise<MlExperimentPreflight> =>
-    postJSON('/api/ml/experiments/preflight', { spec }),
   mlTearsheet(exchangeId: string, timelineOffset = 0): Promise<MlTearSheetProjection> {
     if (!Number.isInteger(timelineOffset) || timelineOffset < 0 || timelineOffset > 1_000_000) {
       throw new RangeError('ML tear-sheet timeline offset must be an integer from 0 to 1,000,000')
@@ -361,6 +353,4 @@ export const api = {
       `/api/ml/exchanges/${encodeURIComponent(exchangeId)}/tear-sheet?${params.toString()}`,
     )
   },
-  createMlExperiment: (spec: Record<string, unknown>, model?: MlModelName, parameters?: MlModelParameters): Promise<MlExperimentJobAccepted> =>
-    postJSON('/api/ml/experiments', { spec, ...(model ? { model, parameters: parameters ?? {} } : {}) }),
 }

@@ -20,7 +20,7 @@ from tests.unit._rdagent_support import (
     proposal,
     universe_run,
 )
-from workers.rdagent import factor_loop_launch as launch
+from workers.rdagent import factor_loop_calls as loop_calls
 
 
 def test_feedback_separates_global_looks_from_family_failures(
@@ -346,9 +346,9 @@ def test_refusal_records_round_names_and_all_closed_and_labels_reasks(
     assert "A mechanism that belongs to none of the closed families is allowed." in row["message"]
     steps = [json.loads(line) for line in (tmp_path / "steps.jsonl").read_text().splitlines()]
     calls = [{"ts": steps[0]["ts"], "endpoint": "/v1/chat/completions", "attempts": 1, "usd": 0.2}]
-    labelled = launch.label_calls(calls, steps)
+    labelled = loop_calls.label_calls(calls, steps)
     assert labelled[0]["step"] == "proposal_reask"
-    split = launch.call_split(calls, labelled)
+    split = loop_calls.call_split(calls, labelled)
     assert split["reask_calls"] == 1 and split["reask_usd"] == 0.2
     assert "proposal_reask" in split["chat_usage"]["by_step"]
 

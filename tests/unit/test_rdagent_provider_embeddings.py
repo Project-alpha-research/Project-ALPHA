@@ -11,7 +11,7 @@ from unittest.mock import Mock
 import pytest
 
 from tests.unit.test_rdagent_embedding_cap import chat, embed, model, rows
-from tests.unit.test_rdagent_factor_launch import launch
+from tests.unit.test_rdagent_factor_launch import launch, loop_calls
 from workers.rdagent import gateway_embeddings
 from workers.rdagent import model_gateway as gateway
 from workers.rdagent import model_gateway as gw
@@ -48,7 +48,7 @@ def test_whole_inputs_reserve_then_settle(
     assert state["provider_embedding_calls"] == 1
     assert state["provider_embedding_tokens"] == 12
     assert state["usd"] == state["provider_embedding_usd"] == pytest.approx(0.000036)
-    split = launch.call_split(rows(model))
+    split = loop_calls.call_split(rows(model))
     assert split["provider_embedding_calls"] == 1 and split["counted_calls"] == 0
     assert split["embedding_route"] == "provider" and split["embedding_model"] == "model-a"
     assert split["provider_embedding_tokens"] == 12
@@ -557,7 +557,7 @@ def test_embedding_missing_model_is_logged_and_counted(
     assert row["response_model"] is None
     assert row["model_check"] == "model_not_reported"
     assert row["reserved_usd"] == pytest.approx(3e-6)
-    assert launch.call_split(rows(model))["embedding_model_not_reported"] == 1
+    assert loop_calls.call_split(rows(model))["embedding_model_not_reported"] == 1
 
 
 def test_provider_batches_order_and_single_settlement(
@@ -588,7 +588,7 @@ def test_provider_batches_order_and_single_settlement(
     state = model.budget.status()["runs"]["test"]
     assert state["provider_embedding_calls"] == 3 and state["calls"] == 0
     assert state["usd"] == pytest.approx(65 * 3e-6)
-    split = launch.call_split(rows(model))
+    split = loop_calls.call_split(rows(model))
     assert split["provider_embedding_requests"] == 3
     assert split["provider_embedding_inputs"] == 65
 
@@ -621,7 +621,7 @@ def test_refused_batch_retries_singly_and_keeps_good_inputs(
     ]
     assert result["input_errors"][0]["index"] == 1
     assert result["input_errors"][0]["code"] == "embedding_input_refused"
-    split = launch.call_split(rows(model))
+    split = loop_calls.call_split(rows(model))
     assert split["embedding_single_retries"] == 3
     assert split["provider_embedding_requests"] == 4
     assert model.budget.status()["runs"]["test"]["usd"] == pytest.approx(6e-6)

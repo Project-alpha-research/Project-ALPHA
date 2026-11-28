@@ -26,6 +26,8 @@ spec = importlib.util.spec_from_file_location(
 assert spec is not None and spec.loader is not None
 launch = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(launch)
+loop_calls = importlib.import_module("factor_loop_calls")
+loop_checks = importlib.import_module("factor_loop_checks")
 
 
 def args(tmp_path: Path, *extra: str) -> argparse.Namespace:
@@ -66,21 +68,21 @@ def environ(tmp_path: Path) -> dict[str, str]:
     ],
 )
 def test_refuses_bad_arguments(tmp_path: Path, extra: list[str], message: str) -> None:
-    with pytest.raises(launch.LaunchError, match=message):
-        launch.validate(args(tmp_path, *extra), environ(tmp_path))
+    with pytest.raises(loop_checks.LaunchError, match=message):
+        loop_checks.validate(args(tmp_path, *extra), environ(tmp_path))
 
 
 def test_refuses_existing_run_dir_git_tree_and_missing_runtime(tmp_path: Path) -> None:
     (tmp_path / "run").mkdir()
-    with pytest.raises(launch.LaunchError, match="already exists"):
-        launch.validate(args(tmp_path), environ(tmp_path))
+    with pytest.raises(loop_checks.LaunchError, match="already exists"):
+        loop_checks.validate(args(tmp_path), environ(tmp_path))
     (tmp_path / "run").rmdir()
-    with pytest.raises(launch.LaunchError, match="setup_rdagent.sh --with-factor-runtime"):
-        launch.validate(args(tmp_path), {})
+    with pytest.raises(loop_checks.LaunchError, match="setup_rdagent.sh --with-factor-runtime"):
+        loop_checks.validate(args(tmp_path), {})
     inside = args(tmp_path)
     inside.run_dir = Path(__file__).resolve().parent / "never-created-run"
-    with pytest.raises(launch.LaunchError, match="outside every git work tree"):
-        launch.validate(inside, environ(tmp_path))
+    with pytest.raises(loop_checks.LaunchError, match="outside every git work tree"):
+        loop_checks.validate(inside, environ(tmp_path))
 
 
 def test_main_reports_refusal_plainly(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -88,7 +90,7 @@ def test_main_reports_refusal_plainly(tmp_path: Path, capsys: pytest.CaptureFixt
     argv += ["--trial-ledger", "/nonexistent-parent/x.jsonl", "--run-id", "r"]
 
     def refuse(parsed: argparse.Namespace, env: dict[str, str]) -> int:
-        raise launch.LaunchError("refused for test")
+        raise loop_checks.LaunchError("refused for test")
 
     assert launch.main(argv, runner=refuse) == 2
     assert "refused for test" in capsys.readouterr().err
@@ -182,8 +184,8 @@ def test_gateway_starts_with_fake_routes_and_token_stays_out_of_logs(tmp_path: P
 
 
 def test_api_route_needs_model_prices_and_keys(tmp_path: Path) -> None:
-    with pytest.raises(launch.LaunchError, match="--api-model"):
-        launch.validate(args(tmp_path, "--chat-route", "api"), environ(tmp_path))
+    with pytest.raises(loop_checks.LaunchError, match="--api-model"):
+        loop_checks.validate(args(tmp_path, "--chat-route", "api"), environ(tmp_path))
     priced = args(
         tmp_path,
         "--chat-route",
@@ -195,14 +197,14 @@ def test_api_route_needs_model_prices_and_keys(tmp_path: Path) -> None:
         "--api-price-out-per-mtok",
         "0.5",
     )
-    with pytest.raises(launch.LaunchError, match="ALPHA_GATEWAY_API_KEY"):
-        launch.validate(priced, environ(tmp_path))
+    with pytest.raises(loop_checks.LaunchError, match="ALPHA_GATEWAY_API_KEY"):
+        loop_checks.validate(priced, environ(tmp_path))
     keyed = {
         **environ(tmp_path),
         "ALPHA_GATEWAY_API_BASE": "https://x",
         "ALPHA_GATEWAY_API_KEY": "k",
     }
-    assert launch.validate(priced, keyed)
+    assert loop_checks.validate(priced, keyed)
 
 
 def test_only_the_gateway_inherits_the_paid_route_settings(
@@ -250,10 +252,10 @@ def test_codex_route_alone_waives_temperature_by_default(
 
     def capture(command: list[str], log: str, **kwargs: object) -> object:
         commands.append(list(command))
-        raise launch.LaunchError("stop after building the command")
+        raise loop_checks.LaunchError("stop after building the command")
 
     monkeypatch.setattr(job, "spawn", capture)
-    with pytest.raises(launch.LaunchError):
+    with pytest.raises(loop_checks.LaunchError):
         job.gateway()
     gateway_command = commands[0]
     assert ("--accept-unhonoured" in gateway_command) is waived
@@ -335,7 +337,7 @@ def test_label_calls_inside_outside_overlap_and_boundaries() -> None:
         for i, stamp in enumerate(["00:00", "01:30", "02:00", "02:30", "04:00"])
     ]
     original = json.dumps(calls)
-    rows = launch.label_calls(calls, steps)
+    rows = loop_calls.label_calls(calls, steps)
     assert [(r["loop"], r["step"]) for r in rows] == [
         (0, "propose"),
         (1, "coding"),
@@ -392,11 +394,11 @@ def test_launcher_logs_start_before_work(
     job.run.mkdir()
 
     def refuse(*args: object, **kwargs: object) -> None:
-        raise launch.LaunchError("stop at first work")
+        raise loop_checks.LaunchError("stop at first work")
 
     monkeypatch.setattr(job, "check", refuse)
     monkeypatch.setattr(job, "spawn", refuse)
-    with pytest.raises(launch.LaunchError):
+    with pytest.raises(loop_checks.LaunchError):
         getattr(job, method)(*(["http://unused", "token"] if method == "loop" else []))
     row = json.loads((job.run / "launch.jsonl").read_text().splitlines()[0])
     assert row["step"] == method and row["event"] == "start"
@@ -404,13 +406,13 @@ def test_launcher_logs_start_before_work(
 
 @pytest.mark.parametrize("value", ["0", "4"])
 def test_coder_max_loop_bounds(tmp_path: Path, value: str) -> None:
-    with pytest.raises(launch.LaunchError, match="--coder-max-loop"):
-        launch.validate(args(tmp_path, "--coder-max-loop", value), environ(tmp_path))
+    with pytest.raises(loop_checks.LaunchError, match="--coder-max-loop"):
+        loop_checks.validate(args(tmp_path, "--coder-max-loop", value), environ(tmp_path))
 
 
 def test_memory_path_inside_git_refused(tmp_path: Path) -> None:
-    with pytest.raises(launch.LaunchError, match="--memory-dir.*outside"):
-        launch.validate(
+    with pytest.raises(loop_checks.LaunchError, match="--memory-dir.*outside"):
+        loop_checks.validate(
             args(tmp_path, "--memory-dir", str(WORKER / "never-memory")), environ(tmp_path)
         )
 
@@ -422,7 +424,7 @@ def test_launcher_memory_default_opt_out_and_determinism(
     from types import SimpleNamespace
 
     parsed = args(tmp_path, *(["--no-memory"] if disabled else []))
-    paths = launch.validate(parsed, environ(tmp_path))
+    paths = loop_checks.validate(parsed, environ(tmp_path))
     job = launch.Launch(parsed, paths)
     job.run.mkdir()
     captured: dict[str, str] = {}
@@ -507,8 +509,8 @@ def test_exit_reason_names_the_call_cap(tmp_path: Path) -> None:
 def test_relative_trial_ledger_is_named_not_memory_dir(tmp_path: Path) -> None:
     parsed = args(tmp_path)
     parsed.trial_ledger = Path("relative/trials.jsonl")
-    with pytest.raises(launch.LaunchError, match="--trial-ledger must be an absolute path"):
-        launch.validate(parsed, environ(tmp_path))
+    with pytest.raises(loop_checks.LaunchError, match="--trial-ledger must be an absolute path"):
+        loop_checks.validate(parsed, environ(tmp_path))
 
 
 @pytest.mark.parametrize("force_race", [False, True], ids=["real-server", "forced-race"])
@@ -606,7 +608,7 @@ def test_receipt_splits_paid_model_calls_from_free_local_embeddings() -> None:
         {"endpoint": "/v1/embeddings", "attempts": 1, "usd": 0.0, "status": 200},
         {"endpoint": "/v1/embeddings", "attempts": 1, "usd": 0.0, "status": 200},
     ]
-    split = launch.call_split(calls)
+    split = loop_calls.call_split(calls)
     assert split["model_chat"] == {"requests": 3, "attempts": 5, "usd": pytest.approx(0.009)}
     assert split["local_embedding"] == {"requests": 2, "attempts": 2, "usd": 0.0}
     assert split["counted_toward_call_cap"] == 7
@@ -627,11 +629,11 @@ def test_gateway_gets_the_per_call_limit_and_retries(
 
     def spawn(command: Sequence[str], log: str, **kwargs: Any) -> Any:
         seen.append(list(command))
-        raise launch.LaunchError("stop here")
+        raise loop_checks.LaunchError("stop here")
 
     monkeypatch.setattr(job, "spawn", spawn)
     job.run.mkdir()
-    with pytest.raises(launch.LaunchError):
+    with pytest.raises(loop_checks.LaunchError):
         job.gateway()
     command = seen[0]
     assert command[command.index("--api-timeout") + 1] == "90.0"
@@ -649,14 +651,14 @@ def test_gateway_gets_the_per_call_limit_and_retries(
     ],
 )
 def test_new_options_are_bounded(tmp_path: Path, extra: list[str], message: str) -> None:
-    with pytest.raises(launch.LaunchError, match=message):
-        launch.validate(args(tmp_path, *extra), environ(tmp_path))
+    with pytest.raises(loop_checks.LaunchError, match=message):
+        loop_checks.validate(args(tmp_path, *extra), environ(tmp_path))
 
 
 def test_receipt_counts_chunked_embeddings_and_skipped_memory_entries(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    split = launch.call_split(
+    split = loop_calls.call_split(
         [
             {"endpoint": "/v1/embeddings", "attempts": 2, "status": 200, "chunked_inputs": 1,
              "chunks": 5, "provider_errors": ["provider_error"]},
@@ -688,7 +690,7 @@ def test_launch_command_records_argv_and_only_allow_listed_environment(
             pass
 
         def verify(self) -> None:
-            raise launch.LaunchError("stopped for test")
+            raise loop_checks.LaunchError("stopped for test")
 
         def log(self, *a: Any, **k: Any) -> None:
             pass
@@ -758,7 +760,7 @@ def test_receipt_round_counts_and_old_refusal_key(tmp_path: Path) -> None:
     (tmp_path / "evaluations.jsonl").write_text(
         json.dumps({"iteration": 0, "factors": [{"name": "price_delay"}]}) + "\n"
     )
-    result = launch.round_counts(tmp_path)
+    result = loop_calls.round_counts(tmp_path)
     assert result == {
         "rounds_with_trial": 1,
         "rounds_no_admissible_idea": 1,

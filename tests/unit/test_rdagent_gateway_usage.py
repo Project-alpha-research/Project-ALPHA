@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 
 from tests.unit.test_rdagent_embedding_cap import chat, model, rows
-from tests.unit.test_rdagent_factor_launch import launch
+from tests.unit.test_rdagent_factor_launch import launch, loop_calls
 from workers.rdagent import gateway_usage
 from workers.rdagent import model_gateway as gw
 
@@ -172,7 +172,7 @@ def logged_calls() -> list[dict[str, Any]]:
 def test_receipt_hand_computed_and_labels_optional() -> None:
     calls = logged_calls()
     original = copy.deepcopy(calls)
-    split = launch.call_split(calls)
+    split = loop_calls.call_split(calls)
     usage = split["chat_usage"]
     assert usage["prompt_tokens"] == 500
     assert usage["cached_tokens"] == 100
@@ -190,7 +190,7 @@ def test_receipt_hand_computed_and_labels_optional() -> None:
         {**call, "step": step}
         for call, step in zip(calls, ["coding", "coding", "propose"], strict=True)
     ]
-    steps = launch.call_split(calls, labelled)["chat_usage"]["by_step"]
+    steps = loop_calls.call_split(calls, labelled)["chat_usage"]["by_step"]
     assert steps["coding"]["cache_hit_rate"] == 0.25
     assert steps["coding"]["reasoning_tokens"] == 20
     assert steps["propose"]["cache_hit_rate"] == 0
@@ -200,7 +200,7 @@ def test_receipt_hand_computed_and_labels_optional() -> None:
 def test_legacy_rows_and_receipts_remain_readable() -> None:
     old = {"endpoint": "/v1/chat/completions", "attempts": 2, "usd": 0.1, "status": 200}
     original = copy.deepcopy(old)
-    split = launch.call_split([old])
+    split = loop_calls.call_split([old])
     assert split["counted_calls"] == 2
     assert split["model_chat"]["usd"] == 0.1
     assert split["chat_usage"]["cache_hit_rate"] is None
@@ -296,7 +296,7 @@ def test_json_retry_retains_each_provider_and_generation(
         ("upstream-b", "gen-456"),
     ]
     assert row["cached_tokens"] == 120 and row["charged_usd"] == 0.014
-    summary = launch.call_split([row])["chat_usage"]
+    summary = loop_calls.call_split([row])["chat_usage"]
     assert summary["provider_calls"] == {"upstream-a": 1, "upstream-b": 1}
     assert summary["prompt_tokens"] == 200 and summary["cache_hit_rate"] == 0.6
     assert model.budget.status()["runs"]["test"]["usd"] == pytest.approx(0.014)
@@ -327,7 +327,7 @@ def test_abandoned_only_attempt_keeps_nulls(
         "charged_usd",
     ):
         assert row[field] is None
-    usage = launch.call_split([row])["chat_usage"]
+    usage = loop_calls.call_split([row])["chat_usage"]
     assert usage["cache_hit_rate"] is None
     assert usage["unknown_provider_calls"] == 1
     assert "1 call(s) have unknown providers" in usage["summary"]
@@ -394,16 +394,16 @@ def test_receipt_labels_reach_step_summary(model: gw.Gateway) -> None:
 def test_incomplete_usage_never_becomes_zero_cache_rate() -> None:
     calls = logged_calls()
     calls[1]["cached_tokens"] = None
-    usage = launch.call_split(calls)["chat_usage"]
+    usage = loop_calls.call_split(calls)["chat_usage"]
     assert usage["cached_tokens"] == 60
     assert usage["cache_hit_rate"] is None
-    assert launch.call_split([])["chat_usage"]["cache_hit_rate"] is None
+    assert loop_calls.call_split([])["chat_usage"]["cache_hit_rate"] is None
 
 
 def test_failed_call_without_usage_is_counted_not_guessed() -> None:
     calls = logged_calls()
     calls.append({"endpoint": "/v1/chat/completions", "route": "api", "status": 502})
-    usage = launch.call_split(calls)["chat_usage"]
+    usage = loop_calls.call_split(calls)["chat_usage"]
     assert usage["usage_unknown_attempts"] == 1
     assert usage["prompt_tokens"] == 500
     assert usage["cache_hit_rate"] == 0.2
@@ -420,7 +420,7 @@ def test_call_split_counts_only_reserved_timeout_retries() -> None:
         },
         {"endpoint": "/v1/embeddings", "route": "ollama", "attempts": 2, "status": 200},
     ]
-    split = launch.call_split(calls)
+    split = loop_calls.call_split(calls)
     assert split["timeout_retry_attempts"] == 1
     assert split["local_embedding"]["attempts"] == 2
     assert split["counted_toward_call_cap"] == 4
@@ -501,7 +501,7 @@ def test_receipt_separates_failed_wait_from_retried_calls(
         )
         + "\n"
     )
-    job.receipt["call_split"] = launch.call_split(
+    job.receipt["call_split"] = loop_calls.call_split(
         [
             {
                 "endpoint": "/v1/chat/completions",
@@ -529,6 +529,6 @@ def test_proposal_receipt_counts_full_prompt_characters(model: gw.Gateway) -> No
     row = rows(model)[0]
     assert row["total_prompt_chars"] == len("systemhello")
     labelled = [{**row, "step": "direct_exp_gen", "loop": 2}]
-    assert launch.call_split([row], labelled)["proposal_prompt_chars"] == [
+    assert loop_calls.call_split([row], labelled)["proposal_prompt_chars"] == [
         {"loop": 2, "step": "direct_exp_gen", "chars": len("systemhello")}
     ]

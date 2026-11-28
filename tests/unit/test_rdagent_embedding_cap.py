@@ -16,7 +16,7 @@ from unittest.mock import Mock
 import pytest
 
 from tests.unit._rdagent_support import coder_parts
-from tests.unit.test_rdagent_factor_launch import launch
+from tests.unit.test_rdagent_factor_launch import launch, loop_calls
 from workers.rdagent import model_gateway as gw
 
 
@@ -73,7 +73,7 @@ def test_sixty_paid_calls_plus_local_embeddings(model: gw.Gateway) -> None:
         assert entry["calls"] == entry["counted_calls"] == 60
         assert entry["local_embedding_calls"] == 181
         assert entry["usd"] == pytest.approx(0.6)
-    split = launch.call_split(rows(model))
+    split = loop_calls.call_split(rows(model))
     assert split["counted_calls"] == split["counted_toward_call_cap"] == 60
     assert split["local_embedding_calls"] == 181
 
@@ -91,7 +91,7 @@ def test_paid_embedding_backend_counts_despite_local_route_and_alias(model: gw.G
     state = model.budget.status()["runs"]["test"]
     assert state["counted_calls"] == 60 and state["local_embedding_calls"] == 0
     assert state["usd"] == 0  # embeddings carry no dollars, as before
-    split = launch.call_split(rows(model))
+    split = loop_calls.call_split(rows(model))
     assert split["provider_embedding"]["attempts"] == 60
     assert split["counted_calls"] == 60 and split["local_embedding_calls"] == 0
 
@@ -194,7 +194,7 @@ def test_legacy_state_and_call_rows_keep_past_embeddings_counted(model: gw.Gatew
         1, old_receipt["gateway_status"], argparse.Namespace(run_max_calls=60)
     )
     old_calls = [{"endpoint": "/v1/embeddings", "route": "ollama", "attempts": 3, "status": 200}]
-    split = launch.call_split(old_calls)
+    split = loop_calls.call_split(old_calls)
     assert split["counted_toward_call_cap"] == 3 and split["local_embedding_calls"] == 0
     assert split["local_embedding"]["attempts"] == 3
 
@@ -344,7 +344,7 @@ def test_ollama_backend_off_this_machine_is_not_exempt(model: gw.Gateway) -> Non
 
 def test_a_chat_row_is_never_split_as_local() -> None:
     forged = [{"endpoint": "/v1/chat/completions", "attempts": 2, "local_embedding": True}]
-    split = launch.call_split(forged)
+    split = loop_calls.call_split(forged)
     assert split["counted_calls"] == split["counted_toward_call_cap"] == 2
     assert split["local_embedding_calls"] == 0
 

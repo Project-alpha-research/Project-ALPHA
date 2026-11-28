@@ -360,7 +360,7 @@ def test_all_dropped_never_enters_coder(tmp_path: Path, monkeypatch: pytest.Monk
 def test_gateway_receipt_marks_revision_as_a_proposal(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from tests.unit.test_rdagent_factor_launch import launch
+    from tests.unit.test_rdagent_factor_launch import loop_calls
 
     _, guard, _, exp, _ = fixture_round(tmp_path, monkeypatch)
     reply = choose(
@@ -387,9 +387,9 @@ def test_gateway_receipt_marks_revision_as_a_proposal(
     monkeypatch.setattr(discussion, "request_revision", ask)
     guard.develop(exp)
     steps = [json.loads(line) for line in (tmp_path / "steps.jsonl").read_text().splitlines()]
-    labels = launch.label_calls(calls, steps)
+    labels = loop_calls.label_calls(calls, steps)
     assert labels[0]["step"] == "discussion_revision"
-    split = launch.call_split(calls, labels)
+    split = loop_calls.call_split(calls, labels)
     assert split["counted_toward_call_cap"] == 1
     assert split["proposal_prompt_chars"][0]["step"] == "discussion_revision"
 

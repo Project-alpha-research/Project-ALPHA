@@ -10,7 +10,7 @@ Private helpers are re-defined per module. Measured on 2026-11-13 with `git grep
 | Helper | Definitions | Call sites |
 | --- | ---: | ---: |
 | `_canonical` | 13 | 52 |
-| `_canonical_json` | 5 | 97 |
+| `_canonical_json` | 4 | 95 |
 | `canonical` | 4 | 72 |
 | `_sha` | 10 | 62 |
 | `_sha256` | 8 | 39 |
@@ -25,13 +25,14 @@ Private helpers are re-defined per module. Measured on 2026-11-13 with `git grep
 | `_utc` | 5 | 20 |
 | `_reject_constant` | 4 | 4 references (passed as `parse_constant=`) |
 
-123 definitions across 82 files: 46 in `apps/alpha-cli`, 8 each in `packages/alpha-data` and
+122 definitions across 81 files: 46 in `apps/alpha-cli`, 8 each in `packages/alpha-data` and
 `packages/alpha-research`, 6 in `apps/alpha-web`, 2 each in `alpha-strategies`, `alpha-study` and
-`tests/unit`, 1 each in `alpha-mcp`, `alpha-backtest`, `alpha-validation`,
-`scripts/rdagent_foundation_contract.py` and `workers/literature`, and 3 in `workers/qlib`. A further
-150 lines call `json.dumps(..., separators=(",", ":"))` inline (115 of them with `sort_keys=True`, in
-96 files). Counts were adjusted on 2026-11-13 for the files removed with ADR-0040. Same-named helpers are not all equivalent (some sort keys, some reject NaN, some allow
-floats); each must be classified before merging.
+`tests/unit`, 1 each in `alpha-mcp`, `alpha-backtest`, `alpha-validation` and `workers/literature`,
+and 3 in `workers/qlib`. A further 150 lines call `json.dumps(..., separators=(",", ":"))` inline
+(115 of them with `sort_keys=True`, in 96 files). Counts were adjusted on 2026-11-13 for the files
+removed with ADR-0040, and on 2026-11-28 for the removed RD-Agent foundation manifest validator.
+Same-named helpers are not all equivalent (some sort keys, some reject NaN, some allow floats); each
+must be classified before merging.
 
 ## Why
 
@@ -60,7 +61,7 @@ ordering) does not reach the others, and reviewers cannot tell which variant a h
 
 ## Suggested slicing
 
-1. Inventory and classify all 123 definitions; add golden tests (no production change).
+1. Inventory and classify all 122 definitions; add golden tests (no production change).
 2. Introduce one shared module per layer (`alpha_core` for pure encoders) with the variants found.
 3. Migrate one package at a time, starting where no identity hash covers the file.
 4. Leave worker copies and identity-bound files for last, each with an explicit owner decision.

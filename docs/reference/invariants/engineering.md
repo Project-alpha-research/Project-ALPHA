@@ -126,10 +126,10 @@ Project-wide coding rules. Area files add their own detail and link here. The re
 - No product source file (`packages`, `apps`, `workers`, `tools`, `scripts`; tests are not
   measured) over 1,500 lines, and no function over 150 lines (`def` line to last line), so an
   agent can hold any file or function in its head.
-- The offenders of 2026-11-14 (10 files, 98 functions then) are capped at their size then in
-  `.claude/code-size-baseline.json`, which holds the current list. Each entry is a ceiling: code may shrink below it with no
-  edit, and a sweep change lowers or removes entries later (owner decision, 2026-11-22). Code that
-  grows past its entry fails, and an entry added or raised since `origin/main` fails; split the
+- The files and functions over a cap on 2026-11-14 are the entries in `.claude/code-size-baseline.json`.
+  Each entry caps its code at its size on that date. Each entry is a ceiling: code may shrink below it
+  with no edit. A sweep change lowers or removes entries later (owner decision, 2026-11-22). Code that
+  grows past its entry fails. An entry added or raised since `origin/main` fails; split the
   code instead. Same-name definitions
   (a property setter) are measured separately as `name#2`. Enforced by `tests/unit/test_code_size.py`.
 

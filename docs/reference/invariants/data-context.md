@@ -165,7 +165,7 @@ the code repository is GPL-2.0. Attribution is in `research/library/imported/osa
 - **Files used.** `SignalDoc.csv` (the signal table) and `Portfolios/Full Sets OP/PredictorLSretWide.parquet`: column
   `date`, then one `Float64` column per predictor acronym (212 in release 2026.10), 1,200 rows. The long-short portfolio
   follows the original paper. Release 2026.10 holds 175,529 returns, 1926-01 to 2025-12; a null means no return.
-- **Unit.** Percent in the file (5.0 = 5%). Mapped to decimals by dividing by 100 once (`map_returns`).
+- **Unit.** Percent in the file (5.0 = 5%). Mapped to decimals by dividing by 100 once.
 - **Month.** The source stamps each month with its last trading day. Stored `month` is the calendar month end.
 - **Layer 1, `known_from`.** The later of 12:00 UTC on the day after the month ends and 00:00 UTC on the day after the
   release date of the vintage that holds the value. The files carry no release date, so `pull-osap-portfolios` requires

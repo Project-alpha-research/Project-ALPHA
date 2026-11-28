@@ -22,7 +22,7 @@ def _row_index(lines: list[str], name: str) -> int:
     raise AssertionError(f"{name} not listed in data --help")
 
 
-def test_data_help_lists_commands_in_order() -> None:
+def test_data_help_lists_moved_commands_in_the_same_order() -> None:
     result = runner.invoke(app, ["data", "--help"], env={"COLUMNS": "200"})
     assert result.exit_code == 0, result.output
     lines = result.output.splitlines()

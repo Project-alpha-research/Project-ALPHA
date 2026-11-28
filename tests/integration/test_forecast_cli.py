@@ -11,7 +11,7 @@ from typer.testing import CliRunner
 
 from alpha_cli.main import app
 from alpha_core import DataError
-from alpha_web import _runs
+from alpha_web import _run_analytics_reads, _runs
 from tests.fixtures.cli_fixtures import seed_store
 
 runner = CliRunner()
@@ -97,7 +97,7 @@ def test_web_forecast_projection_rejects_tampered_v3_artifacts(
     assert result.exit_code == 0, result.output
     (rdir,) = _forecast_dirs(tmp_path)
 
-    first = _runs.forecast_series(rdir.name, data_dir=tmp_path)
+    first = _run_analytics_reads.forecast_series(rdir.name, data_dir=tmp_path)
     assert first is not None and first["history_ohlcv_available"] is True
     assert _runs.run_record("forecast", rdir.name, data_dir=tmp_path)["run_id"] == rdir.name
     history = pl.read_parquet(rdir / "history.parquet").with_columns(
@@ -105,7 +105,7 @@ def test_web_forecast_projection_rejects_tampered_v3_artifacts(
     )
     history.write_parquet(rdir / "history.parquet")
     with pytest.raises(DataError, match="history.parquet (hash|size) mismatch"):
-        _runs.forecast_series(rdir.name, data_dir=tmp_path)
+        _run_analytics_reads.forecast_series(rdir.name, data_dir=tmp_path)
     with pytest.raises(DataError, match="history.parquet (hash|size) mismatch"):
         _runs.run_detail(rdir.name, data_dir=tmp_path)
     with pytest.raises(DataError, match="history.parquet (hash|size) mismatch"):

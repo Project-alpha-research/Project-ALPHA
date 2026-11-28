@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from decimal import ROUND_DOWN, Decimal
 from typing import Any
@@ -38,81 +37,14 @@ from alpha_core import (
     IndicatorTrace,
     bps_rate,
 )
+from alpha_strategies.order_quantity import normalize_order_quantity
+from alpha_strategies.paper_risk import PaperRiskLimits
 from alpha_strategies.sizing import realized_volatility, vol_target_size
-
-
-@dataclass(frozen=True, slots=True)
-class PaperRiskLimits:
-    """Absolute limits derived by ``alpha_cli`` from an approved paper risk profile."""
-
-    max_order_notional: float
-    max_position_notional: float
-    max_gross_notional: float
-    daily_loss_fraction: float
-    max_open_orders: int
-    max_quote_age_seconds: float
-    intent_id: str
-    account_id: str | None = None
-    expected_position_units: float = 0.0
-    order_cutoff: datetime | None = None
-
-    def __post_init__(self) -> None:
-        positive = (
-            self.max_order_notional,
-            self.max_position_notional,
-            self.max_gross_notional,
-            self.daily_loss_fraction,
-            self.max_quote_age_seconds,
-        )
-        if any(not math.isfinite(value) or value <= 0.0 for value in positive):
-            raise DataError("paper risk limits must be finite and positive")
-        if self.max_order_notional > self.max_position_notional:
-            raise DataError("paper max order notional cannot exceed max position notional")
-        if self.max_position_notional > self.max_gross_notional:
-            raise DataError("paper max position notional cannot exceed max gross notional")
-        if not 0.0 < self.daily_loss_fraction < 1.0 or self.max_open_orders < 1:
-            raise DataError("invalid paper daily-loss or open-order limit")
-        if len(self.intent_id) != 64 or any(
-            character not in "0123456789abcdef" for character in self.intent_id
-        ):
-            raise DataError("paper intent id must be a lowercase SHA-256")
-        if self.account_id is not None and not self.account_id.startswith("DU"):
-            raise DataError("paper risk account must be an IBKR DU… account")
-        if not math.isfinite(self.expected_position_units):
-            raise DataError("paper expected position must be finite")
-        if self.order_cutoff is not None and (
-            self.order_cutoff.tzinfo is None or self.order_cutoff.utcoffset() is None
-        ):
-            raise DataError("paper order cutoff must be timezone-aware")
 
 
 def _sum_money(pnls: Any) -> float:
     """Sum a nautilus per-currency PnL dict to a float (single base currency in v1)."""
     return float(sum(money.as_double() for money in pnls.values()))
-
-
-def normalize_order_quantity(
-    delta: float, *, size_precision: int, size_increment: float
-) -> Quantity | None:
-    """Return a valid venue quantity without changing the legacy integer-lot SIM path.
-
-    Existing simulations round to the nearest integer, so that exact behavior is retained when
-    the instrument advertises precision ``0`` and increment ``1``.  Fractional live quantities
-    are rounded down to the nearest positive venue increment to avoid exceeding the target.
-    """
-    magnitude = abs(delta)
-    if size_precision == 0 and size_increment == 1.0:
-        lots = round(magnitude)
-        return Quantity.from_int(lots) if lots > 0 else None
-    if size_increment <= 0.0:
-        raise DataError(f"instrument size_increment must be > 0, got {size_increment}")
-    raw = Decimal(str(magnitude))
-    increment = Decimal(str(size_increment))
-    steps = (raw / increment).to_integral_value(rounding=ROUND_DOWN)
-    normalized = steps * increment
-    if normalized <= 0:
-        return None
-    return Quantity(float(normalized), size_precision)
 
 
 class VolTargetStrategy(Strategy):  # type: ignore[misc]  # nautilus Strategy is untyped (Cython)

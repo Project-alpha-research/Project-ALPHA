@@ -136,7 +136,7 @@ and patterns"); only `alpha_cli` composes it. A strategy decides on the close of
 the next open, never earlier.
 
 - Code: `packages/alpha-strategies/src/alpha_strategies/` (`base.py`, `signals.py`, `sizing.py`,
-  one module per strategy, `rule_strategy.py` for rule specs, `rule_paths.py` for whole-path rule signals).
+  `paper_risk.py` for `PaperRiskLimits`, `order_quantity.py` for `normalize_order_quantity`, one module per strategy, `rule_strategy.py` for rule specs, `rule_paths.py` for whole-path rule signals).
 - Tests: `tests/unit/test_*strategy*.py`, `tests/unit/test_signals*.py`, `tests/unit/test_sizing*.py`,
   `tests/unit/test_rules_*.py`, `tests/unit/test_entry_gap_sizing.py`; bias guards `tests/bias_guards/test_momentum_signal_lookahead.py`,
   `test_signal_window_boundary.py`; integration `tests/integration/test_nautilus_engine.py`.

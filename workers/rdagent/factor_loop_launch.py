@@ -39,6 +39,9 @@ if not TYPE_CHECKING:
 SOURCE_SHA256: str = importlib.import_module("source_pin").SOURCE_SHA256
 
 LaunchError = factor_loop_checks.LaunchError
+MAX_CALLS = factor_loop_checks.MAX_CALLS
+GATEWAY_SECRETS = factor_loop_checks.GATEWAY_SECRETS
+validate = factor_loop_checks.validate
 label_calls = factor_loop_calls.label_calls
 round_counts = factor_loop_calls.round_counts
 call_split = factor_loop_calls.call_split
@@ -58,20 +61,19 @@ LAUNCH_ENVIRONMENT = (
 
 def write_launch_command(run_dir: Path, argv: Sequence[str], environ: dict[str, str]) -> None:
     """Record how this run was started, so the next run can repeat it exactly."""
-    names = factor_loop_checks.GATEWAY_SECRETS
-    secrets = [environ[k] for k in names if environ.get(k)]
+    secrets = [environ[k] for k in GATEWAY_SECRETS if environ.get(k)]
     record = {
         "schema": "AlphaRdagentLaunchCommandV1",
         "program": "workers/rdagent/factor_loop_launch.py",
         "argv": ["[redacted]" if a in secrets else a for a in argv],
         "environment": {k: environ[k] for k in LAUNCH_ENVIRONMENT if k in environ},
-        "secret_names_set": sorted(k for k in names if environ.get(k)),
+        "secret_names_set": sorted(k for k in GATEWAY_SECRETS if environ.get(k)),
     }
     (run_dir / "launch-command.json").write_text(json.dumps(record, indent=2) + "\n")
 
 
 def _without_secrets() -> dict[str, str]:
-    return {k: v for k, v in os.environ.items() if k not in factor_loop_checks.GATEWAY_SECRETS}
+    return {k: v for k, v in os.environ.items() if k not in GATEWAY_SECRETS}
 
 
 def _now() -> str:
@@ -688,7 +690,7 @@ def exit_reason(code: int, gateway_state: Any, args: argparse.Namespace) -> str:
 
 
 def run(args: argparse.Namespace, environ: dict[str, str]) -> int:
-    paths = factor_loop_checks.validate(args, environ)
+    paths = validate(args, environ)
     args.run_dir.mkdir()
     write_launch_command(args.run_dir, getattr(args, "command_line", sys.argv[1:]), environ)
     with (args.run_dir / "run-identity.json").open("x") as stream:
@@ -749,7 +751,7 @@ def parser() -> argparse.ArgumentParser:
     r.add_argument("--discuss-on-timeout", choices=("proceed", "stop"), default="proceed")
     r.add_argument("--no-memory", action="store_true")
     r.add_argument("--coder-max-loop", type=int, default=2)
-    r.add_argument("--run-max-calls", type=int, default=factor_loop_checks.MAX_CALLS)
+    r.add_argument("--run-max-calls", type=int, default=MAX_CALLS)
     r.add_argument("--wall-seconds", type=float, default=5400)
     r.add_argument("--chat-route", choices=("codex", "api", "fake"), default="codex")
     r.add_argument(

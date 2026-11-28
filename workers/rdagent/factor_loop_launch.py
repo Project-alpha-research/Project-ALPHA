@@ -14,7 +14,6 @@ import argparse
 import hashlib
 import importlib
 import json
-import math
 import os
 import signal
 import subprocess
@@ -26,7 +25,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from . import gateway_usage, research_memory
+    from . import factor_loop_calls, factor_loop_checks, research_memory
 
 WORKER = Path(__file__).resolve().parent
 REPO = WORKER.parents[1]
@@ -35,15 +34,19 @@ if str(WORKER) not in sys.path:
 
 if not TYPE_CHECKING:
     research_memory = importlib.import_module("research_memory")
-    gateway_usage = importlib.import_module("gateway_usage")
+    factor_loop_calls = importlib.import_module("factor_loop_calls")
+    factor_loop_checks = importlib.import_module("factor_loop_checks")
 SOURCE_SHA256: str = importlib.import_module("source_pin").SOURCE_SHA256
 
-MAX_CALLS = 60
+LaunchError = factor_loop_checks.LaunchError
+MAX_CALLS = factor_loop_checks.MAX_CALLS
+GATEWAY_SECRETS = factor_loop_checks.GATEWAY_SECRETS
+validate = factor_loop_checks.validate
+label_calls = factor_loop_calls.label_calls
+round_counts = factor_loop_calls.round_counts
+call_split = factor_loop_calls.call_split
 LABEL = "exploratory, not admitted, not yet confirmed"
 AUTHORITY = dict.fromkeys(("admitted", "evidence", "approval", "promotion"), False)
-SETUP_HINT = "bash scripts/setup_rdagent.sh --with-factor-runtime"
-# The paid route's settings reach only the gateway process, never another child.
-GATEWAY_SECRETS = ("ALPHA_GATEWAY_API_KEY", "ALPHA_GATEWAY_API_BASE")
 
 
 # The only environment values launch-command.json may hold: paths that locate the runtimes and
@@ -73,127 +76,8 @@ def _without_secrets() -> dict[str, str]:
     return {k: v for k, v in os.environ.items() if k not in GATEWAY_SECRETS}
 
 
-class LaunchError(Exception):
-    """A refusal or failed step, with a plain message."""
-
-
 def _now() -> str:
     return datetime.now(UTC).isoformat()
-
-
-def label_calls(calls: list[dict[str, Any]], steps: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Copy calls with the latest-starting completed step that contains each timestamp."""
-    active: dict[tuple[int, int, str], list[dict[str, Any]]] = {}
-    intervals = []
-    for row in steps:
-        key = (row["loop"], row["step_index"], row["step"])
-        if row["event"] == "start":
-            active.setdefault(key, []).append(row)
-        elif row["event"] == "end" and active.get(key):
-            start = active[key].pop()
-            intervals.append(
-                (datetime.fromisoformat(start["ts"]), datetime.fromisoformat(row["ts"]), start)
-            )
-    labelled = []
-    for call in calls:
-        ts = datetime.fromisoformat(call["ts"])
-        matching = [(start, row) for start, end, row in intervals if start <= ts <= end]
-        step = max(matching, key=lambda item: item[0])[1] if matching else None
-        labelled.append(
-            {
-                **call,
-                "schema": "AlphaRdagentCallLabelV1",
-                "loop": step["loop"] if step else None,
-                "step": step["step"] if step else "outside-step",
-            }
-        )
-    return labelled
-
-
-def _inside_git(path: Path) -> bool:
-    probe = path
-    while not probe.exists():
-        probe = probe.parent
-    result = subprocess.run(
-        ["git", "-C", str(probe), "rev-parse", "--is-inside-work-tree"],
-        env={"PATH": "/usr/bin:/bin", "LANG": "C"},
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    return result.returncode == 0 and result.stdout.strip() == "true"
-
-
-def validate(args: argparse.Namespace, environ: dict[str, str]) -> dict[str, Path]:
-    if not 1 <= args.coder_max_loop <= 3:
-        raise LaunchError("--coder-max-loop must be 1, 2 or 3")
-    if not 1 <= args.loop_n <= 3:
-        raise LaunchError("--loop-n must be 1, 2 or 3")
-    if not 1 <= args.run_max_calls <= MAX_CALLS:
-        raise LaunchError(f"--run-max-calls must be between 1 and {MAX_CALLS}")
-    if args.discuss_wait_minutes < 0:
-        raise LaunchError("--discuss-wait-minutes must be non-negative")
-    if args.wall_seconds <= 0:
-        raise LaunchError("--wall-seconds must be positive")
-    if not 0 < args.api_timeout <= 900:
-        raise LaunchError("--api-timeout must be between 0 and 900 seconds")
-    if not 0 <= args.provider_retries <= 3:
-        raise LaunchError("--provider-retries must be 0, 1, 2 or 3")
-    if args.family_switch_after < 1:
-        raise LaunchError("--family-switch-after must be at least 1")
-    if args.coding_reasoning_tokens is not None:
-        raise LaunchError(
-            "--coding-reasoning-tokens is unset until the provider request field is confirmed"
-        )
-    if args.universe is not None and not args.universe.is_absolute():
-        raise LaunchError("--universe must be an absolute path")
-    if args.chat_route == "api":
-        if not args.api_model or not args.api_price_in_per_mtok or not args.api_price_out_per_mtok:
-            raise LaunchError(
-                "--chat-route api needs --api-model, --api-price-in-per-mtok and "
-                "--api-price-out-per-mtok"
-            )
-        if any(not environ.get(key) for key in GATEWAY_SECRETS):
-            raise LaunchError(
-                "--chat-route api needs ALPHA_GATEWAY_API_BASE and ALPHA_GATEWAY_API_KEY in the "
-                "launcher's environment (load the owner's file in the same command; never print it)"
-            )
-    if args.embedding_route == "provider":
-        price = args.provider_embed_usd_per_mtok
-        if not args.provider_embed_model or price is None or not math.isfinite(price) or price <= 0:
-            raise LaunchError(
-                "--embedding-route provider needs --provider-embed-model and a positive "
-                "--provider-embed-usd-per-mtok"
-            )
-        if any(not environ.get(key) for key in GATEWAY_SECRETS):
-            raise LaunchError(
-                "--embedding-route provider needs ALPHA_GATEWAY_API_BASE and ALPHA_GATEWAY_API_KEY"
-            )
-    for name in ("data_dir", "run_dir", "gateway_data_dir", "trial_ledger"):
-        if not getattr(args, name).is_absolute():
-            raise LaunchError(f"--{name.replace('_', '-')} must be an absolute path")
-    if args.run_dir.exists():
-        raise LaunchError(f"run directory already exists: {args.run_dir}")
-    if not args.trial_ledger.parent.is_dir():
-        raise LaunchError("the trial ledger's parent directory must exist")
-    for name in ("run_dir", "gateway_data_dir", "trial_ledger"):
-        if _inside_git(getattr(args, name)):
-            raise LaunchError(f"--{name.replace('_', '-')} must be outside every git work tree")
-    # Memory is checked after the trial ledger, whose folder gives its default location, so a
-    # relative --trial-ledger is reported as such rather than as a bad --memory-dir.
-    if not args.no_memory:
-        args.memory_dir = args.memory_dir or args.trial_ledger.parent / "research-memory"
-        if not args.memory_dir.is_absolute():
-            raise LaunchError("--memory-dir must be an absolute path")
-        if _inside_git(args.memory_dir.resolve()):
-            raise LaunchError("--memory-dir must be outside every git work tree")
-    paths = {}
-    for key in ("ALPHA_RDAGENT_SOURCE", "ALPHA_FACTOR_PYTHON"):
-        value = environ.get(key, "")
-        if not value or not Path(value).exists():
-            raise LaunchError(f"{key} is not set or missing; run: {SETUP_HINT}")
-        paths[key] = Path(value)
-    return paths
 
 
 def loop_environment(
@@ -782,165 +666,11 @@ class Launch:
         return exit_status
 
 
-def round_counts(run: Path) -> dict[str, int | float]:
-    rounds_path, evaluations = run / "rounds.jsonl", run / "evaluations.jsonl"
-    rounds = (
-        [json.loads(line) for line in rounds_path.read_text().splitlines()]
-        if rounds_path.exists()
-        else []
-    )
-    evaluated = (
-        [json.loads(line) for line in evaluations.read_text().splitlines()]
-        if evaluations.exists()
-        else []
-    )
-    refused = [
-        row
-        for row in rounds
-        if row.get("refused_families", row.get("closed_families"))
-        or row.get("reason") == "refused_closed_family"
-    ]
-    return {
-        "rounds_with_trial": len({row["iteration"] for row in evaluated if row.get("factors")}),
-        "rounds_no_admissible_idea": sum(
-            row.get("status") == "no_admissible_idea" for row in rounds
-        ),
-        "proposals_refused": len(refused),
-        "rounds_failed_provider": len(
-            {
-                r["iteration"]
-                for r in rounds
-                if str(r.get("status", "")).startswith(
-                    ("coding_failed_provider_", "proposal_failed_provider_")
-                )
-            }
-        ),
-        "provider_failed_wait_seconds": sum(
-            float(r.get("provider_wait_seconds", 0)) for r in rounds
-        ),
-    }
-
-
 def embedding_model(args: argparse.Namespace) -> str:
     route = getattr(args, "embedding_route", "local")
     if route == "provider":
         return str(args.provider_embed_model)
     return "fake" if route == "fake" else "nomic-embed-text"
-
-
-def call_split(
-    calls: list[dict[str, Any]], labelled: list[dict[str, Any]] | None = None
-) -> dict[str, Any]:
-    """Model calls versus free local embeddings, as the gateway logged them.
-
-    Only embedding rows the gateway marked ``local_embedding`` or ``provider_embedding`` are exempt
-    (owner decision 2026-11-17); old logs without the mark stay counted as they were.
-    """
-    split: dict[str, Any] = {
-        "model_chat": {"requests": 0, "attempts": 0, "usd": 0.0},
-        "local_embedding": {"requests": 0, "attempts": 0, "usd": 0.0},
-        "provider_embedding": {"requests": 0, "attempts": 0, "usd": 0.0},
-        "counted_calls": 0,
-        "local_embedding_calls": 0,
-        "provider_embedding_calls": 0,
-        "provider_embedding_requests": 0,
-        "provider_embedding_inputs": 0,
-        "embedding_single_retries": 0,
-        "embedding_model_not_reported": 0,
-        "provider_embedding_usd": 0.0,
-        "provider_embedding_tokens": 0,
-        "provider_timeouts": 0,
-        "empty_or_invalid_replies": 0,
-        "retried_attempts": 0,
-        "timeout_retry_attempts": 0,
-        "failed_requests": {},
-        "chunked_embedding_inputs": 0,
-        "embedding_chunks": 0,
-        "embedding_cache_hits": 0,
-        "embedding_requests": 0,
-        "embedding_inputs_sent": 0,
-        "provider_call_seconds_with_retries": 0.0,
-    }
-    routes: set[str] = set()
-    models: set[str] = set()
-    for call in calls:
-        split["embedding_cache_hits"] += int(call.get("embedding_cache_hits", 0))
-        if call.get("cache_only"):
-            continue
-        if call.get("endpoint") == "/v1/chat/completions" and call.get("provider_errors"):
-            split["provider_call_seconds_with_retries"] += float(call.get("latency_ms", 0)) / 1000
-        if call.get("endpoint") == "/v1/embeddings":
-            split["embedding_requests"] += int(call.get("attempts", 0))
-            split["embedding_inputs_sent"] += int(call.get("embedding_inputs_sent", 0))
-            if isinstance(call.get("route"), str):
-                routes.add(call["route"])
-            if isinstance(call.get("model_used"), str):
-                models.add(call["model_used"])
-        kind = "model_chat" if call.get("endpoint") == "/v1/chat/completions" else "local_embedding"
-        if kind == "local_embedding" and call.get("local_embedding") is False:
-            kind = "provider_embedding"
-        split[kind]["requests"] += 1
-        split[kind]["attempts"] += int(call.get("attempts") or 0)
-        split[kind]["usd"] += float(call.get("usd") or 0.0)
-        split["chunked_embedding_inputs"] += int(call.get("chunked_inputs") or 0)
-        split["embedding_chunks"] += int(call.get("chunks") or 0)
-        errors = call.get("provider_errors") or []
-        split["provider_timeouts"] += errors.count("provider_timeout")
-        split["empty_or_invalid_replies"] += errors.count("invalid_provider_response")
-        attempts = int(call.get("attempts") or 0)
-        local = kind == "local_embedding" and call.get("local_embedding") is True
-        provider = kind == "provider_embedding" and call.get("provider_embedding") is True
-        bucket = (
-            "local_embedding_calls"
-            if local
-            else "provider_embedding_calls"
-            if provider
-            else "counted_calls"
-        )
-        split[bucket] += attempts
-        if provider:
-            split["provider_embedding_requests"] += attempts
-            split["provider_embedding_inputs"] += (
-                int(call.get("input_count") or 0) if not call.get("single_retry") else 0
-            )
-            split["embedding_single_retries"] += int(bool(call.get("single_retry"))) * attempts
-            split["embedding_model_not_reported"] += int(
-                call.get("model_check") == "model_not_reported"
-            )
-            split["provider_embedding_usd"] += float(call.get("usd") or 0)
-            split["provider_embedding_tokens"] += int(call.get("prompt_tokens") or 0)
-        split["retried_attempts"] += max(0, attempts - 1)
-        split["timeout_retry_attempts"] += int(
-            call.get(
-                "timeout_retry_attempts", errors[: max(0, attempts - 1)].count("provider_timeout")
-            )
-        )
-        if call.get("status") != 200:
-            code = str(call.get("error_code"))
-            split["failed_requests"][code] = split["failed_requests"].get(code, 0) + 1
-    split.update(
-        embedding_route=next(iter(routes)) if len(routes) == 1 else None,
-        embedding_model=next(iter(models)) if len(models) == 1 else None,
-        embedding_routes=sorted(routes),
-        embedding_models=sorted(models),
-    )
-    reasks = [
-        c
-        for c in labelled or []
-        if c.get("step") == "proposal_reask" and c.get("endpoint") == "/v1/chat/completions"
-    ]
-    split["proposal_prompt_chars"] = [
-        {"loop": c.get("loop"), "step": c["step"], "chars": c["total_prompt_chars"]}
-        for c in labelled or []
-        if c.get("step") in ("direct_exp_gen", "proposal_reask", "discussion_revision")
-        and c.get("endpoint") == "/v1/chat/completions"
-        and "total_prompt_chars" in c
-    ]
-    split["reask_calls"] = sum(int(c.get("attempts") or 0) for c in reasks)
-    split["reask_usd"] = sum(float(c.get("usd") or 0) for c in reasks)
-    split["chat_usage"] = gateway_usage.receipt_usage(calls, labelled)
-    split["counted_toward_call_cap"] = split["counted_calls"]
-    return split
 
 
 def exit_reason(code: int, gateway_state: Any, args: argparse.Namespace) -> str:

@@ -618,6 +618,7 @@ def test_runtime_gateway_explicitly_waives_temperature(
 ) -> None:
     """Check the integration fixture's real launch command without opening a socket."""
     launch = importlib.import_module("factor_loop_launch")
+    checks = importlib.import_module("factor_loop_checks")
     monkeypatch.setenv("ALPHA_FACTOR_PYTHON", str(tmp_path / "runtime/venv/bin/python"))
     monkeypatch.setenv("ALPHA_RDAGENT_SOURCE", str(tmp_path / "source"))
     monkeypatch.setattr(sys.modules[__name__], "_synthetic_panel", lambda root, timeout: None)
@@ -629,10 +630,10 @@ def test_runtime_gateway_explicitly_waives_temperature(
         assert "--accept-unhonoured" in command
         assert command[command.index("--accept-unhonoured") + 1] == "temperature"
         assert "--log-content" in command
-        raise launch.LaunchError("command captured before socket startup")
+        raise checks.LaunchError("command captured before socket startup")
 
     monkeypatch.setattr(launch.Launch, "spawn", capture)
-    with pytest.raises(launch.LaunchError, match="command captured"):
+    with pytest.raises(checks.LaunchError, match="command captured"):
         test_runtime_offline_e2e(tmp_path, monkeypatch, knowledge_only=False)
 
 

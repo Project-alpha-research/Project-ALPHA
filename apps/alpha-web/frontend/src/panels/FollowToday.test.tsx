@@ -150,7 +150,8 @@ describe('Today screen', () => {
   it('says how to start a follow when there are none', () => {
     const html = render({ data: { ...data, followed: 0, behind: 0, rows: [], groups: [], markets: [] } })
     expect(html).toContain('alpha follow start --test &lt;run id&gt;')
-    expect(html).toContain('alpha results list')
+    expect(html).toContain('<code class="mono">alpha results</code>')
+    expect(html).not.toContain('alpha results list')
     expect(html).toContain('Nothing is followed yet.')
     expect(html).not.toContain('follow-card')
   })

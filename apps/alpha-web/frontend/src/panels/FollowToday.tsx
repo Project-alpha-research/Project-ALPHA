@@ -136,7 +136,7 @@ function Empty() {
     <section className="follow-start" aria-label="Start a follow">
       <p><strong>Nothing is followed yet.</strong> A follow watches one finished rule test forward, on paper, one session at a time.</p>
       <CopyCommand command="alpha follow start --test <run id>" why="Starting a follow is an owner step in the terminal. This screen only shows." />
-      <p>Find a run id with: <code className="mono">alpha results list</code></p>
+      <p>Find a run id with: <code className="mono">alpha results</code></p>
     </section>
   )
 }

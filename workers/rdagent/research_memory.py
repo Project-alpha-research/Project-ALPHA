@@ -20,39 +20,25 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-if TYPE_CHECKING or __package__:
-    from .research_memory_store import (
-        KNOWLEDGE,
-        _fields,
-        _fresh,
-        _hash,
-        _json,
-        _load_knowledge,
-        _lock,
-        _quarantine,
-        _read,
-        _warning,
-        _write,
-        completed_loops,
-    )
+if TYPE_CHECKING:
+    from . import research_memory_store as store
 else:
-    # `python -I` runs this file as a script without its own folder on sys.path.
-    if str(Path(__file__).resolve().parent) not in sys.path:
-        sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from research_memory_store import (
-        KNOWLEDGE,
-        _fields,
-        _fresh,
-        _hash,
-        _json,
-        _load_knowledge,
-        _lock,
-        _quarantine,
-        _read,
-        _warning,
-        _write,
-        completed_loops,
+    store = importlib.import_module(
+        f"{__package__}.research_memory_store" if __package__ else "research_memory_store"
     )
+
+KNOWLEDGE = store.KNOWLEDGE
+_fields = store._fields
+_fresh = store._fresh
+_hash = store._hash
+_json = store._json
+_load_knowledge = store._load_knowledge
+_lock = store._lock
+_quarantine = store._quarantine
+_read = store._read
+_warning = store._warning
+_write = store._write
+completed_loops = store.completed_loops
 
 WORKER = Path(__file__).resolve().parent
 RESTORED_ROUNDS_FULL = 4

@@ -1,0 +1,28 @@
+{
+  "kind": "absence",
+  "removed_symbols": [
+    "MlDiagnostics",
+    "MlDiagnosticsBody",
+    "mlTearsheetModel",
+    "mlResearchModel",
+    "mlLaunchRequest",
+    "buildFoldTimeline",
+    "mlExperimentPlaceholderLabel",
+    "ml-diagnostics",
+    "ml-fold-timeline",
+    "ml-recipe-grid"
+  ],
+  "command_words": [],
+  "removed_paths": [
+    "apps/alpha-web/frontend/src/panels/MlDiagnostics.tsx",
+    "apps/alpha-web/frontend/src/panels/MlDiagnostics.test.ts",
+    "apps/alpha-web/frontend/src/panels/mlTearsheetModel.ts",
+    "apps/alpha-web/frontend/src/panels/mlTearsheetModel.test.ts",
+    "apps/alpha-web/frontend/src/panels/mlResearchModel.ts",
+    "apps/alpha-web/frontend/src/panels/mlResearchModel.test.ts"
+  ],
+  "search_roots": [
+    "apps/alpha-web/frontend/src",
+    "apps/alpha-web/frontend/vitest.config.ts"
+  ]
+}

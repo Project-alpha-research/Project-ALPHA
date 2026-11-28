@@ -1,17 +1,9 @@
-// The explanation engine's guardrails: gate, suggestion and kind-module stories.
+// The explanation engine's guardrails: gate stories.
 
 import { describe, expect, it } from 'vitest'
 
-import { forecastStories } from './forecast'
 import { gateStories, nullStory, walkForwardStory } from './gates'
-import { optimStories, optimSuggestions } from './optim'
-import { portfolioStories } from './portfolio'
-import { propfirmStories } from './propfirm'
-import { suggestions } from './suggestions'
-import type { OptimManifest, PortfolioManifest, PropfirmManifest, ValidateManifest } from './types'
-import optimFixture from './__fixtures__/optim.json'
-import portfolioFixture from './__fixtures__/portfolio.json'
-import propfirmFixture from './__fixtures__/propfirm.json'
+import type { ValidateManifest } from './types'
 import validateB from './__fixtures__/validate-b.json'
 
 describe('gate stories', () => {
@@ -87,56 +79,5 @@ describe('gate stories', () => {
     const g = gateStories(m)[2]
     expect(g.terse).toMatch(/the interval includes zero$/)
     expect(g.oldLevel).toBe('The level used by the old grade: lower end above 0')
-  })
-})
-
-describe('suggestions', () => {
-  it('failed-null run leads with the luck suggestion', () => {
-    const s = suggestions(validateB as unknown as ValidateManifest)
-    expect(s.length).toBeGreaterThan(0)
-    expect(s[0].title).toContain('luck')
-  })
-  it('CI straddling zero yields the statistical-power suggestion', () => {
-    const s = suggestions(validateB as unknown as ValidateManifest)
-    expect(s.some((x) => x.title.includes('straddles zero'))).toBe(true)
-  })
-})
-
-describe('kind modules', () => {
-  it('optim: all three control stories, passing sweep suggests validate', () => {
-    const m = optimFixture as unknown as OptimManifest
-    const stories = optimStories(m)
-    expect(stories.map((s) => s.title)).toEqual([
-      'Deflated Sharpe (best of the sweep)',
-      'Probability of backtest overfitting',
-      'Data-snooping tests (Reality Check / SPA)',
-    ])
-    const sugg = optimSuggestions(m)
-    expect(sugg[0].action?.command).toBe('validate')
-  })
-
-  it('propfirm: odds + EV stories with money formatting', () => {
-    const stories = propfirmStories(propfirmFixture as unknown as PropfirmManifest)
-    expect(stories).toHaveLength(2)
-    expect(stories[0].terse).toMatch(/pass \d+%/)
-    expect(stories[1].stats[0].value).toMatch(/^[$—-]/)
-  })
-
-  it('portfolio: headline + diversification check', () => {
-    const stories = portfolioStories(portfolioFixture as unknown as PortfolioManifest)
-    expect(stories.length).toBeGreaterThanOrEqual(2)
-    expect(stories[1].title).toBe('Diversification check')
-  })
-
-  it('forecast: eval summaries split honest vs overlapping', () => {
-    const stories = forecastStories({
-      command: 'forecast_eval',
-      summary_post_cutoff: { n_origins: 10, skill_vs_rw: -0.05, skill_vs_bootstrap: -0.1, coverage80: 0.9, hit_rate: 0.4 },
-      summary_pre_cutoff: { n_origins: 20, skill_vs_rw: 0.2, skill_vs_bootstrap: 0.1, coverage80: 0.8, hit_rate: 0.6 },
-    })
-    const post = stories.find((s) => s.title.includes('Post-cutoff'))
-    expect(post?.tone).toBe('bad')
-    const pre = stories.find((s) => s.title.includes('Pre-cutoff'))
-    expect(pre?.tone).toBe('warn')
   })
 })

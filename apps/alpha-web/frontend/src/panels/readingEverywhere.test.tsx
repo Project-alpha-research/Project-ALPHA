@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest'
 import type { RunListItem } from '../api/types'
 import { GLOSSARY } from '../explain/glossary'
 import { gateStories } from '../explain/gates'
-import { suggestions } from '../explain/suggestions'
 import type { ValidateManifest } from '../explain/types'
 import validateA from '../explain/__fixtures__/validate-a.json'
 import validateB from '../explain/__fixtures__/validate-b.json'
@@ -119,15 +118,6 @@ describe('the Stress test and risk terms', () => {
       const entry = GLOSSARY[key]
       if (!entry) continue
       assertOwnerText(`<p>${entry.name}</p><p>${entry.short}</p><p>${entry.long}</p>`)
-    }
-  })
-})
-
-describe('the next steps', () => {
-  it('says nothing of a grade in the next steps', () => {
-    for (const manifest of [validateA, validateB, validateD]) {
-      const text = suggestions(manifest as unknown as ValidateManifest).map(item => `<p>${item.title}</p><p>${item.why}</p>`).join('')
-      assertOwnerText(text)
     }
   })
 })

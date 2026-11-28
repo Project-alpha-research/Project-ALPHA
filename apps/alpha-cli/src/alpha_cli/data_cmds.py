@@ -1,4 +1,4 @@
-"""`alpha data` subcommands: pull, snapshot, verify, candles, symbols."""
+"""`alpha data` subcommands: pull, snapshot, candles, symbols; mounts the split-out commands."""
 
 from __future__ import annotations
 
@@ -11,13 +11,12 @@ from typing import Annotated, NoReturn
 
 import typer
 
-from alpha_cli.market_overview_cmds import run_market_overview
+from alpha_cli import data_display_cmds, data_snapshots_cmds, data_universe_cmds
 from alpha_cli.providers import (
     HistoricalAdapterFactory,
     historical_adapter_factories,
     provider_option_choices,
 )
-from alpha_cli.run_price_cmds import run_run_price
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 from alpha_data.adapters.base import DataAdapter
@@ -31,10 +30,7 @@ from alpha_data.snapshot import (
     create_snapshot,
     resolve_snapshot_dir,
     snapshot_manifest_hash,
-    snapshot_timeframe,
-    verify_snapshot,
 )
-from alpha_data.snapshot_reuse import content_hash, read_manifests, shared_content, total_bytes
 from alpha_data.store import ParquetStore
 from alpha_data.timeframe import DAILY, BarTimeframe, parse_timeframe, store_dir
 
@@ -728,193 +724,9 @@ def symbols(
         typer.echo(sym)
 
 
-@data_app.command()
-def snapshots(
-    json_out: bool = typer.Option(False, "--json", help="emit JSON"),
-    with_content: bool = typer.Option(
-        False, "--with-content", help="with --json: add content hashes and the total size"
-    ),
-) -> None:
-    """List every immutable snapshot's manifest summary in deterministic id order.
-
-    The plain list also shows each content hash and the snapshots that share it, and the total
-    size on disk. `--json` keeps its shape (the workstation reads it) unless `--with-content`.
-    """
-    root = _snaps_root()
-    manifests = read_manifests(root)
-    shared = shared_content(manifests)
-    rows: list[dict[str, object]] = []
-    for _, raw, manifest in manifests:
-        symbols_entry = manifest.get("symbols")
-        held = symbols_entry if isinstance(symbols_entry, dict) else {}
-        held_content = {
-            name: {
-                "sha256": content_hash(entry),
-                "shared_with": [
-                    other
-                    for other in shared.get((name, content_hash(entry)), [])
-                    if other != manifest.get("snapshot_id")
-                ],
-            }
-            for name, entry in sorted(held.items())
-            if isinstance(entry, dict)
-        }
-        rows.append(
-            {
-                "snapshot_id": manifest.get("snapshot_id"),
-                "created_at": manifest.get("created_at"),
-                "source": manifest.get("source"),
-                "adapter_version": manifest.get("adapter_version"),
-                "parser_version": manifest.get("parser_version"),
-                "symbols": sorted(held),
-                "manifest_sha256": hashlib.sha256(raw).hexdigest(),
-                "content": held_content,
-            }
-        )
-    size = total_bytes(root)
-    if json_out:
-        if with_content:
-            body: dict[str, object] = {"snapshots": rows, "total_bytes": size}
-        else:
-            body = {"snapshots": [{k: v for k, v in r.items() if k != "content"} for r in rows]}
-        typer.echo(json.dumps(body, sort_keys=True, allow_nan=False))
-        return
-    if not rows:
-        typer.echo("no snapshots")
-        return
-    for row in rows:
-        listed = row["symbols"]
-        names = ",".join(str(item) for item in listed) if isinstance(listed, list) else ""
-        typer.echo(f"{row['snapshot_id']} {row['source']} {names}")
-        content = row["content"]
-        for name, info in content.items() if isinstance(content, dict) else []:
-            twins = ", ".join(info["shared_with"]) or "none"
-            typer.echo(f"  {name} content {info['sha256'][:12]} also held by: {twins}")
-    typer.echo(
-        f"{len(rows)} snapshots, {size / 1024:.0f} KB in total. "
-        "They are never deleted automatically; removing old ones is the owner's decision."
-    )
-
-
-@data_app.command()
-def verify(snapshot_id: str) -> None:
-    """Re-hash a snapshot and confirm it matches its manifest."""
-    try:
-        snapshot_dir = _snaps_root() / snapshot_id
-        verify_snapshot(snapshot_dir, timeframe=snapshot_timeframe(snapshot_dir))
-    except DataError as exc:  # missing snapshot or a hash mismatch (corruption)
-        raise typer.BadParameter(str(exc)) from exc
-    typer.echo(f"snapshot {snapshot_id}: integrity OK")
-
-
-universe_app = typer.Typer(help="Point-in-time universe membership (survivorship-safe reads).")
-data_app.add_typer(universe_app, name="universe")
-
-
-@universe_app.command("import")
-def universe_import(
-    name: str,
-    csv_path: Path,
-    json_out: bool = typer.Option(False, "--json", help="emit JSON"),
-) -> None:
-    """Import symbol,effective_from,effective_to,delisting_return,reason rows as universe NAME."""
-    from alpha_data.universe import parse_universe_csv
-
-    try:
-        rows = parse_universe_csv(csv_path.read_text(encoding="utf-8"))
-        path = _store().write_universe(name, rows)
-    except (OSError, DataError) as exc:
-        raise typer.BadParameter(str(exc)) from exc
-    payload = {
-        "name": name,
-        "memberships": len(rows),
-        "symbols": len({r.symbol for r in rows}),
-        "removed": sum(r.effective_to is not None for r in rows),
-        "path": str(path),
-        "authority": "none",
-    }
-    if json_out:
-        typer.echo(json.dumps(payload, sort_keys=True))
-    else:
-        typer.echo(
-            f"universe {name}: {payload['memberships']} memberships, {payload['symbols']} symbols, "
-            f"{payload['removed']} removed -> {path}"
-        )
-
-
-@universe_app.command("show")
-def universe_show(
-    name: str,
-    as_of: str = typer.Option(
-        ..., help="membership date YYYY-MM-DD (from inclusive, to exclusive)"
-    ),
-    json_out: bool = typer.Option(False, "--json", help="emit JSON"),
-) -> None:
-    """List the members of universe NAME as of a date, including names that later left."""
-    from alpha_core import members_as_of
-
-    try:
-        when = date.fromisoformat(as_of)
-        rows = _store().read_universe(name)
-    except (ValueError, DataError) as exc:
-        raise typer.BadParameter(str(exc)) from exc
-    members = members_as_of(rows, when)
-    later_removed = sorted(
-        {r.symbol for r in rows if r.effective_to is not None and r.effective_to > when}
-        & set(members)
-    )
-    payload = {
-        "name": name,
-        "as_of": when.isoformat(),
-        "members": members,
-        "count": len(members),
-        "later_removed": later_removed,
-        "authority": "none",
-    }
-    if json_out:
-        typer.echo(json.dumps(payload, sort_keys=True))
-    else:
-        typer.echo(
-            f"{name} as of {when}: {len(members)} members ({len(later_removed)} later removed)"
-        )
-        typer.echo(" ".join(members))
-
-
-@data_app.command("market-overview")
-def market_overview_command(
-    store: str = typer.Option("1D", help="stored bar size: 1D (default), 1h, 5m, ..."),
-    window: int = typer.Option(90, help="bars shown: 30, 90 or 365"),
-    limit: int = typer.Option(15, help="how many assets (1..30)"),
-    json_out: bool = typer.Option(False, "--json", help="emit JSON"),
-) -> None:
-    """Read-only market overview of stored bars. Market view. Not a test result."""
-    run_market_overview(store, window, limit, json_out)
-
-
-@data_app.command("run-price")
-def run_price_command(
-    run_id: str = typer.Argument(..., help="a completed rule-test run id"),
-    json_out: bool = typer.Option(False, "--json", help="emit JSON"),
-) -> None:
-    """Stored price bars of a rule test, only when they hash to the run's recorded source."""
-    run_run_price(run_id, json_out)
-
-
-@data_app.command("chart-datasets")
-def chart_datasets_command(json_out: bool = typer.Option(False, "--json")) -> None:
-    """Discover qualified external archive chart datasets without hashing all artifacts."""
-    from alpha_cli._chart_data import chart_datasets
-    from alpha_cli.crypto_data_cmds import BulkVolumeUnconfigured, _bulk_store
-
-    try:
-        store = _bulk_store()
-        store.verify_readable()
-        result = {"datasets": chart_datasets(store), "authority": "none", "state": "available"}
-    except BulkVolumeUnconfigured:
-        result = {"datasets": [], "authority": "none", "state": "unconfigured"}
-    except (DataError, OSError) as exc:
-        raise typer.BadParameter(str(exc)) from exc
-    if json_out:
-        typer.echo(json.dumps(result))
-    else:
-        typer.echo(f"{len(result['datasets'])} archive chart datasets")
+data_app.command()(data_snapshots_cmds.snapshots)
+data_app.command()(data_snapshots_cmds.verify)
+data_app.add_typer(data_universe_cmds.universe_app, name="universe")
+data_app.command("market-overview")(data_display_cmds.market_overview_command)
+data_app.command("run-price")(data_display_cmds.run_price_command)
+data_app.command("chart-datasets")(data_display_cmds.chart_datasets_command)

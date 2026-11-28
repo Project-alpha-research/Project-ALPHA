@@ -128,7 +128,7 @@ another package is named.
 | `context/binance/` | `context_sources_cmds` over `alpha_data.context` | USD-M funding/metrics events, hashed provenance and verified ZIP cache. |
 | `context/cftc/`, `context/finra/` | `context_free_cmds` over `alpha_data.context` | Weekly CFTC positioning and FINRA daily short volume, `known_from` per row, hashed provenance. |
 | `context/fred/` | `context_cmds` over `alpha_data.context` | Macro vintage parquet and hashed provenance; separate from bars and backtests. |
-| `snapshots/` | `data_cmds` over `alpha_data.snapshot` | Immutable content-hashed data snapshots that runs and studies bind to. |
+| `snapshots/` | `data_cmds`, `data_snapshots_cmds` over `alpha_data.snapshot` | Immutable content-hashed data snapshots that runs and studies bind to. |
 | `runs/` | `_artifacts` (backtest/validate runs; listed in `run_store.RUN_DIRS`) | Immutable single-strategy run directories with manifest-pinned artifacts. |
 | `portfolio/` | `backtest_cmds` (`RUN_DIRS`) | Portfolio backtest run directories. |
 | `cross_sectional/` | `backtest_cross_sectional_cmds` (`RUN_DIRS`) | Cross-sectional backtest run directories. |

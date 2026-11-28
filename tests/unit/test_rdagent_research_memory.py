@@ -19,6 +19,7 @@ import pytest
 WORKER = Path(__file__).resolve().parents[2] / "workers/rdagent"
 sys.path.insert(0, str(WORKER))
 memory = importlib.import_module("research_memory")
+store = importlib.import_module("research_memory_store")
 
 
 def prepare(root: Path, run_id: str = "one", **kwargs: str) -> Any:
@@ -83,12 +84,12 @@ def test_prepare_fresh_exact_environment_and_loop_count(tmp_path: Path) -> None:
     (path / "1/0_propose").touch()
     (path / "two/4_record").touch()
     (path / "2/4_record").mkdir()
-    assert memory.completed_loops(path) == 1
+    assert store.completed_loops(path) == 1
     continued = tmp_path / "continued/__session__"
     for name in ("2", "3"):
         (continued / name).mkdir(parents=True)
         (continued / name / "4_record").touch()
-    assert memory.completed_loops(continued) == 4
+    assert store.completed_loops(continued) == 4
 
 
 @pytest.mark.parametrize("raw", ["broken", "[]", '{"schema":"wrong"}', None])
@@ -510,7 +511,7 @@ def _run_memory_round(root: Path, run_id: str, base_url: str, token: str, deadli
     assert "memory-record-failed" not in codes(receipt["warnings"])
     assert not (run / "evaluations.jsonl").exists()
     # Each scheduler starts at zero; the memory receipt retains the cumulative count.
-    assert memory.completed_loops(run / "work/log/__session__") == 1
+    assert store.completed_loops(run / "work/log/__session__") == 1
     assert receipt["loops_after"] == plan.loops_before + 1
     return plan
 

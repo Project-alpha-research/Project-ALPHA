@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { writeFile } from 'node:fs/promises'
-import { heavyChartBundle, HEAVY_LIBRARY_RUN, openHeavyPrice, preparePage } from './support/workstationHarness'
+import { heavyChartBundle } from './support/chartFixtures'
+import { HEAVY_LIBRARY_RUN, openHeavyPrice, preparePage } from './support/workstationHarness'
 
 // Continuous JPEG capture changes the canvas workload; retain DOM/action tracing.
 test.use({ trace: { mode: 'retain-on-failure', screenshots: false } })

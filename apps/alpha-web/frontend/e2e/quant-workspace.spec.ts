@@ -121,7 +121,8 @@ test('comparisons stay pinned across canonical changes and linked gestures conve
 })
 
 test('a hidden panned market document survives opening another run report', async ({ page }) => {
-  const { HEAVY_LIBRARY_RUN, openTask, heavyChartBundle } = await import('./support/workstationHarness')
+  const { HEAVY_LIBRARY_RUN, openTask } = await import('./support/workstationHarness')
+  const { heavyChartBundle } = await import('./support/chartFixtures')
   await preparePage(page, { candles, runs: [HEAVY_LIBRARY_RUN], chartBundle: heavyChartBundle() })
   await page.route(`**/api/runs/${HEAVY_LIBRARY_RUN.run_id}`, route => route.fulfill({ json: { run_id: HEAVY_LIBRARY_RUN.run_id, display_name: 'Recorded fixture', kind: 'runs', manifest: {}, has_equity: false, has_trades: false, has_tearsheet: false } }))
   let hiddenPriceRequests = 0

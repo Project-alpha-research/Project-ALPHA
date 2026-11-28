@@ -3,7 +3,8 @@ import { preparePage } from './support/workstationHarness'
 // Continuous JPEG capture changes the canvas workload; retain DOM/action tracing.
 test.use({ trace: { mode: 'retain-on-failure', screenshots: false } })
 test('@reference-only @perf-budget four 25k-bar panels retain responsive resize and cursor interaction', async ({ page }) => {
-  const { heavyChartBundle, HEAVY_LIBRARY_RUN, openHeavyPrice } = await import('./support/workstationHarness')
+  const { HEAVY_LIBRARY_RUN, openHeavyPrice } = await import('./support/workstationHarness')
+  const { heavyChartBundle } = await import('./support/chartFixtures')
   await preparePage(page, { chartBundle: heavyChartBundle(), runs: [HEAVY_LIBRARY_RUN] })
   await openHeavyPrice(page)
   await page.getByLabel('Plot renderer').selectOption('market')

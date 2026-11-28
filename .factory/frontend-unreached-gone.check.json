@@ -1,0 +1,21 @@
+{
+  "kind": "absence",
+  "removed_symbols": [
+    "IdeaCardsNotice",
+    "IdeaCardsNoticeView",
+    "rerunCommand",
+    "requestResearchCase",
+    "requestNewIdea"
+  ],
+  "command_words": [],
+  "removed_paths": [
+    "apps/alpha-web/frontend/src/panels/rundetail/rerun.ts",
+    "apps/alpha-web/frontend/src/panels/rundetail/rerun.test.ts",
+    "apps/alpha-web/frontend/src/panels/idea/IdeaCardsNotice.tsx",
+    "apps/alpha-web/frontend/src/context/researchCase.ts",
+    "apps/alpha-web/frontend/src/context/newIdea.ts"
+  ],
+  "search_roots": [
+    "apps/alpha-web/frontend/src"
+  ]
+}

@@ -35,7 +35,7 @@ sources:
 ## Command line
 | file | owns | load when |
 |---|---|---|
-| [cli-runs.md](cli-runs.md), [cli-figures.md](cli-figures.md), [cli-nightly.md](cli-nightly.md) | runs; figures; nightly | `alpha run`, `figures`, `nightly` |
+| [cli-runs.md](cli-runs.md), [cli-figures.md](cli-figures.md), [cli-nightly.md](cli-nightly.md) | runs; figures; nightly | `validate`, `figures`, `nightly` |
 | [cli-setups.md](cli-setups.md), [cli-idea-file.md](cli-idea-file.md) | `alpha setup`; `alpha idea file` | `alpha setup`, `alpha idea file` |
 | [cli-research.md](cli-research.md) | governed Research Case commands | `alpha research` |
 | [cli-control-store.md](cli-control-store.md) | SQLite control plane, receipts, jobs, holdouts | control store, jobs, confirmations |

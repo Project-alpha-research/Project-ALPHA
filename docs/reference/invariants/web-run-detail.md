@@ -96,7 +96,7 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
 - The Stress test tab shows scenario numbers; its terms in `explain/glossary.ts` carry no grade bands. The glossary lists the old
   grade as "retired".
 - Covered by `readingEverywhere.test.tsx` (words and a lone letter, old and new style) and `e2e/readings-everywhere.spec.ts` (light, dim, dark).
-- The grade display code (`explain/bands.ts`, `explain/verdictStory.ts`, `util/verdict.ts`, the `--verdict-*` tokens) is deleted.
+- The old grade display code and its `--verdict-*` tokens are deleted.
 
 ## Gates check charts
 

@@ -83,7 +83,7 @@ request only when its paths (or the workflow and gate files) change, and always 
 ## Scripts code map
 
 The developer and CI tooling: the gate (`gate.py`: the fast local check, CI job steps, quant
-sweeps), test selection, the file-system tools (`fs.py orient|search|stale|owners|verify`), generators for
+sweeps), test selection, the file-system tools (`fs.py orient|search|map|see`), generators for
 committed documents, OpenAPI checks and the agent hooks. Scripts are top-level modules on the
 mypy and pytest path, not a package; the harness scripts are standard library only. They never
 read owner data, credentials or hidden tests.

@@ -126,7 +126,6 @@ def test_catalogue_fails_loud_on_a_changed_header_or_duplicate_signal() -> None:
 
 
 def test_percent_is_converted_to_decimal_exactly_once() -> None:
-    assert osap_portfolios.percent_to_decimal(5.0) == 0.05
     df = mapped()
     row = df.filter((pl.col("signal") == "SynthAccrual") & (pl.col("month") == MONTHS[0]))
     assert row["long_short_return"].item() == pytest.approx(0.05)

@@ -75,11 +75,6 @@ def table_path(data_dir: Path, release: str) -> Path:
     return data_dir / FOLDER / f"{_check_release(release)}.parquet"
 
 
-def percent_to_decimal(value: float) -> float:
-    """The one place a percent return becomes a decimal return."""
-    return value / PERCENT
-
-
 def month_end(day: date) -> date:
     """Last calendar day of the month. The source stamps each month with its last trading day."""
     return (day.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)

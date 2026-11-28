@@ -163,12 +163,6 @@ class ParquetStore:
         except ValidationError as exc:
             raise DataError(f"invalid universe data for {name!r} at {path}: {exc}") from exc
 
-    def list_universes(self) -> list[str]:
-        universe_dir = self.root / "universe"
-        if not universe_dir.exists():
-            return []
-        return sorted(p.stem for p in universe_dir.glob("*.json"))
-
     def _provenance_path(self, symbol: str) -> Path:
         if not symbol or ".." in symbol or "\\" in symbol or symbol.startswith("/"):
             raise DataError(f"invalid symbol for storage: {symbol!r}")

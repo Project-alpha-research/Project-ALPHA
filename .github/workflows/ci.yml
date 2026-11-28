@@ -80,8 +80,8 @@ jobs:
         run: uv run python scripts/gate.py check
 
   tests:
-    name: tests (${{ matrix.shard }}/4)
-    # Every root test except `network` and `slow_oracle`, split by file into four shards.
+    name: tests (${{ matrix.shard }}/6)
+    # Every root test except `network` and `slow_oracle`, split by file into six shards.
     # Runs on main after each merge, not on a pull request (see `quick`). A failure here means a
     # merged change broke something the mapped tests did not cover: fix or revert it at once.
     if: github.event_name != 'pull_request'
@@ -91,7 +91,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5, 6]
     steps:
       - uses: actions/checkout@v6.0.3
         with:
@@ -104,7 +104,7 @@ jobs:
       - name: Shared test shard
         run: >-
           uv run --no-project --python 3.12 python scripts/gate.py component backend-tests
-          --shard ${{ matrix.shard }}/4
+          --shard ${{ matrix.shard }}/6
       - name: Name this shard's coverage data
         run: mv .coverage ".coverage.shard-${{ matrix.shard }}"
       - uses: actions/upload-artifact@v4
@@ -135,7 +135,7 @@ jobs:
         env:
           DIFF_BASE: ${{ github.event.pull_request.base.sha }}
         run: >-
-          uv run python scripts/gate.py coverage --shards 4 ${DIFF_BASE:+--base "$DIFF_BASE"}
+          uv run python scripts/gate.py coverage --shards 6 ${DIFF_BASE:+--base "$DIFF_BASE"}
           --summary "$GITHUB_STEP_SUMMARY"
       - name: Per-file test times (refresh scripts/gate_test_durations.json from this artifact)
         if: always()

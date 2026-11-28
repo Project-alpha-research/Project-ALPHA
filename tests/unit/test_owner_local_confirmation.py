@@ -97,22 +97,6 @@ def test_local_confirmation_rejects_changes(
         )
 
 
-@pytest.mark.parametrize("origin", [None, "null", "https://evil.example", "http://localhost:8802"])
-def test_confirmation_api_rejects_wrong_origin(
-    origin: str | None, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from fastapi.testclient import TestClient
-
-    from alpha_web.app import create_app
-
-    monkeypatch.setenv("ALPHA_WEB_PORT", "8801")
-    headers = {} if origin is None else {"Origin": origin}
-    with TestClient(create_app(), base_url="http://localhost:8801") as client:
-        for route in ("challenge", "perform"):
-            result = client.post("/api/owner-auth/actions/" + route, headers=headers, json={})
-            assert result.status_code == 403
-
-
 def test_local_semantic_confirmation_is_atomic_and_recovers(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -251,36 +235,6 @@ def test_revision_change_at_consumption_is_rejected(
             payload=payload,
             now=NOW,
         )
-
-
-@pytest.mark.parametrize(
-    "host,fetch,content",
-    [
-        ("evil.example", "same-origin", "application/json"),
-        ("localhost:8801", "cross-site", "application/json"),
-        ("localhost:8801", "same-origin", "text/plain"),
-    ],
-)
-def test_local_confirmation_rejects_host_fetch_and_content(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, host: str, fetch: str, content: str
-) -> None:
-    from fastapi.testclient import TestClient
-
-    from alpha_web.app import create_app
-
-    monkeypatch.setenv("ALPHA_WEB_PORT", "8801")
-    with TestClient(create_app(), base_url="http://localhost:8801") as client:
-        result = client.post(
-            "/api/owner-auth/actions/perform",
-            content="{}",
-            headers={
-                "origin": "http://localhost:8801",
-                "host": host,
-                "sec-fetch-site": fetch,
-                "content-type": content,
-            },
-        )
-    assert result.status_code == 403
 
 
 def _empty_v5(tmp_path: Path) -> Path:

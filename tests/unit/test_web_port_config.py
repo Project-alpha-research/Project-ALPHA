@@ -128,19 +128,19 @@ def test_large_json_responses_use_gzip() -> None:
 
 def test_loopback_ip_redirects_to_exact_localhost_origin() -> None:
     with TestClient(create_app(), base_url="http://127.0.0.1:8801") as client:
-        response = client.get("/owner-auth/enroll?step=1", follow_redirects=False)
+        response = client.get("/app?step=1", follow_redirects=False)
 
     assert response.status_code == 307
-    assert response.headers["location"] == "http://localhost:8801/owner-auth/enroll?step=1"
+    assert response.headers["location"] == "http://localhost:8801/app?step=1"
 
 
-def test_canonical_origin_serves_health_and_owner_enrollment() -> None:
+def test_canonical_origin_serves_health_and_workstation() -> None:
     with TestClient(create_app(), base_url="http://localhost:8801") as client:
         health = client.get("/healthz")
-        enrollment = client.get("/owner-auth/enroll")
+        workstation = client.get("/app")
     assert health.json() == {"status": "ok"}
-    assert enrollment.status_code == 200
-    assert "text/html" in enrollment.headers["content-type"]
+    assert workstation.status_code == 200
+    assert "text/html" in workstation.headers["content-type"]
 
 
 def test_missing_spa_fails_with_build_recovery(
@@ -148,6 +148,6 @@ def test_missing_spa_fails_with_build_recovery(
 ) -> None:
     monkeypatch.setattr(web_app_module, "_APP_INDEX", tmp_path / "not-built.html")
     with TestClient(create_app(), base_url="http://localhost:8801") as client:
-        response = client.get("/owner-auth/enroll")
+        response = client.get("/app")
     assert response.status_code == 503
     assert "npm run build" in response.json()["message"]

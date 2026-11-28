@@ -15,9 +15,8 @@ from alpha_cli.assistant_contracts import (
     AssistantTurnRequest,
 )
 from alpha_web import _assistant, _invoke
-from alpha_web.api._common import data_dir
+from alpha_web.api._common import data_dir, require_local_origin
 from alpha_web.api.models import JobStatus
-from alpha_web.api.owner_auth import _require_owner_origin
 
 router = APIRouter(prefix="/api/assistant", tags=["assistant"])
 
@@ -28,7 +27,7 @@ def readiness() -> dict[str, Any]:
 
 
 @router.post(
-    "/sessions", response_model=AssistantSession, dependencies=[Depends(_require_owner_origin)]
+    "/sessions", response_model=AssistantSession, dependencies=[Depends(require_local_origin)]
 )
 def create(body: AssistantSessionRequest) -> dict[str, Any]:
     try:
@@ -57,7 +56,7 @@ def show(session_id: str) -> dict[str, Any]:
 @router.post(
     "/sessions/{session_id}/turns",
     response_model=JobStatus,
-    dependencies=[Depends(_require_owner_origin)],
+    dependencies=[Depends(require_local_origin)],
 )
 def turn(session_id: str, body: AssistantTurnRequest) -> dict[str, Any]:
     show(session_id)
@@ -77,7 +76,7 @@ def turn(session_id: str, body: AssistantTurnRequest) -> dict[str, Any]:
 @router.post(
     "/sessions/{session_id}/check",
     response_model=AssistantContextCheck,
-    dependencies=[Depends(_require_owner_origin)],
+    dependencies=[Depends(require_local_origin)],
 )
 def check(session_id: str) -> dict[str, Any]:
     try:

@@ -1,23 +1,22 @@
-"""Generated owner-action contracts track the server without parsing TypeScript source.
+"""Generated contracts carry no browser owner-action surface; owner acts stay in the trusted CLI.
 
-The frontend's type test checks the explicit semantic-event exclusion. Here the generated
-OpenAPI vocabulary is compared to the authoritative request model.
+This guard reads the committed OpenAPI document and the generated client instead of importing
+the server, so a stale regeneration cannot bring the removed routes back unseen.
 """
 
 from __future__ import annotations
 
 import json
-import typing
 from pathlib import Path
 
-from alpha_web.api.owner_auth import OwnerActionChallengeRequest
+ROOT = Path(__file__).resolve().parents[2]
+FRONTEND = ROOT / "apps/alpha-web/frontend"
 
 
-def test_generated_owner_actions_match_server_vocabulary() -> None:
-    root = Path(__file__).resolve().parents[2]
-    openapi = json.loads((root / "apps/alpha-web/frontend/openapi.json").read_text())
-    schema = openapi["components"]["schemas"]["OwnerActionChallengeRequest"]
-    generated = set(schema["properties"]["action_type"]["enum"])
-    annotation = OwnerActionChallengeRequest.model_fields["action_type"].annotation
-    assert generated == set(typing.get_args(annotation))
-    assert "record_semantic_event" in generated
+def test_generated_contracts_have_no_owner_action_surface() -> None:
+    openapi = json.loads((FRONTEND / "openapi.json").read_text(encoding="utf-8"))
+    assert not [path for path in openapi["paths"] if "owner-auth" in path]
+    schemas = openapi["components"]["schemas"]
+    assert not [name for name in schemas if name.startswith(("OwnerAction", "OwnerRegistration"))]
+    generated = (FRONTEND / "src/api/generated.ts").read_text(encoding="utf-8")
+    assert "owner-auth" not in generated

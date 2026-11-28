@@ -463,34 +463,6 @@
       "reason": "Parameterized safe read uses typed identity and boundary fixtures."
     },
     {
-      "method": "POST",
-      "mode": "fixture_backed",
-      "operation_id": "start_action_api_owner_auth_actions_challenge_post",
-      "path": "/api/owner-auth/actions/challenge",
-      "reason": "Local confirmation uses isolated token, origin, replay and receipt fixtures; legacy WebAuthn is an owner walkthrough checkpoint."
-    },
-    {
-      "method": "POST",
-      "mode": "fixture_backed",
-      "operation_id": "perform_action_api_owner_auth_actions_perform_post",
-      "path": "/api/owner-auth/actions/perform",
-      "reason": "Local confirmation uses isolated token, origin, replay and receipt fixtures; legacy WebAuthn is an owner walkthrough checkpoint."
-    },
-    {
-      "method": "POST",
-      "mode": "fixture_backed",
-      "operation_id": "complete_registration_api_owner_auth_enrollment_finish_post",
-      "path": "/api/owner-auth/enrollment/finish",
-      "reason": "Local confirmation uses isolated token, origin, replay and receipt fixtures; legacy WebAuthn is an owner walkthrough checkpoint."
-    },
-    {
-      "method": "POST",
-      "mode": "fixture_backed",
-      "operation_id": "start_registration_api_owner_auth_enrollment_options_post",
-      "path": "/api/owner-auth/enrollment/options",
-      "reason": "Local confirmation uses isolated token, origin, replay and receipt fixtures; legacy WebAuthn is an owner walkthrough checkpoint."
-    },
-    {
       "method": "GET",
       "mode": "automatic",
       "operation_id": "get_providers_api_providers_get",
@@ -901,13 +873,6 @@
       "mode": "automatic",
       "operation_id": "healthz_healthz_get",
       "path": "/healthz",
-      "reason": "Safe read exercised against an isolated temporary store."
-    },
-    {
-      "method": "GET",
-      "mode": "automatic",
-      "operation_id": "owner_enrollment_owner_auth_enroll_get",
-      "path": "/owner-auth/enroll",
       "reason": "Safe read exercised against an isolated temporary store."
     }
   ],

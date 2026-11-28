@@ -6,7 +6,6 @@ import { createPortal } from 'react-dom'
 import { CommandPalette } from './components/CommandPalette'
 import { IndicatorsDialog } from './components/IndicatorsDialog'
 import { Toasts } from './components/Toasts'
-import { OwnerEnrollment } from './auth/OwnerEnrollment'
 import { getLinked, getLinkedWorkspace, restoreLinked, setLinked, useLinked } from './context/linked'
 import { ChartWorkspace } from './shell/ChartWorkspace'
 import { MenuBar } from './shell/MenuBar'
@@ -205,5 +204,5 @@ function WorkstationApp() {
 }
 
 export function App() {
-  return window.location.pathname === '/owner-auth/enroll' ? <OwnerEnrollment /> : <WorkstationApp />
+  return <WorkstationApp />
 }

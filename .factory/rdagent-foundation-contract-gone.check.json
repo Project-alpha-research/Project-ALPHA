@@ -1,0 +1,23 @@
+{
+  "kind": "absence",
+  "removed_symbols": [
+    "RDNativeFoundationManifestV1",
+    "ManifestValidationError"
+  ],
+  "command_words": [
+    "rdagent_foundation_contract",
+    "rdagent_foundation"
+  ],
+  "removed_paths": [
+    "scripts/rdagent_foundation_contract.py",
+    "tests/unit/test_rdagent_foundation_contract.py",
+    "tests/fixtures/rdagent_foundation/"
+  ],
+  "search_roots": [
+    "apps",
+    "packages",
+    "scripts",
+    "tests",
+    "docs"
+  ]
+}
